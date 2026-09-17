@@ -147,7 +147,9 @@ Adapted from the reuse-based plan the user got from another session, with the 10
 - Verified: `:auth-service:compileJava`, `:media-service:compileJava`, `:chat-service:compileJava`, `:content-service:compileJava` all succeed under JDK 21. `:auth-service:test` and `:media-service:test` pass. `:chat-service:test` fails identically to the original Workflow copy (needs a live Redis for its full-context test) — confirmed pre-existing, not something the fork broke.
 - `infra/docker-compose.yml` covers Postgres, Redis, MinIO, Qdrant, and all four services — **no Kafka, no Eureka discovery, no gateway** (none of those were forked). Services still carry their Eureka-client/Kafka config from Workflow; without a running Eureka/Kafka they just fail to connect in the background (non-fatal for local dev). This means there's currently no gateway — inter-service and admin-app calls hit each service's own port directly. Decide before Phase 6 whether this platform needs its own gateway/discovery/Kafka.
 - `CLAUDE.md` written to the new repo's root (same content as below, plus the gateway/Kafka open item).
-- Not yet done: actually running `docker-compose up` end-to-end (Docker wasn't exercised, only direct Gradle compile/test); git init + first commit; copying this plan doc into the new repo's own `docs/`.
+- Git initialized locally (no remote yet — add one when ready to push), first commit made (`caed887`). Plan doc copied into the new repo's own `docs/`.
+- Caught and fixed before committing: `cp -r` doesn't respect `.gitignore`, so the fork initially dragged along Workflow's real `media-service/uploads/` (actual uploaded files from Workflow's own usage), a live Firebase service-account JSON key, and a redundant per-service Gradle wrapper — all deleted, and matching `.gitignore` patterns added so they can't slip in again.
+- Not yet done: actually running `docker-compose up` end-to-end (Docker wasn't exercised, only direct Gradle compile/test).
 - ja/ko/de rollout timing still open — schema supports all 5 from day one, this is purely a sequencing/staffing question.
 
 ## How to run this with Claude Code
