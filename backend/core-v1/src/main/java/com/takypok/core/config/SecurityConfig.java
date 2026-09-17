@@ -44,6 +44,11 @@ public class SecurityConfig {
                     // /v1/videos prefix are POST/DELETE and fall through to .authenticated() below.
                     .pathMatchers(HttpMethod.GET, "/v1/videos/**")
                     .permitAll()
+                    // content-service's public homepage read API — anonymous visitors, site
+                    // resolved from their own Host header. /v1/admin/** is untouched by this and
+                    // still falls through to .authenticated() below.
+                    .pathMatchers(HttpMethod.GET, "/v1/home/**")
+                    .permitAll()
                     .anyExchange()
                     .authenticated())
         .oauth2ResourceServer(

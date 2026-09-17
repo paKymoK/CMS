@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS site
     modified_by jsonb
 );
 
+-- Every content table below also carries `status` (DRAFT/PUBLISHED — the public API only
+-- ever returns PUBLISHED+active rows; admin sees everything) and `version` (Spring Data
+-- R2DBC's @Version optimistic-locking column — a concurrent-edit guard, not a history table;
+-- "simple versioning" per the plan, not full audit trails).
+
 CREATE TABLE IF NOT EXISTS primary_nav_item
 (
     id             bigserial PRIMARY KEY,
@@ -22,6 +27,8 @@ CREATE TABLE IF NOT EXISTS primary_nav_item
     label          character varying NOT NULL,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -36,6 +43,8 @@ CREATE TABLE IF NOT EXISTS nav_section
     label          character varying NOT NULL,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -51,19 +60,25 @@ CREATE TABLE IF NOT EXISTS stat
     note           character varying,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
     modified_by    jsonb
 );
 
-CREATE TABLE IF NOT EXISTS service
+-- Named service_card (not "service") to avoid colliding with the Service/@Service naming
+-- every other entity in this codebase uses for its business-logic layer.
+CREATE TABLE IF NOT EXISTS service_card
 (
     id             bigserial PRIMARY KEY,
     site_id        bigint  NOT NULL REFERENCES site (id),
     name           character varying NOT NULL,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -82,6 +97,8 @@ CREATE TABLE IF NOT EXISTS office
     address        text              NOT NULL,
     display_order  integer           NOT NULL DEFAULT 0,
     active         boolean           NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer           NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -98,6 +115,8 @@ CREATE TABLE IF NOT EXISTS case_study
     category       character varying,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -117,6 +136,8 @@ CREATE TABLE IF NOT EXISTS post
     date           character varying,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -132,6 +153,8 @@ CREATE TABLE IF NOT EXISTS logo_badge
     logo           character varying NOT NULL,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -152,6 +175,8 @@ CREATE TABLE IF NOT EXISTS testimonial
     quote          text,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -166,6 +191,8 @@ CREATE TABLE IF NOT EXISTS footer_nav_category
     links          jsonb   NOT NULL DEFAULT '[]', -- string[]
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -187,6 +214,8 @@ CREATE TABLE IF NOT EXISTS banner
     active_until   timestamp with time zone,
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
