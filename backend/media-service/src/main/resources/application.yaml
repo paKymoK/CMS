@@ -1,0 +1,71 @@
+server:
+  port: 8082
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: media-service
+  config:
+    import:
+      - 'classpath:config/liquibase.yml'
+      - 'classpath:config/r2dbc.yml'
+      - 'classpath:config/oauth2.yml'
+      - 'classpath:config/eureka-client.yml'
+      - 'classpath:config/springdoc.yml'
+      - 'classpath:management.yml'
+  codec:
+    # Only aggregates non-multipart bodies (JSON, form fields) — file parts never go through this.
+    max-in-memory-size: 2MB
+  webflux:
+    multipart:
+      # Kept well below media.upload.max-image-size/max-video-size on purpose: any part smaller
+      # than this is buffered fully in memory by the multipart parser before our code sees it, so a
+      # low threshold forces every image/video part to spill straight to a temp file as it streams
+      # in instead of ballooning JVM memory per concurrent upload. Form fields stay comfortably
+      # under 1MB so they're unaffected.
+      max-in-memory-size: 1MB
+      # Framework-level backstop above our own media.upload.max-video-size below — keep it >=
+      # max-video-size (with headroom) so legitimate uploads aren't cut off before our own
+      # UploadSizeLimiter gets to return its friendlier error.
+      max-disk-usage-per-part: 550MB
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+storage:
+  base-dir: ./uploads
+  images-dir: ./uploads/images
+  raw-dir: ./uploads/raw
+  hls-dir: ./uploads/hls
+  files-dir: ./uploads/files
+
+ffmpeg:
+  path: ""
+  cache-dir: ~/.cache/media-service/ffmpeg
+  download-timeout-seconds: 120
+
+media:
+  transcode:
+    max-concurrent-jobs: ${TRANSCODE_MAX_CONCURRENT:2}
+    queue-capacity: ${TRANSCODE_QUEUE_CAPACITY:50}
+  upload:
+    max-image-size: ${MEDIA_MAX_IMAGE_SIZE:10485760}   # 10 MB
+    max-video-size: ${MEDIA_MAX_VIDEO_SIZE:536870912}  # 512 MB
+  chunked-upload:
+    chunk-size-bytes: ${MEDIA_CHUNK_SIZE:8192}                    # 8 KB
+    max-total-size-bytes: ${MEDIA_CHUNK_MAX_TOTAL:209715200}      # 200 MB
+    session-idle-timeout-seconds: ${MEDIA_CHUNK_IDLE_TIMEOUT:900} # 15 min
+    sweep-interval-seconds: ${MEDIA_CHUNK_SWEEP_INTERVAL:60}
+    max-active-sessions: ${MEDIA_CHUNK_MAX_SESSIONS:200}
+
+logging:
+  config: classpath:log4j2-spring.xml
+  level:
+    root: INFO
+    io.r2dbc.postgresql.QUERY: INFO
+    io.r2dbc.postgresql.PARAM: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: DEBUG

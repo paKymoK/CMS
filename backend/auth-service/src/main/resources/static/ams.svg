@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="64" height="64" fill="#020B18" rx="3"/>
+
+  <!-- Diagonal slash accent -->
+  <line x1="46" y1="0" x2="64" y2="18" stroke="rgba(0,207,255,0.12)" stroke-width="8"/>
+
+  <!-- Corner TL — cyan -->
+  <polyline points="2,13 2,2 13,2"
+            fill="none" stroke="#00CFFF" stroke-width="2.5" stroke-linecap="square"
+            filter="url(#glow-soft)"/>
+  <!-- Corner TR — purple -->
+  <polyline points="51,2 62,2 62,13"
+            fill="none" stroke="#7B2FBE" stroke-width="2.5" stroke-linecap="square"/>
+  <!-- Corner BL — purple -->
+  <polyline points="2,51 2,62 13,62"
+            fill="none" stroke="#7B2FBE" stroke-width="2.5" stroke-linecap="square"/>
+  <!-- Corner BR — cyan -->
+  <polyline points="51,62 62,62 62,51"
+            fill="none" stroke="#00CFFF" stroke-width="2.5" stroke-linecap="square"
+            filter="url(#glow-soft)"/>
+
+  <!-- Glow halo behind TAK -->
+  <text x="32" y="38"
+        font-family="Arial Black, Impact, sans-serif"
+        font-weight="900"
+        font-size="23"
+        text-anchor="middle"
+        fill="rgba(0,207,255,0.18)"
+        letter-spacing="1">TAK</text>
+
+  <!-- TAK main text -->
+  <text x="32" y="38"
+        font-family="Arial Black, Impact, sans-serif"
+        font-weight="900"
+        font-size="23"
+        text-anchor="middle"
+        fill="#00CFFF"
+        filter="url(#glow)"
+        letter-spacing="1">TAK</text>
+
+  <!-- Separator line -->
+  <line x1="10" y1="44" x2="54" y2="44"
+        stroke="#7B2FBE" stroke-width="1.5" opacity="0.8"/>
+
+  <!-- Sub-label -->
+  <text x="32" y="54"
+        font-family="monospace, Courier New"
+        font-size="7"
+        text-anchor="middle"
+        fill="rgba(0,207,255,0.45)"
+        letter-spacing="3">SYS</text>
+</svg>

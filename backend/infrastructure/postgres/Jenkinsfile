@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        SSH_USER    = 'thaiha'
+        POSTGRES_HOST = '192.168.147.107'
+        REPO_DIR    = '/home/thaiha/app'
+        REPO_URL    = 'https://github.com/paKymoK/Workflow.git'
+    }
+
+    stages {
+        stage('Deploy to Postgres Server') {
+            steps {
+                sshagent(credentials: ['postgres-ssh-key']) {
+                    sh '''
+                        # ✅ Test kết nối
+                        echo ">>> Kiểm tra kết nối..."
+                        ssh -o StrictHostKeyChecking=no $SSH_USER@$POSTGRES_HOST \
+                            'echo "✅ SSH thành công! Host: $(hostname)"'
+
+                        # 📁 Clone hoặc Pull code
+                        echo ">>> Kiểm tra thư mục $REPO_DIR..."
+                        ssh -o StrictHostKeyChecking=no $SSH_USER@$POSTGRES_HOST "
+                            if [ -d '$REPO_DIR' ]; then
+                                echo '📁 Thư mục đã tồn tại → Pull code mới nhất...'
+                                cd $REPO_DIR
+                                git pull origin main
+                                echo '✅ Pull code thành công!'
+                            else
+                                echo '📁 Thư mục chưa tồn tại → Clone repo...'
+                                git clone $REPO_URL $REPO_DIR
+                                echo '✅ Clone thành công!'
+                            fi
+                        "
+
+                        # 🐳 Deploy bằng docker-compose
+                        echo ">>> Deploy bằng docker-compose..."
+                        ssh -o StrictHostKeyChecking=no $SSH_USER@$POSTGRES_HOST "
+                            cd $REPO_DIR/postgres
+                            docker compose down -v
+                            docker compose build --no-cache
+                            docker compose up -d
+                            echo '✅ Deploy thành công!'
+                        "
+
+                        # 🔍 Kiểm tra containers
+                        echo ">>> Kiểm tra containers..."
+                        ssh -o StrictHostKeyChecking=no $SSH_USER@$POSTGRES_HOST "
+                            cd $REPO_DIR/postgres
+                            docker compose ps
+                        "
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline hoàn thành!'
+        }
+        failure {
+            echo '❌ Pipeline thất bại. Kiểm tra logs!'
+        }
+    }
+}

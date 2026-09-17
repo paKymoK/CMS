@@ -1,0 +1,13 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5433}/${DB_SCHEMA:content}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      enabled: true
+      initial-size: ${DB_POOL_INITIAL_SIZE:2}
+      max-size: ${DB_POOL_MAX_SIZE:8}
+      max-idle-time: 30m
+      max-life-time: 30m
+      max-acquire-time: 5s
+      validation-query: SELECT 1

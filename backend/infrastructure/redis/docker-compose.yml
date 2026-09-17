@@ -1,0 +1,27 @@
+# Own project name so this stack isn't lumped into the same "takypok" project as
+# everything else — started/stopped independently of the app services and other infra
+# stacks. It still shares the "takypok_default" network (declared explicitly below,
+# not just implied by a shared project name) so services can reach it by container DNS.
+name: takypok-redis
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server
+    ports:
+      - "6379:6379"
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+    restart: unless-stopped
+    networks:
+      - takypok_default
+
+# Named explicitly (not external) so whichever of the independent infra stacks
+# (postgres/kafka/redis) happens to start first creates it; the others just attach.
+networks:
+  takypok_default:
+    name: takypok_default

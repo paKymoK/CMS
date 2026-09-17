@@ -1,0 +1,33 @@
+# Own project name so this stack's identity doesn't depend on the checkout folder name.
+# Reached via host.docker.internal (published ports), not the "takypok_default" network,
+# so no explicit network wiring is needed here.
+name: takypok-ldap
+
+services:
+
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: test-ldap
+    ports:
+      - "389:389"
+      - "636:636"
+    environment:
+      LDAP_ORGANISATION: "MyCompany"
+      LDAP_DOMAIN: "mycompany.local"
+      LDAP_ADMIN_PASSWORD: "admin_secret"
+      LDAP_CONFIG_PASSWORD: "config_secret"
+      LDAP_TLS: "false"
+    volumes:
+      - ./ldap-seed:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    command: --copy-service
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: ldap-ui
+    ports:
+      - "9090:80"
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: "false"
+    depends_on:
+      - openldap

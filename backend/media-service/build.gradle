@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.takypok'
+version = '0.0.1-SNAPSHOT'
+description = 'media-service'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "2025.0.0")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+def ffmpegClassifier = {
+    def override = System.getenv('FFMPEG_PLATFORM')
+    if (override) {
+        logger.lifecycle("[FFmpeg] Platform override from FFMPEG_PLATFORM: ${override}")
+        return override
+    }
+    def os   = System.getProperty('os.name').toLowerCase()
+    def arch = System.getProperty('os.arch').toLowerCase()
+    def arm  = arch.contains('aarch64') || arch.contains('arm')
+    if (os.contains('win'))  return 'windows-x86_64'
+    if (os.contains('mac'))  return arm ? 'macosx-arm64' : 'macosx-x86_64'
+    return arm ? 'linux-arm64' : 'linux-x86_64'
+}()
+
+dependencies {
+    implementation project(':infrastructure')
+    implementation project(':core-v1')
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20260102.1'
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+    implementation "org.springframework.boot:spring-boot-starter-data-r2dbc"
+    implementation "org.springframework.boot:spring-boot-starter-data-jdbc"
+    implementation "org.liquibase:liquibase-core"
+    implementation "org.postgresql:r2dbc-postgresql"
+    if (ffmpegClassifier == 'all') {
+        implementation "org.bytedeco:ffmpeg-platform:6.1.1-1.5.10"
+    } else {
+        implementation "org.bytedeco:ffmpeg:6.1.1-1.5.10:${ffmpegClassifier}"
+    }
+    testImplementation 'io.projectreactor:reactor-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('bootRun') {
+    // Windows maps the Vietnam zone to the legacy IANA alias "Asia/Saigon", which the local
+    // Postgres container's tzdata doesn't recognize (only the canonical "Asia/Ho_Chi_Minh").
+    jvmArgs += ['-Duser.timezone=Asia/Ho_Chi_Minh']
+}

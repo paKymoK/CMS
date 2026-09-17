@@ -1,0 +1,40 @@
+services:
+  media-service:
+    build:
+      context: ..
+      dockerfile: media-service/Dockerfile
+    image: takypok/media-service
+    container_name: media-service
+    ports:
+      - "8082:8082"
+    environment:
+      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_SCHEMA: media
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
+      JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    networks:
+      - takypok_default
+    logging:
+      driver: json-file
+      options:
+        max-size: "500m"
+        max-file: "1"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true
+

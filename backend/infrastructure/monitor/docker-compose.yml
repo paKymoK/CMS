@@ -1,0 +1,115 @@
+name: takypok-monitor
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--enable-feature=exemplar-storage'
+      - '--web.enable-remote-write-receiver'
+    networks:
+      - takypok_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/spring-boot.json
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000/}
+      GF_SECURITY_CSRF_TRUSTED_ORIGINS: ${GF_SECURITY_CSRF_TRUSTED_ORIGINS:-}
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    networks:
+      - takypok_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: tempo
+    command:
+      - '-config.file=/etc/tempo/tempo.yaml'
+    ports:
+      - "3200:3200"   # Tempo query API (used by Grafana datasource)
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    networks:
+      - takypok_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: loki
+    command:
+      - '-config.file=/etc/loki/loki-config.yaml'
+    ports:
+      - "3101:3100"   # Loki API (grafana's own UI already owns host 3100)
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki-data:/loki
+    networks:
+      - takypok_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+
+networks:
+  takypok_default:
+    external: true
+
+volumes:
+  prometheus-data:
+    name: prometheus_data
+    driver: local
+  grafana-data:
+    name: grafana_data
+    driver: local
+  tempo-data:
+    name: tempo_data
+    driver: local
+  loki-data:
+    name: loki_data
+    driver: local

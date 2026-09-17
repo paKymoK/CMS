@@ -1,0 +1,60 @@
+# Own project name so this stack isn't lumped into the same "takypok" project as
+# everything else — started/stopped independently of the app services and other infra
+# stacks. It still shares the "takypok_default" network (declared explicitly below,
+# not just implied by a shared project name) so services can reach it by container DNS.
+name: takypok-postgres
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tqthai/postgres
+    deploy:
+      resources:
+        limits:
+          # TODO(prod split): this 2048M is for LOCAL dev only, where one container hosts all 5
+          # service databases. Once each service gets its own dedicated instance (plan: 4 cores /
+          # 8GB each), raise this to match — e.g. memory: 8192M — and update postgresql.conf's
+          # shared_buffers/effective_cache_size together with it (see TODOs in that file). Don't
+          # raise one without the other or Postgres will either OOM or under-use the box.
+          memory: 2048M
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+    logging:
+      driver: json-file
+      options:
+        max-size: "500m"
+        max-file: "1"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - takypok_default
+
+# Named explicitly (not external) so whichever of the independent infra stacks
+# (postgres/kafka/redis) happens to start first creates it; the others just attach.
+networks:
+  takypok_default:
+    name: takypok_default
+
+volumes:
+  postgres-data:
+    name: pg_data
+    driver: local

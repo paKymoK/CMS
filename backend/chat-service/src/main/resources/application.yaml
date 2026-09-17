@@ -1,0 +1,61 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: chat-service
+  main:
+    web-application-type: reactive
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  config:
+    import:
+      - 'classpath:config/liquibase.yml'
+      - 'classpath:config/r2dbc.yml'
+      - 'classpath:config/oauth2.yml'
+      - 'classpath:config/kafka.yml'
+      - 'classpath:management.yml'
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        model: qwen3.5:4b
+        options:
+          temperature: 0.1
+          # Rules corpus alone is ~11k tokens (25 docs) once the auth/perf/convention batch was
+          # added; bumped from 8192 to leave headroom for the system prompt, the diff under
+          # review, and the model's own response.
+          num-ctx: 32768
+      embedding:
+        model: bge-m3
+    vectorstore:
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_PORT:6334}
+        collection-name: crm_vi
+        initialize-schema: ${ai.rag.enabled:false}
+
+ai:
+  rag:
+    enabled: true
+
+gitlab:
+  base-url: ${GITLAB_BASE_URL:}
+  token: ${GITLAB_TOKEN:}
+
+github:
+  base-url: ${GITHUB_BASE_URL:https://github.com}
+  token: ${GITHUB_TOKEN:}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://127.0.0.1:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.springframework.ai: DEBUG

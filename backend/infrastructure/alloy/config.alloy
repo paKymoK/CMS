@@ -1,0 +1,106 @@
+// ---- Logs: replaces Promtail (same container discovery + level-extraction as promtail-config.yaml) ----
+
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "project"
+  }
+}
+
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.relabel.containers.output
+  relabel_rules = discovery.relabel.containers.rules
+  labels        = {}
+  forward_to    = [loki.process.containers.receiver]
+}
+
+loki.process "containers" {
+  forward_to = [loki.write.default.receiver]
+
+  // Same RE2-safe pattern validated against real captured log lines from both
+  // core-v1's Log4j2 (ANSI-colored) format and discovery-service's plain Spring
+  // Boot default. No lookahead/\b (RE2 doesn't support them) since ANSI color
+  // codes end in a word char ("...\x1b[32mINFO") which defeats a \b boundary.
+  stage.regex {
+    expression = "^\\S+\\s+.{0,60}?(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)[^A-Za-z]"
+  }
+  stage.labels {
+    values = {
+      level = "level",
+    }
+  }
+}
+
+loki.write "default" {
+  endpoint {
+    url = sys.env("LOKI_URL")
+  }
+}
+
+// ---- Metrics: host RAM/CPU/disk (node_exporter-equivalent) + per-container RAM/CPU/disk-IO (cAdvisor-equivalent) ----
+
+prometheus.exporter.unix "host" {
+  rootfs_path = "/host"
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+}
+
+prometheus.exporter.cadvisor "containers" {
+  docker_host = "unix:///var/run/docker.sock"
+  docker_only = true
+}
+
+prometheus.scrape "exporters" {
+  targets = concat(
+    prometheus.exporter.unix.host.targets,
+    prometheus.exporter.cadvisor.containers.targets,
+  )
+  forward_to      = [prometheus.remote_write.default.receiver]
+  scrape_interval = "15s"
+}
+
+discovery.relabel "app" {
+  targets = [
+    {"__address__" = sys.env("APP_SCRAPE_TARGET")},
+  ]
+
+  rule {
+    source_labels = ["__address__"]
+    regex         = "^$"
+    action        = "drop"
+  }
+}
+
+prometheus.scrape "app" {
+  targets         = discovery.relabel.app.output
+  metrics_path    = "/actuator/prometheus"
+  forward_to      = [prometheus.remote_write.default.receiver]
+  scrape_interval = "15s"
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")
+  }
+}

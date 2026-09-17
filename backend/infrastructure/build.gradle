@@ -1,0 +1,50 @@
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.takypok'
+version = '0.0.1-SNAPSHOT'
+description = 'infrastructure'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.0'
+    api 'org.jetbrains.kotlin:kotlin-reflect'
+    api 'org.springframework.boot:spring-boot-starter-log4j2'
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+    api 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+    api 'org.springframework.boot:spring-boot-starter-webflux'
+    api 'org.springframework.kafka:spring-kafka'
+    api 'org.apache.commons:commons-lang3:3.18.0'
+    api 'io.jsonwebtoken:jjwt:0.9.1'
+    api 'com.auth0:java-jwt:4.3.0'
+
+    api 'io.micrometer:micrometer-registry-prometheus'
+
+    //Open Telemetry
+    api 'io.micrometer:context-propagation:1.1.3'
+    api 'io.micrometer:micrometer-tracing-bridge-otel'
+    api 'io.opentelemetry:opentelemetry-exporter-otlp'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

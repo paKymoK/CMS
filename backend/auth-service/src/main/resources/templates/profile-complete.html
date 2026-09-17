@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="/ams.svg" />
+    <title>TAK // COMPLETE PROFILE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-yellow: #00CFFF;
+            --neon-pink:   #7B2FBE;
+            --black:       #020B18;
+            --dark:        #041428;
+            --white:       #C8F0FF;
+            --text-muted:  rgba(200,240,255,0.35);
+            --border-subtle: rgba(0,207,255,0.15);
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--black);
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            width: 100%;
+            max-width: 380px;
+            padding: 40px 36px;
+            background: var(--dark);
+            border: 1px solid var(--border-subtle);
+            margin: 20px;
+        }
+        .eyebrow { font-size: 10px; color: var(--neon-yellow); letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 6px; }
+        .title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 0.05em; line-height: 1; margin-bottom: 8px; }
+        .title span { color: var(--neon-yellow); }
+        .subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.5; }
+        .field-label { display: block; font-size: 10px; letter-spacing: 0.25em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+        .field-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--black);
+            border: 1px solid var(--border-subtle);
+            color: var(--white);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+        .field-input:focus { border-color: var(--neon-yellow); }
+        .error-msg { font-size: 11px; color: var(--neon-pink); margin-top: -18px; margin-bottom: 18px; }
+        .submit-btn {
+            width: 100%;
+            margin-top: 24px;
+            padding: 13px;
+            background: var(--neon-yellow);
+            color: var(--black);
+            border: none;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <p class="eyebrow">▸ One Last Step</p>
+        <h1 class="title">COMPLETE <span>PROFILE</span></h1>
+        <p class="subtitle">We don't have a name on file for your account yet — enter it below to continue.</p>
+
+        <form method="post" th:action="@{/profile/complete}">
+            <label class="field-label" for="name">Your name</label>
+            <input class="field-input" type="text" id="name" name="name" placeholder="Jane Doe" autofocus required />
+            <p class="error-msg" th:if="${error}">Name can't be blank.</p>
+            <button class="submit-btn" type="submit">Continue</button>
+        </form>
+    </div>
+</body>
+</html>

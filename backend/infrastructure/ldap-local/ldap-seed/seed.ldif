@@ -1,0 +1,169 @@
+# ── Organizational Units ──────────────────────────
+
+dn: ou=users,dc=mycompany,dc=local
+objectClass: organizationalUnit
+ou: users
+
+# ── Users ─────────────────────────────────────────
+dn: cn=nttha5,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nttha5
+sn: Ha
+givenName: Nguyen Ha
+displayName: Nguyen Thi Thu Ha
+mail: nttha5@mycompany.local
+userPassword: 1
+
+dn: cn=ndtu24,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: ndtu24
+sn: Tu
+givenName: Nguyen Duc
+displayName: Nguyen Duc Tu
+mail: ndtu24@mycompany.local
+userPassword: 1
+
+dn: cn=tqthai,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: tqthai
+sn: Thai
+givenName: Truong Quang
+displayName: Truong Quang Thai
+mail: tqthai@mycompany.local
+userPassword: 1
+
+dn: cn=nvtu3,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nvtu3
+sn: Tu
+givenName: Nguyen Van
+displayName: Nguyen Van Tu
+mail: nvtu3@mycompany.local
+userPassword: 1
+
+dn: cn=natuan25,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: natuan25
+sn: Tuan
+givenName: Nguyen Anh
+displayName: Nguyen Anh Tuan
+mail: natuan25@mycompany.local
+userPassword: 1
+
+dn: cn=btngoc2,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: btngoc2
+sn: Ngoc
+givenName: Bui Thuy
+displayName: Bui Thuy Ngoc
+mail: btngoc2@mycompany.local
+userPassword: 1
+
+dn: cn=nmngoc5,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nmngoc5
+sn: Ngoc
+givenName: Nguyen Minh
+displayName: Nguyen Minh Ngoc
+mail: nmngoc5@mycompany.local
+userPassword: 1
+
+dn: cn=nttdung9,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nttdung9
+sn: Dung
+givenName: Nguyen Thi Thuy
+displayName: Nguyen Thi Thuy Dung
+mail: nttdung9@mycompany.local
+userPassword: 1
+
+dn: cn=dvtuan4,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: dvtuan4
+sn: Tuan
+givenName: Do Van
+displayName: Do Van Tuan
+mail: dvtuan4@mycompany.local
+userPassword: 1
+
+dn: cn=ldduc,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: ldduc
+sn: Duc
+givenName: Le Dinh
+displayName: Le Dinh Duc
+mail: ldduc@mycompany.local
+userPassword: 1
+
+dn: cn=ndtoi,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: ndtoi
+sn: Toi
+givenName: Nguyen Dinh
+displayName: Nguyen Dinh Toi
+mail: ndtoi@mycompany.local
+userPassword: 1
+
+dn: cn=nmhoang6,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nmhoang6
+sn: Hoang
+givenName: Nguyen Minh
+displayName: Nguyen Minh Hoang
+mail: nmhoang6@mycompany.local
+userPassword: 1
+
+dn: cn=ntnghia4,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: ntnghia4
+sn: Nghia
+givenName: Nguyen Tuan
+displayName: Nguyen Tuan Nghia
+mail: ntnghia4@mycompany.local
+userPassword: 1
+
+dn: cn=nvtuan16,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nvtuan16
+sn: Tuan
+givenName: Nguyen Vi
+displayName: Nguyen Vi Tuan
+mail: nvtuan16@mycompany.local
+userPassword: 1
+
+dn: cn=nxmanh1,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: nxmanh1
+sn: Manh
+givenName: Nguyen Xuan
+displayName: Nguyen Xuan Manh
+mail: nxmanh1@mycompany.local
+userPassword: 1
+
+dn: cn=phanh5,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: phanh5
+sn: Anh
+givenName: Pham Hoang
+displayName: Pham Hoang Anh
+mail: phanh5@mycompany.local
+userPassword: 1
+
+dn: cn=ptduong1,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: ptduong1
+sn: Duong
+givenName: Pham Tung
+displayName: Pham Tung Duong
+mail: ptduong1@mycompany.local
+userPassword: 1
+
+dn: cn=txdat2,ou=users,dc=mycompany,dc=local
+objectClass: inetOrgPerson
+cn: txdat2
+sn: Dat
+givenName: Tran Xuan
+displayName: Tran Xuan Dat
+mail: txdat2@mycompany.local
+userPassword: 1
+

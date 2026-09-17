@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/init/init-schema.sql
+  - include:
+      file: db/changelog/v2/add-conversation-activity-tracking.sql
+  - include:
+      file: db/changelog/v3/add-user-presence.sql
+  - include:
+      file: db/changelog/v4/add-delivered-through-message-id.sql
+  - include:
+      file: db/changelog/v5/add-channel-privacy.sql
+  - include:
+      file: db/changelog/v6/add-message-search.sql
+  - include:
+      file: db/changelog/v7/add-message-reactions.sql
+  - include:
+      file: db/changelog/v8/add-message-threads.sql
+  - include:
+      file: db/changelog/v9/add-employee-directory.sql
+  - include:
+      file: db/changelog/v10/add-device-token-directory.sql

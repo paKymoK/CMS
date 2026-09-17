@@ -1,0 +1,97 @@
+server:
+  port: 9000
+
+auth:
+  issuer-uri: ${AUTH_ISSUER_URI:http://127.0.0.1:9000}
+  internal-domain: ${AUTH_INTERNAL_DOMAIN:mycompany.local}
+  workflow-client:
+    redirect-uris: ${WORKFLOW_REDIRECT_URIS:http://localhost:3000/callback,https://app.thaiha.website/callback,https://oauth.pstmn.io/v1/callback,com.takypok.workflow://oauth2redirect}
+    post-logout-redirect-uris: ${WORKFLOW_POST_LOGOUT_REDIRECT_URIS:http://localhost:3000/login,https://app.thaiha.website/login}
+
+spring:
+  application:
+    name: auth-service
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5433}/${DB_SCHEMA:authentication}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: AuthServicePool
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 5000
+      keepalive-time: 60000
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database: postgresql
+    show-sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        spring.json.add.type.headers: false
+  config:
+    import: 'classpath:management.yml'
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.actuate.autoconfigure.data.redis.RedisReactiveHealthContributorAutoConfiguration
+
+account-events:
+  topic: account.events
+
+department-events:
+  topic: department.events
+
+unit-events:
+  topic: unit.events
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://127.0.0.1:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+client:
+  workflow-service:
+    url: ${WORKFLOW_SERVICE:http://127.0.0.1:8080}
+
+ldap:
+  url: ldap://localhost:389
+  base: dc=mycompany,dc=local
+  username: cn=admin,dc=mycompany,dc=local
+  password: admin_secret
+  user-search-base: ou=users
+  user-search-filter: "(cn={0})"
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  health:
+    redis:
+      enabled: true
+    ldap:
+      enabled: false
+
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    org.springframework.web: ${LOGGING_LEVEL_SPRING_WEB:INFO}
+    org.springframework.security: ${LOGGING_LEVEL_SPRING_SECURITY:DEBUG}
+    org.springframework.security.oauth2: ${LOGGING_LEVEL_SPRING_OAUTH2:DEBUG}
+    org.springframework.security.web.FilterChainProxy: INFO

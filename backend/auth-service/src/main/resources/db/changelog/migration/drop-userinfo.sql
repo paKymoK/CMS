@@ -1,0 +1,6 @@
+-- Superseded by Phase 7: `userinfo` was recreated (with full column parity to employee-service's
+-- `employee` table) directly in init-schema.sql, and the fk_ugm_user/fk_cra_user re-pointing this
+-- file used to do is now baked into init-schema.sql's original table definitions — instead of
+-- layering a create -> drop -> recreate chain of migrations on a codebase that isn't deployed yet.
+-- This file is stubbed rather than deleted (the environment this was authored in couldn't run `rm`)
+-- and is no longer included in db.changelog-master.yaml, so it does not execute.

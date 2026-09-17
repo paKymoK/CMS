@@ -1,0 +1,53 @@
+# Only meaningful if this file is ever run standalone — normally it's merged into the
+# root docker-compose.yaml's "takypok-app" project via its include list, which wins.
+name: takypok-app
+
+services:
+  alloy:
+    image: grafana/alloy:v1.4.3
+    container_name: alloy
+    # privileged + host mounts below are cAdvisor's documented requirements for
+    # per-container metrics (prometheus.exporter.cadvisor in config.alloy). This only
+    # works correctly on a native Linux Docker host — on Docker Desktop for Mac/Windows,
+    # container storage is virtualized and cAdvisor can't resolve the overlayfs layer
+    # metadata it needs (fails with "failed to identify the read-write layer ID"),
+    # so per-container RAM/CPU/disk-IO metrics won't populate there. Host-level metrics
+    # (prometheus.exporter.unix) and log shipping work fine on both.
+    privileged: true
+    command:
+      - 'run'
+      - '--server.http.listen-addr=0.0.0.0:12345'
+      - '--storage.path=/var/lib/alloy/data'
+      - '/etc/alloy/config.alloy'
+    ports:
+      - "12345:12345"   # Alloy's own live-debugging UI (component graph, live log/metric preview)
+    volumes:
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /sys:/sys:ro
+      - /:/rootfs:ro
+      - /:/host:ro
+    environment:
+      LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
+      PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
+      APP_SCRAPE_TARGET: ${APP_SCRAPE_TARGET:-}
+    networks:
+      - takypok_default
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "1"
+
+networks:
+  takypok_default:
+    external: true
+
+volumes:
+  alloy-data:
+    name: alloy_data
+    driver: local

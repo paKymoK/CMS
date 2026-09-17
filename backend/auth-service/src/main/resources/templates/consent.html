@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/svg+xml" href="/ams.svg" />
+    <title>TAK // CONSENT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-yellow: #00CFFF;
+            --neon-pink:   #7B2FBE;
+            --neon-cyan:   #00F5C4;
+            --black:       #020B18;
+            --dark:        #041428;
+            --darker:      #030E1E;
+            --white:       #C8F0FF;
+            --text-muted:  rgba(200,240,255,0.35);
+            --border-subtle: rgba(0,207,255,0.15);
+            --grid-color:  rgba(0,180,255,0.05);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--black);
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            cursor: crosshair;
+        }
+
+        #bubble-canvas { position: fixed; inset: 0; z-index: 0; opacity: 0.6; pointer-events: none; }
+
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 48px 48px;
+            z-index: 0; pointer-events: none;
+        }
+        .bg-slash {
+            position: fixed; top: -20%; right: -10%; width: 60vw; height: 140vh;
+            background: linear-gradient(135deg, transparent 49.5%, rgba(0,207,255,0.04) 49.5%, rgba(0,207,255,0.04) 50.5%, transparent 50.5%);
+            transform: skewX(-10deg); z-index: 0; pointer-events: none;
+        }
+        .scanlines {
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+            z-index: 1; pointer-events: none;
+        }
+
+        .corner { position: fixed; width: 48px; height: 48px; z-index: 9998; pointer-events: none; }
+        .corner-tl { top: 0; left: 0;   border-top: 3px solid var(--neon-yellow); border-left: 3px solid var(--neon-yellow);  box-shadow: -3px -3px 12px rgba(0,207,255,0.5); }
+        .corner-tr { top: 0; right: 0;  border-top: 3px solid var(--neon-pink);   border-right: 3px solid var(--neon-pink);    box-shadow:  3px -3px 12px rgba(123,47,190,0.5); }
+        .corner-bl { bottom: 0; left: 0;  border-bottom: 3px solid var(--neon-pink);   border-left: 3px solid var(--neon-pink);   box-shadow: -3px 3px 12px rgba(123,47,190,0.5); }
+        .corner-br { bottom: 0; right: 0; border-bottom: 3px solid var(--neon-yellow); border-right: 3px solid var(--neon-yellow); box-shadow:  3px  3px 12px rgba(0,207,255,0.5); }
+
+        .ticker {
+            position: fixed; top: 0; left: 0; right: 0; height: 28px;
+            background: var(--neon-yellow); z-index: 10; overflow: hidden;
+            display: flex; align-items: center;
+        }
+        .ticker-track { display: flex; animation: ticker-scroll 22s linear infinite; white-space: nowrap; }
+        .ticker-text { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--dark); letter-spacing: 0.2em; padding-right: 80px; }
+        @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .status-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 28px;
+            background: var(--neon-pink); z-index: 10;
+            display: flex; align-items: center; padding: 0 16px; gap: 24px;
+        }
+        .status-item { font-family: 'Bebas Neue', sans-serif; font-size: 12px; color: #fff; letter-spacing: 0.15em; display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: blink 1.2s step-end infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+        .container {
+            position: relative; z-index: 5;
+            display: grid; grid-template-columns: 1fr 1fr;
+            width: min(920px, 95vw);
+            margin: 48px 0 36px;
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+        /* ── Left panel ── */
+        .left-panel {
+            background: var(--neon-yellow);
+            padding: 48px 40px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden;
+            color: rgba(2,11,24,0.9);
+        }
+        .left-panel::after {
+            content: ''; position: absolute; bottom: -60px; right: -60px;
+            width: 200px; height: 200px;
+            border: 40px solid rgba(2,11,24,0.1); border-radius: 50%;
+            pointer-events: none;
+        }
+        .brand-tag {
+            font-family: 'Bebas Neue', sans-serif; font-size: 11px;
+            letter-spacing: 0.3em; color: rgba(2,11,24,0.5);
+            border: 1.5px solid rgba(2,11,24,0.3);
+            display: inline-block; padding: 4px 10px; width: fit-content;
+        }
+        .brand-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(56px, 7vw, 88px);
+            line-height: 0.9; color: rgba(2,11,24,0.9);
+            letter-spacing: -0.02em;
+            animation: glitch 6s infinite;
+        }
+        @keyframes glitch {
+            0%,90%,100% { text-shadow: none; }
+            92% { text-shadow: -3px 0 var(--neon-pink), 3px 0 var(--neon-cyan); }
+            95% { text-shadow:  3px 0 var(--neon-cyan), -3px 0 var(--neon-pink); }
+        }
+        .brand-subtitle {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.2em;
+            color: rgba(2,11,24,0.5); text-transform: uppercase; margin-top: 16px;
+        }
+        .brand-stats { display: flex; flex-direction: column; gap: 12px; }
+        .stat-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid rgba(2,11,24,0.15); padding-bottom: 8px; }
+        .stat-label { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: rgba(2,11,24,0.5); letter-spacing: 0.1em; }
+        .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: rgba(2,11,24,0.9); letter-spacing: 0.05em; }
+
+        /* ── Right panel ── */
+        .right-panel {
+            background: var(--dark);
+            border: 2px solid var(--neon-yellow); border-left: none;
+            padding: 40px 40px;
+            display: flex; flex-direction: column;
+            overflow-y: auto; max-height: 85vh;
+        }
+        .form-eyebrow { font-size: 10px; color: var(--neon-cyan); letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 8px; }
+        .form-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--white); letter-spacing: 0.05em; line-height: 1; margin-bottom: 6px; }
+        .form-title span { color: var(--neon-yellow); }
+
+        .request-info {
+            font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em;
+            margin-bottom: 20px; line-height: 1.8;
+            border-left: 2px solid var(--border-subtle); padding-left: 12px;
+        }
+        .request-info strong { color: var(--neon-yellow); font-weight: normal; }
+
+        /* ── User code warning ── */
+        .alert-warn {
+            font-size: 11px; letter-spacing: 0.1em;
+            padding: 10px 14px; margin-bottom: 16px;
+            border-left: 3px solid var(--neon-cyan);
+            background: rgba(0,245,196,0.07); color: var(--neon-cyan);
+        }
+        .alert-warn::before { content: '⚠ VERIFY CODE //'; margin-right: 8px; }
+
+        /* ── Section label ── */
+        .section-label {
+            font-size: 9px; letter-spacing: 0.3em; color: var(--text-muted);
+            text-transform: uppercase; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+        /* ── Scope list ── */
+        .scope-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+        .scope-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-subtle);
+            background: rgba(0,207,255,0.02);
+            cursor: crosshair;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .scope-item:has(input:checked) {
+            border-color: var(--neon-yellow);
+            background: rgba(0,207,255,0.05);
+        }
+        .scope-item.disabled {
+            border-color: rgba(0,245,196,0.2);
+            background: rgba(0,245,196,0.03);
+            cursor: default;
+        }
+
+        /* custom checkbox */
+        .scope-check {
+            appearance: none; -webkit-appearance: none;
+            width: 14px; height: 14px; flex-shrink: 0;
+            border: 1.5px solid var(--border-subtle);
+            background: transparent; cursor: crosshair;
+            position: relative; margin-top: 2px;
+            transition: border-color 0.2s;
+        }
+        .scope-check:checked {
+            border-color: var(--neon-yellow);
+            background: rgba(0,207,255,0.1);
+        }
+        .scope-check:checked::after {
+            content: '✓';
+            position: absolute; top: -1px; left: 1px;
+            font-size: 10px; color: var(--neon-yellow);
+        }
+        .scope-check:disabled {
+            border-color: rgba(0,245,196,0.3);
+        }
+        .scope-check:disabled:checked::after { color: var(--neon-cyan); }
+
+        .scope-info { flex: 1; }
+        .scope-name { font-size: 12px; color: var(--white); letter-spacing: 0.1em; }
+        .scope-desc { font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em; margin-top: 2px; }
+        .scope-granted-tag {
+            font-size: 9px; letter-spacing: 0.15em; color: var(--neon-cyan);
+            border: 1px solid rgba(0,245,196,0.3); padding: 1px 6px;
+            align-self: center; white-space: nowrap;
+        }
+
+        /* ── Buttons ── */
+        .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+
+        .submit-btn {
+            flex: 1;
+            background: var(--neon-yellow); color: var(--dark);
+            border: none; font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px; letter-spacing: 0.2em;
+            padding: 13px 20px; cursor: crosshair;
+            position: relative; overflow: hidden;
+            transition: color 0.2s, box-shadow 0.2s, transform 0.1s;
+        }
+        .submit-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: var(--neon-pink); transform: translateX(-105%);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 0;
+        }
+        .submit-btn:hover::before { transform: translateX(0); }
+        .submit-btn:hover { color: #fff; box-shadow: 0 0 30px rgba(123,47,190,0.5); }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn span { position: relative; z-index: 1; }
+
+        .cancel-btn {
+            background: transparent; color: var(--text-muted);
+            border: 1.5px solid var(--border-subtle);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px; letter-spacing: 0.15em;
+            padding: 13px 20px; cursor: crosshair;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .cancel-btn:hover { border-color: var(--neon-pink); color: var(--neon-pink); }
+
+        .footer-note {
+            font-size: 9px; letter-spacing: 0.12em; color: var(--text-muted);
+            text-transform: uppercase; margin-top: 16px; text-align: center;
+            line-height: 1.8;
+        }
+
+        body::after {
+            content: ''; position: fixed; inset: 0; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+            background-size: 200px; pointer-events: none; z-index: 100;
+        }
+
+        @media (max-width: 640px) {
+            .container { grid-template-columns: 1fr; }
+            .left-panel { padding: 32px 28px; }
+            .right-panel { border-left: 2px solid var(--neon-yellow); border-top: none; padding: 32px 28px; max-height: none; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="bubble-canvas"></canvas>
+<div class="bg-grid"></div>
+<div class="bg-slash"></div>
+<div class="scanlines"></div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<div class="ticker">
+    <div class="ticker-track">
+        <span class="ticker-text">PERMISSION REVIEW ///  SCOPE AUTHORIZATION REQUIRED ///  REVIEW CAREFULLY BEFORE GRANTING ///  YOUR DATA YOUR CHOICE ///  OAUTH2 CONSENT FLOW ///  PERMISSION REVIEW ///  SCOPE AUTHORIZATION REQUIRED ///  REVIEW CAREFULLY BEFORE GRANTING ///  YOUR DATA YOUR CHOICE ///  OAUTH2 CONSENT FLOW ///</span>
+        <span class="ticker-text">PERMISSION REVIEW ///  SCOPE AUTHORIZATION REQUIRED ///  REVIEW CAREFULLY BEFORE GRANTING ///  YOUR DATA YOUR CHOICE ///  OAUTH2 CONSENT FLOW ///  PERMISSION REVIEW ///  SCOPE AUTHORIZATION REQUIRED ///  REVIEW CAREFULLY BEFORE GRANTING ///  YOUR DATA YOUR CHOICE ///  OAUTH2 CONSENT FLOW ///</span>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Left branding -->
+    <div class="left-panel">
+        <div>
+            <div class="brand-tag">▲ CONSENT PORTAL</div>
+        </div>
+        <div>
+            <div class="brand-title">SCOPE<br>GRANT</div>
+            <div class="brand-subtitle">// OAuth2 Permission Review</div>
+        </div>
+        <div class="brand-stats">
+            <div class="stat-row">
+                <span class="stat-label">REQUESTING APP</span>
+                <span class="stat-value" style="font-size:14px; word-break:break-all;" th:text="${clientId}">CLIENT</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">ACCOUNT</span>
+                <span class="stat-value" style="font-size:14px;" th:text="${principalName}">USER</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">PROTOCOL</span>
+                <span class="stat-value">OAUTH2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right consent form -->
+    <div class="right-panel">
+        <p class="form-eyebrow">▸ Authorization Request</p>
+        <h2 class="form-title">GRANT <span>ACCESS</span></h2>
+
+        <div class="request-info">
+            Application <strong th:text="${clientId}">app</strong> is requesting access to account
+            <strong th:text="${principalName}">user</strong>
+        </div>
+
+        <!-- Device flow user code -->
+        <div th:if="${userCode}" class="alert-warn">
+            Code <strong th:text="${userCode}"></strong> — verify this matches your device before continuing.
+        </div>
+
+        <form name="consent_form" method="post" th:action="${requestURI}">
+            <input type="hidden" name="client_id" th:value="${clientId}">
+            <input type="hidden" name="state" th:value="${state}">
+            <input th:if="${userCode}" type="hidden" name="user_code" th:value="${userCode}">
+
+            <!-- New scopes -->
+            <div th:if="${not #lists.isEmpty(scopes)}">
+                <div class="section-label">// Requested Permissions</div>
+                <div class="scope-list">
+                    <label th:each="scope: ${scopes}" class="scope-item">
+                        <input class="scope-check" type="checkbox" name="scope"
+                               th:value="${scope.scope}" th:id="${scope.scope}">
+                        <div class="scope-info">
+                            <div class="scope-name" th:text="${scope.scope}"></div>
+                            <div class="scope-desc" th:text="${scope.description}"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Already-granted scopes -->
+            <div th:if="${not #lists.isEmpty(previouslyApprovedScopes)}">
+                <div class="section-label">// Already Granted</div>
+                <div class="scope-list">
+                    <div th:each="scope: ${previouslyApprovedScopes}" class="scope-item disabled">
+                        <input class="scope-check" type="checkbox"
+                               th:id="${scope.scope}" disabled checked>
+                        <div class="scope-info">
+                            <div class="scope-name" th:text="${scope.scope}"></div>
+                            <div class="scope-desc" th:text="${scope.description}"></div>
+                        </div>
+                        <span class="scope-granted-tag">GRANTED</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="submit-btn" type="submit" id="submit-consent">
+                    <span>AUTHORIZE ⚡</span>
+                </button>
+                <button class="cancel-btn" type="button" id="cancel-consent" onclick="cancelConsent();">
+                    DENY
+                </button>
+            </div>
+        </form>
+
+        <p class="footer-note">
+            Denying will share no information with the requesting application.<br>
+            // Secure OAuth2 · Scoped Access · Session Encrypted
+        </p>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div class="status-item"><div class="status-dot"></div>LIVE</div>
+    <div class="status-item">SYS: NOMINAL</div>
+    <div class="status-item">AUTH: PENDING CONSENT</div>
+    <div class="status-item" id="clock" style="margin-left:auto;"></div>
+</div>
+
+<script>
+    function cancelConsent() {
+        document.consent_form.reset();
+        document.consent_form.submit();
+    }
+
+    function updateClock() {
+        document.getElementById('clock').textContent =
+            new Date().toTimeString().slice(0, 8) + ' UTC';
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    (function () {
+        const canvas = document.getElementById('bubble-canvas');
+        const ctx = canvas.getContext('2d');
+        const COLORS = ['#00CFFF', '#48CAE4', '#90E0EF', '#ADE8F4', '#00F5C4'];
+        let dots = [];
+
+        function init() {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+            dots = Array.from({ length: 35 }, function () {
+                return {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 6 + 3,
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: -(Math.random() * 0.4 + 0.1)
+                };
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dots.forEach(function (d) {
+                d.x += d.vx; d.y += d.vy;
+                if (d.x < -d.r) d.x = canvas.width + d.r;
+                if (d.x > canvas.width + d.r) d.x = -d.r;
+                if (d.y < -d.r) { d.y = canvas.height + d.r; d.x = Math.random() * canvas.width; }
+                ctx.globalAlpha = 0.55;
+                ctx.strokeStyle = d.color; ctx.lineWidth = 1.2;
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.stroke();
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = d.color;
+                ctx.beginPath(); ctx.arc(d.x - d.r * 0.3, d.y - d.r * 0.3, d.r * 0.18, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(draw);
+        }
+
+        var resizeTimer;
+        window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(init, 150); });
+        init(); draw();
+    })();
+</script>
+
+</body>
+</html>
