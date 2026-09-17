@@ -25,6 +25,13 @@ public class DomainAuthenticationManager implements AuthenticationManager {
   static final int MAX_ATTEMPTS = 5;
   private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(10);
 
+  // Username-only keying (above) lets anyone lock out a KNOWN username (e.g. "admin") from
+  // anywhere, with no need to control an IP — a free account-lockout DoS. This second, IP-keyed
+  // counter closes that gap. Threshold is much higher than MAX_ATTEMPTS since one IP (NAT,
+  // shared office network) can legitimately represent many real users failing occasionally.
+  private static final String IP_FAIL_KEY_PREFIX = "login-fail-ip:";
+  private static final int MAX_ATTEMPTS_PER_IP = 20;
+
   private final LdapAuthenticationProvider ldapAuthenticationProvider;
   private final DaoAuthenticationProvider jdbcAuthenticationProvider;
   private final JdbcUserDetailsManager jdbcUserDetailsManager;
@@ -34,8 +41,9 @@ public class DomainAuthenticationManager implements AuthenticationManager {
   public Authentication authenticate(Authentication authentication) {
     DomainAuthenticationToken token = (DomainAuthenticationToken) authentication;
     String username = token.getName();
+    String remoteAddress = token.getRemoteAddress();
 
-    checkLocked(username);
+    checkLocked(username, remoteAddress);
 
     Authentication result;
     try {
@@ -49,11 +57,11 @@ public class DomainAuthenticationManager implements AuthenticationManager {
             default -> throw new BadCredentialsException("Unknown domain: " + token.getDomain());
           };
     } catch (AuthenticationException ex) {
-      recordFailure(username);
+      recordFailure(username, remoteAddress);
       throw ex;
     }
 
-    clearFailures(username);
+    clearFailures(username, remoteAddress);
 
     if (result instanceof AbstractAuthenticationToken aat) {
       aat.setDetails(token.getDomain());
@@ -61,12 +69,15 @@ public class DomainAuthenticationManager implements AuthenticationManager {
     return result;
   }
 
-  private void checkLocked(String username) {
+  private void checkLocked(String username, String remoteAddress) {
     try {
-      String key = FAIL_KEY_PREFIX + username;
-      String value = redisTemplate.opsForValue().get(key);
+      String value = redisTemplate.opsForValue().get(FAIL_KEY_PREFIX + username);
       if (value != null && Integer.parseInt(value) >= MAX_ATTEMPTS) {
         throw new LockedException("Account temporarily locked due to too many failed attempts");
+      }
+      String ipValue = redisTemplate.opsForValue().get(IP_FAIL_KEY_PREFIX + remoteAddress);
+      if (ipValue != null && Integer.parseInt(ipValue) >= MAX_ATTEMPTS_PER_IP) {
+        throw new LockedException("Too many failed login attempts from this network");
       }
     } catch (LockedException ex) {
       throw ex;
@@ -75,7 +86,7 @@ public class DomainAuthenticationManager implements AuthenticationManager {
     }
   }
 
-  private void recordFailure(String username) {
+  private void recordFailure(String username, String remoteAddress) {
     try {
       String key = FAIL_KEY_PREFIX + username;
       Long count = redisTemplate.opsForValue().increment(key);
@@ -83,6 +94,14 @@ public class DomainAuthenticationManager implements AuthenticationManager {
         redisTemplate.expire(key, LOCKOUT_DURATION);
       }
       log.debug("Failed login attempt {}/{} for user={}", count, MAX_ATTEMPTS, username);
+
+      String ipKey = IP_FAIL_KEY_PREFIX + remoteAddress;
+      Long ipCount = redisTemplate.opsForValue().increment(ipKey);
+      if (ipCount != null && ipCount == 1) {
+        redisTemplate.expire(ipKey, LOCKOUT_DURATION);
+      }
+      log.debug(
+          "Failed login attempt {}/{} from ip={}", ipCount, MAX_ATTEMPTS_PER_IP, remoteAddress);
     } catch (Exception ex) {
       log.warn(
           "Redis unavailable — failure count not recorded for user={}: {}",
@@ -91,9 +110,10 @@ public class DomainAuthenticationManager implements AuthenticationManager {
     }
   }
 
-  private void clearFailures(String username) {
+  private void clearFailures(String username, String remoteAddress) {
     try {
       redisTemplate.delete(FAIL_KEY_PREFIX + username);
+      redisTemplate.delete(IP_FAIL_KEY_PREFIX + remoteAddress);
     } catch (Exception ex) {
       log.warn(
           "Redis unavailable — failure count not cleared for user={}: {}",

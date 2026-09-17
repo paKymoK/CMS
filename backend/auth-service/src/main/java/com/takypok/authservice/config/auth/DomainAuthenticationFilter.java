@@ -35,7 +35,8 @@ public class DomainAuthenticationFilter extends UsernamePasswordAuthenticationFi
       domain = "INTERNAL";
     }
 
-    DomainAuthenticationToken token = new DomainAuthenticationToken(username, password, domain);
+    DomainAuthenticationToken token =
+        new DomainAuthenticationToken(username, password, domain, request.getRemoteAddr());
 
     return getAuthenticationManager().authenticate(token);
   }

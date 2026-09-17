@@ -77,9 +77,19 @@ public class AuthorizationServerConfig {
   @Value("${auth.workflow-client.post-logout-redirect-uris}")
   private String[] workflowPostLogoutRedirectUris;
 
+  @Value("${auth.cms-admin-client.redirect-uris}")
+  private String[] cmsAdminRedirectUris;
+
+  @Value("${auth.cms-admin-client.post-logout-redirect-uris}")
+  private String[] cmsAdminPostLogoutRedirectUris;
+
   private static final String CUSTOM_CONSENT_PAGE_URI = "/oauth2/consent";
   private static final String WORKFLOW_CLIENT_ID = "workflow";
   private static final String WORKFLOW_CLIENT_SECRET = "{noop}workflow-secret";
+
+  // cms-platform's admin-app (Phase 4) is a pure SPA — PKCE-only, no client secret at all, unlike
+  // "workflow" above which also supports a confidential CLIENT_SECRET_BASIC flow.
+  private static final String CMS_ADMIN_CLIENT_ID = "cms-admin";
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -187,6 +197,40 @@ public class AuthorizationServerConfig {
     upsertClient(registeredClientRepository, workflow);
     seedAdminRole(registeredClientRepository, clientRoleAssignmentRepository, WORKFLOW_CLIENT_ID);
     seedGroupRoles(registeredClientRepository, clientRoleAssignmentRepository, WORKFLOW_CLIENT_ID);
+
+    RegisteredClient cmsAdmin =
+        RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId(CMS_ADMIN_CLIENT_ID)
+            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .tokenSettings(tokenSettings)
+            .redirectUris(uris -> uris.addAll(Arrays.asList(cmsAdminRedirectUris)))
+            .postLogoutRedirectUris(
+                uris -> uris.addAll(Arrays.asList(cmsAdminPostLogoutRedirectUris)))
+            .scope(OidcScopes.OPENID)
+            .scope(OidcScopes.PROFILE)
+            .scope("offline_access")
+            .clientSettings(
+                ClientSettings.builder()
+                    .requireAuthorizationConsent(false)
+                    .requireProofKey(true)
+                    .build())
+            .build();
+
+    upsertClient(registeredClientRepository, cmsAdmin);
+    // Demonstrates project(site)-scoped access rather than a global role: this assignment grants
+    // "admin" the ADMIN role on the "vn" site only. CustomOAuth2TokenCustomizer buckets it under
+    // PROJECT_ROLES_CLAIM["vn"] — "jp" (or any other site) is absent from that claim for this user
+    // because no matching row exists, not because of any additional filtering. Real per-site
+    // editor accounts get seeded the same way once the admin-app (Phase 4) can manage them.
+    seedProjectRole(
+        registeredClientRepository,
+        clientRoleAssignmentRepository,
+        CMS_ADMIN_CLIENT_ID,
+        "admin",
+        "vn",
+        "ADMIN");
     return registeredClientRepository;
   }
 
@@ -224,6 +268,27 @@ public class AuthorizationServerConfig {
                       .role(role)
                       .build());
             });
+  }
+
+  private void seedProjectRole(
+      JdbcRegisteredClientRepository repository,
+      ClientRoleAssignmentRepository clientRoleAssignmentRepository,
+      String clientId,
+      String userSub,
+      String projectId,
+      String role) {
+    RegisteredClient client = repository.findByClientId(clientId);
+    if (client == null) return;
+    if (clientRoleAssignmentRepository.existsByRegisteredClientIdAndUserSubAndProjectId(
+        client.getId(), userSub, projectId)) return;
+    clientRoleAssignmentRepository.save(
+        ClientRoleAssignment.builder()
+            .id(UUID.randomUUID().toString())
+            .registeredClientId(client.getId())
+            .userSub(userSub)
+            .projectId(projectId)
+            .role(role)
+            .build());
   }
 
   private void seedAdminRole(
