@@ -41,6 +41,7 @@ public class OfficeServiceImpl implements OfficeService {
     office.setBig(request.getBig() != null ? request.getBig() : false);
     office.setCity(request.getCity());
     office.setAddress(request.getAddress());
+    office.setImage(request.getImage());
     office.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
     office.setActive(request.getActive() != null ? request.getActive() : true);
     office.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
@@ -58,6 +59,7 @@ public class OfficeServiceImpl implements OfficeService {
               if (request.getBig() != null) office.setBig(request.getBig());
               office.setCity(request.getCity());
               office.setAddress(request.getAddress());
+              office.setImage(request.getImage());
               if (request.getDisplayOrder() != null)
                 office.setDisplayOrder(request.getDisplayOrder());
               if (request.getActive() != null) office.setActive(request.getActive());

@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/init/init-schema.sql
   - include:
       file: db/changelog/init/seed-sites.sql
+  - include:
+      file: db/changelog/init/add-office-image.sql

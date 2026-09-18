@@ -98,6 +98,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "lon", label: "Longitude", type: "number", required: true }),
       field({ name: "flagColor", label: "Flag color", type: "text", required: true }),
       field({ name: "big", label: "Big marker", type: "boolean" }),
+      field({ name: "image", label: "Office photo", type: "image" }),
     ],
   },
   {

@@ -76,7 +76,8 @@ public class HomeContentServiceImpl implements HomeContentService {
                         o.getLon(),
                         o.getFlagColor(),
                         o.getBig(),
-                        o.getAddress()))
+                        o.getAddress(),
+                        o.getImage()))
             .collectList();
 
     Mono<List<HomeContentResponse.CaseStudy>> caseStudies =

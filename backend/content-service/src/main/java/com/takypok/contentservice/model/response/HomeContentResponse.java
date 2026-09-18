@@ -32,7 +32,13 @@ public record HomeContentResponse(
   public record ServiceCard(String name) {}
 
   public record Office(
-      String city, Double lat, Double lon, String flag, Boolean big, String address) {}
+      String city,
+      Double lat,
+      Double lon,
+      String flag,
+      Boolean big,
+      String address,
+      String image) {}
 
   public record CaseStudy(String title, String date, String category, String image) {}
 

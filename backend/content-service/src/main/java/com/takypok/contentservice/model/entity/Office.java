@@ -19,6 +19,7 @@ public class Office extends IdEntity {
   private Boolean big;
   private String city;
   private String address;
+  private String image;
   private Integer displayOrder;
   private Boolean active;
   private String status;

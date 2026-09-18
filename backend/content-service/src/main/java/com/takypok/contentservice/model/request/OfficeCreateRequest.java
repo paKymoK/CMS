@@ -14,6 +14,7 @@ public class OfficeCreateRequest {
   private Boolean big;
   @NotBlank private String city;
   @NotBlank private String address;
+  private String image;
   private Integer displayOrder;
   private Boolean active;
   private String status;

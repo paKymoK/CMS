@@ -51,6 +51,13 @@ spring:
                 redis-rate-limiter.replenishRate: ${GATEWAY_RATE_LIMIT_REPLENISH:20}
                 redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST:40}
                 redis-rate-limiter.requestedTokens: 1
+            # Every backend service also carries its own core-v1 CORS config (unchanged, still
+            # needed for hitting a service directly on its own port). Now that browsers go
+            # through this gateway instead, both this gateway's CORS filter AND the proxied
+            # service's own CORS filter stamp Access-Control-Allow-Origin on the same response,
+            # which browsers reject as invalid once duplicated. Dedupe rather than removing CORS
+            # from either side.
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
           routes:
             - id: auth
               uri: lb://auth-service
@@ -64,6 +71,12 @@ spring:
                 - Path=/content-service/**
               filters:
                 - RewritePath=/content-service/(?<segment>.*), /${segment}
+                # content-service's public /v1/home resolves the site from the literal inbound
+                # Host header (never a query param, by design — see its SiteService). Spring Cloud
+                # Gateway otherwise rewrites the outbound Host to the resolved lb:// target's own
+                # address, which breaks that resolution entirely — this filter keeps the caller's
+                # original Host intact across the hop.
+                - PreserveHostHeader
             - id: media
               uri: lb://media-service
               predicates:
