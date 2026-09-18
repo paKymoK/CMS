@@ -5,10 +5,17 @@ import java.time.Instant;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface VideoJobRepository extends R2dbcRepository<VideoJob, String> {
   Mono<Void> deleteByVideoId(String videoId);
+
+  Flux<VideoJob> findAllBySiteId(String siteId);
+
+  Mono<VideoJob> findByJobIdAndSiteId(String jobId, String siteId);
+
+  Mono<VideoJob> findByVideoIdAndSiteId(String videoId, String siteId);
 
   @Modifying
   @Query(

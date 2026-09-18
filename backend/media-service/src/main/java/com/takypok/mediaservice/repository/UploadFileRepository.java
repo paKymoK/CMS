@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.lang.NonNull;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface UploadFileRepository extends R2dbcRepository<UploadFile, UUID> {
@@ -15,4 +16,8 @@ public interface UploadFileRepository extends R2dbcRepository<UploadFile, UUID> 
                   WHERE id = :id
                   """)
   Mono<UploadFile> findById(@NonNull UUID id);
+
+  Flux<UploadFile> findAllBySiteId(String siteId);
+
+  Mono<UploadFile> findByIdAndSiteId(UUID id, String siteId);
 }

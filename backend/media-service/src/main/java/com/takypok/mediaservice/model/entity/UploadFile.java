@@ -16,4 +16,5 @@ public class UploadFile extends BaseEntity {
   @Id private UUID id;
   private String name;
   private String extension;
+  private String siteId;
 }

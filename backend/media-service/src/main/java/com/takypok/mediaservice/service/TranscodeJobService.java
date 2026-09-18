@@ -5,6 +5,7 @@ import com.takypok.mediaservice.model.JobStatus;
 import com.takypok.mediaservice.model.VideoJob;
 import com.takypok.mediaservice.repository.VideoJobRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class TranscodeJobService {
   private final HlsPackagerService hlsPackagerService;
   private final VideoJobRepository jobRepository;
 
-  public Mono<JobResponse> submitUpload(FilePart filePart) {
+  public Mono<JobResponse> submitUpload(FilePart filePart, String siteId) {
     String videoId = UUID.randomUUID().toString();
     String jobId = UUID.randomUUID().toString();
 
@@ -30,6 +31,7 @@ public class TranscodeJobService {
         VideoJob.builder()
             .jobId(jobId)
             .videoId(videoId)
+            .siteId(siteId)
             .status(JobStatus.QUEUED)
             .createdAt(Instant.now())
             .build();
@@ -45,8 +47,16 @@ public class TranscodeJobService {
                 videoId, jobId, JobStatus.QUEUED, "Upload received, transcoding queued"));
   }
 
-  public Mono<VideoJob> getJob(String jobId) {
-    return jobRepository.findById(jobId);
+  public Mono<VideoJob> getJob(String jobId, String siteId) {
+    return jobRepository.findByJobIdAndSiteId(jobId, siteId);
+  }
+
+  public Mono<VideoJob> getJobByVideoId(String videoId, String siteId) {
+    return jobRepository.findByVideoIdAndSiteId(videoId, siteId);
+  }
+
+  public Mono<List<VideoJob>> listForSite(String siteId) {
+    return jobRepository.findAllBySiteId(siteId).collectList();
   }
 
   public Mono<Void> removeJobsForVideo(String videoId) {

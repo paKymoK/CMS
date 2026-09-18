@@ -105,7 +105,13 @@ public class UploadSessionRegistry {
           AsynchronousFileChannel.open(
               partPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
       return new UploadSession(
-          sessionId, request.filename(), extension, partPath, channel, request.totalSizeBytes());
+          sessionId,
+          request.filename(),
+          extension,
+          request.site(),
+          partPath,
+          channel,
+          request.totalSizeBytes());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

@@ -12,6 +12,7 @@ import com.takypok.mediaservice.util.UploadSizeLimiter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -29,11 +30,11 @@ public class UploadFileServiceImpl implements UploadFileService {
   private final UploadProperties uploadProperties;
 
   @Override
-  public Mono<UploadFile> upload(FilePart filePart) {
+  public Mono<UploadFile> upload(FilePart filePart, String siteId) {
     String filename = filePart.filename();
     String extension = getFileExtension(filename);
     return uploadFileRepository
-        .save(uploadFileMapper.mapToEntity(filename, extension))
+        .save(uploadFileMapper.mapToEntity(filename, extension, siteId))
         .flatMap(
             uploadFile -> {
               Path path = Path.of(storageProperties.getImagesDir(), uploadFile.getId() + extension);
@@ -46,6 +47,11 @@ public class UploadFileServiceImpl implements UploadFileService {
                   .onErrorResume(e -> deletePartial(path).then(Mono.error(e)))
                   .thenReturn(uploadFile);
             });
+  }
+
+  @Override
+  public Mono<List<UploadFile>> listForSite(String siteId) {
+    return uploadFileRepository.findAllBySiteId(siteId).collectList();
   }
 
   private Mono<Void> deletePartial(Path path) {

@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/init/add-video-job.sql
   - include:
       file: db/changelog/init/drop-comment.sql
+  - include:
+      file: db/changelog/init/add-site-scoping.sql

@@ -64,12 +64,13 @@ class ChunkedUploadServiceImplTest {
     UploadSessionRegistry registry = new UploadSessionRegistry(storageProperties, properties);
 
     UploadFileMapper mapper = mock(UploadFileMapper.class);
-    when(mapper.mapToEntity(anyString(), anyString()))
+    when(mapper.mapToEntity(anyString(), anyString(), anyString()))
         .thenAnswer(
             inv -> {
               UploadFile file = new UploadFile();
               file.setName(inv.getArgument(0));
               file.setExtension(inv.getArgument(1));
+              file.setSiteId(inv.getArgument(2));
               return file;
             });
 
@@ -92,6 +93,14 @@ class ChunkedUploadServiceImplTest {
               found.removeIf(java.util.Objects::isNull);
               return Flux.fromIterable(found);
             });
+    when(uploadFileRepository.findByIdAndSiteId(any(UUID.class), anyString()))
+        .thenAnswer(
+            inv -> {
+              UUID id = inv.getArgument(0);
+              String site = inv.getArgument(1);
+              UploadFile file = savedFiles.get(id);
+              return file != null && site.equals(file.getSiteId()) ? Mono.just(file) : Mono.empty();
+            });
     when(uploadFileRepository.deleteById(any(UUID.class)))
         .thenAnswer(
             inv -> {
@@ -112,10 +121,15 @@ class ChunkedUploadServiceImplTest {
   }
 
   private String startSession(long totalSize) {
+    return startSession(totalSize, "vn");
+  }
+
+  private String startSession(long totalSize, String site) {
     StartChunkedUploadResponse response =
         service
             .start(
-                new StartChunkedUploadRequest(UUID.randomUUID().toString(), "test.txt", totalSize))
+                new StartChunkedUploadRequest(
+                    UUID.randomUUID().toString(), "test.txt", totalSize, site))
             .block();
     assertThat(response.chunkSizeBytes()).isEqualTo(8);
     return response.sessionId();
@@ -158,7 +172,7 @@ class ChunkedUploadServiceImplTest {
     writeChunk(inProgressSessionId, 0, data);
 
     List<com.takypok.mediaservice.model.dto.ChunkedUploadedFile> files =
-        service.listFiles().block();
+        service.listFiles("vn").block();
 
     assertThat(files).hasSize(1);
     assertThat(files.get(0).name()).isEqualTo(finished.getId() + ".txt");
@@ -174,22 +188,37 @@ class ChunkedUploadServiceImplTest {
     UploadFile uploaded = service.finish(sessionId, new FinishChunkedUploadRequest(1)).block();
     String diskName = uploaded.getId() + ".txt";
 
-    service.deleteFile(diskName).block();
+    service.deleteFile(diskName, "vn").block();
 
     assertThat(Files.exists(tempDir.resolve(diskName))).isFalse();
-    assertThat(service.listFiles().block()).isEmpty();
+    assertThat(service.listFiles("vn").block()).isEmpty();
   }
 
   @Test
   void deleteFile_isIdempotentForAlreadyMissingFile() {
-    assertThatCode(() -> service.deleteFile(UUID.randomUUID() + ".txt").block())
+    assertThatCode(() -> service.deleteFile(UUID.randomUUID() + ".txt", "vn").block())
         .doesNotThrowAnyException();
   }
 
   @Test
   void deleteFile_rejectsPathTraversalName() {
-    assertThatThrownBy(() -> service.deleteFile("../evil.txt").block())
+    assertThatThrownBy(() -> service.deleteFile("../evil.txt", "vn").block())
         .isInstanceOf(ApplicationException.class);
+  }
+
+  @Test
+  void deleteFile_doesNotRemoveAnotherSitesFile() throws Exception {
+    byte[] data = "ABCDEFGH".getBytes(StandardCharsets.UTF_8);
+    String sessionId = startSession(data.length, "vn");
+    writeChunk(sessionId, 0, data);
+    UploadFile uploaded = service.finish(sessionId, new FinishChunkedUploadRequest(1)).block();
+    String diskName = uploaded.getId() + ".txt";
+
+    service.deleteFile(diskName, "jp").block();
+
+    assertThat(Files.exists(tempDir.resolve(diskName))).isTrue();
+    assertThat(service.listFiles("vn").block()).hasSize(1);
+    assertThat(service.listFiles("jp").block()).isEmpty();
   }
 
   @Test
@@ -203,14 +232,32 @@ class ChunkedUploadServiceImplTest {
     writeChunk(session2, 0, data);
     service.finish(session2, new FinishChunkedUploadRequest(1)).block();
 
-    assertThat(service.listFiles().block()).hasSize(2);
+    assertThat(service.listFiles("vn").block()).hasSize(2);
 
-    service.deleteAllFiles().block();
+    service.deleteAllFiles("vn").block();
 
-    assertThat(service.listFiles().block()).isEmpty();
+    assertThat(service.listFiles("vn").block()).isEmpty();
     try (Stream<Path> remaining = Files.list(tempDir)) {
       assertThat(remaining.toList()).isEmpty();
     }
+  }
+
+  @Test
+  void deleteAllFiles_onlyRemovesTheGivenSitesFiles() throws Exception {
+    byte[] data = "ABCDEFGH".getBytes(StandardCharsets.UTF_8);
+    String vnSession = startSession(data.length, "vn");
+    writeChunk(vnSession, 0, data);
+    service.finish(vnSession, new FinishChunkedUploadRequest(1)).block();
+
+    String jpSession = startSession(data.length, "jp");
+    writeChunk(jpSession, 0, data);
+    UploadFile jpFile = service.finish(jpSession, new FinishChunkedUploadRequest(1)).block();
+
+    service.deleteAllFiles("vn").block();
+
+    assertThat(service.listFiles("vn").block()).isEmpty();
+    assertThat(service.listFiles("jp").block()).hasSize(1);
+    assertThat(Files.exists(tempDir.resolve(jpFile.getId() + ".txt"))).isTrue();
   }
 
   @Test
@@ -386,7 +433,7 @@ class ChunkedUploadServiceImplTest {
   @Test
   void start_rejectsPathTraversalSessionId() {
     StartChunkedUploadRequest request =
-        new StartChunkedUploadRequest("../../etc/passwd", "f.txt", 1L);
+        new StartChunkedUploadRequest("../../etc/passwd", "f.txt", 1L, "vn");
 
     assertThatThrownBy(() -> service.start(request).block())
         .isInstanceOf(ApplicationException.class);

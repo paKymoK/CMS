@@ -35,7 +35,7 @@ class UploadSessionRegistryTest {
   @Test
   void getOrCreate_rejectsNonUuidSessionId() {
     StartChunkedUploadRequest request =
-        new StartChunkedUploadRequest("../../etc/passwd", "f.txt", 10L);
+        new StartChunkedUploadRequest("../../etc/passwd", "f.txt", 10L, "vn");
 
     assertThatThrownBy(() -> registry.getOrCreate(request).block())
         .isInstanceOf(ApplicationException.class);
@@ -45,7 +45,8 @@ class UploadSessionRegistryTest {
   @Test
   void getOrCreate_isIdempotentForARetriedStartCall() {
     String sessionId = UUID.randomUUID().toString();
-    StartChunkedUploadRequest request = new StartChunkedUploadRequest(sessionId, "f.txt", 10L);
+    StartChunkedUploadRequest request =
+        new StartChunkedUploadRequest(sessionId, "f.txt", 10L, "vn");
 
     UploadSession first = registry.getOrCreate(request).block();
     UploadSession second = registry.getOrCreate(request).block();
@@ -63,14 +64,14 @@ class UploadSessionRegistryTest {
   @Test
   void getOrCreate_rejectsBeyondMaxActiveSessions() {
     registry
-        .getOrCreate(new StartChunkedUploadRequest(UUID.randomUUID().toString(), "a.txt", 1L))
+        .getOrCreate(new StartChunkedUploadRequest(UUID.randomUUID().toString(), "a.txt", 1L, "vn"))
         .block();
     registry
-        .getOrCreate(new StartChunkedUploadRequest(UUID.randomUUID().toString(), "b.txt", 1L))
+        .getOrCreate(new StartChunkedUploadRequest(UUID.randomUUID().toString(), "b.txt", 1L, "vn"))
         .block();
 
     StartChunkedUploadRequest third =
-        new StartChunkedUploadRequest(UUID.randomUUID().toString(), "c.txt", 1L);
+        new StartChunkedUploadRequest(UUID.randomUUID().toString(), "c.txt", 1L, "vn");
     assertThatThrownBy(() -> registry.getOrCreate(third).block())
         .isInstanceOf(ApplicationException.class);
   }
@@ -78,7 +79,7 @@ class UploadSessionRegistryTest {
   @Test
   void evictExpired_removesIdleSessionsAndReportsThem() {
     String sessionId = UUID.randomUUID().toString();
-    registry.getOrCreate(new StartChunkedUploadRequest(sessionId, "f.txt", 10L)).block();
+    registry.getOrCreate(new StartChunkedUploadRequest(sessionId, "f.txt", 10L, "vn")).block();
 
     // Any elapsed wall-clock time after creation makes the session idle relative to a
     // zero-duration threshold — no need to sleep or fake the clock.

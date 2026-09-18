@@ -22,6 +22,8 @@ public class VideoJob implements Persistable<String> {
 
   private String videoId;
 
+  private String siteId;
+
   private JobStatus status;
 
   private String errorMessage;
