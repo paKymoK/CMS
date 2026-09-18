@@ -122,10 +122,13 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CONTENT_SERVICE_BASE_URL: http://content-service:8084
     depends_on:
       - postgres
       - auth-service
       - qdrant
+      - content-service
     networks:
       - cms-platform
 

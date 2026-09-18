@@ -2,8 +2,11 @@ package com.takypok.core.config;
 
 import static com.takypok.core.util.AuthenticationUtil.rejectAccess;
 
+import java.util.Arrays;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,6 +16,9 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
 @EnableWebFluxSecurity
@@ -21,9 +27,30 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class SecurityConfig {
 
+  // The 5 site subdomains + admin-app's own origin, per CLAUDE.md's "CORS allowlist is
+  // maintained manually, never wildcard it" — this is what content-service/media-service/
+  // chat-service's browser-facing endpoints (GET /v1/home, media upload/library, the public
+  // assistant) actually need it for, since there's no gateway in front of them to do it instead.
+  @Value("${cors.allowed-origins}")
+  private String[] allowedOrigins;
+
   @Bean
-  public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("*"));
+    configuration.setAllowCredentials(true);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
+  }
+
+  @Bean
+  public SecurityWebFilterChain securityFilterChain(
+      ServerHttpSecurity http, CorsConfigurationSource corsConfigurationSource) {
     return http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .authorizeExchange(
             exchange ->
                 exchange
@@ -48,6 +75,11 @@ public class SecurityConfig {
                     // resolved from their own Host header. /v1/admin/** is untouched by this and
                     // still falls through to .authenticated() below.
                     .pathMatchers(HttpMethod.GET, "/v1/home/**")
+                    .permitAll()
+                    // chat-service's public marketing assistant — anonymous site visitors,
+                    // IP-rate-limited in PublicAssistantController itself. /v1/assistant/ingest
+                    // is untouched by this and still falls through to .authenticated() below.
+                    .pathMatchers(HttpMethod.POST, "/v1/assistant/ask")
                     .permitAll()
                     .anyExchange()
                     .authenticated())

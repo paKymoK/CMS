@@ -11,6 +11,12 @@ auth:
     redirect-uris: ${CMS_ADMIN_REDIRECT_URIS:http://localhost:5173/callback}
     post-logout-redirect-uris: ${CMS_ADMIN_POST_LOGOUT_REDIRECT_URIS:http://localhost:5173/login}
 
+# OAuth2 endpoints (/oauth2/**, /connect/**) are called directly by browsers (admin-app's PKCE
+# flow) — user-maintained allowlist per CLAUDE.md, never a wildcard. See SecurityConfig's
+# corsConfigurationSource().
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
 spring:
   application:
     name: auth-service

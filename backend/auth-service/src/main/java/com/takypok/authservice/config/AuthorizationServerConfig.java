@@ -220,16 +220,21 @@ public class AuthorizationServerConfig {
 
     upsertClient(registeredClientRepository, cmsAdmin);
     // Demonstrates project(site)-scoped access rather than a global role: this assignment grants
-    // "admin" the ADMIN role on the "vn" site only. CustomOAuth2TokenCustomizer buckets it under
-    // PROJECT_ROLES_CLAIM["vn"] — "jp" (or any other site) is absent from that claim for this user
-    // because no matching row exists, not because of any additional filtering. Real per-site
-    // editor accounts get seeded the same way once the admin-app (Phase 4) can manage them.
+    // "admin" the ADMIN role on the "vi" site only (content-service's real site codes are locale
+    // codes — en/vi/ja/ko/de per seed-sites.sql — not country codes; this used to say "vn", which
+    // matched no real site and made the demo account's scoped access a no-op).
+    // CustomOAuth2TokenCustomizer
+    // buckets it under PROJECT_ROLES_CLAIM["vi"] — "ja" (or any other site) is absent from that
+    // claim
+    // for this user because no matching row exists, not because of any additional filtering. Real
+    // per-site editor accounts get seeded the same way once the admin-app (Phase 4) can manage
+    // them.
     seedProjectRole(
         registeredClientRepository,
         clientRoleAssignmentRepository,
         CMS_ADMIN_CLIENT_ID,
         "admin",
-        "vn",
+        "vi",
         "ADMIN");
     return registeredClientRepository;
   }
