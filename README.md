@@ -1,15 +1,5 @@
 # cms-platform
 
-5-region CMS for the CMC Global homepage — one Next.js codebase (`D:\Code\landing-page`),
-5 country subdomains, each region's own marketing team maintaining its own content.
-
-Forked from `D:\Code\Workflow`: `auth-service`, `media-service`, `chat-service` (plus their
-shared `core-v1`/`infrastructure` modules). `content-service` is net-new.
-
-See `docs/cms-platform-plan.md` for the full plan, decision log, and phase breakdown, and
-`CLAUDE.md` for the working rules (multi-tenant discipline, security, what's still missing
-from this scaffold).
-
 ## Local dev
 
 ```
