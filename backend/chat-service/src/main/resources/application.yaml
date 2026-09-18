@@ -17,25 +17,48 @@ spring:
       - 'classpath:config/oauth2.yml'
       - 'classpath:config/kafka.yml'
       - 'classpath:management.yml'
+  autoconfigure:
+    # VectorStoreConfig replaces this with one QdrantVectorStore PER SITE instead of the single
+    # shared collection this autoconfiguration would otherwise create from the properties below.
+    exclude:
+      - org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration
   ai:
     ollama:
+      # Chat model config below is now used ONLY by the pre-existing employee-facing CRM
+      # assistant (AssistantService) and CodeReviewService — untouched, kept exactly as forked.
+      # The public CMS assistant (PublicAssistantService) uses spring.ai.anthropic below instead.
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         model: qwen3.5:4b
         options:
           temperature: 0.1
-          # Rules corpus alone is ~11k tokens (25 docs) once the auth/perf/convention batch was
-          # added; bumped from 8192 to leave headroom for the system prompt, the diff under
-          # review, and the model's own response.
           num-ctx: 32768
       embedding:
+        # Still Ollama — Anthropic has no embeddings API, and there's no reason to touch this
+        # half. Both the CRM assistant's and the CMS assistant's vector stores embed with this.
         model: bge-m3
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+          temperature: 0.3
     vectorstore:
       qdrant:
         host: ${QDRANT_HOST:localhost}
         port: ${QDRANT_PORT:6334}
+        # Only read by VectorStoreConfig's own legacy "vectorStore" bean now (the
+        # single-collection autoconfiguration that used to own this property is excluded above) —
+        # keeps the pre-existing CRM assistant (AssistantService/IngestionService) working
+        # unmodified against its original collection, alongside the new per-site collections.
         collection-name: crm_vi
-        initialize-schema: ${ai.rag.enabled:false}
+
+content-service:
+  base-url: ${CONTENT_SERVICE_BASE_URL:http://localhost:8084}
+
+# See content-service's application.yaml for the full rationale — same shared core-v1 CORS bean.
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 ai:
   rag:

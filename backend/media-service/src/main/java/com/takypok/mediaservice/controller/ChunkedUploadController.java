@@ -1,5 +1,6 @@
 package com.takypok.mediaservice.controller;
 
+import com.takypok.mediaservice.config.CmsAdminGuard;
 import com.takypok.mediaservice.model.dto.Base64ChunkRequest;
 import com.takypok.mediaservice.model.dto.ChunkAckResponse;
 import com.takypok.mediaservice.model.dto.ChunkedUploadedFile;
@@ -13,12 +14,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -34,10 +37,14 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/v1/upload/chunked")
 public class ChunkedUploadController {
   private final ChunkedUploadService chunkedUploadService;
+  private final CmsAdminGuard cmsAdminGuard;
 
   @PostMapping("/start")
-  public Mono<StartChunkedUploadResponse> start(@RequestBody StartChunkedUploadRequest request) {
-    return chunkedUploadService.start(request);
+  public Mono<StartChunkedUploadResponse> start(
+      @RequestBody StartChunkedUploadRequest request, Authentication authentication) {
+    return cmsAdminGuard
+        .requireSiteAccess(authentication, request.site())
+        .then(chunkedUploadService.start(request));
   }
 
   @PostMapping(
@@ -73,17 +80,25 @@ public class ChunkedUploadController {
   }
 
   @GetMapping("/files")
-  public Mono<List<ChunkedUploadedFile>> listFiles() {
-    return chunkedUploadService.listFiles();
+  public Mono<List<ChunkedUploadedFile>> listFiles(
+      @RequestParam String site, Authentication authentication) {
+    return cmsAdminGuard
+        .requireSiteAccess(authentication, site)
+        .then(chunkedUploadService.listFiles(site));
   }
 
   @DeleteMapping("/files/{name}")
-  public Mono<Void> deleteFile(@PathVariable String name) {
-    return chunkedUploadService.deleteFile(name);
+  public Mono<Void> deleteFile(
+      @PathVariable String name, @RequestParam String site, Authentication authentication) {
+    return cmsAdminGuard
+        .requireSiteAccess(authentication, site)
+        .then(chunkedUploadService.deleteFile(name, site));
   }
 
   @DeleteMapping("/files")
-  public Mono<Void> deleteAllFiles() {
-    return chunkedUploadService.deleteAllFiles();
+  public Mono<Void> deleteAllFiles(@RequestParam String site, Authentication authentication) {
+    return cmsAdminGuard
+        .requireSiteAccess(authentication, site)
+        .then(chunkedUploadService.deleteAllFiles(site));
   }
 }

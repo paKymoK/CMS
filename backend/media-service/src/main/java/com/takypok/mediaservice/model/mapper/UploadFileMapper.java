@@ -8,5 +8,6 @@ import org.mapstruct.Mapping;
 public abstract class UploadFileMapper {
   @Mapping(target = "name", source = "filename")
   @Mapping(target = "extension", source = "extension")
-  public abstract UploadFile mapToEntity(String filename, String extension);
+  @Mapping(target = "siteId", source = "siteId")
+  public abstract UploadFile mapToEntity(String filename, String extension, String siteId);
 }

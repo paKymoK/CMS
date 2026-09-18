@@ -14,6 +14,11 @@ spring:
       - 'classpath:config/springdoc.yml'
       - 'classpath:management.yml'
 
+# The 5 site subdomains (public GET /v1/home) + admin-app's own origin — see core-v1's
+# SecurityConfig. Comma-separated; user-maintained per the decision log, never a wildcard.
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
 management:
   endpoint:
     health:

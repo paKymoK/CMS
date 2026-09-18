@@ -65,6 +65,9 @@ public class SecurityConfig {
   @Value("${account-events.topic}")
   private String accountEventsTopic;
 
+  @Value("${cors.allowed-origins}")
+  private String[] corsAllowedOrigins;
+
   @Bean
   public LdapContextSource ldapContextSource() {
     LdapContextSource source = new LdapContextSource();
@@ -185,9 +188,10 @@ public class SecurityConfig {
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));
     configuration.setAllowedHeaders(Collections.singletonList("*"));
-    configuration.setAllowedOriginPatterns(Collections.singletonList("*"));
+    // A real allowlist, not "*" — this platform has no gateway in front of it to enforce that
+    // instead (unlike Workflow's original setup, see the comment this replaced).
+    configuration.setAllowedOrigins(Arrays.asList(corsAllowedOrigins));
     configuration.setAllowCredentials(true);
-    // Only cover OAuth2 endpoints — gateway handles CORS for /v1/** and other proxied paths
     source.registerCorsConfiguration("/oauth2/**", configuration);
     source.registerCorsConfiguration("/.well-known/**", configuration);
     source.registerCorsConfiguration("/connect/**", configuration);

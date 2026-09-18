@@ -70,6 +70,9 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
       return Mono.error(
           new ApplicationException(Message.Application.ERROR, "filename is required"));
     }
+    if (request.site() == null || request.site().isBlank()) {
+      return Mono.error(new ApplicationException(Message.Application.ERROR, "site is required"));
+    }
     return registry
         .getOrCreate(request)
         .map(
@@ -307,7 +310,9 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
 
   private Mono<UploadFile> closeAndPersist(UploadSession session) {
     return uploadFileRepository
-        .save(uploadFileMapper.mapToEntity(session.getFilename(), session.getExtension()))
+        .save(
+            uploadFileMapper.mapToEntity(
+                session.getFilename(), session.getExtension(), session.getSite()))
         .flatMap(
             uploadFile ->
                 Mono.fromCallable(
@@ -338,11 +343,11 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
   }
 
   @Override
-  public Mono<List<ChunkedUploadedFile>> listFiles() {
+  public Mono<List<ChunkedUploadedFile>> listFiles(String siteId) {
     Path dir = Path.of(storageProperties.getFilesDir());
     return Mono.fromCallable(() -> listOnDiskFiles(dir))
         .subscribeOn(Schedulers.boundedElastic())
-        .flatMap(this::attachOriginalNames);
+        .flatMap(onDiskFiles -> attachOriginalNames(onDiskFiles, siteId));
   }
 
   private List<OnDiskFile> listOnDiskFiles(Path dir) throws IOException {
@@ -386,19 +391,28 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
     }
   }
 
-  private Mono<List<ChunkedUploadedFile>> attachOriginalNames(List<OnDiskFile> onDiskFiles) {
+  /**
+   * Only files whose {@link UploadFile} row belongs to {@code siteId} are included — a file on disk
+   * with no matching row for this site (either it doesn't exist or it belongs to another site) is
+   * silently excluded rather than falling back to its disk name, since that fallback would
+   * otherwise leak another site's uploads into this site's media library listing.
+   */
+  private Mono<List<ChunkedUploadedFile>> attachOriginalNames(
+      List<OnDiskFile> onDiskFiles, String siteId) {
     List<UUID> ids = onDiskFiles.stream().map(OnDiskFile::id).filter(Objects::nonNull).toList();
     return uploadFileRepository
         .findAllById(ids)
+        .filter(uploadFile -> siteId.equals(uploadFile.getSiteId()))
         .collectMap(UploadFile::getId, UploadFile::getName)
         .map(
             originalNamesById ->
                 onDiskFiles.stream()
+                    .filter(file -> originalNamesById.containsKey(file.id()))
                     .map(
                         file ->
                             new ChunkedUploadedFile(
                                 file.diskName(),
-                                originalNamesById.getOrDefault(file.id(), file.diskName()),
+                                originalNamesById.get(file.id()),
                                 file.sizeBytes(),
                                 file.modifiedAt()))
                     .sorted(Comparator.comparing(ChunkedUploadedFile::modifiedAt).reversed())
@@ -408,18 +422,32 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
   private record OnDiskFile(String diskName, UUID id, long sizeBytes, Instant modifiedAt) {}
 
   @Override
-  public Mono<Void> deleteFile(String name) {
+  public Mono<Void> deleteFile(String name, String siteId) {
     Path path = resolveFilePath(name);
     UUID id = parseIdPrefix(name);
-    Mono<Void> deleteDbRow = id != null ? uploadFileRepository.deleteById(id) : Mono.empty();
-    return deleteDbRow.then(
-        Mono.fromRunnable(() -> deleteFileFromDisk(path))
-            .subscribeOn(Schedulers.boundedElastic())
-            .then());
+    if (id == null) {
+      return Mono.fromRunnable(() -> deleteFileFromDisk(path))
+          .subscribeOn(Schedulers.boundedElastic())
+          .then();
+    }
+    // Only delete if the row exists AND belongs to this site — a name that resolves to another
+    // site's row is left untouched (and not reported as an error, so a stale/guessed id doesn't
+    // reveal whether it belongs to another site).
+    return uploadFileRepository
+        .findByIdAndSiteId(id, siteId)
+        .flatMap(
+            uploadFile ->
+                uploadFileRepository
+                    .deleteById(id)
+                    .then(
+                        Mono.fromRunnable(() -> deleteFileFromDisk(path))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .then()))
+        .then();
   }
 
   @Override
-  public Mono<Void> deleteAllFiles() {
+  public Mono<Void> deleteAllFiles(String siteId) {
     Path dir = Path.of(storageProperties.getFilesDir());
     return Mono.fromCallable(() -> listOnDiskFiles(dir))
         .subscribeOn(Schedulers.boundedElastic())
@@ -427,18 +455,28 @@ public class ChunkedUploadServiceImpl implements ChunkedUploadService {
             files -> {
               List<UUID> ids = files.stream().map(OnDiskFile::id).filter(Objects::nonNull).toList();
               return uploadFileRepository
-                  .deleteAllById(ids)
-                  .then(
-                      Mono.fromRunnable(
-                              () ->
-                                  files.forEach(
-                                      file ->
-                                          deleteFileFromDisk(
-                                              Path.of(
-                                                  storageProperties.getFilesDir(),
-                                                  file.diskName()))))
-                          .subscribeOn(Schedulers.boundedElastic())
-                          .then());
+                  .findAllById(ids)
+                  .filter(uploadFile -> siteId.equals(uploadFile.getSiteId()))
+                  .collectList()
+                  .flatMap(
+                      siteFiles -> {
+                        List<UUID> siteIds = siteFiles.stream().map(UploadFile::getId).toList();
+                        return uploadFileRepository
+                            .deleteAllById(siteIds)
+                            .then(
+                                Mono.fromRunnable(
+                                        () ->
+                                            files.stream()
+                                                .filter(file -> siteIds.contains(file.id()))
+                                                .forEach(
+                                                    file ->
+                                                        deleteFileFromDisk(
+                                                            Path.of(
+                                                                storageProperties.getFilesDir(),
+                                                                file.diskName()))))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .then());
+                      });
             });
   }
 

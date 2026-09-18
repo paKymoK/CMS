@@ -36,15 +36,16 @@ public interface ChunkedUploadService {
 
   Mono<UploadFile> finish(String sessionId, FinishChunkedUploadRequest request);
 
-  Mono<List<ChunkedUploadedFile>> listFiles();
+  Mono<List<ChunkedUploadedFile>> listFiles(String siteId);
 
   /**
-   * Deletes one finished upload by its on-disk name (as returned by {@link #listFiles()}'s {@code
-   * name}), removing both the file and its {@link UploadFile} row. A name that isn't currently on
-   * disk is treated as already-deleted rather than an error, so a stale/double click is harmless.
+   * Deletes one finished upload by its on-disk name (as returned by {@link #listFiles}'s {@code
+   * name}), removing both the file and its {@link UploadFile} row — only if that row belongs to
+   * {@code siteId}. A name that isn't currently on disk, or belongs to another site, is treated as
+   * already-deleted rather than an error, so a stale/double click is harmless.
    */
-  Mono<Void> deleteFile(String name);
+  Mono<Void> deleteFile(String name, String siteId);
 
-  /** Deletes every finished upload currently in the files directory (file + DB row each). */
-  Mono<Void> deleteAllFiles();
+  /** Deletes every finished upload belonging to {@code siteId} (file + DB row each). */
+  Mono<Void> deleteAllFiles(String siteId);
 }

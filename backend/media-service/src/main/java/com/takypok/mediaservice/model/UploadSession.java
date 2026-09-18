@@ -14,6 +14,7 @@ public class UploadSession {
   private final String sessionId;
   private final String filename;
   private final String extension;
+  private final String site;
   private final Path partPath;
   private final AsynchronousFileChannel channel;
   private final Long expectedTotalSizeBytes;
@@ -35,12 +36,14 @@ public class UploadSession {
       String sessionId,
       String filename,
       String extension,
+      String site,
       Path partPath,
       AsynchronousFileChannel channel,
       Long expectedTotalSizeBytes) {
     this.sessionId = sessionId;
     this.filename = filename;
     this.extension = extension;
+    this.site = site;
     this.partPath = partPath;
     this.channel = channel;
     this.expectedTotalSizeBytes = expectedTotalSizeBytes;
