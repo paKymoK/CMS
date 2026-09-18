@@ -21,11 +21,18 @@ function isRetriableConfig(config: unknown): config is RetriableConfig {
   return !!config && typeof config === "object";
 }
 
-/** content-service and media-service each have their own port — there's no gateway in front of
- * them yet (see docs/cms-platform-plan.md's Phase 0 status), so every admin-app API call goes
- * straight to the owning service. */
-function createApi(baseURL: string): AxiosInstance {
-  const api = axios.create({ baseURL });
+/** Every admin-app API call goes through gateway-service, not straight to the owning service.
+ * VITE_BASE_URL is just the gateway's own origin — each backend service is reached by prefixing
+ * its gateway route id (e.g. "content-service"), which the gateway strips before forwarding via
+ * lb:// discovery. Add a new `createApi("<route-id>")` call here as new services come online. */
+const GATEWAY_BASE_URL = import.meta.env.VITE_BASE_URL as string;
+
+export function serviceUrl(servicePath: string): string {
+  return `${GATEWAY_BASE_URL}/${servicePath}`;
+}
+
+function createApi(servicePath: string): AxiosInstance {
+  const api = axios.create({ baseURL: serviceUrl(servicePath) });
 
   api.interceptors.request.use((config) => {
     const token = sessionStorage.getItem("access_token");
@@ -69,5 +76,5 @@ function createApi(baseURL: string): AxiosInstance {
   return api;
 }
 
-export const contentApi = createApi(import.meta.env.VITE_CONTENT_API_URL as string);
-export const mediaApi = createApi(import.meta.env.VITE_MEDIA_API_URL as string);
+export const contentApi = createApi("content-service");
+export const mediaApi = createApi("media-service");

@@ -1,8 +1,6 @@
 import { useAuth } from "./useAuth";
 import { SITES, type SiteCode } from "../config/sites";
 
-// Mirrors core-v1's Constants.ROLES_CLAIM / PROJECT_ROLES_CLAIM — a global ADMIN role grants
-// every site, a project-scoped one only grants the sites present in project_roles.
 export interface SiteAccess {
   isGlobalAdmin: boolean;
   /** Site codes this user can manage, in SITES order. Empty means no CMS access at all. */

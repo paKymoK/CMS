@@ -1,4 +1,4 @@
-import { mediaApi } from "./api";
+import { mediaApi, serviceUrl } from "./api";
 
 export interface UploadFile {
   id: string;
@@ -17,7 +17,7 @@ export interface VideoJob {
   completedAt: string | null;
 }
 
-const MEDIA_BASE = import.meta.env.VITE_MEDIA_API_URL as string;
+const MEDIA_BASE = serviceUrl("media-service");
 
 export function imageUrl(file: UploadFile): string {
   return `${MEDIA_BASE}/images/${file.id}${file.extension}`;
