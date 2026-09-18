@@ -1,7 +1,9 @@
 rootProject.name = 'cms-platform'
 include 'core-v1',
         'infrastructure',
+        'discovery-service',
         'auth-service',
         'media-service',
         'chat-service',
-        'content-service'
+        'content-service',
+        'gateway-service'

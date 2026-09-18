@@ -34,7 +34,9 @@ cms-platform/
 │   ├── auth-service/          # forked from Workflow platform, extended for multi-site access
 │   ├── media-service/         # forked from Workflow platform, extended for site-scoped storage
 │   ├── chat-service/          # forked from Workflow platform, generation swapped to Claude, per-site Qdrant collections
-│   └── content-service/       # net-new — the actual "CMS" data + API
+│   ├── content-service/       # net-new — the actual "CMS" data + API
+│   ├── discovery-service/     # forked from Workflow platform, Phase 7 — Eureka server
+│   └── gateway-service/       # forked from Workflow platform, Phase 7 — routing/CORS/monitoring/rate limiting
 ├── admin-app/                 # Vite + React SPA (editor UI), separate deploy from the Next.js sites
 ├── docs/
 │   └── api-contract.md
@@ -205,6 +207,27 @@ Adapted from the reuse-based plan the user got from another session, with the 10
 - Since services are forked (not shared): no Workflow-platform regression pass needed here — that was only a concern under the shared-services option, which wasn't chosen.
 
 **Acceptance**: full content lifecycle works end-to-end for at least 2 sites (en, vi — the initial rollout pair), chatbot answers are correctly site-scoped and rate-limited, CORS allowlist enforced.
+
+## Phase 7 — Gateway & Discovery (added post-Phase-6, user-requested)
+
+Not part of the original 6-phase plan. Phase 0 deliberately left `gateway-service`/`discovery-service` unforked and flagged it as an open item ("decide before Phase 6 whether this platform needs its own gateway/discovery"). That question was never revisited during Phases 1–6 — CORS and per-service ports were just worked around directly. The user asked for it explicitly afterward, for easier centralized monitoring, then asked for a fuller fork (real Eureka `lb://` routing, not static URIs) plus a rate limiter once they recalled the source having "a limiter function."
+
+**Correction made during this phase**: I checked, and Workflow's `gateway-service` does **not** actually have a rate limiter anywhere — grepped the whole module and the whole Workflow repo for `RateLimiter`/`Bucket4j`/`ratelimit`; the only hit is a documentation file about rate-limiting as an anti-pattern to avoid, not real code. `build.gradle` pulls in `resilience4j` (circuit-breaker) but it's not wired into any route either. Told the user this before proceeding, since building on top of a misremembered premise would have meant not really giving them what they wanted. They asked for one to be added — see below.
+
+### Design decisions
+- **`discovery-service` forked verbatim** (plain Eureka server, `:8761`) — nothing Workflow-specific in it to adapt.
+- **`gateway-service` forked with fuller fidelity than the original Phase 6 plan text implied was needed**: kept `LoggingFilter` (the actual monitoring payoff — one log line per request with the routed-to service and caller identity), `ControllerAdvice`, `NettyServerConfig`, the Reactor Netty IO-worker-count env post-processor, `HealthController` (`GET /api/health` fans out to every service's `/actuator/health`, `GET /api/health/{name}` for one), `CustomGlobalFilter` (re-attaches the validated Bearer token downstream), and `RevocationCheckFilter` (Workflow's single-tab session-revocation check — kept for fidelity; it no-ops harmlessly since `cms-admin` tokens don't carry the session-policy claim it looks for, so it's inert until/unless that's ever wired up).
+- **Gateway duplicates backend JWT auth**, matching the source exactly (`AuthenticationConfig`'s own `oauth2ResourceServer(jwt)` + a `permitAll` path list mirroring each backend's own carve-outs) rather than my initial instinct to make the gateway "dumb" (routing + logging only, trusting each backend's own enforcement). This does mean the same public-path list now lives in two places (core-v1's `SecurityConfig` and the gateway's `AuthenticationConfig`) — a real duplication-drift risk, accepted deliberately because it matches how Workflow's own gateway already works, and backends still fully self-enforce regardless (per CLAUDE.md's own "don't rely on the gateway alone" rule, which predates this addition).
+- **Fixed the same CORS-wildcard issue here too**: the source's `AuthenticationConfig.corsFilter()` used `setAllowedOriginPatterns(List.of("*"))` with credentials — same pattern already fixed in auth-service during Phase 6. Ported using the same `cors.allowed-origins` allowlist property instead.
+- **Routes**: `auth`, `content`, `media`, `chat`, plus `chat-websocket` (the untouched CRM chat feature's websocket) and a longer-timeout `chatbot-ingest` route for `/chat-service/v1/assistant/ingest`, all via real `lb://` service discovery now that `discovery-service` exists. Dropped Workflow's `workflow-websocket`/`employee` routes entirely — those services were never forked into this platform.
+- **Rate limiter, newly added** (`RateLimiterConfig.ipKeyResolver` + Spring Cloud Gateway's built-in `RequestRateLimiter`, Redis-backed): applied as a `default-filter` to every route, not just one endpoint — a coarse, IP-keyed safety net (20 req/s, burst 40, both env-tunable) layered on top of, not replacing, chat-service's own tighter 10-req/min anonymous-only limiter on `/v1/assistant/ask`. Keyed off the server-observed remote address only, same "never a client-supplied header" rule as everywhere else in this platform.
+- **`content-service` gained a Eureka client it didn't have before**: it was scaffolded fresh in Phase 0 (not forked), so unlike `auth-service`/`media-service`/`chat-service` it never carried Eureka-client config. Added `spring-cloud-starter-netflix-eureka-client` + a new `config/eureka-client.yml` so the gateway's `lb://content-service` route can actually resolve it.
+- **`admin-app` was deliberately left calling `content-service`/`media-service` directly by port**, not through the gateway — routing it through the gateway is what would make its own traffic show up in the new monitoring, and is a reasonable next step, but rewiring an already-working, already-tested frontend wasn't part of what was asked for here.
+- Kafka remains unforked — out of scope for this addition, same as every prior phase.
+
+### Status: done — 2026-09-18
+- Verified: `./gradlew compileJava` succeeds across the entire multi-module build (all 8 modules: `core-v1`, `infrastructure`, `discovery-service`, `auth-service`, `media-service`, `chat-service`, `content-service`, `gateway-service`). `./gradlew test` passes everywhere except `chat-service`'s pre-existing `contextLoads()` (same documented live-Qdrant-connectivity limitation as Phase 5 — not a new failure, and not something this phase touched).
+- **Not done**: no live `docker-compose up` run (same limitation as every phase in this repo so far — no live Postgres/Redis/Qdrant/Eureka in this environment), so the gateway's routing, rate limiter, and monitoring have not actually been exercised end-to-end. `admin-app` was not rewired to route through the gateway (see above).
 
 ## Phase 0 status: scaffolded 2026-09-17
 

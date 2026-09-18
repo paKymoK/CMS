@@ -53,6 +53,22 @@ services:
     networks:
       - cms-platform
 
+  discovery-service:
+    build:
+      context: ../backend
+      dockerfile: discovery-service/Dockerfile
+    image: cms-platform/discovery-service
+    container_name: cms-discovery-service
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cms-platform
+
   auth-service:
     build:
       context: ../backend
@@ -70,11 +86,13 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
       LDAP_URL: ldap://host.docker.internal:389
+      EUREKA_URI: http://discovery-service:8761/eureka
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       - postgres
       - redis
+      - discovery-service
     networks:
       - cms-platform
 
@@ -96,9 +114,11 @@ services:
       DB_PASSWORD: postgres
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      EUREKA_URI: http://discovery-service:8761/eureka
     depends_on:
       - postgres
       - auth-service
+      - discovery-service
     networks:
       - cms-platform
 
@@ -124,11 +144,13 @@ services:
       QDRANT_PORT: 6334
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CONTENT_SERVICE_BASE_URL: http://content-service:8084
+      EUREKA_URI: http://discovery-service:8761/eureka
     depends_on:
       - postgres
       - auth-service
       - qdrant
       - content-service
+      - discovery-service
     networks:
       - cms-platform
 
@@ -148,9 +170,36 @@ services:
       DB_SCHEMA: content
       DB_USER: postgres
       DB_PASSWORD: postgres
+      EUREKA_URI: http://discovery-service:8761/eureka
     depends_on:
       - postgres
       - auth-service
+      - discovery-service
+    networks:
+      - cms-platform
+
+  gateway-service:
+    build:
+      context: ../backend
+      dockerfile: gateway-service/Dockerfile
+    image: cms-platform/gateway-service
+    container_name: cms-gateway-service
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    environment:
+      AUTH_ISSUER_URI: http://auth-service:9000
+      EUREKA_URI: http://discovery-service:8761/eureka
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    depends_on:
+      - discovery-service
+      - redis
+      - auth-service
+      - content-service
+      - media-service
+      - chat-service
     networks:
       - cms-platform
 

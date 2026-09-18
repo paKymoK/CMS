@@ -26,22 +26,32 @@ Full plan and decision log: see `docs/cms-platform-plan.md` in this repo.
 - Site resolution: from the request's subdomain (Host header), not a
   query param or path segment
 
-## Open item from scaffolding — no gateway/discovery/Kafka yet
-Only `core-v1`, `infrastructure`, `auth-service`, `media-service`,
-`chat-service`, and `content-service` were forked/scaffolded — NOT
-`discovery-service` or `gateway-service`. The three forked services still
-carry their Eureka-client and Kafka config/dependencies from Workflow;
-without a running Eureka or Kafka broker they'll just fail to
-register/connect in the background (non-fatal for local dev — Spring's
-Eureka client and Lettuce/Kafka clients are lazy, they don't block
-startup). `infra/docker-compose.yml` only brings up Postgres, Redis,
-MinIO, and Qdrant — no Kafka, no Eureka, no gateway. There is currently no
-gateway, so inter-service and admin-app calls hit each service's own port
-directly. Decide before Phase 6 whether this platform needs its own
-gateway/discovery/Kafka or can stay without them (fewer moving parts, but
-then CORS and per-service TLS/ports become the admin-app's problem
-directly, and auth-service's account/department/unit Kafka events and
-chat-service's employee-directory sync silently go nowhere).
+## Gateway + discovery — added post-Phase-6, forked more fully from Workflow
+`discovery-service` (Eureka server, `:8761`) and `gateway-service`
+(Spring Cloud Gateway, `:8080`, actuator on `:8090`) are now forked in,
+at the user's explicit request for centralized traffic monitoring
+(unified per-request log line via `LoggingFilter`, `GET /api/health`
+fan-out, aggregated Swagger, its own Redis-backed `RequestRateLimiter`
+default-filter on every route — keyed by server-observed IP only, never
+a client-supplied header). Routes use real `lb://` service discovery now
+(not static URIs), which is why `content-service` also gained a Eureka
+client it didn't have before (it was scaffolded fresh, unlike the three
+forked services which already carried Eureka-client config from
+Workflow). The gateway duplicates each backend's own JWT auth
+enforcement (same as it did in Workflow) rather than being the only
+place auth is checked — backends must keep defending themselves
+regardless of what the gateway does.
+
+Still NOT forked: Kafka. `auth-service`'s account/department/unit Kafka
+events and `chat-service`'s employee-directory sync still go nowhere —
+those Kafka client dependencies are inert background config, same as
+before this addition (non-fatal, Spring's Kafka clients are lazy).
+
+`admin-app` still calls `content-service`/`media-service` directly by
+port, NOT through the gateway — this was a deliberate scope call when
+the gateway was added, not an oversight. Routing it through the gateway
+is a reasonable follow-up (it's what would make admin-app's own traffic
+show up in the gateway's monitoring), but wasn't done here.
 
 ## Multi-tenant rules (non-negotiable)
 - Every content table has `site_id` from its FIRST migration. Never add it later.

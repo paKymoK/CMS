@@ -11,6 +11,7 @@ spring:
       - 'classpath:config/liquibase.yml'
       - 'classpath:config/r2dbc.yml'
       - 'classpath:config/oauth2.yml'
+      - 'classpath:config/eureka-client.yml'
       - 'classpath:config/springdoc.yml'
       - 'classpath:management.yml'
 

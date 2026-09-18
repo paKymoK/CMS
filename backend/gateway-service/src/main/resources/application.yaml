@@ -1,0 +1,146 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://127.0.0.1:8761/eureka}
+server:
+  port: 8080
+gateway:
+  reactor:
+    io-worker-count: ${GATEWAY_IO_WORKER_COUNT:}
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: gateway-service
+  data:
+    redis:
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_ISSUER_URI:http://127.0.0.1:9000}
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+    gateway:
+      server:
+        webflux:
+          enabled: true
+          discovery:
+            locator:
+              enabled: true
+          httpclient:
+            connect-timeout: 10000
+            response-timeout: 60s
+            compression: false
+            pool:
+              type: FIXED
+              max-connections: ${GATEWAY_POOL_MAX_CONNECTIONS:2000}
+              max-idle-time: 30s
+              acquire-timeout: 10000
+          # Applies to every route — a coarse, IP-keyed safety net on top of chat-service's own
+          # tighter anonymous-only limiter on /v1/assistant/ask (see RateLimiterConfig.ipKeyResolver
+          # — server-observed remote address only, never a client-supplied header).
+          default-filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: ${GATEWAY_RATE_LIMIT_REPLENISH:20}
+                redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST:40}
+                redis-rate-limiter.requestedTokens: 1
+          routes:
+            - id: auth
+              uri: lb://auth-service
+              predicates:
+                - Path=/auth-service/**
+              filters:
+                - RewritePath=/auth-service/(?<segment>.*), /${segment}
+            - id: content
+              uri: lb://content-service
+              predicates:
+                - Path=/content-service/**
+              filters:
+                - RewritePath=/content-service/(?<segment>.*), /${segment}
+            - id: media
+              uri: lb://media-service
+              predicates:
+                - Path=/media-service/**
+              filters:
+                - RewritePath=/media-service/(?<segment>.*), /${segment}
+            - id: chat-websocket
+              uri: lb:ws://chat-service
+              predicates:
+                - Path=/chat-service/web-socket/**
+              filters:
+                - RewritePath=/chat-service/(?<segment>.*), /${segment}
+            - id: chatbot-ingest
+              uri: lb://chat-service
+              predicates:
+                - Path=/chat-service/v1/assistant/ingest
+              filters:
+                - RewritePath=/chat-service/(?<segment>.*), /${segment}
+              metadata:
+                response-timeout: 300000
+                connect-timeout: 10000
+            - id: chat
+              uri: lb://chat-service
+              predicates:
+                - Path=/chat-service/**
+              filters:
+                - RewritePath=/chat-service/(?<segment>.*), /${segment}
+
+# The 5 site subdomains + admin-app's own origin — user-maintained per the decision log, never a
+# wildcard. Same property/convention as the 4 backend services' own core-v1 SecurityConfig.
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    urls:
+      - name: content-service
+        url: /content-service/docs/api-docs
+      - name: media-service
+        url: /media-service/docs/api-docs
+      - name: chat-service
+        url: /chat-service/docs/api-docs
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  server:
+    port: 8090
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      access: unrestricted
+    prometheus:
+      access: unrestricted
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  otlp:
+    enabled: true
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+
+single-tab:
+  redis-on-failure: ${SINGLE_TAB_REDIS_ON_FAILURE:FAIL_OPEN}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: DEBUG
