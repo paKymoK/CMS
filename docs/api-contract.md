@@ -1,13 +1,21 @@
 # API Contract
 
-No gateway in front of these services yet (see `docs/cms-platform-plan.md`'s Phase 0 status) — every
-client, including `admin-app`, calls each service's own port directly. Full request/response schemas
-are in each service's Swagger UI once it's running:
+As of Phase 7, `gateway-service` (`:8080`) fronts `auth-service`/`content-service`/`media-service`/
+`chat-service` at `/auth-service/**`, `/content-service/**`, `/media-service/**`, `/chat-service/**`
+(path prefix stripped before proxying — the paths below are what each service sees, and what you hit
+directly if you skip the gateway). `admin-app` currently still calls each service's own port directly,
+not through the gateway (see `docs/cms-platform-plan.md`'s Phase 7 status) — both paths work today.
+The gateway adds: a unified per-request log line (`LoggingFilter`), `GET /api/health` (fans out to
+every service's `/actuator/health`) and `GET /api/health/{name}`, aggregated Swagger at
+`http://localhost:8080/swagger-ui.html`, and an IP-keyed `RequestRateLimiter` on every route.
+
+Full request/response schemas are in each service's own Swagger UI once it's running:
 
 - `auth-service`: `http://localhost:9000` (OAuth2 endpoints below; no `/v1/doc` Swagger UI)
 - `content-service`: `http://localhost:8084/v1/doc/swagger-ui.html`
 - `media-service`: `http://localhost:8082/v1/doc/swagger-ui.html`
 - `chat-service`: `http://localhost:8083/v1/doc/swagger-ui.html`
+- `discovery-service` (Eureka dashboard): `http://localhost:8761`
 
 This file tracks the shape and auth requirement of every endpoint — keep it current as endpoints
 change, since `admin-app` and the separately-built Next.js sites both depend on it.
