@@ -1,15 +1,11 @@
 package com.takypok.authservice.web;
 
 import com.takypok.authservice.model.entity.Userinfo;
-import com.takypok.authservice.model.event.AccountEvent;
 import com.takypok.authservice.repository.UserinfoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
@@ -27,15 +23,10 @@ import org.springframework.web.bind.annotation.RequestParam;
  */
 @Controller
 @RequiredArgsConstructor
-@Slf4j
 public class ProfileCompletionController {
 
   private final UserinfoRepository userinfoRepository;
-  private final KafkaTemplate<String, AccountEvent> kafkaTemplate;
   private final RequestCache requestCache;
-
-  @Value("${account-events.topic}")
-  private String accountEventsTopic;
 
   @GetMapping("/profile/complete")
   public String complete(@RequestParam(required = false) String error, Model model) {
@@ -65,22 +56,6 @@ public class ProfileCompletionController {
     }
     userinfo.setName(name.trim());
     userinfoRepository.save(userinfo);
-
-    AccountEvent event =
-        new AccountEvent(
-            sub,
-            userinfo.getName(),
-            userinfo.getEmail(),
-            userinfo.getDepartmentId(),
-            userinfo.getUnitId());
-    kafkaTemplate
-        .send(accountEventsTopic, sub, event)
-        .whenComplete(
-            (result, ex) -> {
-              if (ex != null) {
-                log.error("Failed to publish account event for sub {}", sub, ex);
-              }
-            });
 
     // The original /oauth2/authorize?... request was never consumed — it's still sitting in the
     // session's RequestCache, parked there by LdapAutoProvisionSuccessHandler's redirect here

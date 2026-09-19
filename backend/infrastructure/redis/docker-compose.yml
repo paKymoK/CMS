@@ -21,7 +21,7 @@ services:
       - takypok_default
 
 # Named explicitly (not external) so whichever of the independent infra stacks
-# (postgres/kafka/redis) happens to start first creates it; the others just attach.
+# (postgres/redis) happens to start first creates it; the others just attach.
 networks:
   takypok_default:
     name: takypok_default

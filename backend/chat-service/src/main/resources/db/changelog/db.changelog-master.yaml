@@ -15,7 +15,3 @@ databaseChangeLog:
       file: db/changelog/v7/add-message-reactions.sql
   - include:
       file: db/changelog/v8/add-message-threads.sql
-  - include:
-      file: db/changelog/v9/add-employee-directory.sql
-  - include:
-      file: db/changelog/v10/add-device-token-directory.sql

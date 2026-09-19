@@ -36,9 +36,9 @@ The following databases are created automatically on first start via `init-datab
 | Database | Used by |
 |----------|---------|
 | `authentication` | auth-service |
-| `workflow` | workflow-service |
+| `content` | content-service |
 | `media` | media-service |
-| `shop` | shop-service |
+| `chat` | chat-service |
 
 ---
 

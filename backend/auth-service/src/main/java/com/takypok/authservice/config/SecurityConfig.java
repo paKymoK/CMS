@@ -4,7 +4,6 @@ import com.takypok.authservice.config.auth.DomainAuthenticationFilter;
 import com.takypok.authservice.config.auth.DomainAuthenticationManager;
 import com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler;
 import com.takypok.authservice.config.auth.LoginFailureHandler;
-import com.takypok.authservice.model.event.AccountEvent;
 import com.takypok.authservice.repository.UserinfoRepository;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -62,9 +60,6 @@ public class SecurityConfig {
   @Value("${ldap.user-search-filter}")
   private String userSearchFilter;
 
-  @Value("${account-events.topic}")
-  private String accountEventsTopic;
-
   @Value("${cors.allowed-origins}")
   private String[] corsAllowedOrigins;
 
@@ -111,7 +106,6 @@ public class SecurityConfig {
       JdbcUserDetailsManager jdbcUserDetailsManager,
       PasswordEncoder passwordEncoder,
       LoginFailureHandler loginFailureHandler,
-      KafkaTemplate<String, AccountEvent> accountEventKafkaTemplate,
       UserinfoRepository userinfoRepository,
       LdapTemplate ldapTemplate) {
     DomainAuthenticationFilter filter = new DomainAuthenticationFilter(domainAuthenticationManager);
@@ -122,8 +116,6 @@ public class SecurityConfig {
         new LdapAutoProvisionSuccessHandler(
             jdbcUserDetailsManager,
             passwordEncoder,
-            accountEventKafkaTemplate,
-            accountEventsTopic,
             userinfoRepository,
             ldapTemplate,
             userSearchBase,

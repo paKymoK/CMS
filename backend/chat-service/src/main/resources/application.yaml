@@ -15,7 +15,6 @@ spring:
       - 'classpath:config/liquibase.yml'
       - 'classpath:config/r2dbc.yml'
       - 'classpath:config/oauth2.yml'
-      - 'classpath:config/kafka.yml'
       - 'classpath:management.yml'
   autoconfigure:
     # VectorStoreConfig replaces this with one QdrantVectorStore PER SITE instead of the single

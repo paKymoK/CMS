@@ -79,8 +79,7 @@ CREATE TABLE IF NOT EXISTS authorities
 );
 
 -- Department/unit are auth-service-owned catalog tables (Phase 7) — they rarely change, so keeping
--- them alongside identity data avoids a second hop to employee-service. employee-service keeps a
--- read-only Kafka-fed mirror of these two tables under the same names.
+-- them alongside identity data avoids a second hop to a separate service.
 CREATE TABLE IF NOT EXISTS department
 (
     id       BIGSERIAL    NOT NULL,
@@ -103,10 +102,9 @@ CREATE TABLE IF NOT EXISTS unit
     CONSTRAINT unit_department_name_uq UNIQUE (department_id, name)
 );
 
--- Full column parity with employee-service's `employee` (General) table (Phase 7) — only
--- name/email/department_id/unit_id have real read/write logic; everything else is an inert
--- placeholder until a future HR-editing frontend exists, kept now so that frontend doesn't need a
--- second disruptive migration. employee-service remains authoritative for the placeholder fields.
+-- Only name/email/department_id/unit_id have real read/write logic (Phase 7); everything else is
+-- an inert placeholder until a future profile-editing frontend exists, kept now so that frontend
+-- doesn't need a second disruptive migration.
 CREATE TABLE IF NOT EXISTS userinfo
 (
     sub           VARCHAR(50) NOT NULL,

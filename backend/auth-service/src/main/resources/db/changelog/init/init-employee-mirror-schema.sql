@@ -1,6 +1,0 @@
--- Superseded by Phase 7: EmployeeMirror/EmployeeEventConsumer are deleted — auth-service is no
--- longer a Kafka consumer of employee.events. Display-name resolution (GroupServiceImpl,
--- ClientRoleServiceImpl) now reads Userinfo directly, since name/email are auth-service-owned data
--- now, not a mirror of employee-service's copy. This file is stubbed rather than deleted (the
--- environment this was authored in couldn't run `rm`) and is no longer included in
--- db.changelog-master.yaml, so it does not execute.

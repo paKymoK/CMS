@@ -31,6 +31,12 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
     implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'
+    // io.qdrant:client declares these as Maven runtime-scope, so QdrantGrpcClient's
+    // ManagedChannel-returning builder (VectorStoreConfig) isn't otherwise on the compile
+    // classpath. Version matches what io.qdrant:client:1.13.0 itself depends on.
+    implementation 'io.grpc:grpc-protobuf:1.65.1'
+    implementation 'io.grpc:grpc-stub:1.65.1'
+    implementation 'io.grpc:grpc-netty-shaded:1.65.1'
     implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
     implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
@@ -42,7 +48,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
     implementation 'org.liquibase:liquibase-core'
     implementation 'org.postgresql:r2dbc-postgresql'
-    implementation 'com.google.firebase:firebase-admin:9.4.2'
 }
 
 tasks.named('test') {

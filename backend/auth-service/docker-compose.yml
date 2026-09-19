@@ -23,10 +23,7 @@ services:
       LDAP_PASSWORD: admin_secret
       LDAP_USER_SEARCH_BASE: ou=users
       LDAP_USER_SEARCH_FILTER: "(cn={0})"
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
       MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
-      REDIRECT_URIS: ${WORKFLOW_REDIRECT_URIS:-http://localhost:3000/callback,https://app.thaiha.website/callback,https://oauth.pstmn.io/v1/callback,com.takypok.workflow://oauth2redirect}
-      POST_LOGOUT_REDIRECT_URIS: ${WORKFLOW_POST_LOGOUT_REDIRECT_URIS:-http://localhost:3000/login,https://app.thaiha.website/login}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

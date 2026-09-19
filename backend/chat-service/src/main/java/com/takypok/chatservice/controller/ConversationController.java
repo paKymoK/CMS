@@ -8,7 +8,6 @@ import com.takypok.chatservice.model.request.CreateConversationRequest;
 import com.takypok.chatservice.model.request.RenameConversationRequest;
 import com.takypok.chatservice.model.response.ConversationListResponse;
 import com.takypok.chatservice.service.ConversationService;
-import com.takypok.chatservice.service.EmployeeDirectoryService;
 import jakarta.validation.Valid;
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -23,7 +22,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/chat/conversations")
 public class ConversationController {
   private final ConversationService conversationService;
-  private final EmployeeDirectoryService employeeDirectoryService;
 
   @PostMapping
   public Mono<Conversation> create(
@@ -72,9 +70,7 @@ public class ConversationController {
 
   @PostMapping("/{id}/typing")
   public Mono<Void> typing(@PathVariable UUID id, Authentication authentication) {
-    return employeeDirectoryService
-        .resolveActingUser(authentication.getName())
-        .flatMap(caller -> conversationService.notifyTyping(id, caller));
+    return conversationService.notifyTyping(id, getUserInfo(authentication));
   }
 
   @PostMapping("/{id}/join")

@@ -5,7 +5,7 @@ import lombok.Setter;
 
 /**
  * Partial update — only non-null fields are applied. This is the write path the future
- * employee-service-hosted HR frontend calls directly for name/email/department/unit (Phase 7).
+ * admin-managed profile-editing frontend calls directly for name/email/department/unit (Phase 7).
  */
 @Getter
 @Setter

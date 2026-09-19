@@ -195,6 +195,14 @@ public class AuthorizationServerConfig {
         "admin",
         "vi",
         "ADMIN");
+
+    seedProjectRole(
+        registeredClientRepository,
+        clientRoleAssignmentRepository,
+        CMS_ADMIN_CLIENT_ID,
+        "admin",
+        "en",
+        "ADMIN");
     return registeredClientRepository;
   }
 

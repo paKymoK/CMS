@@ -1,7 +1,6 @@
 package com.takypok.authservice.config.auth;
 
 import com.takypok.authservice.model.entity.Userinfo;
-import com.takypok.authservice.model.event.AccountEvent;
 import com.takypok.authservice.repository.UserinfoRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,7 +14,6 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.core.Authentication;
@@ -27,14 +25,13 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 /**
  * On a first-time LDAP login, auto-provisions a disabled local shadow row in Spring Security's own
  * {@code users} table. That row backs group membership and role assignment FKs (an authorization
- * concern) — unrelated to HR data, so it survives even though employee-service now owns the profile
- * record that used to gate login here.
+ * concern) — unrelated to HR data.
  *
  * <p>First-time-seen is also the moment this sub becomes "real" for an internal/LDAP user — nobody
- * provisions their login through auth-service, LDAP already did. So this is the hook that tells
- * employee-service it's safe to create a shell record for them. It's also the moment auth-service
- * captures {@code displayName}/{@code mail} from the directory into its own {@link Userinfo} record
- * (Phase 7) — LDAP already has this data, so there's no reason to ask for it twice.
+ * provisions their login through auth-service, LDAP already did. This is also the moment
+ * auth-service captures {@code displayName}/{@code mail} from the directory into its own {@link
+ * Userinfo} record (Phase 7) — LDAP already has this data, so there's no reason to ask for it
+ * twice.
  *
  * <p>This is also the single success handler for every {@code /login}, both domains — so it's the
  * natural hook for the guest "complete profile" gate too: if a GUEST login's {@link Userinfo} has
@@ -47,8 +44,6 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
 
   private final JdbcUserDetailsManager userDetailsManager;
   private final PasswordEncoder passwordEncoder;
-  private final KafkaTemplate<String, AccountEvent> kafkaTemplate;
-  private final String accountEventsTopic;
   private final UserinfoRepository userinfoRepository;
   private final LdapTemplate ldapTemplate;
   private final String userSearchBase;
@@ -78,17 +73,6 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
       userinfo.setName(displayNameAndMail[0]);
       userinfo.setEmail(displayNameAndMail[1]);
       userinfoRepository.save(userinfo);
-
-      AccountEvent event =
-          new AccountEvent(username, displayNameAndMail[0], displayNameAndMail[1], null, null);
-      kafkaTemplate
-          .send(accountEventsTopic, event.getSub(), event)
-          .whenComplete(
-              (result, ex) -> {
-                if (ex != null) {
-                  log.error("Failed to publish account event for sub {}", username, ex);
-                }
-              });
     }
 
     if (authentication.getDetails() instanceof String domain && "GUEST".equals(domain)) {

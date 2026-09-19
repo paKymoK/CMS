@@ -9,10 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Relocated from employee-service (Phase 7) — auth-service is now the authoritative owner;
- * employee-service keeps a read-only Kafka-fed mirror under the same table name.
- */
+/** auth-service's authoritative record for department data (Phase 7). */
 @Entity
 @Data
 @NoArgsConstructor
