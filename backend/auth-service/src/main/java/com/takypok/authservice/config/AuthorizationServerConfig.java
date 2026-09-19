@@ -78,8 +78,6 @@ public class AuthorizationServerConfig {
 
   private static final String CUSTOM_CONSENT_PAGE_URI = "/oauth2/consent";
 
-  // cms-platform's admin-app (Phase 4) is a pure SPA — PKCE-only, no client secret at all, unlike
-  // "workflow" above which also supports a confidential CLIENT_SECRET_BASIC flow.
   private static final String CMS_ADMIN_CLIENT_ID = "cms-admin";
   private static final String CMS_ADMIN_CLIENT_SECRET = "cms-admin-client-secret";
 
@@ -248,24 +246,6 @@ public class AuthorizationServerConfig {
             .userSub(userSub)
             .projectId(projectId)
             .role(role)
-            .build());
-  }
-
-  private void seedAdminRole(
-      JdbcRegisteredClientRepository repository,
-      ClientRoleAssignmentRepository clientRoleAssignmentRepository,
-      String clientId) {
-    RegisteredClient client = repository.findByClientId(clientId);
-    if (client == null) return;
-    if (clientRoleAssignmentRepository.existsByRegisteredClientIdAndUserSubAndProjectId(
-        client.getId(), "admin", null)) return;
-    clientRoleAssignmentRepository.save(
-        ClientRoleAssignment.builder()
-            .id(UUID.randomUUID().toString())
-            .registeredClientId(client.getId())
-            .userSub("admin")
-            .projectId(null)
-            .role("ADMIN")
             .build());
   }
 

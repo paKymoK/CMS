@@ -1,0 +1,9 @@
+{
+  "_todo": "Stub only — English values copied as placeholders. Japanese translation not done yet (Phase 0 only builds the /en page).",
+  "cta": {
+    "contactUs": "Contact Us"
+  },
+  "footer": {
+    "copyright": "Copyright © {year} CMC Global. All rights reserved."
+  }
+}

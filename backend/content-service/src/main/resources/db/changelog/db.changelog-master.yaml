@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/init/add-office-image.sql
   - include:
       file: db/changelog/init/remove-nav-tables.sql
+  - include:
+      file: db/changelog/init/add-service-card-image.sql

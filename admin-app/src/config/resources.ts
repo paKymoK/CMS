@@ -67,7 +67,10 @@ export const RESOURCES: ResourceConfig[] = [
     label: "Services",
     apiPath: "/v1/admin/services",
     titleField: "name",
-    fields: [field({ name: "name", label: "Name", type: "text", required: true })],
+    fields: [
+      field({ name: "name", label: "Name", type: "text", required: true }),
+      field({ name: "image", label: "Service image", type: "image" }),
+    ],
   },
   {
     key: "offices",

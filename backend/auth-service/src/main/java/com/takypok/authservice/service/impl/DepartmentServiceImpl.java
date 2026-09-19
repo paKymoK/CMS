@@ -38,8 +38,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     department.setName(request.getName());
     department.setHead(request.getHead());
     department.setLocation(request.getLocation());
-    Department saved = departmentRepository.save(department);
-    return saved;
+      return departmentRepository.save(department);
   }
 
   @Override
@@ -48,8 +47,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     department.setName(request.getName());
     department.setHead(request.getHead());
     department.setLocation(request.getLocation());
-    Department saved = departmentRepository.save(department);
-    return saved;
+      return departmentRepository.save(department);
   }
 
   @Override

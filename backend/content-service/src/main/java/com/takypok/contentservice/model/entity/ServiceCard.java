@@ -14,6 +14,7 @@ import org.springframework.data.relational.core.mapping.Table;
 public class ServiceCard extends IdEntity {
   private Long siteId;
   private String name;
+  private String image;
   private Integer displayOrder;
   private Boolean active;
   private String status;

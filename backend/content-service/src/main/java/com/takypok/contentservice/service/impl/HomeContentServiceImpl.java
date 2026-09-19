@@ -46,7 +46,7 @@ public class HomeContentServiceImpl implements HomeContentService {
     Mono<List<HomeContentResponse.ServiceCard>> services =
         serviceCardService
             .getPublished(siteId)
-            .map(s -> new HomeContentResponse.ServiceCard(s.getName()))
+            .map(s -> new HomeContentResponse.ServiceCard(s.getName(), s.getImage()))
             .collectList();
 
     Mono<List<HomeContentResponse.Office>> offices =

@@ -23,7 +23,7 @@ public record HomeContentResponse(
 
   public record Stat(String value, String label, String note) {}
 
-  public record ServiceCard(String name) {}
+  public record ServiceCard(String name, String image) {}
 
   public record Office(
       String city,

@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/*
+ * Real color tokens, sampled live from https://cmcglobal.com.vn/ on 2026-08-27
+ * via getComputedStyle(): eyebrow/link blue #189FE0, hero CTA cyan #00BBE4,
+ * dark navy section background #0A2540, light section background #F6F9FC.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --brand-primary: #189fe0;
+  --brand-primary-dark: #0a2540;
+  --brand-accent: #00bbe4;
+  --brand-surface: #f6f9fc;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-surface: var(--brand-surface);
+  --font-sans: var(--font-montserrat);
+  --font-mono: var(--font-ibm-plex-mono);
+  /* Redesigned homepage body sections only — see components/home/*.
+     Kept separate from font-sans/font-mono so the header/footer (unchanged)
+     keep Montserrat/IBM Plex Mono. */
+  --font-mono-wave: var(--font-jetbrains-mono);
+  --font-wave-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Auto-scrolling logo rows (Awards/Certificates/Partners once a group grows
+   past a handful of items) — see components/home/Certifications.tsx. */
+.marquee-mask {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 24px,
+    black calc(100% - 24px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 24px,
+    black calc(100% - 24px),
+    transparent
+  );
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-duration, 30s) linear infinite;
+}
+
+.marquee-mask:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+  }
+}
+
+/* Hero floating badge bob (e.g. "35+ business partners" card). */
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+/* Hero slide-progress dot: fills left-to-right over the slide duration. */
+@keyframes fillbar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floaty-badge,
+  .fillbar-progress {
+    animation: none !important;
+  }
+}
+
+/* --- Redesigned homepage body (components/home/*) --- */
+
+/* AI assistant greeting caret, section-nav-adjacent decorative blinks. */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* AI assistant "waiting" three-dot pulse. */
+@keyframes dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* AI assistant skeleton-line shimmer while a reply is slow (>1.5s). */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 340px 0;
+  }
+}
+
+/* Globe marker idle ring pulse. */
+@keyframes ring-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.caret-blink {
+  animation: caret-blink 1s step-end infinite;
+}
+
+.dot-pulse {
+  animation: dot-pulse 1.2s ease-in-out infinite;
+}
+
+.shimmer {
+  animation: shimmer 1.4s linear infinite;
+}
+
+.ring-pulse {
+  animation: ring-pulse 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret-blink,
+  .dot-pulse,
+  .shimmer,
+  .ring-pulse {
+    animation: none !important;
+  }
+}
+
+/* Scroll-triggered fade/slide-up reveal — see components/ui/Reveal.tsx. */
+.reveal {
+  opacity: 0;
+  transform: translateY(var(--reveal-travel, 36px));
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

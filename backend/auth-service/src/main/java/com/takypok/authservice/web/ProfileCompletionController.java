@@ -15,12 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-/**
- * Guest-only "complete your profile" gate (Phase 7) — LDAP users never see this, their name is
- * captured automatically from the directory at first login (see {@link
- * com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler}). A guest has no directory
- * to source a name from, so they're asked for it once, here, the first time they actually log in.
- */
 @Controller
 @RequiredArgsConstructor
 public class ProfileCompletionController {
