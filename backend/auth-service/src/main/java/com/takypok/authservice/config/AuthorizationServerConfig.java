@@ -88,7 +88,8 @@ public class AuthorizationServerConfig {
   public SecurityFilterChain authorizationServerSecurityFilterChain(
       HttpSecurity http,
       CorsConfigurationSource corsConfigurationSource,
-      SecurityContextRepository securityContextRepository)
+      SecurityContextRepository securityContextRepository,
+      RegisteredClientRepository registeredClientRepository)
       throws Exception {
     Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper =
         (context) -> {
@@ -118,7 +119,20 @@ public class AuthorizationServerConfig {
                     .oidc(
                         (oidc) ->
                             oidc.userInfoEndpoint(
-                                (userInfo) -> userInfo.userInfoMapper(userInfoMapper))))
+                                (userInfo) -> userInfo.userInfoMapper(userInfoMapper)))
+                    // cms-admin is PKCE-only (ClientAuthenticationMethod.NONE, no secret) — the
+                    // built-in public-client converter/provider pair only ever authenticates the
+                    // authorization_code+PKCE exchange, so without this, its refresh_token grant
+                    // has no way to authenticate at all and always fails invalid_client. See
+                    // PublicClientRefreshTokenAuthenticationConverter's javadoc.
+                    .clientAuthentication(
+                        (clientAuthentication) ->
+                            clientAuthentication
+                                .authenticationConverter(
+                                    new PublicClientRefreshTokenAuthenticationConverter())
+                                .authenticationProvider(
+                                    new PublicClientRefreshTokenAuthenticationProvider(
+                                        registeredClientRepository))))
         .authorizeHttpRequests(
             (authorize) ->
                 authorize
