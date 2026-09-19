@@ -1,9 +1,12 @@
 // Every content-service admin controller follows the identical CRUD contract (GET list/by-id,
 // POST, PUT with id in the body, DELETE/{id}, all under ?site=<code>) — see
-// docs/cms-platform-plan.md's Phase 2 status. Driving all 11 screens off one config here, rather
-// than hand-writing 11 near-identical page files, is a deliberate deviation from the backend's
+// docs/cms-platform-plan.md's Phase 2 status. Driving all 9 screens off one config here, rather
+// than hand-writing 9 near-identical page files, is a deliberate deviation from the backend's
 // "no generic abstraction" convention: these ARE genuinely identical shapes on the frontend, and
-// hand-duplicating them buys nothing but drift risk across 11 files.
+// hand-duplicating them buys nothing but drift risk across 9 files.
+// Primary nav items and nav sections used to live here too — removed along with their
+// content-service tables/endpoints since that nav structure never changes per-region and is
+// now hardcoded directly in the Next.js site.
 export type FieldType =
   | "text"
   | "textarea"
@@ -48,26 +51,6 @@ function field(config: FieldConfig): FieldConfig {
 }
 
 export const RESOURCES: ResourceConfig[] = [
-  {
-    key: "primary-nav-items",
-    label: "Primary Nav Items",
-    apiPath: "/v1/admin/primary-nav-items",
-    titleField: "label",
-    fields: [
-      field({ name: "label", label: "Label", type: "text", required: true }),
-      field({ name: "hasDropdown", label: "Has dropdown", type: "boolean" }),
-    ],
-  },
-  {
-    key: "nav-sections",
-    label: "Nav Sections",
-    apiPath: "/v1/admin/nav-sections",
-    titleField: "label",
-    fields: [
-      field({ name: "anchor", label: "Anchor (section id)", type: "text", required: true }),
-      field({ name: "label", label: "Label", type: "text", required: true }),
-    ],
-  },
   {
     key: "stats",
     label: "Stats",

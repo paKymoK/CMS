@@ -10,8 +10,6 @@ import java.util.List;
  * per the plan's decision log), even though it's fully manageable via its own admin endpoint.
  */
 public record HomeContentResponse(
-    List<PrimaryNavItem> primaryNav,
-    List<NavSection> navSections,
     List<Stat> stats,
     List<ServiceCard> services,
     List<Office> offices,
@@ -22,10 +20,6 @@ public record HomeContentResponse(
     List<LogoBadge> partners,
     List<Testimonial> testimonials,
     List<FooterNavCategory> footerNav) {
-
-  public record PrimaryNavItem(String label, Boolean hasDropdown) {}
-
-  public record NavSection(String id, String label) {}
 
   public record Stat(String value, String label, String note) {}
 

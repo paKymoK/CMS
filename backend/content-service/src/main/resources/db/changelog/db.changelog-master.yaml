@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/init/seed-sites.sql
   - include:
       file: db/changelog/init/add-office-image.sql
+  - include:
+      file: db/changelog/init/remove-nav-tables.sql
