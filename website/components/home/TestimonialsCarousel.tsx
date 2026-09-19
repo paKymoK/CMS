@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -85,9 +86,22 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
                     "linear-gradient(104deg,#0f7a5f 0%,#2fa36b 42%,#7cc243 78%,#c9dd5a 100%)",
                 }}
               >
-                <div className="absolute bottom-3 left-6 z-[2]">
-                  <div className="text-[13.5px] font-bold text-white">{active.name}</div>
-                  <div className="text-[11.5px] text-white/88">{active.title}</div>
+                <div className="absolute bottom-3 left-6 z-[2] flex items-center gap-3">
+                  {active.photo && (
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/50">
+                      <Image
+                        src={active.photo}
+                        alt={active.name}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-[13.5px] font-bold text-white">{active.name}</div>
+                    <div className="text-[11.5px] text-white/88">{active.title}</div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { ServiceCard } from "@/content/home/types";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -45,15 +46,34 @@ export function Services({ services }: { services: ServiceCard[] }) {
             {services.map((service, i) => (
               <Reveal key={service.name} once delayMs={i * 60} travelPx={20} className="flex-none">
                 <div className="group w-[224px] select-none transition-transform duration-200 ease-out hover:-translate-y-1">
-                  <Placeholder
-                    tone="dark"
-                    label="Service Image"
-                    className="h-[284px] transition-transform duration-200 ease-out group-hover:scale-[1.04]"
-                  >
-                    <span className="absolute top-3.5 left-3.5 max-w-[85%] text-[14px] leading-[1.3] font-bold text-white">
-                      {service.name}
-                    </span>
-                  </Placeholder>
+                  {service.image ? (
+                    <div className="relative h-[284px] overflow-hidden transition-transform duration-200 ease-out group-hover:scale-[1.04]">
+                      <Image
+                        src={service.image}
+                        alt={service.name}
+                        fill
+                        className="object-cover"
+                        sizes="224px"
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{ background: "linear-gradient(transparent 55%, rgba(3,9,22,.85))" }}
+                      />
+                      <span className="absolute top-3.5 left-3.5 max-w-[85%] text-[14px] leading-[1.3] font-bold text-white">
+                        {service.name}
+                      </span>
+                    </div>
+                  ) : (
+                    <Placeholder
+                      tone="dark"
+                      label="Service Image"
+                      className="h-[284px] transition-transform duration-200 ease-out group-hover:scale-[1.04]"
+                    >
+                      <span className="absolute top-3.5 left-3.5 max-w-[85%] text-[14px] leading-[1.3] font-bold text-white">
+                        {service.name}
+                      </span>
+                    </Placeholder>
+                  )}
                 </div>
               </Reveal>
             ))}

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
 import type { CaseStudy } from "@/content/home/types";
@@ -24,11 +25,21 @@ export function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
                 href="#"
                 className="group relative block h-[328px] overflow-hidden bg-[#061225]"
               >
-                <Placeholder
-                  tone={TONES[i % TONES.length]}
-                  label=""
-                  className="absolute inset-0 scale-[1.05] transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
-                />
+                {cs.image ? (
+                  <Image
+                    src={cs.image}
+                    alt={cs.title}
+                    fill
+                    className="absolute inset-0 scale-[1.05] object-cover transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
+                    sizes="(min-width: 1120px) 260px, 33vw"
+                  />
+                ) : (
+                  <Placeholder
+                    tone={TONES[i % TONES.length]}
+                    label=""
+                    className="absolute inset-0 scale-[1.05] transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
+                  />
+                )}
                 <div
                   className="absolute inset-0 opacity-85 transition-opacity duration-200 ease-linear group-hover:opacity-95"
                   style={{ background: "linear-gradient(transparent 32%, rgba(3,9,22,.92))" }}

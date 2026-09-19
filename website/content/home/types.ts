@@ -44,6 +44,7 @@ export type FooterNavCategory = {
 
 export type ServiceCard = {
   name: string;
+  image?: string;
 };
 
 export type Office = {
