@@ -106,7 +106,7 @@ export function GlobalDelivery({ stats, offices }: { stats: Stat[]; offices: Off
   return (
     <section id="global" ref={ref} className="px-6 py-[clamp(56px,7vw,96px)]">
       <div className="mx-auto max-w-[1120px]">
-        <Reveal once travelPx={16} className="mx-auto mb-11 max-w-[680px] text-center">
+        <Reveal travelPx={16} className="mx-auto mb-11 max-w-[680px] text-center">
           <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
             — Global Delivery
           </div>

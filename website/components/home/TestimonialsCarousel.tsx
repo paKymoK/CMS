@@ -47,7 +47,7 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
       className="bg-gradient-to-b from-[#f2f7fd] to-[#e7f0fa] py-[clamp(56px,7vw,96px)]"
     >
       <div className="mx-auto max-w-[1120px] px-6 text-center">
-        <Reveal once>
+        <Reveal>
           <div className="font-mono-wave text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
             — Testimonials
           </div>

@@ -39,8 +39,7 @@ public class UnitServiceImpl implements UnitService {
     unit.setDepartmentId(request.getDepartmentId());
     unit.setHead(request.getHead());
     unit.setLocation(request.getLocation());
-    Unit saved = unitRepository.save(unit);
-    return saved;
+    return unitRepository.save(unit);
   }
 
   @Override
@@ -50,7 +49,7 @@ public class UnitServiceImpl implements UnitService {
     unit.setDepartmentId(request.getDepartmentId());
     unit.setHead(request.getHead());
     unit.setLocation(request.getLocation());
-      return unitRepository.save(unit);
+    return unitRepository.save(unit);
   }
 
   @Override

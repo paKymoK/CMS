@@ -28,7 +28,7 @@ export function Insights({ insights }: { insights: InsightItem[] }) {
             {...dragHandlers}
           >
             {insights.map((item, i) => (
-              <Reveal key={item.title} delayMs={i * 70} once className="flex-none">
+              <Reveal key={item.title} delayMs={i * 70} className="flex-none">
                 <div
                   className={`relative h-[300px] cursor-grab overflow-hidden active:cursor-grabbing ${
                     i === 0 ? "w-[62vw] max-w-[680px] min-w-[280px]" : "w-[29vw] max-w-[320px] min-w-[180px]"

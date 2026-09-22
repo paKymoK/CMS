@@ -57,13 +57,13 @@ function TileGroup({ label, items }: { label: string; items: LogoBadge[] }) {
         {label}
       </div>
       {items.length > MARQUEE_THRESHOLD ? (
-        <Reveal once>
+        <Reveal>
           <MarqueeRow items={items} />
         </Reveal>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(96px,1fr))] gap-2.5">
           {items.map((item, i) => (
-            <Reveal key={item.name} once delayMs={i * 40} travelPx={12}>
+            <Reveal key={item.name} delayMs={i * 40} travelPx={12}>
               <Tile item={item} />
             </Reveal>
           ))}
@@ -85,7 +85,7 @@ export function Certifications({
   return (
     <section className="py-[clamp(56px,7vw,96px)]">
       <div className="mx-auto flex max-w-[1120px] flex-wrap gap-11 px-6">
-        <Reveal once className="flex-[1_1_260px]">
+        <Reveal className="flex-[1_1_260px]">
           <h2 className="text-[clamp(20px,2.6vw,28px)] font-bold tracking-[-0.015em]">
             Global Recognition for{" "}
             <span className="text-brand-primary">Innovative</span> Engineering

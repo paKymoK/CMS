@@ -9,7 +9,7 @@ export function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
   return (
     <section id="cases" className="py-[clamp(56px,7vw,96px)]">
       <div className="mx-auto max-w-[1120px] px-6">
-        <Reveal once className="text-center">
+        <Reveal className="text-center">
           <div className="font-mono-wave text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
             — Case Studies
           </div>
@@ -20,7 +20,7 @@ export function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(224px,1fr))] gap-5">
           {caseStudies.map((cs, i) => (
-            <Reveal key={cs.title} delayMs={100 + i * 80} once travelPx={24}>
+            <Reveal key={cs.title} delayMs={100 + i * 80} travelPx={24}>
               <a
                 href="#"
                 className="group relative block h-[328px] overflow-hidden bg-[#061225]"

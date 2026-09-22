@@ -23,7 +23,7 @@ docker-compose down
 | Field | Value |
 |-------|-------|
 | Host | `localhost` |
-| Port | `5433` |
+| Port | `5432` |
 | Username | `postgres` |
 | Password | `postgres` |
 

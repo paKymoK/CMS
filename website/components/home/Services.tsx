@@ -14,17 +14,17 @@ export function Services({ services }: { services: ServiceCard[] }) {
   return (
     <section id="whatwedo" className="py-[clamp(56px,7vw,96px)]">
       <div className="mx-auto max-w-[1120px] px-6">
-        <Reveal once>
+        <Reveal>
           <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
             — What We Do
           </div>
         </Reveal>
-        <Reveal once className="mx-auto max-w-[640px] text-center">
+        <Reveal className="mx-auto max-w-[640px] text-center">
           <h2 className="text-[clamp(24px,3.2vw,34px)] font-bold tracking-[-0.02em] text-brand-primary">
             Architecting Your Next-Gen Digital Core
           </h2>
         </Reveal>
-        <Reveal once delayMs={60} className="mx-auto mb-11 max-w-[540px] text-center">
+        <Reveal delayMs={60} className="mx-auto mb-11 max-w-[540px] text-center">
           <p className="font-wave-sans text-[15px] leading-[1.6] text-[#55585f]">
             We accelerate your digital evolution by blending advanced AI
             engineering, robust cloud infrastructure and deep domain
@@ -44,7 +44,7 @@ export function Services({ services }: { services: ServiceCard[] }) {
             style={{ transform: `translateX(${translateX}px)` }}
           >
             {services.map((service, i) => (
-              <Reveal key={service.name} once delayMs={i * 60} travelPx={20} className="flex-none">
+              <Reveal key={service.name} delayMs={i * 60} travelPx={20} className="flex-none">
                 <div className="group w-[224px] select-none transition-transform duration-200 ease-out hover:-translate-y-1">
                   {service.image ? (
                     <div className="relative h-[284px] overflow-hidden transition-transform duration-200 ease-out group-hover:scale-[1.04]">

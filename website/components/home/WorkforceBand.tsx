@@ -45,24 +45,24 @@ export function WorkforceBand() {
         aria-hidden
       />
       <div className="relative z-[2] max-w-[760px] px-6 pt-16 pb-14">
-        <Reveal once travelPx={20} delayMs={200}>
+        <Reveal travelPx={20} delayMs={200}>
           <div className="font-mono-wave mb-3 text-[10px] tracking-[0.16em] text-[#7fc0ff] uppercase">
             Your Extended Tech Workforce
           </div>
         </Reveal>
-        <Reveal once travelPx={20} delayMs={280}>
+        <Reveal travelPx={20} delayMs={280}>
           <h2 className="mb-3.5 text-[clamp(26px,4vw,40px)] leading-[1.12] font-bold tracking-[-0.02em] text-white text-balance">
             Scale Your Tech Capabilities With Precision And Agility
           </h2>
         </Reveal>
-        <Reveal once travelPx={20} delayMs={360}>
+        <Reveal travelPx={20} delayMs={360}>
           <p className="mb-6 max-w-[560px] text-sm leading-[1.6] text-[#c5d6e8]">
             Expand your engineering bandwidth with flexible, cross-functional
             tech teams that seamlessly align with your workflows and scale as
             your goals evolve.
           </p>
         </Reveal>
-        <Reveal once travelPx={20} delayMs={440}>
+        <Reveal travelPx={20} delayMs={440}>
           <a
             href="#contact"
             className="group inline-flex items-center gap-2 border border-white/50 px-6 py-3 font-mono-wave text-xs tracking-[0.05em] text-white uppercase transition-colors duration-200 hover:bg-white/16"
