@@ -18,7 +18,7 @@ export type InsightItem = {
 
 export type LogoBadge = {
   name: string;
-  logo: string;
+  logo?: string;
 };
 
 export type FlankLogo = {

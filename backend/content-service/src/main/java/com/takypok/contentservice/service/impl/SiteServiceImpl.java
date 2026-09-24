@@ -14,6 +14,11 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 public class SiteServiceImpl implements SiteService {
+  // Visitors hitting a host that isn't one of the 5 registered regional subdomains (no
+  // subdomain at all, a bare IP, localhost in local dev) get the 'en' site rather than a
+  // hard error — a public marketing homepage degrades gracefully instead of 400ing.
+  private static final String DEFAULT_SITE_CODE = "en";
+
   private final SiteRepository siteRepository;
 
   @Override
@@ -30,13 +35,10 @@ public class SiteServiceImpl implements SiteService {
     InetSocketAddress host = exchange.getRequest().getHeaders().getHost();
     String hostName = host != null ? host.getHostString() : null;
     if (hostName == null) {
-      return Mono.error(new ApplicationException(Message.Application.ERROR, "Missing Host header"));
+      return resolveByCode(DEFAULT_SITE_CODE);
     }
     return siteRepository
         .findBySubdomain(hostName)
-        .switchIfEmpty(
-            Mono.error(
-                new ApplicationException(
-                    Message.Application.ERROR, "Unknown site host: " + hostName)));
+        .switchIfEmpty(Mono.defer(() -> resolveByCode(DEFAULT_SITE_CODE)));
   }
 }
