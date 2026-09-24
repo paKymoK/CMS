@@ -23,18 +23,10 @@ spring:
       - org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration
   ai:
     ollama:
-      # Chat model config below is now used ONLY by the pre-existing employee-facing CRM
-      # assistant (AssistantService) and CodeReviewService — untouched, kept exactly as forked.
-      # The public CMS assistant (PublicAssistantService) uses spring.ai.anthropic below instead.
+      # Anthropic has no embeddings API, so embedding stays on Ollama for the public CMS
+      # assistant's per-site vector stores — the chat model itself is spring.ai.anthropic below.
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-      chat:
-        model: qwen3.5:4b
-        options:
-          temperature: 0.1
-          num-ctx: 32768
       embedding:
-        # Still Ollama — Anthropic has no embeddings API, and there's no reason to touch this
-        # half. Both the CRM assistant's and the CMS assistant's vector stores embed with this.
         model: bge-m3
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:}
@@ -46,11 +38,6 @@ spring:
       qdrant:
         host: ${QDRANT_HOST:localhost}
         port: ${QDRANT_PORT:6334}
-        # Only read by VectorStoreConfig's own legacy "vectorStore" bean now (the
-        # single-collection autoconfiguration that used to own this property is excluded above) —
-        # keeps the pre-existing CRM assistant (AssistantService/IngestionService) working
-        # unmodified against its original collection, alongside the new per-site collections.
-        collection-name: crm_vi
 
 content-service:
   base-url: ${CONTENT_SERVICE_BASE_URL:http://localhost:8084}
@@ -62,14 +49,6 @@ cors:
 ai:
   rag:
     enabled: true
-
-gitlab:
-  base-url: ${GITLAB_BASE_URL:}
-  token: ${GITLAB_TOKEN:}
-
-github:
-  base-url: ${GITHUB_BASE_URL:https://github.com}
-  token: ${GITHUB_TOKEN:}
 
 eureka:
   client:
