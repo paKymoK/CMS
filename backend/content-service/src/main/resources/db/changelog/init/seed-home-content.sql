@@ -10,7 +10,7 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', '
        ((SELECT id FROM site WHERE code = 'en'), '30+', 'Countries', 'Delivery presence across three regions.', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '300+', 'Global Clients', 'Bosch, Honda, AIA, IBM, LINE and more.', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '35+', 'Business Partners', 'AWS, Google Cloud, UiPath, Salesforce.', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), '30000+', 'Employees', 'Across delivery centres worldwide.', 4, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), '3000+', 'Employees', 'Across delivery centres worldwide.', 4, 'PUBLISHED');
 
 INSERT INTO service_card (site_id, name, image, display_order, status)
 VALUES ((SELECT id FROM site WHERE code = 'en'), 'AI & Digital Strategy Advisory', '/images/services/ai-digital-strategy.jpg', 0, 'PUBLISHED'),
