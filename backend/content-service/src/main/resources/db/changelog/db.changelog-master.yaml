@@ -4,10 +4,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/init/seed-sites.sql
   - include:
-      file: db/changelog/init/add-office-image.sql
-  - include:
-      file: db/changelog/init/remove-nav-tables.sql
-  - include:
-      file: db/changelog/init/add-service-card-image.sql
-  - include:
       file: db/changelog/init/seed-home-content.sql
+  - include:
+      file: db/changelog/init/seed-content-types.sql
+  - include:
+      file: db/changelog/init/add-preview-token-table.sql

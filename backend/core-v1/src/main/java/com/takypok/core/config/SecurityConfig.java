@@ -81,6 +81,14 @@ public class SecurityConfig {
                     // is untouched by this and still falls through to .authenticated() below.
                     .pathMatchers(HttpMethod.POST, "/v1/assistant/ask")
                     .permitAll()
+                    // content-service's token-gated draft preview — anonymous at this layer (no
+                    // JWT presented), but every request is validated against a minted,
+                    // site-scoped, time-limited preview_token by PreviewTokenGuard/
+                    // PreviewTokenService inside the controllers themselves; not a general
+                    // bypass. /v1/admin/preview-tokens (minting) is untouched by this and still
+                    // falls through to .authenticated() below.
+                    .pathMatchers("/v1/preview/**")
+                    .permitAll()
                     .anyExchange()
                     .authenticated())
         .oauth2ResourceServer(

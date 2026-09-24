@@ -147,6 +147,151 @@ public class HomeContentServiceImpl implements HomeContentService {
                 (List<HomeContentResponse.FooterNavCategory>) results[9]));
   }
 
+  /**
+   * Mirrors {@link #getHomeContent} field-for-field, with every getPublished(siteId) swapped for
+   * the same getAll(siteId) the admin list screens already use — draft and inactive rows included.
+   * getAll already returns Mono&lt;List&lt;X&gt;&gt; rather than Flux&lt;X&gt;, so this maps over
+   * the list directly instead of collectList()-ing a Flux; behaviorally identical composition
+   * otherwise. Only ever called from the token-gated preview path (PreviewController) — never
+   * cached, never reachable without a valid preview_token.
+   */
+  @Override
+  public Mono<HomeContentResponse> getPreviewContent(Long siteId) {
+    Mono<List<HomeContentResponse.Stat>> stats =
+        statService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(
+                            s ->
+                                new HomeContentResponse.Stat(
+                                    s.getValue(), s.getLabel(), s.getNote()))
+                        .toList());
+
+    Mono<List<HomeContentResponse.ServiceCard>> services =
+        serviceCardService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(s -> new HomeContentResponse.ServiceCard(s.getName(), s.getImage()))
+                        .toList());
+
+    Mono<List<HomeContentResponse.Office>> offices =
+        officeService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(
+                            o ->
+                                new HomeContentResponse.Office(
+                                    o.getCity(),
+                                    o.getLat(),
+                                    o.getLon(),
+                                    o.getFlagColor(),
+                                    o.getBig(),
+                                    o.getAddress(),
+                                    o.getImage()))
+                        .toList());
+
+    Mono<List<HomeContentResponse.CaseStudy>> caseStudies =
+        caseStudyService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(
+                            c ->
+                                new HomeContentResponse.CaseStudy(
+                                    c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
+                        .toList());
+
+    // Same "insight"-only filter as getHomeContent — a preview of a draft "press-release"-category
+    // post (once that category is actually used) still shouldn't render on the homepage preview,
+    // for the same reason it wouldn't render once published.
+    Mono<List<HomeContentResponse.Insight>> insights =
+        postService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .filter(p -> "insight".equals(p.getCategory()))
+                        .map(p -> new HomeContentResponse.Insight(p.getTitle(), p.getImage()))
+                        .toList());
+
+    Mono<List<HomeContentResponse.LogoBadge>> awards =
+        logoBadgeService
+            .getAll(siteId, "AWARD")
+            .map(list -> list.stream().map(HomeContentServiceImpl::toLogoBadge).toList());
+    Mono<List<HomeContentResponse.LogoBadge>> certifications =
+        logoBadgeService
+            .getAll(siteId, "CERTIFICATION")
+            .map(list -> list.stream().map(HomeContentServiceImpl::toLogoBadge).toList());
+    Mono<List<HomeContentResponse.LogoBadge>> partners =
+        logoBadgeService
+            .getAll(siteId, "PARTNER")
+            .map(list -> list.stream().map(HomeContentServiceImpl::toLogoBadge).toList());
+
+    Mono<List<HomeContentResponse.Testimonial>> testimonials =
+        testimonialService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(
+                            t ->
+                                new HomeContentResponse.Testimonial(
+                                    t.getName(),
+                                    t.getTitle(),
+                                    t.getCompany(),
+                                    t.getQuote(),
+                                    t.getPhoto(),
+                                    t.getFlankLogos()))
+                        .toList());
+
+    Mono<List<HomeContentResponse.FooterNavCategory>> footerNav =
+        footerNavCategoryService
+            .getAll(siteId)
+            .map(
+                list ->
+                    list.stream()
+                        .map(
+                            f ->
+                                new HomeContentResponse.FooterNavCategory(
+                                    f.getLabel(), f.getLinks()))
+                        .toList());
+
+    List<Mono<?>> sources =
+        List.of(
+            stats,
+            services,
+            offices,
+            caseStudies,
+            insights,
+            awards,
+            certifications,
+            partners,
+            testimonials,
+            footerNav);
+
+    return Mono.zip(
+        sources,
+        results ->
+            new HomeContentResponse(
+                (List<HomeContentResponse.Stat>) results[0],
+                (List<HomeContentResponse.ServiceCard>) results[1],
+                (List<HomeContentResponse.Office>) results[2],
+                (List<HomeContentResponse.CaseStudy>) results[3],
+                (List<HomeContentResponse.Insight>) results[4],
+                (List<HomeContentResponse.LogoBadge>) results[5],
+                (List<HomeContentResponse.LogoBadge>) results[6],
+                (List<HomeContentResponse.LogoBadge>) results[7],
+                (List<HomeContentResponse.Testimonial>) results[8],
+                (List<HomeContentResponse.FooterNavCategory>) results[9]));
+  }
+
   private static HomeContentResponse.LogoBadge toLogoBadge(LogoBadge badge) {
     return new HomeContentResponse.LogoBadge(badge.getName(), badge.getLogo());
   }

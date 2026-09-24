@@ -37,7 +37,21 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-r2dbc"
     implementation "org.liquibase:liquibase-core"
     implementation "org.postgresql:r2dbc-postgresql"
+    // Classpath scan for ContentFields implementations at startup (ContentFieldsRegistryConfig) —
+    // same library/version Workflow's TicketConfig already uses for the equivalent scan.
+    implementation 'org.reflections:reflections:0.10.2'
     testImplementation 'io.projectreactor:reactor-test'
+    // content-service had no test dependency at all yet — this is the minimum to exercise the
+    // ContentFields registry scan + Bean Validation wiring below without pulling in the full
+    // spring-boot-starter-test stack (Mockito/AssertJ/Spring context) for a service with no
+    // Spring-context tests yet.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // ContentItemMapperTest needs to stub ContentTypeRepository (an R2dbcRepository, too many
+    // inherited methods to hand-write a fake) — version comes from Spring Boot's own dependency
+    // management, same as every other unversioned dependency in this file.
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
 }
 
 tasks.named('test') {

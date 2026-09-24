@@ -51,6 +51,18 @@ public class AuthenticationConfig {
                     // is untouched by this and still falls through to .authenticated() below.
                     .pathMatchers("/content-service/v1/home/**")
                     .permitAll()
+                    // content-service's token-gated draft preview — anonymous at this layer (no
+                    // JWT presented), but every request is validated against a minted,
+                    // site-scoped, time-limited preview_token inside content-service itself (see
+                    // PreviewTokenGuard/PreviewTokenService); not a general bypass.
+                    // /content-service/v1/admin/preview-tokens (minting) is untouched by this and
+                    // still falls through to .authenticated() below. Mirrors core-v1's
+                    // SecurityConfig's own /v1/preview/** carve-out for content-service's direct
+                    // port — this gateway config is a separate, hand-duplicated copy (gateway's
+                    // GatewayServiceApplication scans only com.takypok.gatewayservice, so it never
+                    // loads core-v1's SecurityConfig at all), keep both in sync by hand.
+                    .pathMatchers("/content-service/v1/preview/**")
+                    .permitAll()
                     // media-service's content-addressed static serving — public once a site's
                     // published page embeds the URL.
                     .pathMatchers("/media-service/images/**", "/media-service/files/**")
