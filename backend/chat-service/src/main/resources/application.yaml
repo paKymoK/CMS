@@ -6,6 +6,15 @@ spring:
     name: chat-service
   main:
     web-application-type: reactive
+  http:
+    client:
+      # OllamaApiAutoConfiguration resolves any RestClient.Builder bean already in the context
+      # (see OllamaApiAutoConfiguration#ollamaApi), so this flows straight through to Ollama's
+      # blocking chat calls — a local model can take far longer than a hosted one to respond, so
+      # the default read timeout (10s) isn't enough. Also applies to Anthropic's blocking client
+      # for the same reason (same RestClient.Builder bean); harmless there since it only matters
+      # if a call actually hangs that long.
+      read-timeout: ${AI_HTTP_READ_TIMEOUT:10m}
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:127.0.0.1}
