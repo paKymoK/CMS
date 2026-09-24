@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "next-intl";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const GREETING =
@@ -12,30 +13,44 @@ const CHIPS = [
   { label: "Know more AI capabilities", send: "What are your AI capabilities?" },
 ];
 
-// Canned replies, stubbed per this pass's scope — no real backend yet. Voice
-// matches the handoff's documented system prompt: "You are the assistant on
-// CMC Global's homepage. CMC Global is a Vietnam-headquartered IT services
-// company: AI and digital strategy advisory, data and AI solutions, digital
-// and cloud, enterprise solutions, infrastructure and managed services,
-// cybersecurity, and software engineering. 32+ years of experience, 3000+
-// employees, 300+ global clients, 30+ countries. Answer in at most 3 short
-// sentences, warm and concrete, no bullet lists, no markdown."
-const CANNED_REPLIES: Record<string, string> = {
-  "Tell me about CMC Global":
-    "CMC Global is the international IT services arm of CMC Corporation, headquartered in Hanoi with 32+ years of experience and 3000+ engineers across 30+ countries. We partner with clients like Bosch, Honda and IBM on everything from cloud migration to AI-driven products. Happy to point you to the right team if you tell me a bit about what you're working on.",
-  "What services do you offer?":
-    "We cover the full stack: AI and digital strategy advisory, data and AI solutions, digital and cloud engineering, enterprise platforms, infrastructure and managed services, cybersecurity, and custom software engineering. Most clients start with one of these and expand as the relationship grows. What kind of project are you exploring?",
-  "What are your AI capabilities?":
-    "Our AI team builds everything from agentic delivery tooling to production ML pipelines, energy trading models and intrusion-detection systems for clients today. We handle the full lifecycle: strategy, data engineering, model development and MLOps. What problem are you hoping AI could help with?",
-};
 const FALLBACK_REPLY =
-  "Good question — our team can dig into the specifics with you directly. In short, CMC Global blends AI, cloud and engineering talent across 30+ countries to help clients ship faster and more securely. Want me to point you toward the right specialist?";
+  "Sorry, I'm having trouble reaching our knowledge base right now — please try again in a moment, or reach out to our team directly.";
+
+const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
 type Message = { role: "user" | "bot"; text: string };
+type AssistantTurn = { role: "USER" | "ASSISTANT"; content: string };
+
+/**
+ * chat-service's PublicAssistantController is stateless — it doesn't persist a session, so the
+ * widget resends its own running transcript on every call. Same gateway-routed base as
+ * lib/cms/homeContent.ts (never straight to chat-service's own port); see AuthenticationConfig's
+ * POST /chat-service/v1/assistant/ask permitAll carve-out for why this is safe unauthenticated.
+ */
+async function askAssistant(
+  site: string,
+  question: string,
+  history: AssistantTurn[],
+): Promise<{ answer: string; sources: string[] }> {
+  const res = await fetch(`${CMS_BASE}/chat-service/v1/assistant/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ site, question, history }),
+  });
+  if (!res.ok) {
+    throw new Error(`Assistant request failed: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
 
 export function AssistantPanel() {
   const reducedMotion = usePrefersReducedMotion();
+  const locale = useLocale();
   const logRef = useRef<HTMLDivElement>(null);
+  // Sent back on every call so chat-service (stateless — see PublicAskRequest) has the running
+  // transcript. Only updated on a successful reply — a client-side fallback message never enters
+  // the history sent to the backend.
+  const historyRef = useRef<AssistantTurn[]>([]);
 
   const [greetingText, setGreetingText] = useState("");
   const [greetingDone, setGreetingDone] = useState(false);
@@ -91,7 +106,7 @@ export function AssistantPanel() {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
   }, [messages, streamingText]);
 
-  function sendMessage(text: string) {
+  async function sendMessage(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
     setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
@@ -100,30 +115,45 @@ export function AssistantPanel() {
     setStreamingText(null);
 
     const slowTimer = setTimeout(() => setSlow(true), 1500);
-    const reply = CANNED_REPLIES[trimmed] ?? FALLBACK_REPLY;
 
-    const startStreaming = () => {
-      clearTimeout(slowTimer);
-      setSlow(false);
-      const words = reply.split(" ");
-      let shown = 0;
-      setStreamingText("");
-      const interval = setInterval(
-        () => {
-          shown = Math.min(words.length, shown + 3);
-          setStreamingText(words.slice(0, shown).join(" "));
-          if (shown >= words.length) {
-            clearInterval(interval);
-            setMessages((prev) => [...prev, { role: "bot", text: reply }]);
-            setStreamingText(null);
-            setBusy(false);
-          }
-        },
-        reducedMotion ? 0 : 90,
-      );
-    };
+    let reply: string;
+    let ok = true;
+    try {
+      const result = await askAssistant(locale, trimmed, historyRef.current);
+      reply = result.answer;
+    } catch (err) {
+      console.error("Assistant request failed", err);
+      reply = FALLBACK_REPLY;
+      ok = false;
+    }
 
-    setTimeout(startStreaming, reducedMotion ? 0 : 800);
+    if (ok) {
+      historyRef.current = [
+        ...historyRef.current,
+        { role: "USER", content: trimmed },
+        { role: "ASSISTANT", content: reply },
+      ];
+    }
+
+    clearTimeout(slowTimer);
+    setSlow(false);
+
+    const words = reply.split(" ");
+    let shown = 0;
+    setStreamingText("");
+    const interval = setInterval(
+      () => {
+        shown = Math.min(words.length, shown + 3);
+        setStreamingText(words.slice(0, shown).join(" "));
+        if (shown >= words.length) {
+          clearInterval(interval);
+          setMessages((prev) => [...prev, { role: "bot", text: reply }]);
+          setStreamingText(null);
+          setBusy(false);
+        }
+      },
+      reducedMotion ? 0 : 90,
+    );
   }
 
   return (
