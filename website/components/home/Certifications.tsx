@@ -1,6 +1,7 @@
 import type { LogoBadge } from "@/content/home/types";
 import { Reveal } from "@/components/ui/Reveal";
 import { LogoImage } from "@/components/ui/LogoImage";
+import { Placeholder } from "@/components/ui/Placeholder";
 
 // Above this many items a static grid gets crowded, so the group switches to
 // an auto-scrolling row instead of wrapping onto more lines.
@@ -20,7 +21,11 @@ function Tile({
       aria-hidden={hidden}
       className={`flex h-[66px] items-center justify-center border border-[#e6e6e3] px-3 ${className}`}
     >
-      <LogoImage src={item.logo} alt={hidden ? "" : item.name} width={72} height={40} />
+      {item.logo ? (
+        <LogoImage src={item.logo} alt={hidden ? "" : item.name} width={72} height={40} />
+      ) : (
+        <Placeholder tone="light" label="" className="h-10 w-[72px]" />
+      )}
     </div>
   );
 }
