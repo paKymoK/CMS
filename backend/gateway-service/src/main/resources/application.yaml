@@ -12,6 +12,8 @@ spring:
     web-application-type: reactive
   application:
     name: gateway-service
+  config:
+    import: 'classpath:management.yml'
   data:
     redis:
       port: ${SPRING_DATA_REDIS_PORT:6379}
@@ -124,29 +126,12 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
+# Shared Actuator/tracing config imported from core-v1's management.yml (see spring.config.import
+# above) — same base as the other 4 backend services. Only override here is the actuator port:
+# gateway runs actuator on its own :8090, separate from the proxy traffic on :8080 (CLAUDE.md).
 management:
   server:
     port: 8090
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    health:
-      access: unrestricted
-    prometheus:
-      access: unrestricted
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  tracing:
-    enabled: true
-    sampling:
-      probability: 1.0
-  otlp:
-    enabled: true
-    tracing:
-      endpoint: http://localhost:4318/v1/traces
 
 single-tab:
   redis-on-failure: ${SINGLE_TAB_REDIS_ON_FAILURE:FAIL_OPEN}
