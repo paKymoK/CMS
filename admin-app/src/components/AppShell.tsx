@@ -1,12 +1,22 @@
+import { useMemo } from "react";
 import { Layout, Menu, Select, Button, Empty, Typography, message } from "antd";
-import { LogoutOutlined, PictureOutlined, EyeOutlined, RobotOutlined } from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { LogoutOutlined, EyeOutlined } from "@ant-design/icons";
 import { useMutation } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { useSite } from "../lib/useSite";
 import { contentApi } from "../lib/api";
-import { RESOURCES } from "../config/resources";
+import { NAVIGATION, type NavItem } from "../config/navigation";
 import { SITES } from "../config/sites";
+
+function toMenuItems(items: NavItem[]): MenuProps["items"] {
+  return items.map((item) =>
+    item.items
+      ? { key: item.key, icon: item.icon, label: item.label, children: toMenuItems(item.items) }
+      : { key: item.key, icon: item.icon, label: item.label },
+  );
+}
 
 const { Header, Sider, Content } = Layout;
 
@@ -59,11 +69,18 @@ export default function AppShell() {
     },
   });
 
-  const menuItems = [
-    ...RESOURCES.map((r) => ({ key: `/content/${r.key}`, label: r.label })),
-    { key: "/media", label: "Media Library", icon: <PictureOutlined /> },
-    { key: "/assistant", label: "Assistant", icon: <RobotOutlined /> },
-  ];
+  const menuItems = useMemo(() => toMenuItems(NAVIGATION), []);
+
+  // Expand whichever group contains the current route on first render; the user can open/close
+  // groups freely afterward (antd manages that as uncontrolled state once mounted).
+  const defaultOpenKeys = useMemo(
+    () =>
+      NAVIGATION.filter((item) => item.items?.some((child) => child.key === location.pathname)).map(
+        (item) => item.key,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   if (accessibleSites.length === 0) {
     return (
@@ -80,6 +97,7 @@ export default function AppShell() {
         <Menu
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={defaultOpenKeys}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />
