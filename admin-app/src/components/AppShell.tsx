@@ -1,5 +1,5 @@
 import { Layout, Menu, Select, Button, Empty, Typography, message } from "antd";
-import { LogoutOutlined, PictureOutlined, EyeOutlined } from "@ant-design/icons";
+import { LogoutOutlined, PictureOutlined, EyeOutlined, RobotOutlined } from "@ant-design/icons";
 import { useMutation } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -62,6 +62,7 @@ export default function AppShell() {
   const menuItems = [
     ...RESOURCES.map((r) => ({ key: `/content/${r.key}`, label: r.label })),
     { key: "/media", label: "Media Library", icon: <PictureOutlined /> },
+    { key: "/assistant", label: "Assistant", icon: <RobotOutlined /> },
   ];
 
   if (accessibleSites.length === 0) {

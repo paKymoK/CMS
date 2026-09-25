@@ -7,6 +7,7 @@ import Login from "../pages/Login";
 import Callback from "../pages/Callback";
 import ContentPage from "../pages/ContentPage";
 import MediaLibraryPage from "../pages/MediaLibraryPage";
+import AssistantPage from "../pages/AssistantPage";
 import { RESOURCES } from "../config/resources";
 
 export default function AppRouter() {
@@ -27,6 +28,7 @@ export default function AppRouter() {
               <Route index element={<Navigate to={`/content/${RESOURCES[0].key}`} replace />} />
               <Route path="/content/:resourceKey" element={<ContentPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />
+              <Route path="/assistant" element={<AssistantPage />} />
             </Route>
           </Route>
         </Routes>
