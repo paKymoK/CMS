@@ -78,3 +78,4 @@ function createApi(servicePath: string): AxiosInstance {
 
 export const contentApi = createApi("content-service");
 export const mediaApi = createApi("media-service");
+export const chatApi = createApi("chat-service");
