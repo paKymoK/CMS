@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>CMC Global CMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:#f6f9fc;}
+*{box-sizing:border-box;}
+a{color:#189fe0;text-decoration:none;}
+a:hover{color:#0a2540;}
+input::placeholder,textarea::placeholder{color:#9aa3ad;}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes dotpulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;background:#f6f9fc;font-family:Montserrat, Arial, Helvetica, sans-serif;color:#0f172a;">
+
+  <aside style="{{ sideStyle }}">
+    <div style="display:flex;align-items:center;gap:10px;padding:26px 22px 22px;">
+      <img src="website/public/images/logo.svg" alt="CMC Global" style="{{ logoStyle }}">
+      <span style="{{ cmsTagStyle }}">CMS</span>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:4px 12px 16px;display:flex;flex-direction:column;gap:22px;">
+      <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="{{ g.labelStyle }}">— {{ g.label }}</div>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="5">
+            <button onClick="{{ it.go }}" style="{{ it.style }}">
+              <span style="{{ it.numStyle }}">{{ it.num }}</span>
+              <span>{{ it.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="{{ userBoxStyle }}">
+      <div style="width:34px;height:34px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#ffffff;background:radial-gradient(circle at 34% 30%, #7cc4f7 0%, #1a6fc4 60%, #0c3f7d 100%);">LN</div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+        <span style="{{ userNameStyle }}">Lan Nguyen</span>
+        <span style="{{ userRoleStyle }}">Site editor · EN, VI</span>
+      </div>
+      <a href="CMS Sign In.dc.html" title="Log out" style="{{ logoutStyle }}">Log out</a>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+    <div style="position:sticky;top:0;z-index:20;padding:16px clamp(16px,3vw,32px) 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px;padding:0 12px 0 22px;border-radius:18px;border:1px solid rgba(24,159,224,.2);background:rgba(255,255,255,.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05);">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;font-size:15px;font-weight:500;color:#3c4858;white-space:nowrap;overflow:hidden;">
+          <span>{{ crumbGroup }}</span>
+          <span style="color:#cfd2d6;">/</span>
+          <span style="font-weight:600;color:#10314f;">{{ pageTitle }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="position:relative;">
+            <button onClick="{{ toggleSite }}" style="display:flex;align-items:center;gap:8px;border-radius:9px;border:1px solid #dceaf5;background:#ffffff;padding:9px 12px;font-family:inherit;font-size:14px;color:#3c4858;cursor:pointer;" style-hover="border-color:#189fe0;">
+              <span style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.06em;color:#189fe0;">{{ siteCodeUp }}</span>
+              <span>{{ siteLabel }}</span>
+              <svg viewBox="0 0 10 6" style="width:11px;height:7px;fill:none;stroke:currentColor;stroke-width:1.5;"><path d="M1 1l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </button>
+            <sc-if value="{{ siteOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;right:0;top:calc(100% + 8px);width:250px;padding:6px;border-radius:12px;border:1px solid #e0e4e9;background:#ffffff;box-shadow:0 18px 44px rgba(10,37,64,.16);animation:rise 200ms ease both;">
+                <sc-for list="{{ siteOptions }}" as="so" hint-placeholder-count="5">
+                  <button onClick="{{ so.pick }}" disabled="{{ so.disabled }}" style="{{ so.style }}">
+                    <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#189fe0;width:22px;">{{ so.codeUp }}</span>
+                    <span style="flex:1;text-align:left;">{{ so.label }}</span>
+                    <span style="font-size:11px;color:#9aa3ad;">{{ so.note }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <button onClick="{{ preview }}" style="display:flex;align-items:center;gap:8px;border:none;border-radius:10px;padding:11px 22px;background:linear-gradient(90deg, #189fe0, #00bbe4);font-family:inherit;font-size:14px;font-weight:700;color:#ffffff;cursor:pointer;white-space:nowrap;box-shadow:0 10px 24px rgba(24,159,224,.36);" style-hover="background:#0a2540;">Preview site ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <main style="flex:1;width:100%;max-width:1180px;margin:0 auto;padding:36px clamp(16px,3vw,32px) 64px;">
+
+      <sc-if value="{{ isContent }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:rise 380ms cubic-bezier(.22,1,.36,1) both;">
+          <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px;">
+            <div style="min-width:0;">
+              <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;margin-bottom:12px;">— Home Page · {{ siteLabel }}</div>
+              <h1 style="margin:0;font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.02em;color:#10314f;">{{ pageTitle }}</h1>
+              <p style="margin:8px 0 0;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#55585f;">{{ rowCount }} items · <span style="color:#189fe0;">{{ publishedCount }} published</span> on {{ siteSub }}</p>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+              <sc-if value="{{ hasTypeFilter }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:6px;padding:4px;border-radius:999px;border:1px solid #dfe3e8;background:#ffffff;">
+                  <sc-for list="{{ typeChips }}" as="tc" hint-placeholder-count="4">
+                    <button onClick="{{ tc.pick }}" style="{{ tc.style }}">{{ tc.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <button onClick="{{ openCreate }}" style="min-height:44px;padding:0 22px;border:none;background:#189fe0;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#ffffff;cursor:pointer;" style-hover="background:#0a2540;">+ NEW {{ singularUp }}</button>
+            </div>
+          </div>
+
+          <div style="border:1px solid #e0e4e9;background:#ffffff;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:720px;">
+              <thead>
+                <tr style="background:#f6f9fc;">
+                  <th style="text-align:left;padding:13px 16px;width:56px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;">ID</th>
+                  <th style="text-align:left;padding:13px 16px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;">{{ titleLabel }}</th>
+                  <sc-for list="{{ columns }}" as="c" hint-placeholder-count="2">
+                    <th style="text-align:left;padding:13px 16px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;white-space:nowrap;">{{ c }}</th>
+                  </sc-for>
+                  <th style="text-align:left;padding:13px 16px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;">Status</th>
+                  <th style="text-align:left;padding:13px 16px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;">Active</th>
+                  <th style="text-align:left;padding:13px 16px;width:64px;font-family:'JetBrains Mono', monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;border-bottom:1px solid #e0e4e9;">Order</th>
+                  <th style="padding:13px 16px;width:150px;border-bottom:1px solid #e0e4e9;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+                  <tr style="border-bottom:1px solid #eef1f4;" style-hover="background:#f9fbfd;">
+                    <td style="{{ r.cellStyle }}"><span style="font-family:'JetBrains Mono', monospace;font-size:12px;color:#6a7c90;">{{ r.id }}</span></td>
+                    <td style="{{ r.cellStyle }}">
+                      <div style="display:flex;align-items:center;gap:12px;">
+                        <sc-if value="{{ r.hasImg }}" hint-placeholder-val="{{ false }}">
+                          <img src="{{ r.img }}" alt="" style="width:44px;height:44px;flex:none;object-fit:cover;">
+                        </sc-if>
+                        <sc-if value="{{ r.noImg }}" hint-placeholder-val="{{ false }}">
+                          <div style="width:44px;height:44px;flex:none;background:repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px);"></div>
+                        </sc-if>
+                        <span style="font-size:14px;font-weight:600;color:#10141c;">{{ r.title }}</span>
+                      </div>
+                    </td>
+                    <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="2">
+                      <td style="{{ r.cellStyle }}"><span style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;color:#55585f;">{{ cell }}</span></td>
+                    </sc-for>
+                    <td style="{{ r.cellStyle }}"><span style="{{ r.statusStyle }}">{{ r.status }}</span></td>
+                    <td style="{{ r.cellStyle }}">
+                      <button onClick="{{ r.toggleActive }}" aria-label="Toggle active" style="{{ r.trackStyle }}"><span style="{{ r.knobStyle }}"></span></button>
+                    </td>
+                    <td style="{{ r.cellStyle }}"><span style="font-family:'JetBrains Mono', monospace;font-size:12px;color:#6a7c90;">{{ r.order }}</span></td>
+                    <td style="{{ r.cellStyle }}">
+                      <sc-if value="{{ r.confirming }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;color:#55585f;white-space:nowrap;">Delete?
+                          <button onClick="{{ r.doDelete }}" style="padding:6px 10px;border:none;background:#d4380d;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#ffffff;cursor:pointer;">YES</button>
+                          <button onClick="{{ r.cancelDelete }}" style="padding:6px 10px;border:1px solid #cfd2d6;background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#3d4046;cursor:pointer;">NO</button>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ r.idle }}" hint-placeholder-val="{{ true }}">
+                        <div style="display:flex;justify-content:flex-end;gap:6px;">
+                          <button onClick="{{ r.edit }}" style="padding:8px 12px;border:1px solid rgba(24,159,224,.4);background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#189fe0;cursor:pointer;" style-hover="background:#189fe0;color:#ffffff;">EDIT</button>
+                          <button onClick="{{ r.askDelete }}" style="padding:8px 12px;border:1px solid #cfd2d6;background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#3d4046;cursor:pointer;" style-hover="border-color:#d4380d;color:#d4380d;">DELETE</button>
+                        </div>
+                      </sc-if>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:56px 24px;text-align:center;">
+                <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;">— Nothing here yet</div>
+                <p style="margin:10px 0 0;font-size:14px;color:#55585f;">No items for {{ siteLabel }}. Create the first one.</p>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isMedia }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:rise 380ms cubic-bezier(.22,1,.36,1) both;">
+          <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;margin-bottom:12px;">— Library · {{ siteLabel }}</div>
+          <h1 style="margin:0 0 20px;font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.02em;color:#10314f;">Media Library</h1>
+          <div style="display:flex;gap:4px;border-bottom:1px solid #e0e4e9;margin-bottom:24px;">
+            <button onClick="{{ tabImages }}" style="{{ tabImgStyle }}">Images <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#9aa3ad;">{{ imgCount }}</span></button>
+            <button onClick="{{ tabVideos }}" style="{{ tabVidStyle }}">Videos <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#9aa3ad;">{{ vidCount }}</span></button>
+          </div>
+          <div onClick="{{ fakeUpload }}" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px;margin-bottom:24px;border:1px dashed #b9c6d3;background:linear-gradient(#f2f7fd,#e7f0fa);cursor:pointer;" style-hover="border-color:#189fe0;">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#10314f;">Drop {{ mediaNoun }} here, or browse</div>
+              <div style="margin-top:4px;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#6a6d74;">{{ mediaHint }}</div>
+            </div>
+            <span style="padding:12px 20px;background:#189fe0;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#ffffff;">UPLOAD {{ mediaNounUp }}</span>
+          </div>
+          <sc-if value="{{ showImages }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:18px;">
+              <sc-for list="{{ images }}" as="im" hint-placeholder-count="8">
+                <div style="display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .2s ease-out;" style-hover="transform:translateY(-4px);">
+                  <sc-if value="{{ im.src }}" hint-placeholder-val="{{ true }}">
+                    <img src="{{ im.src }}" alt="{{ im.name }}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
+                  </sc-if>
+                  <sc-if value="{{ im.ph }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:relative;width:100%;aspect-ratio:4/3;background:repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px);"><span style="position:absolute;left:10px;bottom:10px;font-family:'JetBrains Mono', monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.8);">Uploading…</span></div>
+                  </sc-if>
+                  <div style="display:flex;justify-content:space-between;gap:8px;">
+                    <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#3d4046;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ im.name }}</span>
+                    <span style="font-family:'JetBrains Mono', monospace;font-size:11px;color:#9aa3ad;flex:none;">{{ im.size }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ showVideos }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;">
+              <sc-for list="{{ videos }}" as="v" hint-placeholder-count="3">
+                <div style="border:1px solid #e0e4e9;background:#ffffff;">
+                  <div style="{{ v.thumbStyle }}">
+                    <span style="position:absolute;left:10px;bottom:10px;font-family:'JetBrains Mono', monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.8);">{{ v.name }}</span>
+                    <span style="{{ v.badgeStyle }}">{{ v.status }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;">
+                    <span style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:13px;color:#55585f;">{{ v.meta }}</span>
+                    <button style="padding:6px 10px;border:1px solid #cfd2d6;background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#3d4046;cursor:pointer;" style-hover="border-color:#d4380d;color:#d4380d;">DELETE</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAssistant }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:rise 380ms cubic-bezier(.22,1,.36,1) both;">
+          <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;margin-bottom:12px;">— Library · {{ siteLabel }}</div>
+          <h1 style="margin:0 0 20px;font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.02em;color:#10314f;">Assistant</h1>
+          <div style="position:relative;overflow:hidden;padding:clamp(24px,4vw,44px);background:linear-gradient(180deg, #03091a, #04102a, #061634);">
+            <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(150,195,255,.09), rgba(120,175,255,.03) 30%, rgba(8,32,74,.1));"></div>
+            <div style="position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, rgba(170,212,255,.34), transparent);"></div>
+            <div style="position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;align-items:center;">
+              <div>
+                <div style="width:40px;height:40px;border-radius:50%;margin-bottom:18px;background:radial-gradient(circle at 34% 30%, #eaf6ff 0%, #7cc4f7 42%, #1a6fc4 78%, #0c3f7d 100%);box-shadow:0 0 22px rgba(90,180,255,.55);"></div>
+                <h2 style="margin:0;font-size:clamp(20px,2.4vw,26px);font-weight:700;color:#ffffff;">Knowledge base for <span style="color:#43a4ff;">{{ siteLabel }}</span></h2>
+                <p style="margin:12px 0 24px;max-width:460px;font-size:14px;line-height:1.6;color:#dce7f5;text-wrap:pretty;">Re-ingests the public chatbot's knowledge from this site's curated documents. This replaces everything previously ingested — it does not merge.</p>
+                <sc-if value="{{ ingestIdle }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ askIngest }}" style="display:inline-flex;align-items:center;gap:12px;border:none;cursor:pointer;border-radius:999px;background:#ffffff;padding:6px 6px 6px 24px;font-family:inherit;font-size:14px;font-weight:600;color:#0d2b52;" style-hover="background:#e8f1fb;">Re-ingest knowledge base
+                    <span style="display:flex;width:36px;height:36px;border-radius:50%;background:#0b63c5;color:#ffffff;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  </button>
+                </sc-if>
+                <sc-if value="{{ ingestBusy }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:inline-flex;align-items:center;gap:12px;border-radius:999px;border:1px solid rgba(255,255,255,.28);padding:14px 22px;font-size:14px;color:#dce7f5;">
+                    <span style="display:flex;gap:6px;">
+                      <span style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.8);animation:dotpulse 1.2s ease-in-out infinite;"></span>
+                      <span style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.8);animation:dotpulse 1.2s ease-in-out .16s infinite;"></span>
+                      <span style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.8);animation:dotpulse 1.2s ease-in-out .32s infinite;"></span>
+                    </span>Ingesting documents…
+                  </div>
+                </sc-if>
+              </div>
+              <div style="border-radius:10px;border:1px solid rgba(255,255,255,.26);padding:22px;background:linear-gradient(105deg, rgba(214,228,245,.2), rgba(150,180,215,.1));box-shadow:0 18px 44px rgba(3,12,32,.34);display:grid;grid-template-columns:1fr 1fr;gap:22px;">
+                <sc-for list="{{ kbStats }}" as="k" hint-placeholder-count="4">
+                  <div>
+                    <div style="font-size:clamp(24px,3vw,32px);font-weight:700;letter-spacing:-.02em;color:#ffffff;line-height:1;">{{ k.v }}</div>
+                    <div style="margin-top:6px;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#c9d9ee;">{{ k.l }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:24px;border:1px solid #e0e4e9;background:#ffffff;">
+            <div style="padding:14px 18px;border-bottom:1px solid #e0e4e9;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;">Source documents · documents/{{ siteCode }}/</div>
+            <sc-for list="{{ docs }}" as="d" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid #eef1f4;">
+                <span style="font-family:'JetBrains Mono', monospace;font-size:12px;color:#10141c;">{{ d.name }}</span>
+                <span style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:13px;color:#6a7c90;">{{ d.meta }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </main>
+  </div>
+
+  <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:50;display:flex;justify-content:flex-end;">
+      <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(3,9,26,.45);backdrop-filter:blur(2px);animation:fade 200ms ease both;"></div>
+      <div style="position:relative;width:min(480px,100%);height:100%;display:flex;flex-direction:column;background:#ffffff;box-shadow:-18px 0 44px rgba(3,12,32,.2);animation:slidein 320ms cubic-bezier(.22,1,.36,1) both;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:26px 28px 20px;border-bottom:1px solid #e0e4e9;">
+          <div>
+            <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;margin-bottom:8px;">— {{ drawerEyebrow }}</div>
+            <h2 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em;color:#10314f;">{{ drawerTitle }}</h2>
+          </div>
+          <button onClick="{{ closeDrawer }}" aria-label="Close" style="width:40px;height:40px;flex:none;border-radius:50%;border:1px solid #cfd2d6;background:#ffffff;font-size:18px;color:#3d4046;cursor:pointer;" style-hover="border-color:#189fe0;color:#189fe0;">×</button>
+        </div>
+        <form onSubmit="{{ save }}" style="flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;">
+          <sc-for list="{{ formFields }}" as="f" hint-placeholder-count="4">
+            <label style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;">{{ f.label }}<span style="color:#189fe0;">{{ f.req }}</span></span>
+              <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}">
+                <input type="{{ f.inputType }}" defaultValue="{{ f.value }}" style="border:1px solid #dfe3e8;padding:13px 14px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;color:#10141c;outline:none;" style-focus="border-color:#189fe0;">
+              </sc-if>
+              <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+                <textarea rows="{{ f.rows }}" defaultValue="{{ f.value }}" style="{{ f.areaStyle }}"></textarea>
+              </sc-if>
+              <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                <select defaultValue="{{ f.value }}" style="border:1px solid #dfe3e8;padding:13px 14px;background:#ffffff;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;color:#10141c;outline:none;">
+                  <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
+                    <option value="{{ o.value }}">{{ o.label }}</option>
+                  </sc-for>
+                </select>
+              </sc-if>
+              <sc-if value="{{ f.isBool }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <input type="checkbox" defaultChecked="{{ f.checked }}" style="width:18px;height:18px;margin:0;accent-color:#189fe0;">
+                  <span style="font-size:14px;color:#55585f;">Enabled</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ f.isImage }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <sc-if value="{{ f.value }}" hint-placeholder-val="{{ false }}">
+                    <img src="{{ f.value }}" alt="" style="width:56px;height:56px;flex:none;object-fit:cover;">
+                  </sc-if>
+                  <sc-if value="{{ f.noValue }}" hint-placeholder-val="{{ true }}">
+                    <div style="width:56px;height:56px;flex:none;background:repeating-linear-gradient(135deg, #dfe6ee 0 6px, #eef2f6 6px 12px);"></div>
+                  </sc-if>
+                  <span style="flex:1;min-width:0;font-family:'JetBrains Mono', monospace;font-size:11px;color:#6a7c90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.fileName }}</span>
+                  <button type="button" onClick="{{ openLibrary }}" style="padding:10px 14px;border:1px solid rgba(24,159,224,.4);background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.08em;color:#189fe0;cursor:pointer;" style-hover="background:#189fe0;color:#ffffff;">CHOOSE</button>
+                </div>
+              </sc-if>
+            </label>
+          </sc-for>
+          <div style="height:1px;background:#e0e4e9;margin:4px 0;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <label style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;">Status</span>
+              <select defaultValue="{{ draftStatus }}" style="border:1px solid #dfe3e8;padding:13px 14px;background:#ffffff;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;color:#10141c;outline:none;">
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'JetBrains Mono', monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5a5d64;">Display order</span>
+              <input type="number" defaultValue="{{ draftOrder }}" style="border:1px solid #dfe3e8;padding:13px 14px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;color:#10141c;outline:none;" style-focus="border-color:#189fe0;">
+            </label>
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" defaultChecked="{{ draftActive }}" style="width:18px;height:18px;margin:0;accent-color:#189fe0;">
+            <span style="font-size:14px;color:#10141c;">Active on {{ siteSub }}</span>
+          </label>
+          <div style="flex:1;"></div>
+          <div style="position:sticky;bottom:-24px;margin:0 -28px -24px;padding:16px 28px;display:flex;gap:10px;background:#ffffff;border-top:1px solid #e0e4e9;">
+            <button type="button" onClick="{{ closeDrawer }}" style="min-height:44px;padding:0 20px;border:1px solid #cfd2d6;background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#3d4046;cursor:pointer;">CANCEL</button>
+            <button type="submit" style="flex:1;min-height:44px;border:none;background:#189fe0;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#ffffff;cursor:pointer;" style-hover="background:#0a2540;">SAVE CHANGES</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirmIngest }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div onClick="{{ cancelIngest }}" style="position:absolute;inset:0;background:rgba(3,9,26,.55);backdrop-filter:blur(3px);animation:fade 200ms ease both;"></div>
+      <div style="position:relative;width:min(440px,100%);padding:28px;background:#ffffff;box-shadow:0 18px 44px rgba(3,12,32,.34);animation:rise 280ms cubic-bezier(.22,1,.36,1) both;">
+        <div style="font-family:'JetBrains Mono', monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#5a5d64;margin-bottom:10px;">— Confirm</div>
+        <h3 style="margin:0;font-size:20px;font-weight:700;color:#10314f;">Re-ingest knowledge base?</h3>
+        <p style="margin:10px 0 22px;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;color:#55585f;">This replaces all of {{ siteLabel }}'s existing chatbot knowledge.</p>
+        <div style="display:flex;gap:10px;">
+          <button onClick="{{ cancelIngest }}" style="min-height:44px;padding:0 20px;border:1px solid #cfd2d6;background:#ffffff;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#3d4046;cursor:pointer;">CANCEL</button>
+          <button onClick="{{ runIngest }}" style="flex:1;min-height:44px;border:none;background:#189fe0;font-family:'JetBrains Mono', monospace;font-size:12px;letter-spacing:.1em;color:#ffffff;cursor:pointer;" style-hover="background:#0a2540;">RE-INGEST</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:28px;z-index:80;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;background:#0a2540;box-shadow:0 10px 34px rgba(10,37,64,.3);font-size:14px;color:#ffffff;animation:rise 260ms cubic-bezier(.22,1,.36,1) both;">
+      <span style="width:7px;height:7px;border-radius:50%;background:#00bbe4;"></span>{{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;sidebarTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const SITES = [
+  { code: 'en', label: 'English', sub: 'en.cmcglobal.com' },
+  { code: 'vi', label: 'Vietnam', sub: 'vn.cmcglobal.com' },
+  { code: 'ja', label: 'Japan', sub: 'jp.cmcglobal.com' },
+  { code: 'ko', label: 'Korea', sub: 'kr.cmcglobal.com' },
+  { code: 'de', label: 'Germany', sub: 'de.cmcglobal.com' }
+];
+const ACCESS = ['en', 'vi'];
+const IMG = 'website/public/images/';
+const BADGE = [{ label: 'Award', value: 'AWARD' }, { label: 'Certification', value: 'CERTIFICATION' }, { label: 'Partner', value: 'PARTNER' }];
+const f = (name, label, type, extra) => Object.assign({ name, label, type, showInTable: !['textarea', 'json', 'string-list', 'image'].includes(type) }, extra || {});
+const RESOURCES = [
+  { key: 'stats', label: 'Stats', titleField: 'label', fields: [f('value', 'Value', 'text', { required: true }), f('label', 'Label', 'text', { required: true }), f('note', 'Note', 'text')] },
+  { key: 'services', label: 'Services', titleField: 'name', fields: [f('name', 'Name', 'text', { required: true }), f('image', 'Service image', 'image')] },
+  { key: 'offices', label: 'Offices', titleField: 'city', fields: [f('city', 'City', 'text', { required: true }), f('address', 'Address', 'text', { required: true }), f('lat', 'Latitude', 'number', { required: true }), f('lon', 'Longitude', 'number', { required: true }), f('flagColor', 'Flag color', 'text', { required: true, showInTable: false }), f('big', 'Big marker', 'boolean'), f('image', 'Office photo', 'image')] },
+  { key: 'case-studies', label: 'Case Studies', titleField: 'title', fields: [f('title', 'Title', 'text', { required: true }), f('date', 'Date', 'text'), f('category', 'Category', 'text'), f('image', 'Image', 'image')] },
+  { key: 'posts', label: 'Posts', titleField: 'title', fields: [f('title', 'Title', 'text', { required: true }), f('category', 'Category', 'text'), f('date', 'Date', 'text'), f('image', 'Image', 'image'), f('excerpt', 'Excerpt', 'textarea')] },
+  { key: 'logo-badges', label: 'Logo Badges', titleField: 'name', typeFilter: BADGE, fields: [f('type', 'Type', 'select', { required: true, options: BADGE }), f('name', 'Name', 'text', { required: true }), f('logo', 'Logo', 'image', { required: true })] },
+  { key: 'testimonials', label: 'Testimonials', titleField: 'name', fields: [f('name', 'Name', 'text', { required: true }), f('company', 'Company', 'text'), f('title', 'Title', 'text'), f('photo', 'Photo', 'image'), f('quote', 'Quote', 'textarea'), f('flankLogos', 'Flank logos (JSON array of {name, color})', 'json')] },
+  { key: 'footer-nav-categories', label: 'Footer Nav Categories', titleField: 'label', fields: [f('label', 'Label', 'text', { required: true }), f('links', 'Links', 'string-list')] },
+  { key: 'banners', label: 'Banners', titleField: 'title', fields: [f('title', 'Title', 'text', { required: true }), f('body', 'Body', 'textarea'), f('image', 'Image', 'image'), f('ctaLabel', 'CTA label', 'text'), f('ctaUrl', 'CTA URL', 'text'), f('activeFrom', 'Active from', 'datetime'), f('activeUntil', 'Active until', 'datetime')] }
+];
+const P = (s, a, o) => ({ status: s, active: a, displayOrder: o });
+const DATA = {
+  stats: [
+    { id: 1, value: '30+', label: 'Years of experience', note: 'Since 1993', ...P('PUBLISHED', true, 0) },
+    { id: 2, value: '30+', label: 'Countries served', note: '', ...P('PUBLISHED', true, 1) },
+    { id: 3, value: '300+', label: 'Global clients', note: '', ...P('PUBLISHED', true, 2) },
+    { id: 4, value: '35+', label: 'Business partners', note: '', ...P('PUBLISHED', true, 3) },
+    { id: 5, value: '3500+', label: 'Employees', note: 'Group-wide', ...P('DRAFT', false, 4) }
+  ],
+  services: [
+    { id: 11, name: 'Software Engineering', image: IMG + 'services/software-engineering.jpg', ...P('PUBLISHED', true, 0) },
+    { id: 12, name: 'Data & AI Solutions', image: IMG + 'services/data-ai-solutions.jpg', ...P('PUBLISHED', true, 1) },
+    { id: 13, name: 'Digital & Cloud Solutions', image: IMG + 'services/digital-cloud-solutions.jpg', ...P('PUBLISHED', true, 2) },
+    { id: 14, name: 'Cybersecurity', image: IMG + 'services/cybersecurity.jpg', ...P('PUBLISHED', true, 3) },
+    { id: 15, name: 'AI & Digital Strategy', image: null, ...P('DRAFT', true, 4) },
+    { id: 16, name: 'Enterprise Solutions', image: null, ...P('DRAFT', false, 5) }
+  ],
+  offices: [
+    { id: 21, city: 'Hanoi', address: 'CMC Tower, Duy Tan, Cau Giay', lat: 21.03, lon: 105.78, flagColor: '#da251d', big: true, image: null, ...P('PUBLISHED', true, 0) },
+    { id: 22, city: 'Ho Chi Minh City', address: 'District 7', lat: 10.73, lon: 106.72, flagColor: '#da251d', big: false, image: null, ...P('PUBLISHED', true, 1) },
+    { id: 23, city: 'Tokyo', address: 'Minato-ku', lat: 35.66, lon: 139.75, flagColor: '#bc002d', big: false, image: null, ...P('PUBLISHED', true, 2) },
+    { id: 24, city: 'Seoul', address: 'Gangnam-gu', lat: 37.5, lon: 127.03, flagColor: '#0047a0', big: false, image: null, ...P('DRAFT', true, 3) }
+  ],
+  'case-studies': [
+    { id: 31, title: 'AI-driven energy forecasting', date: '2026-06', category: 'Data & AI', image: IMG + 'case-studies/cs-2-ai-energy.webp', ...P('PUBLISHED', true, 0) },
+    { id: 32, title: 'Smart assistant for retail banking', date: '2026-04', category: 'AI', image: IMG + 'case-studies/cs-3-smart-assistant.webp', ...P('PUBLISHED', true, 1) },
+    { id: 33, title: 'Marketplace platform modernization', date: '2026-02', category: 'Cloud', image: null, ...P('DRAFT', true, 2) }
+  ],
+  posts: [
+    { id: 41, title: 'CMC Global at the APEC digital workshop', category: 'Events', date: '2026-08-14', image: null, excerpt: '', ...P('PUBLISHED', true, 0) },
+    { id: 42, title: 'New partnership in New Zealand', category: 'News', date: '2026-07-02', image: null, excerpt: '', ...P('PUBLISHED', true, 1) }
+  ],
+  'logo-badges': [
+    { id: 51, type: 'CERTIFICATION', name: 'ISO/IEC 27001', logo: null, ...P('PUBLISHED', true, 0) },
+    { id: 52, type: 'CERTIFICATION', name: 'PCI DSS', logo: null, ...P('PUBLISHED', true, 1) },
+    { id: 53, type: 'PARTNER', name: 'AWS', logo: null, ...P('PUBLISHED', true, 2) },
+    { id: 54, type: 'PARTNER', name: 'Google Cloud', logo: null, ...P('PUBLISHED', true, 3) },
+    { id: 55, type: 'AWARD', name: 'Sao Khue 2026', logo: null, ...P('DRAFT', true, 4) }
+  ],
+  testimonials: [
+    { id: 61, name: 'Elena Rojas', company: 'Client company', title: 'CTO', photo: IMG + 'testimonials/elena-rojas.jpg', quote: '', flankLogos: '[]', ...P('PUBLISHED', true, 0) },
+    { id: 62, name: 'Jun Park', company: 'Client company', title: 'Head of Engineering', photo: IMG + 'testimonials/jun-park.jpg', quote: '', flankLogos: '[]', ...P('PUBLISHED', true, 1) }
+  ],
+  'footer-nav-categories': [
+    { id: 71, label: 'Services', links: 'Software Engineering, Data & AI, Cloud, Cybersecurity', ...P('PUBLISHED', true, 0) },
+    { id: 72, label: 'Company', links: 'About Us, Careers, News', ...P('PUBLISHED', true, 1) },
+    { id: 73, label: 'Resources', links: 'Case Studies, Insights', ...P('PUBLISHED', true, 2) }
+  ],
+  banners: [
+    { id: 81, title: 'Building Tomorrow', body: '', image: null, ctaLabel: 'Contact Us', ctaUrl: '#contact', activeFrom: '2026-09-01T00:00', activeUntil: '2026-12-31T23:59', ...P('PUBLISHED', true, 0) }
+  ]
+};
+const IMAGES = [
+  ['software-engineering.jpg', 'services/software-engineering.jpg', '138 KB'], ['data-ai-solutions.jpg', 'services/data-ai-solutions.jpg', '222 KB'],
+  ['digital-cloud-solutions.jpg', 'services/digital-cloud-solutions.jpg', '159 KB'], ['cybersecurity.jpg', 'services/cybersecurity.jpg', '145 KB'],
+  ['cs-2-ai-energy.webp', 'case-studies/cs-2-ai-energy.webp', '155 KB'], ['cs-3-smart-assistant.webp', 'case-studies/cs-3-smart-assistant.webp', '125 KB'],
+  ['elena-rojas.jpg', 'testimonials/elena-rojas.jpg', '18 KB'], ['jun-park.jpg', 'testimonials/jun-park.jpg', '23 KB']
+].map(([name, p, size]) => ({ name, src: IMG + p, size, ph: false }));
+
+class Component extends DCLogic {
+  state = { page: 'content:services', site: 'en', siteOpen: false, typeFilter: null, editing: null, drawer: false, confirmDel: null, deleted: {}, activeOverride: {}, mediaTab: 'images', uploads: 0, confirmIngest: false, ingestBusy: false, lastIngest: 'Sep 22, 2026', toast: null };
+  flash(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: null }), 2600); }
+  componentWillUnmount() { clearTimeout(this.tt); clearTimeout(this.it); }
+  renderVals() {
+    const s = this.state;
+    const dark = (this.props.sidebarTone ?? 'dark') === 'dark';
+    const compact = (this.props.density ?? 'comfortable') === 'compact';
+    const site = SITES.find(x => x.code === s.site);
+    const [kind, rkey] = s.page.split(':');
+    const res = RESOURCES.find(r => r.key === rkey) || RESOURCES[1];
+    const go = page => () => this.setState({ page, typeFilter: null, confirmDel: null, siteOpen: false });
+
+    const itemStyle = on => ({ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer', borderRadius: 8, padding: '9px 12px', fontFamily: 'inherit', fontSize: 14, fontWeight: on ? 600 : 500, background: on ? (dark ? 'rgba(255,255,255,.1)' : '#eaf4fb') : 'transparent', color: on ? (dark ? '#ffffff' : '#0a2540') : (dark ? '#c9d9ee' : '#3c4858'), transition: 'background .2s,color .2s' });
+    const numStyle = on => ({ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '.06em', width: 18, color: on ? (dark ? '#43a4ff' : '#189fe0') : (dark ? 'rgba(201,217,238,.55)' : '#9aa3ad') });
+    const mk = (key, label, i) => { const on = s.page === key; return { label, num: String(i + 1).padStart(2, '0'), go: go(key), style: itemStyle(on), numStyle: numStyle(on) }; };
+    const groupLabel = { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '.16em', textTransform: 'uppercase', padding: '0 12px 8px', color: dark ? 'rgba(201,217,238,.7)' : '#5a5d64' };
+    const navGroups = [
+      { label: 'Home Page', labelStyle: groupLabel, items: RESOURCES.map((r, i) => mk('content:' + r.key, r.label, i)) },
+      { label: 'Library', labelStyle: groupLabel, items: [mk('media', 'Media Library', 0), mk('assistant', 'Assistant', 1)] }
+    ];
+
+    let list = (DATA[res.key] || []).filter(r => !s.deleted[r.id]);
+    if (s.typeFilter) list = list.filter(r => r.type === s.typeFilter);
+    const imgField = res.fields.find(x => x.type === 'image');
+    const cols = res.fields.filter(x => x.showInTable && x.name !== res.titleField);
+    const pad = compact ? '8px 16px' : '14px 16px';
+    const rows = list.map(r => {
+      const active = s.activeOverride[r.id] ?? r.active;
+      const pub = r.status === 'PUBLISHED';
+      const conf = s.confirmDel === r.id;
+      return {
+        id: r.id, title: r[res.titleField],
+        hasImg: !!(imgField && r[imgField.name]), img: imgField ? r[imgField.name] : null, noImg: !!(imgField && !r[imgField.name]),
+        cells: cols.map(c => c.type === 'boolean' ? (r[c.name] ? 'Yes' : 'No') : c.type === 'select' ? ((c.options.find(o => o.value === r[c.name]) || {}).label || '') : String(r[c.name] ?? '—') || '—'),
+        status: pub ? 'PUBLISHED' : 'DRAFT', order: r.displayOrder,
+        cellStyle: { padding: pad, verticalAlign: 'middle' },
+        statusStyle: { display: 'inline-block', padding: '4px 10px', borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '.08em', background: pub ? 'rgba(24,159,224,.12)' : '#eef1f4', color: pub ? '#0b63c5' : '#5a5d64' },
+        trackStyle: { position: 'relative', width: 36, height: 20, borderRadius: 999, border: 'none', cursor: 'pointer', padding: 0, background: active ? '#189fe0' : '#cfd2d6', transition: 'background .2s' },
+        knobStyle: { position: 'absolute', top: 2, left: active ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#ffffff', boxShadow: '0 1px 3px rgba(10,37,64,.25)', transition: 'left .2s' },
+        toggleActive: () => this.setState(st => ({ activeOverride: { ...st.activeOverride, [r.id]: !active } })),
+        confirming: conf, idle: !conf,
+        askDelete: () => this.setState({ confirmDel: r.id }), cancelDelete: () => this.setState({ confirmDel: null }),
+        doDelete: () => { this.setState(st => ({ deleted: { ...st.deleted, [r.id]: true }, confirmDel: null })); this.flash('Deleted'); },
+        edit: () => this.setState({ editing: r, drawer: true })
+      };
+    });
+
+    const ed = s.editing;
+    const singular = res.label.replace(/ies$/, 'y').replace(/s$/, '');
+    const formFields = res.fields.map(x => {
+      const v = ed ? ed[x.name] : (x.type === 'boolean' ? false : '');
+      const val = x.type === 'json' && v && typeof v !== 'string' ? JSON.stringify(v, null, 2) : (v ?? '');
+      return {
+        label: x.label, req: x.required ? ' *' : '',
+        isInput: ['text', 'number', 'datetime', 'string-list'].includes(x.type), inputType: x.type === 'number' ? 'number' : x.type === 'datetime' ? 'datetime-local' : 'text',
+        isArea: x.type === 'textarea' || x.type === 'json', rows: x.type === 'json' ? 4 : 3,
+        areaStyle: { border: '1px solid #dfe3e8', padding: '13px 14px', resize: 'vertical', fontFamily: x.type === 'json' ? "'JetBrains Mono', monospace" : "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: x.type === 'json' ? 12 : 14, color: '#10141c', outline: 'none' },
+        isSelect: x.type === 'select', options: x.options || [],
+        isBool: x.type === 'boolean', checked: !!v,
+        isImage: x.type === 'image', noValue: x.type === 'image' && !v, fileName: v ? String(v).split('/').pop() : 'No image selected',
+        value: x.type === 'image' ? (v || '') : val
+      };
+    });
+
+    const vids = [
+      { name: 'brand-film-2026.mp4', status: 'DONE', meta: '1080p · 2:14', stripe: 'repeating-linear-gradient(135deg, #061225 0 6px, #0b1a2f 6px 12px)' },
+      { name: 'office-tour-hanoi.mp4', status: 'TRANSCODING', meta: 'Queued 3 min ago', stripe: 'repeating-linear-gradient(135deg, #123a5c 0 8px, #17496f 8px 16px)' },
+      { name: 'client-story.mov', status: 'FAILED', meta: 'Unsupported codec', stripe: 'repeating-linear-gradient(135deg, #3a1c0c 0 6px, #5c2f12 6px 12px)' }
+    ].map(v => ({ ...v, thumbStyle: { position: 'relative', aspectRatio: '16/9', background: v.stripe }, badgeStyle: { position: 'absolute', top: 10, right: 10, padding: '4px 10px', borderRadius: 999, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '.08em', background: v.status === 'DONE' ? '#ffffff' : v.status === 'FAILED' ? '#ffe1e1' : 'rgba(255,255,255,.18)', color: v.status === 'DONE' ? '#0b63c5' : v.status === 'FAILED' ? '#a8071a' : '#ffffff' } }));
+    const uploads = Array.from({ length: s.uploads }, (_, i) => ({ name: 'upload-' + (i + 1) + '.jpg', src: null, ph: true, size: '—' }));
+    const tab = on => ({ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 16px', marginBottom: -1, border: 'none', borderBottom: on ? '2px solid #189fe0' : '2px solid transparent', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, color: on ? '#10314f' : '#6a7c90' });
+    const isImg = s.mediaTab === 'images';
+
+    const chip = on => ({ border: 'none', borderRadius: 999, padding: '8px 14px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, background: on ? '#0a2540' : 'transparent', color: on ? '#ffffff' : '#3c4858' });
+
+    return {
+      sideStyle: { width: 248, flex: 'none', position: 'sticky', top: 0, height: '100vh', display: 'flex', flexDirection: 'column', background: dark ? 'linear-gradient(180deg, #03091a, #04102a 60%, #061634)' : '#ffffff', borderRight: dark ? 'none' : '1px solid #e0e4e9' },
+      logoStyle: { height: 24, width: 'auto', filter: dark ? 'brightness(0) invert(1)' : 'none' },
+      cmsTagStyle: { fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '.12em', padding: '3px 8px', borderRadius: 999, border: dark ? '1px solid rgba(255,255,255,.28)' : '1px solid #dceaf5', color: dark ? '#c9d9ee' : '#189fe0' },
+      userBoxStyle: { display: 'flex', alignItems: 'center', gap: 10, margin: 12, padding: 12, borderRadius: 10, border: dark ? '1px solid rgba(255,255,255,.18)' : '1px solid #e0e4e9', background: dark ? 'rgba(255,255,255,.05)' : '#f6f9fc' },
+      userNameStyle: { fontSize: 13, fontWeight: 600, color: dark ? '#ffffff' : '#10314f' },
+      userRoleStyle: { fontSize: 11.5, color: dark ? '#c9d9ee' : '#6a7c90', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+      logoutStyle: { fontSize: 12, fontWeight: 600, color: dark ? '#8fd0ff' : '#189fe0' },
+      navGroups,
+      crumbGroup: kind === 'content' ? 'Home Page' : 'Library',
+      pageTitle: kind === 'content' ? res.label : kind === 'media' ? 'Media Library' : 'Assistant',
+      siteLabel: site.label, siteCode: site.code, siteCodeUp: site.code.toUpperCase(), siteSub: site.sub, siteOpen: s.siteOpen,
+      toggleSite: () => this.setState(st => ({ siteOpen: !st.siteOpen })),
+      siteOptions: SITES.map(x => { const ok = ACCESS.includes(x.code); const on = x.code === s.site; return { codeUp: x.code.toUpperCase(), label: x.label, note: ok ? (on ? 'Editing' : '') : 'No access', disabled: !ok, pick: () => { this.setState({ site: x.code, siteOpen: false }); this.flash('Now editing ' + x.label); }, style: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', border: 'none', borderRadius: 8, cursor: ok ? 'pointer' : 'not-allowed', fontFamily: 'inherit', fontSize: 14, background: on ? '#eaf4fb' : 'transparent', color: ok ? '#10314f' : '#9aa3ad' } }; }),
+      preview: () => this.flash('Preview opened for ' + site.sub),
+      isContent: kind === 'content', isMedia: kind === 'media', isAssistant: kind === 'assistant',
+      rowCount: list.length, publishedCount: list.filter(r => r.status === 'PUBLISHED').length,
+      hasTypeFilter: !!res.typeFilter,
+      typeChips: [{ label: 'All', value: null }, ...(res.typeFilter || [])].map(o => ({ label: o.label, style: chip(s.typeFilter === o.value), pick: () => this.setState({ typeFilter: o.value }) })),
+      singularUp: singular.toUpperCase(),
+      titleLabel: (res.fields.find(x => x.name === res.titleField) || {}).label || 'Title',
+      columns: cols.map(c => c.label), rows, noRows: rows.length === 0,
+      openCreate: () => this.setState({ editing: null, drawer: true }),
+      drawerOpen: s.drawer, drawerEyebrow: ed ? 'Edit · ID ' + ed.id : 'New · ' + site.label,
+      drawerTitle: ed ? ed[res.titleField] : 'New ' + singular.toLowerCase(),
+      formFields, draftStatus: ed ? ed.status : 'DRAFT', draftOrder: ed ? ed.displayOrder : 0, draftActive: ed ? (s.activeOverride[ed.id] ?? ed.active) : true,
+      closeDrawer: () => this.setState({ drawer: false }),
+      save: e => { e.preventDefault(); this.setState({ drawer: false }); this.flash(ed ? 'Updated' : 'Created'); },
+      openLibrary: () => this.flash('Media picker would open here'),
+      tabImages: () => this.setState({ mediaTab: 'images' }), tabVideos: () => this.setState({ mediaTab: 'videos' }),
+      tabImgStyle: tab(isImg), tabVidStyle: tab(!isImg), showImages: isImg, showVideos: !isImg,
+      imgCount: IMAGES.length + s.uploads, vidCount: vids.length,
+      mediaNoun: isImg ? 'images' : 'videos', mediaNounUp: isImg ? 'IMAGE' : 'VIDEO',
+      mediaHint: isImg ? 'JPG · PNG · WEBP · SVG — FILE TYPE VERIFIED BY CONTENT' : 'MP4 · MOV — TRANSCODED TO HLS AFTER UPLOAD',
+      fakeUpload: () => { if (isImg) this.setState(st => ({ uploads: st.uploads + 1 })); this.flash(isImg ? 'Image uploaded' : 'Video queued for transcoding'); },
+      images: [...uploads, ...IMAGES], videos: vids,
+      ingestIdle: !s.ingestBusy, ingestBusy: s.ingestBusy, confirmIngest: s.confirmIngest,
+      askIngest: () => this.setState({ confirmIngest: true }), cancelIngest: () => this.setState({ confirmIngest: false }),
+      runIngest: () => { this.setState({ confirmIngest: false, ingestBusy: true }); this.it = setTimeout(() => { this.setState({ ingestBusy: false, lastIngest: 'Just now' }); this.flash('Ingested 14 documents for ' + site.label + '.'); }, 1800); },
+      kbStats: [{ v: '14', l: 'Documents' }, { v: '1,286', l: 'Chunks' }, { v: s.lastIngest, l: 'Last ingest' }, { v: 'assistant_' + site.code, l: 'Collection' }],
+      docs: [{ name: 'company-overview.md', meta: '4.2 KB · Sep 18' }, { name: 'services.md', meta: '9.8 KB · Sep 18' }, { name: 'case-studies.md', meta: '12.1 KB · Sep 12' }, { name: 'offices-and-contact.md', meta: '2.6 KB · Aug 30' }],
+      toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
