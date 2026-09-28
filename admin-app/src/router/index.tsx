@@ -8,6 +8,8 @@ import Callback from "../pages/Callback";
 import ContentPage from "../pages/ContentPage";
 import MediaLibraryPage from "../pages/MediaLibraryPage";
 import AssistantPage from "../pages/AssistantPage";
+import PostEditorPage from "../pages/PostEditorPage";
+import CaseStudyEditorPage from "../pages/CaseStudyEditorPage";
 import { RESOURCES } from "../config/resources";
 
 export default function AppRouter() {
@@ -27,6 +29,8 @@ export default function AppRouter() {
             >
               <Route index element={<Navigate to={`/content/${RESOURCES[0].key}`} replace />} />
               <Route path="/content/:resourceKey" element={<ContentPage />} />
+              <Route path="/posts/:id" element={<PostEditorPage />} />
+              <Route path="/case-studies/:id" element={<CaseStudyEditorPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />
               <Route path="/assistant" element={<AssistantPage />} />
             </Route>

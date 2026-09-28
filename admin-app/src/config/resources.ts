@@ -41,6 +41,10 @@ export interface ResourceConfig {
   fields: FieldConfig[];
   supportsTypeFilter?: boolean;
   typeFilterOptions?: FieldOption[];
+  /** Present => this resource has a dedicated editor route (rich body, slug, etc.) instead of the
+   * generic drawer form; ContentPage navigates here on row-click/"New" rather than opening the
+   * drawer. `id` is the row id, or "new" for create. */
+  editorRoute?: (id: number | "new") => string;
 }
 
 const scalarDefault = (type: FieldType) =>
@@ -92,6 +96,7 @@ export const RESOURCES: ResourceConfig[] = [
     label: "Case Studies",
     apiPath: "/v1/admin/case-studies",
     titleField: "title",
+    editorRoute: (id) => `/case-studies/${id}`,
     fields: [
       field({ name: "title", label: "Title", type: "text", required: true }),
       field({ name: "date", label: "Date", type: "text" }),
@@ -104,6 +109,7 @@ export const RESOURCES: ResourceConfig[] = [
     label: "Posts",
     apiPath: "/v1/admin/posts",
     titleField: "title",
+    editorRoute: (id) => `/posts/${id}`,
     fields: [
       field({ name: "title", label: "Title", type: "text", required: true }),
       field({ name: "category", label: "Category", type: "text" }),
