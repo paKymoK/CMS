@@ -4,5 +4,41 @@
   },
   "footer": {
     "copyright": "Copyright ©{year} CMC Global. All rights reserved."
+  },
+  "insights": {
+    "home": "Home",
+    "eyebrow": "Insights",
+    "insightBadge": "Insight",
+    "titleLead": "Ideas from the teams",
+    "titleHighlight": "building it",
+    "subtitle": "Perspectives on AI, cloud and software delivery from CMC Global engineers, advisors and partners.",
+    "searchPlaceholder": "Search insights",
+    "topics": "Topics",
+    "allTopics": "All",
+    "eventPhotography": "Event photography",
+    "featuredBadge": "Featured",
+    "minRead": "min read",
+    "min": "min",
+    "results": "Results",
+    "latest": "Latest",
+    "article": "article",
+    "articles": "articles",
+    "noMatches": "No matches",
+    "noMatchesBody": "No insights match your search.",
+    "clearFilters": "Clear filters",
+    "onThisPage": "On this page",
+    "share": "Share",
+    "keepReading": "Keep reading",
+    "relatedInsights": "Related insights",
+    "viewAllInsights": "View all insights"
+  },
+  "caseStudies": {
+    "home": "Home",
+    "eyebrow": "Case Studies",
+    "eventPhotography": "Event photography",
+    "discussProject": "Discuss a similar project",
+    "results": "Results",
+    "moreWork": "More work",
+    "relatedCaseStudies": "Related case studies"
   }
 }
