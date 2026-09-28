@@ -1,5 +1,6 @@
 package com.takypok.contentservice.model.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.core.model.IdEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,5 +22,16 @@ public class Post extends IdEntity {
   private Integer displayOrder;
   private Boolean active;
   private String status;
+  private String slug;
+  private String body;
+  private String authorName;
+  private String authorRole;
+  private String authorBio;
+  private String authorAvatar;
+
+  /** ["ai-governance","events"] */
+  private JsonNode tags;
+
+  private Boolean featured;
   @Version private Integer version;
 }

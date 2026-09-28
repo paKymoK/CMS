@@ -9,3 +9,5 @@ databaseChangeLog:
       file: db/changelog/init/seed-content-types.sql
   - include:
       file: db/changelog/init/add-preview-token-table.sql
+  - include:
+      file: db/changelog/init/add-post-case-study-detail-fields.sql

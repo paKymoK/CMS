@@ -3,6 +3,7 @@ package com.takypok.contentservice.service;
 import com.takypok.contentservice.model.entity.CaseStudy;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
 import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
+import com.takypok.contentservice.model.response.CaseStudyDetailResponse;
 import java.util.List;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,4 +20,6 @@ public interface CaseStudyService {
   Mono<Void> delete(Long id, Long siteId);
 
   Flux<CaseStudy> getPublished(Long siteId);
+
+  Mono<CaseStudyDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
 }

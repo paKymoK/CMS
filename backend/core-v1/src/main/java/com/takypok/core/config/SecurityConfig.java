@@ -76,6 +76,15 @@ public class SecurityConfig {
                     // still falls through to .authenticated() below.
                     .pathMatchers(HttpMethod.GET, "/v1/home/**")
                     .permitAll()
+                    // content-service's public Insights listing + Post/Case Study detail pages —
+                    // same Host-header site resolution as /v1/home above (see PublicPostController/
+                    // PublicCaseStudyController). /v1/admin/posts and /v1/admin/case-studies are
+                    // different path prefixes, untouched by this, and still fall through to
+                    // .authenticated() below.
+                    .pathMatchers(HttpMethod.GET, "/v1/posts", "/v1/posts/**")
+                    .permitAll()
+                    .pathMatchers(HttpMethod.GET, "/v1/case-studies/**")
+                    .permitAll()
                     // chat-service's public marketing assistant — anonymous site visitors,
                     // IP-rate-limited in PublicAssistantController itself. /v1/assistant/ingest
                     // is untouched by this and still falls through to .authenticated() below.

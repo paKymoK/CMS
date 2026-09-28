@@ -1,5 +1,6 @@
 package com.takypok.contentservice.model.request;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,4 +15,9 @@ public class CaseStudyCreateRequest {
   private Integer displayOrder;
   private Boolean active;
   private String status;
+  private String slug;
+  private String body;
+  private String summary;
+  private JsonNode results;
+  private Long testimonialId;
 }

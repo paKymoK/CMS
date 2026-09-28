@@ -12,4 +12,11 @@ public interface PostRepository extends R2dbcRepository<Post, Long> {
       Long siteId, String status, Boolean active);
 
   Mono<Post> findByIdAndSiteId(Long id, Long siteId);
+
+  Mono<Post> findBySiteIdAndSlugAndStatusAndActive(
+      Long siteId, String slug, String status, Boolean active);
+
+  Mono<Boolean> existsBySiteIdAndSlug(Long siteId, String slug);
+
+  Mono<Boolean> existsBySiteIdAndSlugAndIdNot(Long siteId, String slug, Long id);
 }
