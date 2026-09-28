@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Button, Spin, Empty, message, Popconfirm, Tabs } from "antd";
-import { UploadOutlined, DeleteOutlined } from "@ant-design/icons";
+import { InboxOutlined, DeleteOutlined } from "@ant-design/icons";
 import Hls from "hls.js";
-import { useEffect, useRef } from "react";
 import { useSite } from "../lib/useSite";
+import { siteLabel } from "../config/sites";
 import { mediaApi } from "../lib/api";
 import {
   listImages,
@@ -16,6 +16,13 @@ import {
   type UploadFile,
   type VideoJob,
 } from "../lib/mediaClient";
+
+const STATUS_STYLE: Record<VideoJob["status"], { bg: string; color: string; label: string }> = {
+  DONE: { bg: "#ffffff", color: "#0b63c5", label: "DONE" },
+  FAILED: { bg: "#ffe1e1", color: "#a8071a", label: "FAILED" },
+  QUEUED: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "QUEUED" },
+  PROCESSING: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "PROCESSING" },
+};
 
 function VideoThumb({ src }: { src: string }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -30,7 +37,63 @@ function VideoThumb({ src }: { src: string }) {
     }
     video.src = src;
   }, [src]);
-  return <video ref={ref} muted controls className="w-full h-32 object-cover rounded" />;
+  return <video ref={ref} muted controls style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover", display: "block" }} />;
+}
+
+function Dropzone({
+  noun,
+  hint,
+  accept,
+  onFile,
+}: {
+  noun: string;
+  hint: string;
+  accept: string;
+  onFile: (file: File) => unknown;
+}) {
+  return (
+    <Upload.Dragger
+      accept={accept}
+      showUploadList={false}
+      beforeUpload={(file) => {
+        onFile(file);
+        return false;
+      }}
+      style={{
+        marginBottom: 24,
+        padding: 0,
+        border: "1px dashed #b9c6d3",
+        background: "linear-gradient(#f2f7fd,#e7f0fa)",
+        borderRadius: 0,
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 px-2 py-1">
+        <div className="flex items-center gap-3">
+          <InboxOutlined style={{ fontSize: 22, color: "#189fe0" }} />
+          <div className="text-left">
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#10314f" }}>
+              Drop {noun} here, or browse
+            </div>
+            <div className="cms-eyebrow mt-1" style={{ fontSize: 10 }}>
+              {hint}
+            </div>
+          </div>
+        </div>
+        <span
+          style={{
+            padding: "12px 20px",
+            background: "#189fe0",
+            fontFamily: "var(--font-mono)",
+            fontSize: 12,
+            letterSpacing: ".1em",
+            color: "#ffffff",
+          }}
+        >
+          UPLOAD {noun.slice(0, -1).toUpperCase()}
+        </span>
+      </div>
+    </Upload.Dragger>
+  );
 }
 
 export default function MediaLibraryPage() {
@@ -60,7 +123,7 @@ export default function MediaLibraryPage() {
   });
 
   const handleUploadImage = async (file: File) => {
-    if (!site) return false;
+    if (!site) return false as const;
     try {
       await uploadImage(site, file);
       message.success("Image uploaded");
@@ -68,11 +131,11 @@ export default function MediaLibraryPage() {
     } catch {
       message.error("Upload failed");
     }
-    return false;
+    return false as const;
   };
 
   const handleUploadVideo = async (file: File) => {
-    if (!site) return false;
+    if (!site) return false as const;
     try {
       await uploadVideo(site, file);
       message.success("Video queued for transcoding");
@@ -83,26 +146,42 @@ export default function MediaLibraryPage() {
     } catch {
       message.error("Upload failed");
     }
-    return false;
+    return false as const;
   };
 
   const imagesPanel = (
     <div>
-      <Upload beforeUpload={handleUploadImage} showUploadList={false} accept="image/*">
-        <Button icon={<UploadOutlined />} className="mb-4">
-          Upload image
-        </Button>
-      </Upload>
+      <Dropzone
+        noun="images"
+        hint="JPG · PNG · WEBP · SVG — FILE TYPE VERIFIED BY CONTENT"
+        accept="image/*"
+        onFile={handleUploadImage}
+      />
       {imagesQuery.isLoading ? (
         <Spin />
       ) : !imagesQuery.data?.length ? (
         <Empty description="No images yet for this site" />
       ) : (
-        <div className="grid grid-cols-6 gap-3">
+        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
           {imagesQuery.data.map((file: UploadFile) => (
-            <div key={file.id} className="border border-gray-200 rounded overflow-hidden">
-              <img src={imageUrl(file)} alt={file.name} className="w-full h-24 object-cover" />
-              <div className="text-xs text-gray-500 truncate px-1 py-0.5">{file.name}</div>
+            <div key={file.id} className="flex flex-col gap-2">
+              <img
+                src={imageUrl(file)}
+                alt={file.name}
+                style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }}
+              />
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  color: "#3d4046",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {file.name}
+              </span>
             </div>
           ))}
         </div>
@@ -112,36 +191,68 @@ export default function MediaLibraryPage() {
 
   const videosPanel = (
     <div>
-      <Upload beforeUpload={handleUploadVideo} showUploadList={false} accept="video/*">
-        <Button icon={<UploadOutlined />} className="mb-4">
-          Upload video
-        </Button>
-      </Upload>
+      <Dropzone
+        noun="videos"
+        hint="MP4 · MOV — TRANSCODED TO HLS AFTER UPLOAD"
+        accept="video/*"
+        onFile={handleUploadVideo}
+      />
       {videosQuery.isLoading ? (
         <Spin />
       ) : !videosQuery.data?.length ? (
         <Empty description="No videos yet for this site" />
       ) : (
-        <div className="grid grid-cols-4 gap-3">
-          {videosQuery.data.map((job: VideoJob) => (
-            <div key={job.jobId} className="border border-gray-200 rounded p-1">
-              {job.status === "DONE" ? (
-                <VideoThumb src={videoPlaybackUrl(job)} />
-              ) : (
-                <div className="h-32 flex items-center justify-center text-xs text-gray-500">
-                  {job.status === "FAILED" ? "Transcode failed" : job.status}
+        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+          {videosQuery.data.map((job: VideoJob) => {
+            const badge = STATUS_STYLE[job.status];
+            return (
+              <div key={job.jobId} style={{ border: "1px solid #e0e4e9", background: "#ffffff" }}>
+                {job.status === "DONE" ? (
+                  <VideoThumb src={videoPlaybackUrl(job)} />
+                ) : (
+                  <div
+                    style={{
+                      position: "relative",
+                      aspectRatio: "16/9",
+                      background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 10,
+                        letterSpacing: ".08em",
+                        background: badge.bg,
+                        color: badge.color,
+                      }}
+                    >
+                      {job.status === "FAILED" ? job.errorMessage ?? badge.label : badge.label}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-4 px-3.5 py-3">
+                  <span style={{ fontSize: 13, color: "#55585f" }}>
+                    {new Date(job.createdAt).toLocaleDateString()}
+                  </span>
+                  <Popconfirm title="Delete this video?" onConfirm={() => deleteVideoMutation.mutate(job.videoId)}>
+                    <Button
+                      size="small"
+                      danger
+                      icon={<DeleteOutlined />}
+                      style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
+                    >
+                      DELETE
+                    </Button>
+                  </Popconfirm>
                 </div>
-              )}
-              <Popconfirm
-                title="Delete this video?"
-                onConfirm={() => deleteVideoMutation.mutate(job.videoId)}
-              >
-                <Button size="small" danger icon={<DeleteOutlined />} className="mt-1 w-full">
-                  Delete
-                </Button>
-              </Popconfirm>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -149,13 +260,38 @@ export default function MediaLibraryPage() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Media Library</h2>
+      <div className="cms-eyebrow mb-3">— Library · {site ? siteLabel(site) : ""}</div>
+      <h1 className="mt-0 mb-5" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#10314f" }}>
+        Media Library
+      </h1>
       <Tabs
         activeKey={tab}
         onChange={setTab}
         items={[
-          { key: "images", label: "Images", children: imagesPanel },
-          { key: "videos", label: "Videos", children: videosPanel },
+          {
+            key: "images",
+            label: (
+              <span className="flex items-center gap-2">
+                Images
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9aa3ad" }}>
+                  {imagesQuery.data?.length ?? 0}
+                </span>
+              </span>
+            ),
+            children: imagesPanel,
+          },
+          {
+            key: "videos",
+            label: (
+              <span className="flex items-center gap-2">
+                Videos
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9aa3ad" }}>
+                  {videosQuery.data?.length ?? 0}
+                </span>
+              </span>
+            ),
+            children: videosPanel,
+          },
         ]}
       />
     </div>

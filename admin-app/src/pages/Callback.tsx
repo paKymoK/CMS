@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Alert, Button, Card, Spin, Typography } from "antd";
+import { Button } from "antd";
 import { useAuth } from "../auth/useAuth";
 
-const { Title } = Typography;
+const heroBg = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "24px 20px",
+  background: "linear-gradient(180deg, #03091a, #04102a, #061634)",
+  fontFamily: "Montserrat, Arial, Helvetica, sans-serif",
+};
 
 export default function Callback() {
   const [searchParams] = useSearchParams();
@@ -56,21 +64,69 @@ export default function Callback() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md text-center shadow-md">
-          <Title level={3}>Authentication Error</Title>
-          <Alert message={error} type="error" showIcon className="mb-4" />
-          <Button type="primary" onClick={() => (window.location.href = "/login")}>
-            Back to Login
+      <div style={heroBg}>
+        <div style={{ width: "100%", maxWidth: 420, textAlign: "center" }}>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "#ffffff" }}>
+            Authentication error
+          </h1>
+          <div
+            style={{
+              margin: "16px 0",
+              textAlign: "left",
+              borderRadius: 10,
+              padding: "12px 16px",
+              fontSize: 13,
+              lineHeight: 1.5,
+              background: "rgba(255,120,120,.14)",
+              border: "1px solid rgba(255,150,150,.4)",
+              color: "#ffd9d9",
+            }}
+          >
+            {error}
+          </div>
+          <Button
+            onClick={() => (window.location.href = "/login")}
+            style={{
+              border: "none",
+              borderRadius: 999,
+              background: "#ffffff",
+              padding: "0 26px",
+              height: 44,
+              fontWeight: 600,
+              color: "#0d2b52",
+            }}
+          >
+            Back to login
           </Button>
-        </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <Spin size="large" />
+    <div style={heroBg}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 18 }}>
+          {[0, 0.16, 0.32].map((delay) => (
+            <span
+              key={delay}
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#ffffff",
+                animation: `cms-dotpulse 1.2s ease-in-out ${delay}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "#ffffff" }}>
+          Redirecting to CMS Admin…
+        </h1>
+        <p style={{ margin: "10px 0 0", fontSize: 14, color: "#c9d9ee" }}>
+          Exchanging authorization code
+        </p>
+      </div>
     </div>
   );
 }
