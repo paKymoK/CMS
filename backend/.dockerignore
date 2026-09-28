@@ -1,0 +1,25 @@
+# Build context is this "backend" directory for every service's Dockerfile
+# (each docker-compose.yml sets `build.context: ..`).
+
+.git
+**/build/
+**/.gradle/
+**/*.md
+
+# Never needed inside an image; deploy config, not app code.
+**/.env
+**/.env.*
+**/docker-compose*.yml
+**/docker-compose*.yaml
+**/Dockerfile
+
+# `infrastructure` here is dual-purpose: a Gradle module (source, copied into every
+# image build) AND a home for unrelated standalone ops compose stacks. Only the
+# Gradle module is needed to compile — exclude the ops subfolders so they're never
+# sent as build context or copied into an image.
+infrastructure/monitor/
+infrastructure/alloy/
+infrastructure/redis/
+infrastructure/minio/
+infrastructure/postgres/
+infrastructure/ldap-local/

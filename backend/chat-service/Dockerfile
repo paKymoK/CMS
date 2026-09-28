@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM gradle:8.14.3-jdk21-alpine AS builder
 WORKDIR /app
 
@@ -9,10 +10,15 @@ COPY infrastructure infrastructure
 COPY core-v1 core-v1
 COPY chat-service chat-service
 
-RUN gradle :chat-service:bootJar -x test --no-daemon
+RUN --mount=type=cache,target=/home/gradle/.gradle,id=gradle-cache-shared,sharing=locked \
+    gradle :chat-service:bootJar -x test --no-daemon --build-cache
 
-FROM eclipse-temurin:21-jre-jammy
+FROM amazoncorretto:21-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 
 COPY --from=builder /app/chat-service/build/libs/*.jar app.jar
+USER spring
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
+    CMD wget -qO- http://localhost:8083/actuator/health | grep -q '"status":"UP"' || exit 1
 ENTRYPOINT ["java", "-jar", "app.jar"]

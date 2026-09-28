@@ -1,0 +1,27 @@
+services:
+  discovery-service:
+    build:
+      context: ..
+      dockerfile: discovery-service/Dockerfile
+    image: takypok/discovery-service
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    # No environment block: discovery-service's application.yaml hardcodes its OTLP
+    # tracing endpoint (http://localhost:4318/v1/traces) rather than reading it from an
+    # env var like every other service does — out of scope for this pass, left as-is.
+    networks:
+      - takypok_default
+    logging:
+      driver: json-file
+      options:
+        max-size: "500m"
+        max-file: "1"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true

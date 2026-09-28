@@ -12,20 +12,24 @@ services:
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
       DB_SCHEMA: authentication
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
       LDAP_URL: ${LDAP_URL:-ldap://host.docker.internal:389}
-      LDAP_BASE: dc=mycompany,dc=local
-      LDAP_USERNAME: cn=admin,dc=mycompany,dc=local
-      LDAP_PASSWORD: admin_secret
-      LDAP_USER_SEARCH_BASE: ou=users
-      LDAP_USER_SEARCH_FILTER: "(cn={0})"
+      LDAP_BASE: ${LDAP_BASE:-dc=mycompany,dc=local}
+      LDAP_USERNAME: ${LDAP_USERNAME:-cn=admin,dc=mycompany,dc=local}
+      LDAP_PASSWORD: ${LDAP_PASSWORD:-admin_secret}
+      LDAP_USER_SEARCH_BASE: ${LDAP_USER_SEARCH_BASE:-ou=users}
+      LDAP_USER_SEARCH_FILTER: ${LDAP_USER_SEARCH_FILTER:-(cn={0})}
       MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # discovery-service isn't defined in this file — this depends_on only resolves when
+    # this file is passed to compose alongside discovery-service's own, e.g.:
+    #   docker compose -f ../discovery-service/docker-compose.yml -f docker-compose.yml up -d
+    # Running `docker compose up` from this directory alone fails validation.
     depends_on:
       discovery-service:
         condition: service_healthy

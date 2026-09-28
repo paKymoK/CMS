@@ -365,3 +365,112 @@ later app boot that didn't know about the manual run) — doubled every seeded
 content row. Not a bug in this feature; a one-time side effect of that earlier
 verification method. Deduplicated in the local DB; `databasechangelog` is now
 correctly populated so this specific duplication can't recur.
+
+## HTTPS for `auth-service` — planned, not yet implemented
+
+### Context
+Production needs `auth-service` reachable over HTTPS; it currently only serves
+plain HTTP on `:9000`. It's not like the other backend services: admin-app's
+browser-based PKCE flow (`admin-app/src/auth/pkce.ts`, `VITE_AUTH_SERVER`)
+talks to `auth-service` **directly from the browser** (`/login`,
+`/oauth2/authorize`, `/oauth2/token`, `/connect/logout`), bypassing
+`gateway-service` entirely — a deliberate existing split (`VITE_BASE_URL` for
+content/media/chat via the gateway, `VITE_AUTH_SERVER` separate). So
+`auth-service` uniquely needs its own public HTTPS origin; the other services
+validate JWTs against it server-to-server over the private network and can
+stay plain HTTP (per their `.env.example` comments: "production: auth-service
+VPS's private IP").
+
+Deploy topology confirmed with the user: **HAProxy** in front of internal
+service-to-service traffic (private network, unaffected by any of this), and
+**Cloudflare** in front of whatever's public.
+
+### Decision: Caddy reverse proxy in front of `auth-service`, production-only
+Rejected two alternatives:
+- **Spring Boot's own `server.ssl.*`/keystore** — means hand-managing a
+  PKCS12 keystore and Let's Encrypt renewal inside the app; no benefit to
+  local dev (nobody wants a self-signed-cert prompt for `localhost:9000`).
+  Caddy's automatic HTTPS needs a ~5-line Caddyfile and handles issuance,
+  renewal, and HTTP→HTTPS redirect on its own.
+- **Route `auth-service` through `gateway-service`** instead of giving it its
+  own edge — rejected. Doesn't avoid needing a TLS terminator anyway (gateway
+  has none either, so Caddy would just move in front of gateway instead).
+  Makes gateway a single point of failure for login platform-wide (today
+  auth is reachable independently of gateway). Collides gateway's blunt
+  per-IP `RequestRateLimiter` (shared across every route) with
+  `auth-service`'s purpose-built IP+username lockout. Adds OIDC
+  issuer/path-prefix fragility (Spring Authorization Server builds absolute
+  URLs — discovery doc, `token_endpoint`, `redirect_uri` validation — from
+  the request it sees) and a new cookie/CORS namespace shared with every
+  other service. No offsetting benefit.
+
+Local dev is untouched either way — `./gradlew :auth-service:bootRun` or the
+plain `docker-compose.yml`, `http://localhost:9000`, no cert, nothing new to
+install.
+
+### Design
+
+1. **`backend/auth-service/Caddyfile`** (new):
+   ```
+   {$AUTH_PUBLIC_DOMAIN} {
+       reverse_proxy auth-service:9000
+   }
+   ```
+2. **`backend/auth-service/docker-compose.prod.yml`** (new override, used as
+   `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`) —
+   adds a `caddy` service (80/443 + cert volume), removes `auth-service`'s own
+   public `9000:9000` mapping so Caddy is the sole path in. Base
+   `docker-compose.yml` stays as-is for local dev.
+3. **`application.yaml`** — add `server.forward-headers-strategy: framework`
+   under `server:`, so Spring trusts `X-Forwarded-Proto`/`Host`/`Port` from
+   the (now sole, trusted) reverse proxy — correct `Secure` cookie flag and
+   correct scheme/host in generated OIDC URLs. No-op locally (nothing forwards
+   headers there).
+4. **`.env.example`** — document `AUTH_PUBLIC_DOMAIN`
+   (e.g. `auth.cmcglobal.com`) and note `AUTH_ISSUER_URI` must be the matching
+   `https://` value in production.
+5. No changes needed in `content-service`/`media-service`/`chat-service`.
+
+**Cloudflare-specific additions** (surfaced once the user described the real
+deploy topology):
+- Cloudflare SSL/TLS mode must be **Full (strict)**, not Flexible — Flexible
+  leaves the Cloudflare-edge-to-origin hop (including login POST bodies and
+  session cookies) unencrypted. Full (strict) needs a real cert on the
+  origin, which Caddy provides (or a Cloudflare Origin CA cert, served
+  statically by Caddy instead of via ACME).
+- Use Caddy's `caddy-dns/cloudflare` plugin for a **DNS-01** challenge
+  instead of HTTP-01 — avoids HTTP-01 conflicting with Cloudflare's
+  proxying/redirect behavior on port 80, and lets port 80 stay closed on the
+  origin entirely.
+- Configure Caddy's `trusted_proxies` with Cloudflare's published IP ranges,
+  so `X-Forwarded-For` is rewritten to the real client IP (not Cloudflare's
+  PoP IP) before reaching `auth-service` — required for the IP-keyed lockout
+  to key off the real client rather than Cloudflare.
+- Firewall the VPS so `auth-service`'s public listener only accepts
+  connections from Cloudflare's IP ranges — otherwise someone can bypass
+  Cloudflare, hit the origin directly, and spoof the forwarded-IP header
+  themselves.
+
+### Production checklist this unlocks (env vars only)
+- `auth-service`: `AUTH_PUBLIC_DOMAIN`, `AUTH_ISSUER_URI=https://...`,
+  `CMS_ADMIN_REDIRECT_URIS`/`CMS_ADMIN_POST_LOGOUT_REDIRECT_URIS` set to the
+  real admin-app HTTPS origin, `CORS_ALLOWED_ORIGINS` including that origin.
+- `admin-app` production build: `VITE_AUTH_SERVER=https://...`,
+  `VITE_REDIRECT_URI=https://<admin-app-domain>/callback`.
+
+### Verification (once implemented)
+- Local: `curl http://localhost:9000/login` unaffected.
+- Production dry run: Caddy issues a cert (check logs);
+  `curl https://auth.../.well-known/openid-configuration` and confirm
+  `"issuer"` matches `AUTH_ISSUER_URI` exactly; full admin-app login round
+  trip over HTTPS with the session cookie's `Secure` flag confirmed in
+  devtools.
+
+### Status
+**Blocked, on purpose** — the user flagged the backend Dockerfiles aren't
+production-ready yet and wants that fixed first (see next section). Nothing
+above has been implemented; `server.forward-headers-strategy` in particular
+was confirmed as the right fix when the user tried a Cloudflare Tunnel
+locally and saw `auth-service` generate `http://` URLs against an `https://`
+tunnel — but even that one-line, harmless-when-unused change was deferred
+until the Dockerfile work lands, at the user's request.

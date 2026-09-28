@@ -1,23 +1,22 @@
 services:
-  media-service:
+  content-service:
     build:
       context: ..
-      dockerfile: media-service/Dockerfile
-    image: takypok/media-service
-    container_name: media-service
+      dockerfile: content-service/Dockerfile
+    image: takypok/content-service
+    container_name: content-service
     ports:
-      - "8082:8082"
+      - "8084:8084"
     environment:
       AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
-      DB_SCHEMA: media
+      DB_SCHEMA: content
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
       JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
-      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
-      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
       MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
     # discovery-service isn't defined in this file — this depends_on only resolves when
     # this file is passed to compose alongside discovery-service's own, e.g.:
@@ -41,4 +40,3 @@ services:
 networks:
   takypok_default:
     external: true
-
