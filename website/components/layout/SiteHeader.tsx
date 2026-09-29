@@ -54,16 +54,27 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 whitespace-nowrap text-[15px] font-medium text-[#3c4858] md:flex">
-          {PRIMARY_NAV.map((item) => (
-            <a key={item.label} href="#" className="flex items-center gap-1.5 transition-colors hover:text-brand-primary">
-              {item.label}
-              {item.hasDropdown && (
-                <svg viewBox="0 0 10 6" className="h-[7px] w-[11px] fill-none stroke-current stroke-[1.5]" aria-hidden>
-                  <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </a>
-          ))}
+          {PRIMARY_NAV.map((item) => {
+            const content = (
+              <>
+                {item.label}
+                {item.hasDropdown && (
+                  <svg viewBox="0 0 10 6" className="h-[7px] w-[11px] fill-none stroke-current stroke-[1.5]" aria-hidden>
+                    <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </>
+            );
+            return item.href ? (
+              <Link key={item.label} href={item.href} className="flex items-center gap-1.5 transition-colors hover:text-brand-primary">
+                {content}
+              </Link>
+            ) : (
+              <a key={item.label} href="#" className="flex items-center gap-1.5 transition-colors hover:text-brand-primary">
+                {content}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-3.5">

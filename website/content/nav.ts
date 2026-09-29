@@ -5,6 +5,8 @@
 export type PrimaryNavItem = {
   label: string;
   hasDropdown?: boolean;
+  /** Real destination, if this item has one yet — falls back to "#" (unwired) when omitted. */
+  href?: string;
 };
 
 export type NavSection = {
@@ -16,6 +18,7 @@ export type NavSection = {
 export const PRIMARY_NAV: PrimaryNavItem[] = [
   { label: "Services", hasDropdown: true },
   { label: "Case Studies", hasDropdown: true },
+  { label: "Insights", href: "/insights" },
   { label: "About Us", hasDropdown: true },
   { label: "Resources", hasDropdown: true },
   { label: "Careers" },
