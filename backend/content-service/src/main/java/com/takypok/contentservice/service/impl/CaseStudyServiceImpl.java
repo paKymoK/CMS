@@ -8,6 +8,7 @@ import com.takypok.contentservice.model.response.CaseStudySummaryResponse;
 import com.takypok.contentservice.repository.CaseStudyRepository;
 import com.takypok.contentservice.repository.TestimonialRepository;
 import com.takypok.contentservice.service.CaseStudyService;
+import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.text.Normalizer;
@@ -46,6 +47,11 @@ public class CaseStudyServiceImpl implements CaseStudyService {
 
   @Override
   public Mono<CaseStudy> create(Long siteId, CaseStudyCreateRequest request) {
+    // defer: sanitizeOrReject throws, and that must surface as a Mono error, not at assembly time
+    return Mono.defer(() -> doCreate(siteId, request));
+  }
+
+  private Mono<CaseStudy> doCreate(Long siteId, CaseStudyCreateRequest request) {
     CaseStudy caseStudy = new CaseStudy();
     caseStudy.setSiteId(siteId);
     caseStudy.setDate(request.getDate());
@@ -55,7 +61,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
     caseStudy.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
     caseStudy.setActive(request.getActive() != null ? request.getActive() : true);
     caseStudy.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
-    caseStudy.setBody(request.getBody());
+    caseStudy.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
     caseStudy.setSummary(request.getSummary());
     caseStudy.setResults(request.getResults());
     return validateTestimonial(siteId, request.getTestimonialId())
@@ -81,7 +87,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
                 caseStudy.setDisplayOrder(request.getDisplayOrder());
               if (request.getActive() != null) caseStudy.setActive(request.getActive());
               if (request.getStatus() != null) caseStudy.setStatus(request.getStatus());
-              caseStudy.setBody(request.getBody());
+              caseStudy.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
               caseStudy.setSummary(request.getSummary());
               caseStudy.setResults(request.getResults());
               return validateTestimonial(siteId, request.getTestimonialId())

@@ -101,6 +101,31 @@ class PostServiceImplTest {
   }
 
   @Test
+  void createCleansBenignLeftoversAndRejectsDangerousBodies() {
+    PostServiceImpl service = new PostServiceImpl(postRepository);
+    when(postRepository.existsBySiteIdAndSlug(1L, "s")).thenReturn(Mono.just(false));
+    when(postRepository.save(any(Post.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("T");
+    request.setSlug("s");
+    request.setBody("<p style=\"color:red\">ok</p>");
+
+    StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
+
+    ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
+    verify(postRepository).save(captor.capture());
+    assertEquals("<p>ok</p>", captor.getValue().getBody());
+
+    request.setBody("<p>ok</p><script>alert(1)</script>");
+    StepVerifier.create(service.create(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+    verify(postRepository, times(1)).save(any(Post.class)); // the rejected body was never saved
+  }
+
+  @Test
   void previewDetailIncludesDraftsButNeverLeaksAnotherSitesPostForTheSameSlug() {
     PostServiceImpl service = new PostServiceImpl(postRepository);
     Post siteOnesDraft = new Post();

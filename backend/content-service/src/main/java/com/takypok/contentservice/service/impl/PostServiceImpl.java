@@ -7,6 +7,7 @@ import com.takypok.contentservice.model.response.PostDetailResponse;
 import com.takypok.contentservice.model.response.PostSummaryResponse;
 import com.takypok.contentservice.repository.PostRepository;
 import com.takypok.contentservice.service.PostService;
+import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.text.Normalizer;
@@ -42,6 +43,11 @@ public class PostServiceImpl implements PostService {
 
   @Override
   public Mono<Post> create(Long siteId, PostCreateRequest request) {
+    // defer: sanitizeOrReject throws, and that must surface as a Mono error, not at assembly time
+    return Mono.defer(() -> doCreate(siteId, request));
+  }
+
+  private Mono<Post> doCreate(Long siteId, PostCreateRequest request) {
     Post post = new Post();
     post.setSiteId(siteId);
     post.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
@@ -52,7 +58,7 @@ public class PostServiceImpl implements PostService {
     post.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
     post.setActive(request.getActive() != null ? request.getActive() : true);
     post.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
-    post.setBody(request.getBody());
+    post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
     post.setAuthorName(request.getAuthorName());
     post.setAuthorRole(request.getAuthorRole());
     post.setAuthorBio(request.getAuthorBio());
@@ -81,7 +87,7 @@ public class PostServiceImpl implements PostService {
                 post.setDisplayOrder(request.getDisplayOrder());
               if (request.getActive() != null) post.setActive(request.getActive());
               if (request.getStatus() != null) post.setStatus(request.getStatus());
-              post.setBody(request.getBody());
+              post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
               post.setAuthorName(request.getAuthorName());
               post.setAuthorRole(request.getAuthorRole());
               post.setAuthorBio(request.getAuthorBio());

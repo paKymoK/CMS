@@ -40,6 +40,8 @@ dependencies {
     // Classpath scan for ContentFields implementations at startup (ContentFieldsRegistryConfig) —
     // same library/version Workflow's TicketConfig already uses for the equivalent scan.
     implementation 'org.reflections:reflections:0.10.2'
+    // Allowlist HTML sanitizer for rich-text bodies (posts, case studies) — see RichTextSanitizer.
+    implementation 'org.jsoup:jsoup:1.18.3'
     testImplementation 'io.projectreactor:reactor-test'
     // content-service had no test dependency at all yet — this is the minimum to exercise the
     // ContentFields registry scan + Bean Validation wiring below without pulling in the full

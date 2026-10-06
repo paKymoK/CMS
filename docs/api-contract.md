@@ -32,3 +32,20 @@ response (never another site's data).
   otherwise `400 Invalid preview path`.
 - Bad/expired token → `401`. Success → enables Next.js Draft Mode, sets the httpOnly
   `cms_preview_token` cookie, redirects to `path`.
+
+## Rich-text bodies (posts, case studies)
+
+`POST`/`PUT /v1/admin/posts` and `/v1/admin/case-studies` pass `body` through
+`RichTextSanitizer` (content-service) on every save:
+
+- **Rejected with HTTP 400** (`status.message` lists what was found, shown to the author) if the
+  body contains `<script>`-like elements (script, style, object, embed, form, svg, …), `on*` event
+  handler attributes, `javascript:`/`vbscript:`/`data:` URLs, or an `<iframe>` whose source isn't an
+  allowed embed provider (YouTube-nocookie, Vimeo, Google Forms, Tally, Typeform, Jotform,
+  Microsoft Forms — https only). The admin editor can't produce these, so a hit means a client
+  bypassed it.
+- **Silently cleaned** otherwise: tags/attributes outside the allowlist (e.g. table inline styles)
+  are dropped, and every link gets `rel="noopener noreferrer"`.
+
+The public site renders `body` as-is, trusting this write-time step. Bodies saved before this was
+added were not re-sanitized.
