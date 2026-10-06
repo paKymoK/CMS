@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Mirrors content-service's seed-sites.sql and admin-app's config/sites.ts. chat-service has no
+ * Mirrors the site rows in content-service's init-data.sql and admin-app's config/sites.ts. chat-service has no
  * site registry of its own (same reasoning as media-service's CmsAdminGuard) — this is just the
  * fixed, small list needed to size the per-site vector store map and resolve a subdomain for
  * server-to-server content-service calls during ingestion.

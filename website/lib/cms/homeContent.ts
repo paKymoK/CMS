@@ -1,5 +1,6 @@
 import type { HomeContent } from "@/content/home/types";
 import { homeContentEn } from "@/content/home/en";
+import { resolveMediaUrls } from "./media";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -24,7 +25,7 @@ export async function getHomeContent(): Promise<HomeContent> {
       return homeContentEn;
     }
     const body = (await res.json()) as { data: HomeContent };
-    return body.data ?? homeContentEn;
+    return body.data ? resolveMediaUrls(body.data) : homeContentEn;
   } catch (err) {
     console.error("Failed to load home content", err);
     return homeContentEn;
@@ -51,5 +52,5 @@ export async function getPreviewHomeContent(token: string): Promise<HomeContent>
   if (!body.data) {
     throw new Error("Preview response had no data");
   }
-  return body.data;
+  return resolveMediaUrls(body.data);
 }

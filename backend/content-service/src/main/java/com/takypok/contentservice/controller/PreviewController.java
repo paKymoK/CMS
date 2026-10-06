@@ -1,13 +1,18 @@
 package com.takypok.contentservice.controller;
 
 import com.takypok.contentservice.config.PreviewTokenGuard;
+import com.takypok.contentservice.model.response.CaseStudyDetailResponse;
 import com.takypok.contentservice.model.response.HomeContentResponse;
+import com.takypok.contentservice.model.response.PostDetailResponse;
 import com.takypok.contentservice.model.response.PreviewTokenResponse;
+import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.HomeContentService;
+import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.PreviewTokenService;
 import com.takypok.core.model.ResultMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,12 +32,33 @@ public class PreviewController {
   private final PreviewTokenGuard previewTokenGuard;
   private final PreviewTokenService previewTokenService;
   private final HomeContentService homeContentService;
+  private final PostService postService;
+  private final CaseStudyService caseStudyService;
 
   @GetMapping("/home")
   public Mono<ResultMessage<HomeContentResponse>> getHome(@RequestParam String token) {
     return previewTokenGuard
         .requireValidToken(token)
         .flatMap(previewToken -> homeContentService.getPreviewContent(previewToken.getSiteId()))
+        .map(ResultMessage::success);
+  }
+
+  @GetMapping("/posts/{slug}")
+  public Mono<ResultMessage<PostDetailResponse>> getPost(
+      @PathVariable String slug, @RequestParam String token) {
+    return previewTokenGuard
+        .requireValidToken(token)
+        .flatMap(previewToken -> postService.getPreviewDetailBySlug(previewToken.getSiteId(), slug))
+        .map(ResultMessage::success);
+  }
+
+  @GetMapping("/case-studies/{slug}")
+  public Mono<ResultMessage<CaseStudyDetailResponse>> getCaseStudy(
+      @PathVariable String slug, @RequestParam String token) {
+    return previewTokenGuard
+        .requireValidToken(token)
+        .flatMap(
+            previewToken -> caseStudyService.getPreviewDetailBySlug(previewToken.getSiteId(), slug))
         .map(ResultMessage::success);
   }
 

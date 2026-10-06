@@ -1,4 +1,4 @@
-// Mirrors content-service's seed-sites.sql exactly — site codes are locale codes (site = locale
+// Mirrors the site rows in content-service's init-data.sql exactly — site codes are locale codes (site = locale
 // per the platform's decision log), not country codes. Keep in sync if that seed ever changes.
 export const SITES = [
   { code: "en", label: "English", subdomain: "en.cmcglobal.com" },

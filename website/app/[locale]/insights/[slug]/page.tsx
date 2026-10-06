@@ -6,7 +6,9 @@ import { getTranslations } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SITE_URL } from "@/lib/seo/constants";
 import { Link } from "@/i18n/navigation";
-import { getPost } from "@/lib/cms/posts";
+import { getPost, getPreviewPost } from "@/lib/cms/posts";
+import { getPreviewToken } from "@/lib/cms/previewSession";
+import { DraftBanner } from "@/components/preview/DraftBanner";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { ReadingProgress } from "@/components/insights/ReadingProgress";
 
@@ -47,7 +49,8 @@ export async function generateMetadata(
   props: PageProps<"/[locale]/insights/[slug]">,
 ): Promise<Metadata> {
   const { locale, slug } = await props.params;
-  const post = await getPost(slug);
+  const token = await getPreviewToken();
+  const post = token ? await getPreviewPost(slug, token) : await getPost(slug);
   if (!post) {
     return buildPageMetadata({
       locale,
@@ -63,6 +66,7 @@ export async function generateMetadata(
     title: `${post.title} — CMC Global Insights`,
     description: post.excerpt,
     ogImage: post.image,
+    noIndex: token !== null,
   });
 }
 
@@ -75,7 +79,8 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
   setRequestLocale(locale);
 
   const t = await getTranslations("insights");
-  const post = await getPost(slug);
+  const token = await getPreviewToken();
+  const post = token ? await getPreviewPost(slug, token) : await getPost(slug);
   if (!post) {
     notFound();
   }
@@ -102,6 +107,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
 
   return (
     <div className="font-wave-sans text-[#0f172a]">
+      {token !== null && <DraftBanner />}
       <ReadingProgress targetId="post-article" />
 
       <section className="mx-auto max-w-[1180px] px-6 pt-[150px] pb-16">

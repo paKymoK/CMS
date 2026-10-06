@@ -5,6 +5,8 @@ import { message } from "antd";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
+import { usePreviewItem } from "../lib/usePreviewItem";
+import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
@@ -162,6 +164,19 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
     },
   });
 
+  const previewMutation = usePreviewItem({
+    site,
+    section: "insights",
+    isNew,
+    dirty,
+    serverStatus: initial?.status,
+    slug,
+    saveAsDraft: async () => {
+      const res = await saveMutation.mutateAsync("DRAFT");
+      return (res.data.data as { slug: string | null }).slug;
+    },
+  });
+
   const addTag = () => {
     const t = slugify(tagDraft);
     if (t && !tags.includes(t)) setTags([...tags, t]);
@@ -259,11 +274,11 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
               />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
-            {siteSub && !isNew && slug && (
-              <a
-                href={`https://${siteSub}/insights/${slug}`}
-                target="_blank"
-                rel="noreferrer"
+            {site && (
+              <button
+                type="button"
+                onClick={() => previewMutation.mutate()}
+                disabled={previewMutation.isPending || saveMutation.isPending}
                 style={{
                   minHeight: 40,
                   display: "flex",
@@ -275,10 +290,11 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
                   fontSize: 11,
                   letterSpacing: ".1em",
                   color: "#3d4046",
+                  cursor: "pointer",
                 }}
               >
-                PREVIEW ↗
-              </a>
+                {previewMutation.isPending ? "OPENING…" : "PREVIEW ↗"}
+              </button>
             )}
             <button
               type="button"
@@ -334,7 +350,7 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
         <main style={{ flex: "1 1 640px", minWidth: 0, background: "#ffffff", border: "1px solid #e0e4e9" }}>
           <div style={{ position: "relative" }}>
             {image ? (
-              <img src={image} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
+              <img src={mediaSrc(image)} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
             ) : (
               <div style={{ width: "100%", aspectRatio: "21/8", background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)" }} />
             )}

@@ -96,4 +96,33 @@ class CaseStudyServiceImplTest {
 
     StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
   }
+
+  @Test
+  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesCaseStudyForTheSameSlug() {
+    CaseStudyServiceImpl service =
+        new CaseStudyServiceImpl(caseStudyRepository, testimonialRepository);
+    CaseStudy siteOnesDraft = new CaseStudy();
+    siteOnesDraft.setId(1L);
+    siteOnesDraft.setSiteId(1L);
+    siteOnesDraft.setSlug("shared-slug");
+    siteOnesDraft.setTitle("Site 1's draft");
+    siteOnesDraft.setCategory("cloud");
+    siteOnesDraft.setStatus("DRAFT");
+    siteOnesDraft.setActive(false);
+
+    when(caseStudyRepository.findBySiteIdAndSlug(1L, "shared-slug"))
+        .thenReturn(Mono.just(siteOnesDraft));
+    when(caseStudyRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
+            1L, "PUBLISHED", true))
+        .thenReturn(Flux.empty());
+    when(caseStudyRepository.findBySiteIdAndSlug(2L, "shared-slug")).thenReturn(Mono.empty());
+
+    StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
+        .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))
+        .verifyComplete();
+
+    StepVerifier.create(service.getPreviewDetailBySlug(2L, "shared-slug"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
 }

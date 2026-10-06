@@ -24,5 +24,12 @@ public interface PostService {
 
   Mono<PostDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
 
+  /**
+   * Draft-inclusive counterpart of getPublishedDetailBySlug for the token-gated preview path —
+   * ignores status/active, but still filters by siteId. "Related" stays published-only so the
+   * preview shows what visitors will actually see in that section.
+   */
+  Mono<PostDetailResponse> getPreviewDetailBySlug(Long siteId, String slug);
+
   Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q);
 }

@@ -53,9 +53,13 @@ same-origin preview. Rejected:
 Preview is solved instead with Draft Mode + a token, below.
 
 ### Design
-Preview is **page-level**, not per-entity — there's no per-post detail page today,
-only the one composed homepage per locale, so "preview" means "show site X's
-homepage including drafts/inactive rows," not "preview this one post."
+Preview has **two scopes**, sharing one token mechanism:
+
+- **Page-level** — the composed homepage per locale, including drafts/inactive rows.
+  Entry: the top-level "Preview site" button in `AppShell`.
+- **Item-level** (added once Post / Case Study detail pages existed) — one post or
+  case study on its real detail page, drafts included. Entry: the "Preview" button
+  in `PostEditorPage` / `CaseStudyEditorPage`. See "Item-level preview" below."
 
 Mechanism: **Next.js Draft Mode + a short-lived, site-scoped, opaque preview
 token**, minted by `content-service`, redeemed by `website`.
@@ -262,7 +266,7 @@ refreshable to cover a longer editing/review session without paying either cost.
 
 ### What's implemented
 **content-service**:
-- `preview_token` table (`add-preview-token-table.sql`): `id` (real `bigserial`
+- `preview_token` table (`init-schema.sql`): `id` (real `bigserial`
   `@Id` — not `token` itself, since Spring Data R2DBC's `save()` only inserts
   when the `@Id` is null beforehand; a manually-assigned String `@Id` would look
   "already existing" and attempt an update instead), `token` (opaque, `SecureRandom`
@@ -474,3 +478,26 @@ was confirmed as the right fix when the user tried a Cloudflare Tunnel
 locally and saw `auth-service` generate `http://` URLs against an `https://`
 tunnel — but even that one-line, harmless-when-unused change was deferred
 until the Dockerfile work lands, at the user's request.
+
+### Item-level preview (posts, case studies)
+Same site-scoped `preview_token`; the *item* is chosen by the URL, not the token.
+
+- **Backend**: `GET /v1/preview/posts/{slug}?token=` and
+  `GET /v1/preview/case-studies/{slug}?token=` — guarded by `PreviewTokenGuard`, site
+  taken from the token only, `findBySiteIdAndSlug` ignores `status`/`active` (including
+  the linked testimonial's `active`). "Related" stays published-only so it matches what
+  visitors will see. Cross-site tests: `PostServiceImplTest`, `CaseStudyServiceImplTest`,
+  `PreviewControllerTest`.
+- **Website**: `/api/preview?token=&path=` deep-links to one page. `path` is checked
+  against a strict allowlist (`lib/cms/previewPath.ts`: a locale home, or
+  `/{locale}/insights|case-studies/{slug}`) — anything else is a 400, never a redirect
+  (open-redirect guard). Detail pages use `getPreviewToken()`; with a token they fetch
+  from the preview endpoints (`no-store`), show `DraftBanner`, and set `noindex`.
+  Without one they take the unchanged published/ISR path.
+- **admin-app**: the editor's Preview button (`usePreviewItem`) previews the **saved**
+  row. New item or draft with unsaved edits → saved as DRAFT first. Published item with
+  unsaved edits → *not* saved (that would push edits live); previews the last saved
+  version and warns. The tab is opened synchronously before the token mint to avoid
+  popup blockers (`lib/preview.ts`).
+- **Out of scope**: live typing preview of unsaved form state.
+

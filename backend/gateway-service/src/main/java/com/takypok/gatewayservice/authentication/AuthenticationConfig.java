@@ -51,6 +51,18 @@ public class AuthenticationConfig {
                     // is untouched by this and still falls through to .authenticated() below.
                     .pathMatchers("/content-service/v1/home/**")
                     .permitAll()
+                    // content-service's public Insights listing + Post/Case Study detail reads —
+                    // GET only, same Host-header site resolution as /v1/home above. Mirrors
+                    // core-v1's SecurityConfig carve-out for the direct port (this config is a
+                    // separate hand-duplicated copy, see the preview note below).
+                    // /content-service/v1/admin/posts and /v1/admin/case-studies are different
+                    // path prefixes, untouched by this, and still fall through to
+                    // .authenticated() below.
+                    .pathMatchers(
+                        HttpMethod.GET, "/content-service/v1/posts", "/content-service/v1/posts/**")
+                    .permitAll()
+                    .pathMatchers(HttpMethod.GET, "/content-service/v1/case-studies/**")
+                    .permitAll()
                     // content-service's token-gated draft preview — anonymous at this layer (no
                     // JWT presented), but every request is validated against a minted,
                     // site-scoped, time-limited preview_token inside content-service itself (see

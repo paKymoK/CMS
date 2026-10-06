@@ -5,6 +5,8 @@ import { message } from "antd";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
+import { usePreviewItem } from "../lib/usePreviewItem";
+import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
@@ -170,6 +172,19 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
     },
   });
 
+  const previewMutation = usePreviewItem({
+    site,
+    section: "case-studies",
+    isNew,
+    dirty,
+    serverStatus: initial?.status,
+    slug,
+    saveAsDraft: async () => {
+      const res = await saveMutation.mutateAsync("DRAFT");
+      return (res.data.data as { slug: string | null }).slug;
+    },
+  });
+
   const updateResult = (index: number, field: keyof CaseStudyResult, val: string) => {
     setResults((rs) => rs.map((r, i) => (i === index ? { ...r, [field]: val } : r)));
     setDirty(true);
@@ -265,11 +280,11 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbe4" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
-            {siteSub && !isNew && slug && (
-              <a
-                href={`https://${siteSub}/case-studies/${slug}`}
-                target="_blank"
-                rel="noreferrer"
+            {site && (
+              <button
+                type="button"
+                onClick={() => previewMutation.mutate()}
+                disabled={previewMutation.isPending || saveMutation.isPending}
                 style={{
                   minHeight: 40,
                   display: "flex",
@@ -281,10 +296,11 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                   fontSize: 11,
                   letterSpacing: ".1em",
                   color: "#3d4046",
+                  cursor: "pointer",
                 }}
               >
-                PREVIEW ↗
-              </a>
+                {previewMutation.isPending ? "OPENING…" : "PREVIEW ↗"}
+              </button>
             )}
             <button
               type="button"
@@ -340,7 +356,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
         <main style={{ flex: "1 1 640px", minWidth: 0, background: "#ffffff", border: "1px solid #e0e4e9" }}>
           <div style={{ position: "relative" }}>
             {image ? (
-              <img src={image} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
+              <img src={mediaSrc(image)} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
             ) : (
               <div style={{ width: "100%", aspectRatio: "21/8", background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)" }} />
             )}

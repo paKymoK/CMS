@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type CSSProperties } from "react";
+import { relativizeMediaHtml, resolveMediaHtml } from "../lib/media";
 
 export interface RichTextEditorHandle {
   /** Inserts at the live cursor position if the editor still has an active selection there
@@ -57,20 +58,21 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
   const [block, setBlock] = useState<Block>("p");
 
   useEffect(() => {
-    if (rootRef.current) rootRef.current.innerHTML = mountedValue.current;
+    if (rootRef.current) rootRef.current.innerHTML = resolveMediaHtml(mountedValue.current);
   }, []);
 
   const scan = () => {
     const el = rootRef.current;
     if (!el) return;
     setBlock(currentBlock(el));
-    onChange(el.innerHTML);
+    onChange(relativizeMediaHtml(el.innerHTML));
   };
 
   useImperativeHandle(ref, () => ({
     insertHtml: (html: string) => {
       const el = rootRef.current;
       if (!el) return;
+      html = resolveMediaHtml(html); // the picker hands back origin-less paths; the DOM needs a loadable src
       const sel = window.getSelection();
       const hasLiveSelection = !!sel && sel.rangeCount > 0 && el.contains(sel.anchorNode);
       if (hasLiveSelection) {

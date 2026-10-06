@@ -16,6 +16,7 @@ import {
   type UploadFile,
   type VideoJob,
 } from "../lib/mediaClient";
+import { mediaSrc } from "../lib/media";
 
 const STATUS_STYLE: Record<VideoJob["status"], { bg: string; color: string; label: string }> = {
   DONE: { bg: "#ffffff", color: "#0b63c5", label: "DONE" },
@@ -166,7 +167,7 @@ export default function MediaLibraryPage() {
           {imagesQuery.data.map((file: UploadFile) => (
             <div key={file.id} className="flex flex-col gap-2">
               <img
-                src={imageUrl(file)}
+                src={mediaSrc(imageUrl(file))}
                 alt={file.name}
                 style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }}
               />

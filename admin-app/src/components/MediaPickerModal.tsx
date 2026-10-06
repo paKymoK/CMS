@@ -14,6 +14,7 @@ import {
   type UploadFile,
   type VideoJob,
 } from "../lib/mediaClient";
+import { mediaSrc } from "../lib/media";
 
 interface MediaPickerModalProps {
   open: boolean;
@@ -114,7 +115,7 @@ export default function MediaPickerModal({
               title={file.name}
             >
               <img
-                src={imageUrl(file)}
+                src={mediaSrc(imageUrl(file))}
                 alt={file.name}
                 className="w-full h-24 object-cover"
               />

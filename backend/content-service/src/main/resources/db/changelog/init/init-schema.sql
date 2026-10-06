@@ -114,69 +114,6 @@ CREATE TABLE IF NOT EXISTS office
 CREATE INDEX IF NOT EXISTS idx_office_site_order ON office (site_id, display_order);
 CREATE INDEX IF NOT EXISTS idx_office_site_status_active_order ON office (site_id, status, active, display_order);
 
-CREATE TABLE IF NOT EXISTS case_study
-(
-    id             bigserial PRIMARY KEY,
-    site_id        bigint  NOT NULL REFERENCES site (id),
-    date           character varying, -- display string (e.g. "Jun 2, 2026"), not a real date type
-    image          character varying,
-    title          character varying NOT NULL,
-    category       character varying,
-    display_order  integer NOT NULL DEFAULT 0,
-    active         boolean NOT NULL DEFAULT true,
-    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
-    version        integer NOT NULL DEFAULT 0,
-    created_at     timestamp with time zone,
-    created_by     jsonb,
-    modified_at    timestamp with time zone,
-    modified_by    jsonb
-);
-CREATE INDEX IF NOT EXISTS idx_case_study_site_order ON case_study (site_id, display_order);
-CREATE INDEX IF NOT EXISTS idx_case_study_site_status_active_order ON case_study (site_id, status, active, display_order);
-
--- Generalized from the homepage's "insights" section per the decision log — "category"
--- lets this cover future post-like content (e.g. press releases) without a new table.
-CREATE TABLE IF NOT EXISTS post
-(
-    id             bigserial PRIMARY KEY,
-    site_id        bigint  NOT NULL REFERENCES site (id),
-    category       character varying NOT NULL DEFAULT 'insight',
-    image          character varying,
-    title          character varying NOT NULL,
-    excerpt        text,
-    date           character varying,
-    display_order  integer NOT NULL DEFAULT 0,
-    active         boolean NOT NULL DEFAULT true,
-    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
-    version        integer NOT NULL DEFAULT 0,
-    created_at     timestamp with time zone,
-    created_by     jsonb,
-    modified_at    timestamp with time zone,
-    modified_by    jsonb
-);
-CREATE INDEX IF NOT EXISTS idx_post_site_order ON post (site_id, display_order);
-CREATE INDEX IF NOT EXISTS idx_post_site_status_active_order ON post (site_id, status, active, display_order);
-
-CREATE TABLE IF NOT EXISTS logo_badge
-(
-    id             bigserial PRIMARY KEY,
-    site_id        bigint  NOT NULL REFERENCES site (id),
-    type           character varying NOT NULL CHECK (type IN ('AWARD', 'CERTIFICATION', 'PARTNER')),
-    name           character varying NOT NULL,
-    logo           character varying NOT NULL,
-    display_order  integer NOT NULL DEFAULT 0,
-    active         boolean NOT NULL DEFAULT true,
-    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
-    version        integer NOT NULL DEFAULT 0,
-    created_at     timestamp with time zone,
-    created_by     jsonb,
-    modified_at    timestamp with time zone,
-    modified_by    jsonb
-);
--- logo_badge additionally filters by `type` (AWARD/CERTIFICATION/PARTNER) in every query shape.
-CREATE INDEX IF NOT EXISTS idx_logo_badge_site_type_order ON logo_badge (site_id, type, display_order);
-CREATE INDEX IF NOT EXISTS idx_logo_badge_site_type_status_active_order ON logo_badge (site_id, type, status, active, display_order);
-
 CREATE TABLE IF NOT EXISTS testimonial
 (
     id             bigserial PRIMARY KEY,
@@ -200,6 +137,91 @@ CREATE TABLE IF NOT EXISTS testimonial
 );
 CREATE INDEX IF NOT EXISTS idx_testimonial_site_order ON testimonial (site_id, display_order);
 CREATE INDEX IF NOT EXISTS idx_testimonial_site_status_active_order ON testimonial (site_id, status, active, display_order);
+
+CREATE TABLE IF NOT EXISTS case_study
+(
+    id             bigserial PRIMARY KEY,
+    site_id        bigint  NOT NULL REFERENCES site (id),
+    slug           character varying, -- URL segment of the detail page; unique per site (index below)
+    date           character varying, -- display string (e.g. "Jun 2, 2026"), not a real date type
+    image          character varying,
+    title          character varying NOT NULL,
+    category       character varying,
+    summary        text,
+    body           text,              -- rich text (HTML)
+    -- [{"value":"40%","label":"Faster deployment cycle"}] — headline figures on the detail page.
+    results        jsonb   NOT NULL DEFAULT '[]',
+    -- Nullable: not every case study has a quote. References the existing testimonial table rather
+    -- than duplicating name/quote/photo here — don't fork data that already has a home.
+    testimonial_id bigint  REFERENCES testimonial (id),
+    display_order  integer NOT NULL DEFAULT 0,
+    active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
+    created_at     timestamp with time zone,
+    created_by     jsonb,
+    modified_at    timestamp with time zone,
+    modified_by    jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_case_study_site_order ON case_study (site_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_case_study_site_status_active_order ON case_study (site_id, status, active, display_order);
+-- Partial: rows without a slug never collide with each other, but once set a slug is unique within
+-- its own site — never across sites, per the "content is not shared across sites" rule.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_case_study_site_slug ON case_study (site_id, slug) WHERE slug IS NOT NULL;
+
+-- Generalized from the homepage's "insights" section per the decision log — "category"
+-- lets this cover future post-like content (e.g. press releases) without a new table.
+CREATE TABLE IF NOT EXISTS post
+(
+    id             bigserial PRIMARY KEY,
+    site_id        bigint  NOT NULL REFERENCES site (id),
+    slug           character varying, -- URL segment of the detail page; unique per site (index below)
+    category       character varying NOT NULL DEFAULT 'insight',
+    image          character varying,
+    title          character varying NOT NULL,
+    excerpt        text,
+    date           character varying,
+    body           text,              -- rich text (HTML), same convention as case_study.body
+    author_name    character varying,
+    author_role    character varying,
+    author_bio     text,
+    author_avatar  character varying,
+    tags           jsonb   NOT NULL DEFAULT '[]', -- ["ai-governance","events"]
+    featured       boolean NOT NULL DEFAULT false,
+    display_order  integer NOT NULL DEFAULT 0,
+    active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
+    created_at     timestamp with time zone,
+    created_by     jsonb,
+    modified_at    timestamp with time zone,
+    modified_by    jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_post_site_order ON post (site_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_post_site_status_active_order ON post (site_id, status, active, display_order);
+-- Partial: see uq_case_study_site_slug.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_post_site_slug ON post (site_id, slug) WHERE slug IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS logo_badge
+(
+    id             bigserial PRIMARY KEY,
+    site_id        bigint  NOT NULL REFERENCES site (id),
+    type           character varying NOT NULL CHECK (type IN ('AWARD', 'CERTIFICATION', 'PARTNER')),
+    name           character varying NOT NULL,
+    logo           character varying NOT NULL,
+    display_order  integer NOT NULL DEFAULT 0,
+    active         boolean NOT NULL DEFAULT true,
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    version        integer NOT NULL DEFAULT 0,
+    created_at     timestamp with time zone,
+    created_by     jsonb,
+    modified_at    timestamp with time zone,
+    modified_by    jsonb
+);
+-- logo_badge additionally filters by `type` (AWARD/CERTIFICATION/PARTNER) in every query shape.
+CREATE INDEX IF NOT EXISTS idx_logo_badge_site_type_order ON logo_badge (site_id, type, display_order);
+CREATE INDEX IF NOT EXISTS idx_logo_badge_site_type_status_active_order ON logo_badge (site_id, type, status, active, display_order);
+
 
 CREATE TABLE IF NOT EXISTS footer_nav_category
 (
@@ -280,3 +302,27 @@ CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
 -- GIN index so a query into a specific field inside `data` (e.g. data->>'category') can still be
 -- indexed if one is ever needed — the option WordPress's flat postmeta rows never had.
 CREATE INDEX IF NOT EXISTS idx_content_item_data ON content_item USING GIN (data);
+
+-- Token-based draft preview (see docs/cms-platform-plan.md). A row here is a narrow, single-purpose
+-- credential: opaque (not a JWT — presenting it as an Authorization: Bearer anywhere under
+-- /v1/admin/** just fails JWT parsing, it isn't accepted as that credential type at all),
+-- site-scoped, short-lived. It authorizes nothing beyond the unauthenticated-at-the-Spring-Security-
+-- layer /v1/preview/** endpoints, which validate it themselves (see PreviewTokenGuard) — never a
+-- general bypass.
+--
+-- id is the real @Id (bigserial), not `token` — Spring Data R2DBC's save() only inserts when the
+-- @Id is null before save; a manually-assigned String @Id would look "already existing" and attempt
+-- an update instead. token is looked up via a derived query, not findById.
+CREATE TABLE IF NOT EXISTS preview_token
+(
+    id         bigserial PRIMARY KEY,
+    token      character varying        NOT NULL UNIQUE,
+    site_id    bigint                   NOT NULL REFERENCES site (id),
+    minted_at  timestamp with time zone NOT NULL,
+    expires_at timestamp with time zone NOT NULL
+);
+
+-- Refresh rotates (delete old row, insert new) rather than extending expires_at in place, so a
+-- captured-but-unused old token stops being usable the moment a real refresh happens. No separate
+-- index needed for lookups by token — UNIQUE already creates one.
+CREATE INDEX IF NOT EXISTS idx_preview_token_expires_at ON preview_token (expires_at);

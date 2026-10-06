@@ -25,6 +25,7 @@ import { siteLabel, SITES } from "../config/sites";
 import { findResource, type FieldConfig } from "../config/resources";
 import { NAVIGATION } from "../config/navigation";
 import MediaPickerModal from "../components/MediaPickerModal";
+import { mediaSrc } from "../lib/media";
 
 type Row = Record<string, unknown> & { id: number; active: boolean; status: string };
 
@@ -56,7 +57,7 @@ function Thumb({ src }: { src: string | null }) {
   if (!src || broken) return <div style={placeholderThumbStyle} />;
   return (
     <img
-      src={src}
+      src={mediaSrc(src)}
       alt=""
       style={{ width: 44, height: 44, flex: "none", objectFit: "cover" }}
       onError={() => setBroken(true)}
@@ -498,7 +499,7 @@ function FieldInput({
       <Form.Item label={f.label}>
         <div className="flex items-center gap-3">
           {currentValue ? (
-            <Image src={currentValue} width={56} height={56} className="object-cover rounded" />
+            <Image src={mediaSrc(currentValue as string)} width={56} height={56} className="object-cover rounded" />
           ) : null}
           <Form.Item name={f.name} rules={rules} noStyle>
             <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />

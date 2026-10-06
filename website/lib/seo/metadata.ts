@@ -14,7 +14,8 @@ type BuildPageMetadataInput = {
   path: string;
   title: string;
   description: string;
-  ogImage?: string;
+  /** null/undefined → DEFAULT_OG_IMAGE (CMS rows without a cover image come back as null). */
+  ogImage?: string | null;
   noIndex?: boolean;
 };
 
@@ -33,10 +34,11 @@ export function buildPageMetadata({
   path,
   title,
   description,
-  ogImage = DEFAULT_OG_IMAGE,
+  ogImage: ogImageInput,
   noIndex = false,
 }: BuildPageMetadataInput): Metadata {
   const url = localizedUrl(locale, path);
+  const ogImage = ogImageInput || DEFAULT_OG_IMAGE;
   const ogImageUrl = ogImage.startsWith("http") ? ogImage : `${SITE_URL}${ogImage}`;
 
   // Only advertise hreflang alternates for locales that actually have content,

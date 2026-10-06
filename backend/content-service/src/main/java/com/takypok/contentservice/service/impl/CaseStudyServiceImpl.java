@@ -121,7 +121,27 @@ public class CaseStudyServiceImpl implements CaseStudyService {
             Mono.error(new ApplicationException(Message.Application.ERROR, "Case study not found")))
         .flatMap(
             caseStudy ->
-                resolveTestimonial(siteId, caseStudy.getTestimonialId())
+                resolveTestimonial(siteId, caseStudy.getTestimonialId(), true)
+                    .flatMap(
+                        testimonial ->
+                            getPublished(siteId)
+                                .collectList()
+                                .map(all -> relatedTo(caseStudy, all))
+                                .map(
+                                    related ->
+                                        CaseStudyDetailResponse.from(
+                                            caseStudy, testimonial.orElse(null), related))));
+  }
+
+  @Override
+  public Mono<CaseStudyDetailResponse> getPreviewDetailBySlug(Long siteId, String slug) {
+    return caseStudyRepository
+        .findBySiteIdAndSlug(siteId, slug)
+        .switchIfEmpty(
+            Mono.error(new ApplicationException(Message.Application.ERROR, "Case study not found")))
+        .flatMap(
+            caseStudy ->
+                resolveTestimonial(siteId, caseStudy.getTestimonialId(), false)
                     .flatMap(
                         testimonial ->
                             getPublished(siteId)
@@ -139,13 +159,13 @@ public class CaseStudyServiceImpl implements CaseStudyService {
    * that section of the page rather than failing the whole case study.
    */
   private Mono<Optional<CaseStudyDetailResponse.TestimonialSummary>> resolveTestimonial(
-      Long siteId, Long testimonialId) {
+      Long siteId, Long testimonialId, boolean requireActive) {
     if (testimonialId == null) {
       return Mono.just(Optional.empty());
     }
     return testimonialRepository
         .findByIdAndSiteId(testimonialId, siteId)
-        .filter(t -> Boolean.TRUE.equals(t.getActive()))
+        .filter(t -> !requireActive || Boolean.TRUE.equals(t.getActive()))
         .map(CaseStudyDetailResponse.TestimonialSummary::from)
         .map(Optional::of)
         .defaultIfEmpty(Optional.empty());

@@ -8,9 +8,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * A narrow, single-purpose, opaque credential for the token-based draft preview flow — see
- * add-preview-token-table.sql's comment for why it's deliberately not a JWT and not usable anywhere
- * under /v1/admin/**.
+ * A narrow, single-purpose, opaque credential for the token-based draft preview flow — see the
+ * preview_token comment in init-schema.sql for why it's deliberately not a JWT and not usable
+ * anywhere under /v1/admin/**.
  *
  * <p>Deliberately does NOT extend IdEntity/BaseEntity: those add createdBy/modifiedAt/modifiedBy
  * columns the preview_token table was never given — this entity is immutable (refresh rotates, i.e.

@@ -19,8 +19,9 @@ export interface VideoJob {
 
 const MEDIA_BASE = serviceUrl("media-service");
 
+/** The stored form: an origin-less path (see lib/media.ts). Pass it through mediaSrc() to display. */
 export function imageUrl(file: UploadFile): string {
-  return `${MEDIA_BASE}/images/${file.id}${file.extension}`;
+  return `/media-service/images/${file.id}${file.extension}`;
 }
 
 export function videoPlaybackUrl(job: VideoJob): string {

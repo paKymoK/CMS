@@ -16,6 +16,8 @@ public interface CaseStudyRepository extends R2dbcRepository<CaseStudy, Long> {
   Mono<CaseStudy> findBySiteIdAndSlugAndStatusAndActive(
       Long siteId, String slug, String status, Boolean active);
 
+  Mono<CaseStudy> findBySiteIdAndSlug(Long siteId, String slug);
+
   Mono<Boolean> existsBySiteIdAndSlug(Long siteId, String slug);
 
   Mono<Boolean> existsBySiteIdAndSlugAndIdNot(Long siteId, String slug, Long id);

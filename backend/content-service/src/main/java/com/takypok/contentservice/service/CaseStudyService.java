@@ -22,4 +22,11 @@ public interface CaseStudyService {
   Flux<CaseStudy> getPublished(Long siteId);
 
   Mono<CaseStudyDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
+
+  /**
+   * Draft-inclusive counterpart of getPublishedDetailBySlug for the token-gated preview path —
+   * ignores status/active (including on the linked testimonial), but still filters by siteId.
+   * "Related" stays published-only so the preview shows what visitors will actually see.
+   */
+  Mono<CaseStudyDetailResponse> getPreviewDetailBySlug(Long siteId, String slug);
 }

@@ -99,4 +99,32 @@ class PostServiceImplTest {
     assertEquals("same-slug", captor.getAllValues().get(1).getSlug());
     assertEquals(2L, captor.getAllValues().get(1).getSiteId());
   }
+
+  @Test
+  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesPostForTheSameSlug() {
+    PostServiceImpl service = new PostServiceImpl(postRepository);
+    Post siteOnesDraft = new Post();
+    siteOnesDraft.setId(1L);
+    siteOnesDraft.setSiteId(1L);
+    siteOnesDraft.setSlug("shared-slug");
+    siteOnesDraft.setTitle("Site 1's draft");
+    siteOnesDraft.setCategory("insight");
+    siteOnesDraft.setStatus("DRAFT");
+    siteOnesDraft.setActive(false);
+
+    when(postRepository.findBySiteIdAndSlug(1L, "shared-slug"))
+        .thenReturn(Mono.just(siteOnesDraft));
+    when(postRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
+            1L, "PUBLISHED", true))
+        .thenReturn(Flux.empty());
+    when(postRepository.findBySiteIdAndSlug(2L, "shared-slug")).thenReturn(Mono.empty());
+
+    StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
+        .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))
+        .verifyComplete();
+
+    StepVerifier.create(service.getPreviewDetailBySlug(2L, "shared-slug"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
 }

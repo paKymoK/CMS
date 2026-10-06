@@ -123,6 +123,20 @@ public class PostServiceImpl implements PostService {
   }
 
   @Override
+  public Mono<PostDetailResponse> getPreviewDetailBySlug(Long siteId, String slug) {
+    return postRepository
+        .findBySiteIdAndSlug(siteId, slug)
+        .switchIfEmpty(
+            Mono.error(new ApplicationException(Message.Application.ERROR, "Post not found")))
+        .flatMap(
+            post ->
+                getPublished(siteId)
+                    .collectList()
+                    .map(all -> relatedTo(post, all))
+                    .map(related -> PostDetailResponse.from(post, related)));
+  }
+
+  @Override
   public Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q) {
     String normalizedQuery = q != null && !q.isBlank() ? q.trim().toLowerCase() : null;
     return getPublished(siteId)

@@ -1,3 +1,12 @@
+-- auth-service schema: Spring Authorization Server's own tables (oauth2_*), Spring Security's JDBC
+-- user store (users/authorities), and the app's own identity/authorization tables.
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ── Spring Authorization Server ────────────────────────────────────────────────────────────────
+-- Column shapes are dictated by JdbcRegisteredClientRepository / JdbcOAuth2AuthorizationService /
+-- JdbcOAuth2AuthorizationConsentService — don't rename or retype them.
+
 CREATE TABLE IF NOT EXISTS oauth2_registered_client
 (
     id                            varchar(100)                            NOT NULL,
@@ -26,10 +35,10 @@ CREATE TABLE IF NOT EXISTS oauth2_authorization_consent
 
 CREATE TABLE IF NOT EXISTS oauth2_authorization
 (
-    id                            varchar(100) NOT NULL,
-    registered_client_id          varchar(100) NOT NULL,
-    principal_name                varchar(200) NOT NULL,
-    authorization_grant_type      varchar(100) NOT NULL,
+    id                            varchar(100)  NOT NULL,
+    registered_client_id          varchar(100)  NOT NULL,
+    principal_name                varchar(200)  NOT NULL,
+    authorization_grant_type      varchar(100)  NOT NULL,
     authorized_scopes             varchar(1000) DEFAULT NULL,
     attributes                    text          DEFAULT NULL,
     state                         varchar(500)  DEFAULT NULL,
@@ -62,6 +71,12 @@ CREATE TABLE IF NOT EXISTS oauth2_authorization
     PRIMARY KEY (id)
 );
 
+CREATE INDEX IF NOT EXISTS ix_oa_client_principal ON oauth2_authorization (registered_client_id, principal_name);
+CREATE INDEX IF NOT EXISTS ix_oa_access_token ON oauth2_authorization USING HASH (access_token_value);
+
+-- ── Spring Security JDBC user store ────────────────────────────────────────────────────────────
+-- password is a DelegatingPasswordEncoder value ('{bcrypt}...'), never plaintext.
+
 CREATE TABLE IF NOT EXISTS users
 (
     username VARCHAR(50)  NOT NULL,
@@ -78,8 +93,10 @@ CREATE TABLE IF NOT EXISTS authorities
     CONSTRAINT ix_auth_username UNIQUE (username, authority)
 );
 
--- Department/unit are auth-service-owned catalog tables (Phase 7) — they rarely change, so keeping
--- them alongside identity data avoids a second hop to a separate service.
+-- ── Directory ──────────────────────────────────────────────────────────────────────────────────
+-- Department/unit are auth-service-owned catalog tables — they rarely change, so keeping them
+-- alongside identity data avoids a second hop to a separate service.
+
 CREATE TABLE IF NOT EXISTS department
 (
     id       BIGSERIAL    NOT NULL,
@@ -102,9 +119,9 @@ CREATE TABLE IF NOT EXISTS unit
     CONSTRAINT unit_department_name_uq UNIQUE (department_id, name)
 );
 
--- Only name/email/department_id/unit_id have real read/write logic (Phase 7); everything else is
--- an inert placeholder until a future profile-editing frontend exists, kept now so that frontend
--- doesn't need a second disruptive migration.
+-- Only name/email/department_id/unit_id have real read/write logic; everything else is an inert
+-- placeholder until a profile-editing frontend exists, kept now so that frontend doesn't need a
+-- second disruptive migration.
 CREATE TABLE IF NOT EXISTS userinfo
 (
     sub           VARCHAR(50) NOT NULL,
@@ -127,67 +144,68 @@ CREATE TABLE IF NOT EXISTS userinfo
     CONSTRAINT fk_userinfo_manager_sub FOREIGN KEY (manager_sub) REFERENCES userinfo (sub)
 );
 
-CREATE TABLE user_group (
-                            id          VARCHAR(50)  NOT NULL,
-                            name        VARCHAR(100) NOT NULL,
-                            description VARCHAR(200),
-                            CONSTRAINT user_group_pkey    PRIMARY KEY (id),
-                            CONSTRAINT user_group_name_uq UNIQUE (name)
-);
+CREATE INDEX IF NOT EXISTS ix_userinfo_manager_sub ON userinfo (manager_sub);
+CREATE INDEX IF NOT EXISTS ix_userinfo_department_id ON userinfo (department_id);
+CREATE INDEX IF NOT EXISTS ix_userinfo_unit_id ON userinfo (unit_id);
 
+-- ── Authorization ──────────────────────────────────────────────────────────────────────────────
 -- Group membership and role assignment back Spring Security's own `users` table, not `userinfo` —
--- they're authorization data, unrelated to whether a Userinfo/HR record exists for that sub (see
--- Phase 7: Group was deliberately kept independent of the employee-data cutover).
-CREATE TABLE user_group_member (
-                                   group_id VARCHAR(50) NOT NULL,
-                                   user_sub VARCHAR(50) NOT NULL,
-                                   CONSTRAINT user_group_member_pkey PRIMARY KEY (group_id, user_sub),
-                                   CONSTRAINT fk_ugm_group FOREIGN KEY (group_id) REFERENCES user_group(id)  ON DELETE CASCADE,
-                                   CONSTRAINT fk_ugm_user  FOREIGN KEY (user_sub)  REFERENCES users(username) ON DELETE CASCADE
+-- they're authorization data, unrelated to whether a userinfo record exists for that sub.
+
+CREATE TABLE IF NOT EXISTS user_group
+(
+    id          VARCHAR(50)  NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    description VARCHAR(200),
+    CONSTRAINT user_group_pkey PRIMARY KEY (id),
+    CONSTRAINT user_group_name_uq UNIQUE (name)
 );
 
-CREATE TABLE client_role_assignment (
-                                        id                   VARCHAR(50)  NOT NULL,
-                                        registered_client_id VARCHAR(100) NOT NULL,
-                                        user_sub             VARCHAR(50),
-                                        group_id             VARCHAR(50),
-                                        project_id           VARCHAR(50),
-                                        role                 VARCHAR(50)  NOT NULL,
-                                        CONSTRAINT client_role_assignment_pkey PRIMARY KEY (id),
-                                        CONSTRAINT cra_exactly_one CHECK (
-                                            (user_sub IS NULL AND group_id IS NOT NULL)
-                                                OR
-                                            (user_sub IS NOT NULL AND group_id IS NULL)
-                                            ),
-                                        CONSTRAINT fk_cra_client FOREIGN KEY (registered_client_id) REFERENCES oauth2_registered_client(id) ON DELETE CASCADE,
-                                        CONSTRAINT fk_cra_user   FOREIGN KEY (user_sub)             REFERENCES users(username)              ON DELETE CASCADE,
-                                        CONSTRAINT fk_cra_group  FOREIGN KEY (group_id)             REFERENCES user_group(id)               ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS user_group_member
+(
+    group_id VARCHAR(50) NOT NULL,
+    user_sub VARCHAR(50) NOT NULL,
+    CONSTRAINT user_group_member_pkey PRIMARY KEY (group_id, user_sub),
+    CONSTRAINT fk_ugm_group FOREIGN KEY (group_id) REFERENCES user_group (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ugm_user FOREIGN KEY (user_sub) REFERENCES users (username) ON DELETE CASCADE
 );
 
-CREATE TABLE client_session_policy (
-                                       registered_client_id VARCHAR(100) NOT NULL,
-                                       single_tab           BOOLEAN      NOT NULL DEFAULT FALSE,
-                                       fail_open            BOOLEAN      NOT NULL DEFAULT TRUE,
-                                       CONSTRAINT client_session_policy_pkey PRIMARY KEY (registered_client_id),
-                                       CONSTRAINT fk_csp_client FOREIGN KEY (registered_client_id)
-                                           REFERENCES oauth2_registered_client(id) ON DELETE CASCADE
+CREATE INDEX IF NOT EXISTS ix_ugm_user_sub ON user_group_member (user_sub);
+
+-- A role a user (or group) holds on one client, optionally scoped to a project. For cms-admin the
+-- project is the site code: (cms-admin, admin, 'en', ADMIN) = admin may edit site 'en'.
+CREATE TABLE IF NOT EXISTS client_role_assignment
+(
+    id                   VARCHAR(50)  NOT NULL,
+    registered_client_id VARCHAR(100) NOT NULL,
+    user_sub             VARCHAR(50),
+    group_id             VARCHAR(50),
+    project_id           VARCHAR(50),
+    role                 VARCHAR(50)  NOT NULL,
+    CONSTRAINT client_role_assignment_pkey PRIMARY KEY (id),
+    CONSTRAINT cra_exactly_one CHECK (
+        (user_sub IS NULL AND group_id IS NOT NULL)
+            OR
+        (user_sub IS NOT NULL AND group_id IS NULL)
+        ),
+    CONSTRAINT fk_cra_client FOREIGN KEY (registered_client_id) REFERENCES oauth2_registered_client (id) ON DELETE CASCADE,
+    CONSTRAINT fk_cra_user FOREIGN KEY (user_sub) REFERENCES users (username) ON DELETE CASCADE,
+    CONSTRAINT fk_cra_group FOREIGN KEY (group_id) REFERENCES user_group (id) ON DELETE CASCADE
 );
 
 -- Roles are project-scoped: one role per (client, user, project) / (client, group, project).
 -- COALESCE keeps the global (project_id IS NULL) row unique too, since Postgres treats NULLs
 -- as distinct in a plain unique index.
-CREATE UNIQUE INDEX ux_cra_client_user_project  ON client_role_assignment(registered_client_id, user_sub, COALESCE(project_id, ''))  WHERE user_sub  IS NOT NULL;
-CREATE UNIQUE INDEX ux_cra_client_group_project ON client_role_assignment(registered_client_id, group_id, COALESCE(project_id, '')) WHERE group_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cra_client_user_project ON client_role_assignment (registered_client_id, user_sub, COALESCE(project_id, '')) WHERE user_sub IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_cra_client_group_project ON client_role_assignment (registered_client_id, group_id, COALESCE(project_id, '')) WHERE group_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ix_cra_client_user_sub ON client_role_assignment (registered_client_id, user_sub);
+CREATE INDEX IF NOT EXISTS ix_cra_client_group_id ON client_role_assignment (registered_client_id, group_id);
 
-CREATE INDEX ix_ugm_user_sub           ON user_group_member(user_sub);
-CREATE INDEX ix_cra_client_user_sub    ON client_role_assignment(registered_client_id, user_sub);
-CREATE INDEX ix_cra_client_group_id    ON client_role_assignment(registered_client_id, group_id);
-
-CREATE INDEX IF NOT EXISTS ix_userinfo_manager_sub ON userinfo (manager_sub);
-CREATE INDEX IF NOT EXISTS ix_userinfo_department_id ON userinfo (department_id);
-CREATE INDEX IF NOT EXISTS ix_userinfo_unit_id ON userinfo (unit_id);
-
-CREATE INDEX IF NOT EXISTS ix_oa_client_principal ON oauth2_authorization(registered_client_id, principal_name);
-CREATE INDEX IF NOT EXISTS ix_oa_access_token     ON oauth2_authorization USING HASH (access_token_value);
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE TABLE IF NOT EXISTS client_session_policy
+(
+    registered_client_id VARCHAR(100) NOT NULL,
+    single_tab           BOOLEAN      NOT NULL DEFAULT FALSE,
+    fail_open            BOOLEAN      NOT NULL DEFAULT TRUE,
+    CONSTRAINT client_session_policy_pkey PRIMARY KEY (registered_client_id),
+    CONSTRAINT fk_csp_client FOREIGN KEY (registered_client_id) REFERENCES oauth2_registered_client (id) ON DELETE CASCADE
+);

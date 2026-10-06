@@ -23,7 +23,9 @@ export function DraftBanner() {
   }, []);
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-4 bg-amber-400 px-4 py-2 text-sm font-medium text-amber-950">
+    // Bottom-floating pill rather than a full-width top bar: the site's floating nav already owns
+    // the top of the viewport, and a top bar ended up hidden behind it.
+    <div className="fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-medium text-amber-950 shadow-[0_10px_30px_rgba(10,37,64,0.25)]">
       <span>You&apos;re previewing draft content — visitors don&apos;t see this.</span>
       <button
         type="button"
