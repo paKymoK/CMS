@@ -200,3 +200,122 @@ body {
     transition: none;
   }
 }
+
+/* Rich-text body elements beyond the base typography set via utilities on the <article>
+   (posts + case studies). Mirrors admin-app's .cms-rte so the editor preview matches the site. */
+.rich-body::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+.rich-body ul,
+.rich-body ol {
+  margin-bottom: 1.375rem;
+  padding-left: 1.375rem;
+}
+.rich-body ul {
+  list-style: disc;
+}
+.rich-body ol {
+  list-style: decimal;
+}
+.rich-body li > p {
+  margin: 0;
+}
+.rich-body u {
+  text-underline-offset: 3px;
+}
+.rich-body code {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #eef1f4;
+  font-family: var(--font-mono-wave);
+  font-size: 0.88em;
+}
+.rich-body pre {
+  margin: 1.5rem 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  background: #0a2540;
+  color: #e6eef6;
+  font-family: var(--font-mono-wave);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.rich-body pre code {
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+.rich-body hr {
+  margin: 2.25rem 0;
+  border: none;
+  border-top: 1px solid #dfe3e8;
+}
+.rich-body [data-callout] {
+  margin: 1.5rem 0;
+  padding: 16px 20px;
+  border-left: 3px solid var(--brand-primary);
+  background: #eaf4fb;
+  color: #10314f;
+}
+.rich-body [data-callout] > :last-child {
+  margin-bottom: 0;
+}
+.rich-body figure {
+  margin: 1.5rem 0;
+}
+.rich-body figure[data-align="left"] {
+  float: left;
+  width: 44%;
+  margin: 0.4rem 1.5rem 0.9rem 0;
+}
+.rich-body figure[data-align="right"] {
+  float: right;
+  width: 44%;
+  margin: 0.4rem 0 0.9rem 1.5rem;
+}
+@media (max-width: 640px) {
+  .rich-body figure[data-align="left"],
+  .rich-body figure[data-align="right"] {
+    float: none;
+    width: 100%;
+    margin: 1.5rem 0;
+  }
+}
+.rich-body table {
+  display: block;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.rich-body th,
+.rich-body td {
+  min-width: 6rem;
+  padding: 8px 12px;
+  border: 1px solid #dfe3e8;
+  vertical-align: top;
+  text-align: left;
+}
+.rich-body th {
+  background: #f6f9fc;
+  font-weight: 700;
+  color: #10314f;
+}
+.rich-body [data-embed] {
+  margin: 1.5rem 0;
+}
+.rich-body [data-embed] iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+.rich-body [data-embed="video"] iframe {
+  aspect-ratio: 16 / 9;
+}
+.rich-body [data-embed="form"] iframe {
+  height: 700px;
+}

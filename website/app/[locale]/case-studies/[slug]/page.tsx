@@ -133,7 +133,7 @@ export default async function CaseStudyDetailPage(
 
       <section className="mx-auto max-w-[1180px] px-6 py-[clamp(56px,7vw,88px)]">
         <article
-          className="mx-auto max-w-[700px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-2.5 [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_img]:w-full [&_img]:object-cover [&_li]:flex [&_li]:gap-3 [&_p]:mb-5.5 [&_ul]:mb-5.5 [&_ul]:list-none [&_ul]:pl-0"
+          className="rich-body mx-auto max-w-[700px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-2.5 [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_img]:w-full [&_img]:object-cover [&_li]:flex [&_li]:gap-3 [&_p]:mb-5.5 [&_ul]:mb-5.5 [&_ul]:list-none [&_ul]:pl-0"
           dangerouslySetInnerHTML={{ __html: caseStudy.body }}
         />
 

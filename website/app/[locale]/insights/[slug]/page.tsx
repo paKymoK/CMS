@@ -22,10 +22,10 @@ function initials(name: string): string {
 }
 
 /**
- * Injects an id into every top-level <h2> in the (already server-sanitized) body HTML and
+ * Injects an id into every top-level <h2> in the (already server-sanitized by content-service on save) body HTML and
  * returns the matching table-of-contents entries — mirrors the design mockup's
  * "+ built from body H2s" note. Regex-based rather than a full DOM parse since body is
- * trusted CMS-authored content, not user input.
+ * sanitized on write.
  */
 function prepareBody(body: string): { html: string; toc: { id: string; label: string }[] } {
   const toc: { id: string; label: string }[] = [];
@@ -215,7 +215,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
 
         <article
           id="post-article"
-          className="min-w-0 max-w-[700px] flex-[1_1_560px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_blockquote]:my-9 [&_blockquote]:border-l-2 [&_blockquote]:border-brand-primary [&_blockquote]:py-7 [&_blockquote]:pl-7 [&_blockquote_p]:font-sans [&_blockquote_p]:text-[clamp(20px,2.2vw,24px)] [&_blockquote_p]:leading-[1.45] [&_blockquote_p]:font-semibold [&_blockquote_p]:text-[#10314f] [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-4 [&_h2]:scroll-mt-[110px] [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:leading-[1.3] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_h3]:font-sans [&_h3]:mt-9 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-[#10141c] [&_img]:w-full [&_img]:object-cover [&_p]:mb-5.5"
+          className="rich-body min-w-0 max-w-[700px] flex-[1_1_560px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_blockquote]:my-9 [&_blockquote]:border-l-2 [&_blockquote]:border-brand-primary [&_blockquote]:py-7 [&_blockquote]:pl-7 [&_blockquote_p]:font-sans [&_blockquote_p]:text-[clamp(20px,2.2vw,24px)] [&_blockquote_p]:leading-[1.45] [&_blockquote_p]:font-semibold [&_blockquote_p]:text-[#10314f] [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-4 [&_h2]:scroll-mt-[110px] [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:leading-[1.3] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_h3]:font-sans [&_h3]:mt-9 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-[#10141c] [&_img]:w-full [&_img]:object-cover [&_p]:mb-5.5"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </section>
