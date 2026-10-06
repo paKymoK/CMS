@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -96,7 +96,7 @@ export default async function CaseStudyDetailPage(
           <div className="relative min-w-0">
             {caseStudy.image ? (
               <div className="relative aspect-4/3 w-full">
-                <Image src={caseStudy.image} alt="" fill className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
+                <CoverImage src={caseStudy.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
               </div>
             ) : (
               <Placeholder tone="cool" label={t("eventPhotography")} className="aspect-4/3 w-full" />
@@ -148,7 +148,7 @@ export default async function CaseStudyDetailPage(
             <figcaption className="mt-5.5 flex items-center gap-3">
               {caseStudy.testimonial.photo ? (
                 <div className="relative h-11 w-11 flex-none overflow-hidden rounded-full">
-                  <Image src={caseStudy.testimonial.photo} alt="" fill className="object-cover" />
+                  <CoverImage src={caseStudy.testimonial.photo} alt="" className="object-cover" sizes="44px" />
                 </div>
               ) : (
                 <div className="h-11 w-11 flex-none rounded-full bg-white/15" />
@@ -187,7 +187,7 @@ export default async function CaseStudyDetailPage(
                 >
                   {r.image ? (
                     <div className="relative aspect-[16/10] w-full">
-                      <Image src={r.image} alt="" fill className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />
+                      <CoverImage src={r.image} alt="" className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />
                     </div>
                   ) : (
                     <Placeholder tone="warm" label="" className="aspect-[16/10] w-full" />

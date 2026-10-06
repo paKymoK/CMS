@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -132,7 +132,7 @@ export default async function InsightsPage(props: PageProps<"/[locale]/insights"
           >
             <div className="relative min-h-[340px]">
               {featured.image ? (
-                <Image src={featured.image} alt="" fill className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" />
+                <CoverImage src={featured.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" />
               ) : (
                 <Placeholder tone="dark" label={t("eventPhotography")} className="absolute inset-0" />
               )}
@@ -203,7 +203,7 @@ export default async function InsightsPage(props: PageProps<"/[locale]/insights"
                 <div className="relative overflow-hidden">
                   {p.image ? (
                     <div className="relative aspect-4/3 w-full">
-                      <Image src={p.image} alt="" fill className="object-cover" sizes="(min-width: 1180px) 280px, 45vw" />
+                      <CoverImage src={p.image} alt="" className="object-cover" sizes="(min-width: 1180px) 280px, 45vw" />
                     </div>
                   ) : (
                     <Placeholder tone="navy" label={t("eventPhotography")} className="aspect-4/3 w-full" />

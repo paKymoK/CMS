@@ -17,7 +17,7 @@ const RASTER_HEIGHT = 360;
  */
 export function buildGlobeDots(
   topology: Topology,
-  { latStepDeg = 1.9, alphaThreshold = 120 }: { latStepDeg?: number; alphaThreshold?: number } = {},
+  { latStepDeg = 1.5, alphaThreshold = 120 }: { latStepDeg?: number; alphaThreshold?: number } = {},
 ): GlobeDot[] {
   const canvas = document.createElement("canvas");
   canvas.width = RASTER_WIDTH;

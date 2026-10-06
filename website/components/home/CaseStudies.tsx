@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
 import type { CaseStudy } from "@/content/home/types";
@@ -26,10 +26,9 @@ export function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
                 className="group relative block h-[328px] overflow-hidden bg-[#061225]"
               >
                 {cs.image ? (
-                  <Image
+                  <CoverImage
                     src={cs.image}
                     alt={cs.title}
-                    fill
                     className="absolute inset-0 scale-[1.05] object-cover transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
                     sizes="(min-width: 1120px) 260px, 33vw"
                   />

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { useDragCarousel } from "@/lib/useDragCarousel";
@@ -35,10 +35,9 @@ export function Insights({ insights }: { insights: InsightItem[] }) {
                   }`}
                 >
                   {item.image ? (
-                    <Image
+                    <CoverImage
                       src={item.image}
                       alt={item.title}
-                      fill
                       className="object-cover"
                       sizes={i === 0 ? "62vw" : "29vw"}
                     />

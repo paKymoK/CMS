@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -89,10 +89,9 @@ export function TestimonialsCarousel({ testimonials }: { testimonials: Testimoni
                 <div className="absolute bottom-3 left-6 z-[2] flex items-center gap-3">
                   {active.photo && (
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/50">
-                      <Image
+                      <CoverImage
                         src={active.photo}
                         alt={active.name}
-                        fill
                         className="object-cover"
                         sizes="40px"
                       />

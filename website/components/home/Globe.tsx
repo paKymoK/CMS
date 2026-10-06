@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import type { Topology } from "topojson-specification";
 import type { Office } from "@/content/home/types";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -102,7 +102,7 @@ export function Globe({ offices }: { offices: Office[] }) {
     const projected = projectDots(dots, view);
     for (const p of projected) {
       const alpha = Math.max(0.08, 1 - p.depth) * 0.85;
-      const r = Math.max(0.5, 1.1 - p.depth * 0.5);
+      const r = Math.max(0.45, 0.95 - p.depth * 0.45);
       ctx.beginPath();
       ctx.fillStyle = `rgba(47,134,207,${alpha.toFixed(3)})`;
       ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
@@ -160,6 +160,7 @@ export function Globe({ offices }: { offices: Office[] }) {
   }, [draw, reducedMotion]);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as Element).closest("[data-globe-marker]")) return;
     dragRef.current = { lastX: e.clientX };
     velocityRef.current = 0;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
@@ -220,7 +221,8 @@ export function Globe({ offices }: { offices: Office[] }) {
             markerRefs.current[i] = el;
           }}
           className="absolute top-0 left-0 flex items-center justify-center"
-          style={{ width: 44, height: 44, marginLeft: -22, marginTop: -22, opacity: 0 }}
+          style={{ width: 44, height: 44, opacity: 0 }}
+          data-globe-marker
           onPointerEnter={() => openOffice(i)}
           onPointerLeave={closeOffice}
           onClick={() => (hoveredIndex === i ? closeOffice() : openOffice(i))}
@@ -240,12 +242,12 @@ export function Globe({ offices }: { offices: Office[] }) {
       {active && (
         <div
           ref={cardRef}
-          className="absolute top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
+          className="pointer-events-none absolute top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
           style={{ left: "50%" }}
         >
           {active.image ? (
             <div className="relative h-[76px] w-full">
-              <Image src={active.image} alt={active.city} fill className="object-cover" />
+              <CoverImage src={active.image} alt={active.city} className="object-cover" sizes="200px" />
             </div>
           ) : (
             <Placeholder tone="light" label="OFFICE PHOTO" className="h-[76px]" />

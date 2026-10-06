@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import type { ServiceCard } from "@/content/home/types";
 import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -48,10 +48,9 @@ export function Services({ services }: { services: ServiceCard[] }) {
                 <div className="group w-[224px] select-none transition-transform duration-200 ease-out hover:-translate-y-1">
                   {service.image ? (
                     <div className="relative h-[284px] overflow-hidden transition-transform duration-200 ease-out group-hover:scale-[1.04]">
-                      <Image
+                      <CoverImage
                         src={service.image}
                         alt={service.name}
-                        fill
                         className="object-cover"
                         sizes="224px"
                       />

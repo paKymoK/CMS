@@ -103,3 +103,8 @@ show up in the gateway's monitoring), but wasn't done here.
 - Keep `docs/api-contract.md` updated as endpoints change — the admin app
   and the separately-built Next.js sites both depend on it.
 - Small, reviewable commits per logical change.
+- Website images: never use `next/image` with `fill` directly. Use
+  `website/components/ui/CoverImage.tsx` (requires `sizes`; add `priority`
+  for above-the-fold/LCP images) for content/media images, and
+  `LogoImage` for logos in a fixed box. Intrinsic-size images (e.g. the
+  header/footer logos with real width/height) may use `next/image` as-is.

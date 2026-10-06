@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { CoverImage } from "@/components/ui/CoverImage";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -133,7 +133,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
               <div className="flex items-center gap-3">
                 {post.authorAvatar ? (
                   <div className="relative h-11 w-11 flex-none overflow-hidden rounded-full">
-                    <Image src={post.authorAvatar} alt="" fill className="object-cover" />
+                    <CoverImage src={post.authorAvatar} alt="" className="object-cover" sizes="44px" />
                   </div>
                 ) : (
                   <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-sm font-bold text-white">
@@ -158,7 +158,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
           <div className="relative min-w-0">
             {post.image ? (
               <div className="relative aspect-4/3 w-full">
-                <Image src={post.image} alt="" fill className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
+                <CoverImage src={post.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
               </div>
             ) : (
               <Placeholder tone="navy" label={t("eventPhotography")} className="aspect-4/3 w-full" />
@@ -248,7 +248,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
                 >
                   {r.image ? (
                     <div className="relative aspect-4/3 w-full">
-                      <Image src={r.image} alt="" fill className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />
+                      <CoverImage src={r.image} alt="" className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />
                     </div>
                   ) : (
                     <Placeholder tone="cool" label={t("eventPhotography")} className="aspect-4/3 w-full" />
