@@ -6,7 +6,7 @@ services:
     image: takypok/content-service
     container_name: content-service
     ports:
-      - "8084:8084"
+      - "8086:8086"
     environment:
       AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
       DB_HOST: ${DB_HOST:-postgres}

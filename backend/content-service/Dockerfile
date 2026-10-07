@@ -19,5 +19,5 @@ WORKDIR /app
 COPY --from=builder /app/content-service/build/libs/*.jar app.jar
 USER spring
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
-    CMD wget -qO- http://localhost:8084/actuator/health | grep -q '"status":"UP"' || exit 1
+    CMD wget -qO- http://localhost:8086/actuator/health | grep -q '"status":"UP"' || exit 1
 ENTRYPOINT ["java", "-jar", "app.jar"]

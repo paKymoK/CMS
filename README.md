@@ -10,7 +10,7 @@ docker compose up
 ```
 
 Services: `auth-service` :9000, `media-service` :8082, `chat-service` :8083,
-`content-service` :8084. No gateway yet — see `CLAUDE.md`'s open items.
+`content-service` :8086. No gateway yet — see `CLAUDE.md`'s open items.
 
 ## Database migrations
 
