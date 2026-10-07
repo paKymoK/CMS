@@ -149,15 +149,19 @@ export default async function InsightsPage(props: PageProps<"/[locale]/insights"
                 <h2 className="mt-4 font-sans text-[clamp(22px,2.6vw,32px)] leading-[1.25] font-bold tracking-[-0.015em] text-white text-pretty">
                   {featured.title}
                 </h2>
-                <p className="mt-3.5 text-base leading-[1.6] text-[#dce7f5]">{featured.excerpt}</p>
+                {featured.excerpt && <p className="mt-3.5 text-base leading-[1.6] text-[#dce7f5]">{featured.excerpt}</p>}
               </div>
               <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-xs font-bold text-white">
-                    {initials(featured.authorName)}
+                {featured.authorName ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-xs font-bold text-white">
+                      {initials(featured.authorName)}
+                    </div>
+                    <span className="text-sm font-semibold text-white">{featured.authorName}</span>
                   </div>
-                  <span className="text-sm font-semibold text-white">{featured.authorName}</span>
-                </div>
+                ) : (
+                  <span />
+                )}
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#0b63c5]">
                   <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] fill-none stroke-current stroke-2" aria-hidden>
                     <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
@@ -220,9 +224,9 @@ export default async function InsightsPage(props: PageProps<"/[locale]/insights"
                   ))}
                 </div>
                 <span className="text-lg leading-[1.4] font-bold text-[#10141c] text-pretty">{p.title}</span>
-                <span className="text-[15px] leading-[1.55] text-[#55585f]">{p.excerpt}</span>
+                {p.excerpt && <span className="text-[15px] leading-[1.55] text-[#55585f]">{p.excerpt}</span>}
                 <span className="font-mono-wave mt-auto text-[11px] tracking-[0.06em] text-[#5a5d64]">
-                  {p.date} · {p.readMinutes} {t("min")} · {p.authorName}
+                  {[p.date, `${p.readMinutes} ${t("min")}`, p.authorName].filter(Boolean).join(" · ")}
                 </span>
               </Link>
             ))}

@@ -1,6 +1,8 @@
 package com.takypok.contentservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -149,6 +151,41 @@ class PostServiceImplTest {
         .verifyComplete();
 
     StepVerifier.create(service.getPreviewDetailBySlug(2L, "shared-slug"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
+
+  @Test
+  void blankExcerptDateAndAuthorAreFilledOrLeftEmptyInsteadOfRejected() {
+    PostServiceImpl service = new PostServiceImpl(postRepository);
+    when(postRepository.existsBySiteIdAndSlug(1L, "just-a-title")).thenReturn(Mono.just(false));
+    when(postRepository.save(any(Post.class)))
+        .thenAnswer(inv -> Mono.just((Post) inv.getArgument(0)));
+
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("Just a title");
+    request.setStatus("PUBLISHED");
+    request.setBody("<h2>Hi</h2><p>First paragraph of the post.</p>");
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(
+            post -> {
+              assertEquals("Hi First paragraph of the post.", post.getExcerpt());
+              assertNotNull(post.getDate());
+              assertEquals("default", post.getLayout());
+              assertNull(post.getAuthorName());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void unknownLayoutIsRejected() {
+    PostServiceImpl service = new PostServiceImpl(postRepository);
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("T");
+    request.setLayout("fancy");
+
+    StepVerifier.create(service.create(1L, request))
         .expectError(ApplicationException.class)
         .verify();
   }

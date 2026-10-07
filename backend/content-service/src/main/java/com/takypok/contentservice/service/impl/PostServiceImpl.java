@@ -11,10 +11,15 @@ import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.text.Normalizer;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -25,6 +30,10 @@ public class PostServiceImpl implements PostService {
   private static final Pattern DIACRITICS = Pattern.compile("\\p{M}");
   private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]+");
   private static final int MAX_RELATED = 3;
+  private static final Set<String> LAYOUTS = Set.of("default", "focused", "wide", "landing");
+  private static final int EXCERPT_MAX = 200;
+  private static final DateTimeFormatter DISPLAY_DATE =
+      DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
 
   private final PostRepository postRepository;
 
@@ -53,12 +62,13 @@ public class PostServiceImpl implements PostService {
     post.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
     post.setImage(request.getImage());
     post.setTitle(request.getTitle());
-    post.setExcerpt(request.getExcerpt());
-    post.setDate(request.getDate());
     post.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
     post.setActive(request.getActive() != null ? request.getActive() : true);
     post.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
     post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
+    post.setExcerpt(excerptOrDerived(request.getExcerpt(), post.getBody()));
+    post.setDate(dateOrToday(request.getDate(), post.getStatus()));
+    post.setLayout(validLayout(request.getLayout()));
     post.setAuthorName(request.getAuthorName());
     post.setAuthorRole(request.getAuthorRole());
     post.setAuthorBio(request.getAuthorBio());
@@ -81,13 +91,14 @@ public class PostServiceImpl implements PostService {
               if (request.getCategory() != null) post.setCategory(request.getCategory());
               post.setImage(request.getImage());
               post.setTitle(request.getTitle());
-              post.setExcerpt(request.getExcerpt());
-              post.setDate(request.getDate());
               if (request.getDisplayOrder() != null)
                 post.setDisplayOrder(request.getDisplayOrder());
               if (request.getActive() != null) post.setActive(request.getActive());
               if (request.getStatus() != null) post.setStatus(request.getStatus());
               post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
+              post.setExcerpt(excerptOrDerived(request.getExcerpt(), post.getBody()));
+              post.setDate(dateOrToday(request.getDate(), post.getStatus()));
+              if (request.getLayout() != null) post.setLayout(validLayout(request.getLayout()));
               post.setAuthorName(request.getAuthorName());
               post.setAuthorRole(request.getAuthorRole());
               post.setAuthorBio(request.getAuthorBio());
@@ -101,6 +112,31 @@ public class PostServiceImpl implements PostService {
                         return postRepository.save(post);
                       });
             });
+  }
+
+  static String validLayout(String layout) {
+    if (layout == null || layout.isBlank()) return "default";
+    if (!LAYOUTS.contains(layout)) {
+      throw new ApplicationException(Message.Application.ERROR, "Unknown layout: " + layout);
+    }
+    return layout;
+  }
+
+  /** The excerpt is optional: left blank, it is taken from the start of the body text. */
+  private static String excerptOrDerived(String excerpt, String body) {
+    if (excerpt != null && !excerpt.isBlank()) return excerpt;
+    if (body == null || body.isBlank()) return null;
+    String text = Jsoup.parseBodyFragment(body).body().text().trim();
+    if (text.isEmpty()) return null;
+    if (text.length() <= EXCERPT_MAX) return text;
+    int cut = text.lastIndexOf(' ', EXCERPT_MAX);
+    return text.substring(0, cut > EXCERPT_MAX / 2 ? cut : EXCERPT_MAX).trim() + "…";
+  }
+
+  /** The display date is optional: a post published without one is dated today. */
+  private static String dateOrToday(String date, String status) {
+    if (date != null && !date.isBlank()) return date;
+    return "PUBLISHED".equals(status) ? LocalDate.now().format(DISPLAY_DATE) : date;
   }
 
   @Override

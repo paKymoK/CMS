@@ -24,4 +24,5 @@ public class PostCreateRequest {
   private String authorAvatar;
   private JsonNode tags;
   private Boolean featured;
+  private String layout;
 }

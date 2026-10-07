@@ -1,8 +1,13 @@
 package com.takypok.contentservice.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -16,22 +21,28 @@ import org.jsoup.safety.Safelist;
 /**
  * Allowlist sanitizer for rich-text bodies (posts, case studies), applied on write so stored HTML
  * is already clean no matter who called the API. Mirrors what the admin editor's schema can produce
- * and what the website's render-time sanitizer (website/lib/richText.ts) allows — keep the three in
- * sync. Iframes are only kept for the embed providers the editor offers.
+ * (admin-app/src/components/rte/extensions.ts) — keep the two in sync. Iframes are only kept for
+ * the embed providers listed in rich-text-embed-hosts.json, which the admin app imports too, so
+ * that list has a single source.
  */
 @Slf4j
 public final class RichTextSanitizer {
 
-  /** hostname -> required path prefix ("" = any). Mirrors admin-app/src/lib/embeds.ts. */
-  private static final Map<String, String> EMBED_HOSTS =
-      Map.of(
-          "www.youtube-nocookie.com", "",
-          "player.vimeo.com", "",
-          "docs.google.com", "/forms/",
-          "tally.so", "",
-          "form.typeform.com", "",
-          "form.jotform.com", "",
-          "forms.office.com", "");
+  /** hostname -> required path prefix ("" = any), from rich-text-embed-hosts.json. */
+  private static final Map<String, String> EMBED_HOSTS = loadEmbedHosts();
+
+  private static Map<String, String> loadEmbedHosts() {
+    try (InputStream in =
+        RichTextSanitizer.class.getResourceAsStream("/rich-text-embed-hosts.json")) {
+      JsonNode root = new ObjectMapper().readTree(in);
+      Map<String, String> hosts = new HashMap<>();
+      root.fields()
+          .forEachRemaining(e -> hosts.put(e.getKey(), e.getValue().path("pathPrefix").asText("")));
+      return Map.copyOf(hosts);
+    } catch (IOException | RuntimeException e) {
+      throw new IllegalStateException("Cannot load rich-text-embed-hosts.json", e);
+    }
+  }
 
   private static final Safelist SAFELIST =
       new Safelist()
@@ -40,6 +51,10 @@ public final class RichTextSanitizer {
               "br",
               "h2",
               "h3",
+              "h4",
+              "span",
+              "details",
+              "summary",
               "ul",
               "ol",
               "li",
@@ -63,10 +78,16 @@ public final class RichTextSanitizer {
               "td",
               "div",
               "iframe")
-          .addAttributes("a", "href", "target")
+          .addAttributes("a", "href", "target", "data-button")
+          .addAttributes("span", "data-color")
+          .addAttributes("p", "data-text-align")
+          .addAttributes("h2", "data-text-align")
+          .addAttributes("h3", "data-text-align")
+          .addAttributes("h4", "data-text-align")
+          .addAttributes("blockquote", "data-text-align")
           .addAttributes("img", "src", "alt")
           .addAttributes("figure", "data-align")
-          .addAttributes("div", "data-callout", "data-embed")
+          .addAttributes("div", "data-callout", "data-embed", "data-columns", "data-column")
           .addAttributes("th", "colspan", "rowspan")
           .addAttributes("td", "colspan", "rowspan")
           .addAttributes("iframe", "src", "title", "loading", "allowfullscreen", "referrerpolicy")

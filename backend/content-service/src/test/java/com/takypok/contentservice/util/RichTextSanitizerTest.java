@@ -112,4 +112,33 @@ class RichTextSanitizerTest {
     assertTrue(RichTextSanitizer.findViolations(editorBody).isEmpty());
     assertFalse(RichTextSanitizer.sanitizeOrReject(editorBody).contains("style="));
   }
+
+  @Test
+  void keepsLayoutBlocksAlignmentColorAndButtons() {
+    String body =
+        "<h4 data-text-align=\"center\">h</h4><p data-text-align=\"right\">a <span data-color=\"blue\">b</span></p>"
+            + "<p><a href=\"https://a.com\" data-button=\"\" rel=\"noopener noreferrer\">Go</a></p>"
+            + "<div data-columns=\"2\"><div data-column=\"\"><p>l</p></div><div data-column=\"\"><p>r</p></div></div>"
+            + "<details><summary>Q</summary><p>A</p></details>";
+    assertEquals(body, RichTextSanitizer.sanitize(body));
+  }
+
+  @Test
+  void stripsOpenFromDetailsAndInlineStyleFromSpans() {
+    String out =
+        RichTextSanitizer.sanitize(
+            "<details open=\"\"><summary>Q</summary><p>A</p></details><span style=\"color:red\">x</span>");
+    assertFalse(out.contains("open"));
+    assertFalse(out.contains("style"));
+  }
+
+  @Test
+  void embedHostsComeFromTheSharedResource() {
+    String ok =
+        "<div data-embed=\"video\"><iframe src=\"https://www.loom.com/embed/abc123\"></iframe></div>";
+    assertTrue(RichTextSanitizer.sanitize(ok).contains("loom.com/embed/abc123"));
+    String wrongPath =
+        "<div data-embed=\"video\"><iframe src=\"https://www.loom.com/share/abc123\"></iframe></div>";
+    assertFalse(RichTextSanitizer.sanitize(wrongPath).contains("iframe"));
+  }
 }

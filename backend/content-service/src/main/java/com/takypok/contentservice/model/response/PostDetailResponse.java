@@ -18,6 +18,7 @@ public record PostDetailResponse(
     String authorRole,
     String authorBio,
     String authorAvatar,
+    String layout,
     int readMinutes,
     List<PostSummaryResponse> related) {
 
@@ -36,6 +37,7 @@ public record PostDetailResponse(
         post.getAuthorRole(),
         post.getAuthorBio(),
         post.getAuthorAvatar(),
+        post.getLayout() != null ? post.getLayout() : "default",
         ReadTimeCalculator.minutesFor(post.getBody()),
         related);
   }

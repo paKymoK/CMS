@@ -1,31 +1,28 @@
-/** Embeds authors may place in a post/case-study body. Only these providers are allowed: the
- * editor refuses everything else, and the website's render-time sanitizer re-checks the same list
- * (website/lib/richText.ts) — keep the two in sync. */
-export type EmbedKind = "video" | "form";
+import hosts from "../../../backend/content-service/src/main/resources/rich-text-embed-hosts.json";
+
+/** Embeds authors may place in a post/case-study body. Only the providers in
+ * rich-text-embed-hosts.json are allowed. That file belongs to content-service, which enforces it
+ * on save (RichTextSanitizer) — the editor imports the same file, so the two cannot drift. */
+export type EmbedKind = "video" | "form" | "audio";
 
 export interface EmbedSpec {
   src: string;
   kind: EmbedKind;
 }
 
-/** hostname -> kind, for the final iframe src. */
-export const EMBED_HOSTS: Record<string, EmbedKind> = {
-  "www.youtube-nocookie.com": "video",
-  "player.vimeo.com": "video",
-  "docs.google.com": "form",
-  "tally.so": "form",
-  "form.typeform.com": "form",
-  "form.jotform.com": "form",
-  "forms.office.com": "form",
-};
+const HOSTS = hosts as Record<string, { kind: EmbedKind; pathPrefix: string }>;
 
-/** True when `src` is an https URL on an allowed embed host (Google only under /forms/). */
+/** hostname -> kind, for the final iframe src. */
+export const EMBED_HOSTS: Record<string, EmbedKind> = Object.fromEntries(
+  Object.entries(HOSTS).map(([host, h]) => [host, h.kind]),
+);
+
+/** True when `src` is an https URL on an allowed embed host and under that host's path prefix. */
 export function isAllowedEmbedSrc(src: string): boolean {
   try {
     const u = new URL(src);
-    if (u.protocol !== "https:" || !(u.hostname in EMBED_HOSTS)) return false;
-    if (u.hostname === "docs.google.com") return u.pathname.startsWith("/forms/");
-    return true;
+    const h = HOSTS[u.hostname];
+    return u.protocol === "https:" && !!h && u.pathname.startsWith(h.pathPrefix);
   } catch {
     return false;
   }
@@ -55,6 +52,16 @@ export function parseEmbedUrl(input: string): EmbedSpec | null {
   if (host === "vimeo.com" || host === "player.vimeo.com") {
     const vid = u.pathname.match(/(\d{5,})/)?.[1];
     if (vid) return { src: `https://player.vimeo.com/video/${vid}`, kind: "video" };
+  }
+
+  if (host === "loom.com") {
+    const lid = u.pathname.match(/^\/(?:share|embed)\/([\w-]+)/)?.[1];
+    if (lid) return { src: `https://www.loom.com/embed/${lid}`, kind: "video" };
+  }
+
+  if (host === "open.spotify.com") {
+    const m = u.pathname.match(/^\/(?:embed\/)?(track|episode|playlist|album|show)\/([\w]+)/);
+    if (m) return { src: `https://open.spotify.com/embed/${m[1]}/${m[2]}`, kind: "audio" };
   }
 
   if (host === "tally.so") {

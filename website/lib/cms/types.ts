@@ -2,18 +2,20 @@ export type PostSummary = {
   id: number;
   slug: string;
   title: string;
-  excerpt: string;
-  image?: string;
+  excerpt?: string | null;
+  image?: string | null;
   date: string;
   category: string;
   tags: string[];
-  authorName: string;
+  authorName?: string | null;
   readMinutes: number;
   featured: boolean;
 };
 
 export type PostDetail = Omit<PostSummary, "featured"> & {
   body: string;
+  /** default | focused | wide | landing — picked by the author per post. */
+  layout?: string;
   authorRole?: string;
   authorBio?: string;
   authorAvatar?: string;

@@ -27,7 +27,10 @@ function initials(name: string): string {
  * "+ built from body H2s" note. Regex-based rather than a full DOM parse since body is
  * sanitized on write.
  */
-function prepareBody(body: string): { html: string; toc: { id: string; label: string }[] } {
+function prepareBody(body: string): {
+  html: string;
+  toc: { id: string; label: string }[];
+} {
   const toc: { id: string; label: string }[] = [];
   let index = 0;
   const html = body.replace(/<h2([^>]*)>([\s\S]*?)<\/h2>/gi, (_match, attrs: string, inner: string) => {
@@ -45,9 +48,7 @@ function prepareBody(body: string): { html: string; toc: { id: string; label: st
   return { html, toc };
 }
 
-export async function generateMetadata(
-  props: PageProps<"/[locale]/insights/[slug]">,
-): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<"/[locale]/insights/[slug]">): Promise<Metadata> {
   const { locale, slug } = await props.params;
   const token = await getPreviewToken();
   const post = token ? await getPreviewPost(slug, token) : await getPost(slug);
@@ -64,8 +65,8 @@ export async function generateMetadata(
     locale,
     path: `insights/${slug}`,
     title: `${post.title} — CMC Global Insights`,
-    description: post.excerpt,
-    ogImage: post.image,
+    description: post.excerpt ?? "",
+    ogImage: post.image ?? undefined,
     noIndex: token !== null,
   });
 }
@@ -85,7 +86,11 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
     notFound();
   }
 
-  const { html, toc } = prepareBody(post.body);
+  const { html, toc } = prepareBody(post.body ?? "");
+  const layout = post.layout ?? "default";
+  const landing = layout === "landing";
+  const sidebar = layout === "default";
+  const articleWidth = layout === "wide" ? "max-w-[1000px]" : landing ? "max-w-[1100px]" : "max-w-[700px]";
   const pageUrl = `${SITE_URL}/${locale}/insights/${slug}`;
   const shareLinks = [
     {
@@ -105,132 +110,137 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
     },
   ];
 
+  const shareBlock = (
+    <div>
+      <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">— {t("share")}</div>
+      <div className="flex gap-2">
+        {shareLinks.map((s) => (
+          <a
+            key={s.name}
+            href={s.href}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Share on ${s.name}`}
+            title={`Share on ${s.name}`}
+            className="flex h-9.5 w-9.5 items-center justify-center rounded-full border border-[#cfd2d6] text-[#3d4046] transition-colors hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+          >
+            <svg viewBox="0 0 24 24" className="h-[15px] w-[15px] fill-current" aria-hidden>
+              <path d={s.path} />
+            </svg>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="font-wave-sans text-[#0f172a]">
       {token !== null && <DraftBanner />}
       <ReadingProgress targetId="post-article" />
 
-      <section className="mx-auto max-w-[1180px] px-6 pt-[150px] pb-16">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-[clamp(32px,5vw,64px)]">
-          <div className="min-w-0">
-            <nav className="font-mono-wave mb-5.5 flex flex-wrap items-center gap-2 text-[11px] tracking-[0.08em] text-[#6a7c90] uppercase">
-              <Link href="/" className="text-[#6a7c90]">
-                {t("home")}
-              </Link>
-              <span>/</span>
-              <Link href="/insights" className="text-[#6a7c90]">
-                {t("eyebrow")}
-              </Link>
-            </nav>
-            <div className="font-mono-wave mb-4 text-xs tracking-[0.16em] text-brand-primary uppercase">
-              — {t("insightBadge")}
-            </div>
-            <h1 className="font-sans text-[clamp(30px,3.8vw,46px)] leading-[1.16] font-bold tracking-[-0.02em] text-[#10314f] text-balance">
-              {post.title}
-            </h1>
-            <p className="mt-5 max-w-[560px] text-lg leading-[1.6] text-[#55585f] text-pretty">{post.excerpt}</p>
-            <div className="mt-7.5 flex flex-wrap items-center gap-4.5 border-t border-[#e0e4e9] pt-5.5">
-              <div className="flex items-center gap-3">
-                {post.authorAvatar ? (
-                  <div className="relative h-11 w-11 flex-none overflow-hidden rounded-full">
-                    <CoverImage src={post.authorAvatar} alt="" className="object-cover" sizes="44px" />
-                  </div>
-                ) : (
-                  <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-sm font-bold text-white">
-                    {initials(post.authorName)}
-                  </div>
+      {landing ? (
+        <h1 className="sr-only">{post.title}</h1>
+      ) : (
+        <section className="mx-auto max-w-[1180px] px-6 pt-[150px] pb-16">
+          <div className={`grid items-center gap-[clamp(32px,5vw,64px)] ${post.image ? "grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))]" : "grid-cols-1"}`}>
+            <div className="min-w-0">
+              <nav className="font-mono-wave mb-5.5 flex flex-wrap items-center gap-2 text-[11px] tracking-[0.08em] text-[#6a7c90] uppercase">
+                <Link href="/" className="text-[#6a7c90]">
+                  {t("home")}
+                </Link>
+                <span>/</span>
+                <Link href="/insights" className="text-[#6a7c90]">
+                  {t("eyebrow")}
+                </Link>
+              </nav>
+              <div className="font-mono-wave mb-4 text-xs tracking-[0.16em] text-brand-primary uppercase">— {t("insightBadge")}</div>
+              <h1 className="font-sans text-[clamp(30px,3.8vw,46px)] leading-[1.16] font-bold tracking-[-0.02em] text-[#10314f] text-balance">{post.title}</h1>
+              {post.excerpt && <p className="mt-5 max-w-[560px] text-lg leading-[1.6] text-[#55585f] text-pretty">{post.excerpt}</p>}
+              <div className="mt-7.5 flex flex-wrap items-center gap-4.5 border-t border-[#e0e4e9] pt-5.5">
+                {post.authorName && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      {post.authorAvatar ? (
+                        <div className="relative h-11 w-11 flex-none overflow-hidden rounded-full">
+                          <CoverImage src={post.authorAvatar} alt="" className="object-cover" sizes="44px" />
+                        </div>
+                      ) : (
+                        <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-sm font-bold text-white">
+                          {initials(post.authorName)}
+                        </div>
+                      )}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold text-[#10141c]">{post.authorName}</span>
+                        {post.authorRole && <span className="text-[13px] text-[#6a7c90]">{post.authorRole}</span>}
+                      </div>
+                    </div>
+                    <div className="h-7 w-px bg-[#e0e4e9]" />
+                  </>
                 )}
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-bold text-[#10141c]">{post.authorName}</span>
-                  {post.authorRole && <span className="text-[13px] text-[#6a7c90]">{post.authorRole}</span>}
+                <div className="font-mono-wave flex flex-wrap items-center gap-3.5 text-xs tracking-[0.04em] text-[#5a5d64]">
+                  {post.date && (
+                    <>
+                      <span>{post.date}</span>
+                      <span className="h-1 w-1 rounded-full bg-[#cfd2d6]" />
+                    </>
+                  )}
+                  <span>
+                    {post.readMinutes} {t("minRead")}
+                  </span>
                 </div>
               </div>
-              <div className="h-7 w-px bg-[#e0e4e9]" />
-              <div className="font-mono-wave flex flex-wrap items-center gap-3.5 text-xs tracking-[0.04em] text-[#5a5d64]">
-                <span>{post.date}</span>
-                <span className="h-1 w-1 rounded-full bg-[#cfd2d6]" />
-                <span>
-                  {post.readMinutes} {t("minRead")}
-                </span>
-              </div>
             </div>
-          </div>
-          <div className="relative min-w-0">
-            {post.image ? (
-              <div className="relative aspect-4/3 w-full">
-                <CoverImage src={post.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
+            {post.image && (
+              <div className="relative min-w-0">
+                <div className="relative aspect-4/3 w-full">
+                  <CoverImage src={post.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
+                </div>
               </div>
-            ) : (
-              <Placeholder tone="navy" label={t("eventPhotography")} className="aspect-4/3 w-full" />
             )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      <section className="mx-auto flex max-w-[1180px] flex-wrap justify-center gap-[clamp(32px,6vw,80px)] px-6 pt-6 pb-24">
-        <aside className="flex-[0_1_220px] min-w-[200px]">
-          <div className="sticky top-[112px] flex flex-col gap-8.5">
-            {toc.length > 0 && (
-              <div>
-                <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
-                  — {t("onThisPage")}
+      <section className={`mx-auto flex max-w-[1180px] flex-wrap justify-center gap-[clamp(32px,6vw,80px)] px-6 pb-24 ${landing ? "pt-[130px]" : "pt-6"}`}>
+        {sidebar && (
+          <aside className="flex-[0_1_220px] min-w-[200px]">
+            <div className="sticky top-[112px] flex flex-col gap-8.5">
+              {toc.length > 0 && (
+                <div>
+                  <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">— {t("onThisPage")}</div>
+                  <nav className="flex flex-col border-l border-[#e0e4e9]">
+                    {toc.map((item) => (
+                      <a
+                        key={item.id}
+                        href={`#${item.id}`}
+                        className="-ml-px border-l-2 border-transparent py-2 pl-4 text-[13.5px] leading-[1.4] font-medium text-[#6a7c90] transition-colors hover:border-brand-primary hover:text-[#10314f]"
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                  </nav>
                 </div>
-                <nav className="flex flex-col border-l border-[#e0e4e9]">
-                  {toc.map((item) => (
-                    <a
-                      key={item.id}
-                      href={`#${item.id}`}
-                      className="-ml-px border-l-2 border-transparent py-2 pl-4 text-[13.5px] leading-[1.4] font-medium text-[#6a7c90] transition-colors hover:border-brand-primary hover:text-[#10314f]"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            )}
-            <div>
-              <div className="font-mono-wave mb-3.5 text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
-                — {t("share")}
-              </div>
-              <div className="flex gap-2">
-                {shareLinks.map((s) => (
-                  <a
-                    key={s.name}
-                    href={s.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Share on ${s.name}`}
-                    title={`Share on ${s.name}`}
-                    className="flex h-9.5 w-9.5 items-center justify-center rounded-full border border-[#cfd2d6] text-[#3d4046] transition-colors hover:border-brand-primary hover:bg-brand-primary hover:text-white"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-[15px] w-[15px] fill-current" aria-hidden>
-                      <path d={s.path} />
-                    </svg>
-                  </a>
-                ))}
-              </div>
+              )}
+              {shareBlock}
             </div>
-          </div>
-        </aside>
+          </aside>
+        )}
 
         <article
           id="post-article"
-          className="rich-body min-w-0 max-w-[700px] flex-[1_1_560px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_blockquote]:my-9 [&_blockquote]:border-l-2 [&_blockquote]:border-brand-primary [&_blockquote]:py-7 [&_blockquote]:pl-7 [&_blockquote_p]:font-sans [&_blockquote_p]:text-[clamp(20px,2.2vw,24px)] [&_blockquote_p]:leading-[1.45] [&_blockquote_p]:font-semibold [&_blockquote_p]:text-[#10314f] [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-4 [&_h2]:scroll-mt-[110px] [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:leading-[1.3] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_h3]:font-sans [&_h3]:mt-9 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-[#10141c] [&_img]:w-full [&_img]:object-cover [&_p]:mb-5.5"
+          className={`rich-body min-w-0 ${articleWidth} flex-[1_1_560px] text-lg leading-[1.75] text-[#3d4046] [&_a]:text-brand-primary [&_blockquote]:my-9 [&_blockquote]:border-l-2 [&_blockquote]:border-brand-primary [&_blockquote]:py-7 [&_blockquote]:pl-7 [&_blockquote_p]:font-sans [&_blockquote_p]:text-[clamp(20px,2.2vw,24px)] [&_blockquote_p]:leading-[1.45] [&_blockquote_p]:font-semibold [&_blockquote_p]:text-[#10314f] [&_figcaption]:font-mono-wave [&_figcaption]:mt-2.5 [&_figcaption]:text-[11px] [&_figcaption]:text-[#6a7c90] [&_h2]:font-sans [&_h2]:mt-13 [&_h2]:mb-4 [&_h2]:scroll-mt-[110px] [&_h2]:text-[clamp(22px,2.4vw,28px)] [&_h2]:leading-[1.3] [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-[#10314f] [&_h3]:font-sans [&_h3]:mt-9 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-[#10141c] [&_img]:w-full [&_img]:object-cover [&_p]:mb-5.5`}
           dangerouslySetInnerHTML={{ __html: html }}
         />
+        {!sidebar && !landing && <div className="w-full max-w-[700px]">{shareBlock}</div>}
       </section>
 
-      {post.related.length > 0 && (
+      {!landing && post.related.length > 0 && (
         <section className="bg-[#f6f9fc] py-[clamp(56px,7vw,96px)]">
           <div className="mx-auto max-w-[1120px] px-6">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <div className="font-mono-wave mb-3 text-xs tracking-[0.16em] text-brand-primary uppercase">
-                  — {t("keepReading")}
-                </div>
-                <h2 className="font-sans text-[clamp(24px,3vw,34px)] font-bold tracking-[-0.02em] text-[#10314f]">
-                  {t("relatedInsights")}
-                </h2>
+                <div className="font-mono-wave mb-3 text-xs tracking-[0.16em] text-brand-primary uppercase">— {t("keepReading")}</div>
+                <h2 className="font-sans text-[clamp(24px,3vw,34px)] font-bold tracking-[-0.02em] text-[#10314f]">{t("relatedInsights")}</h2>
               </div>
               <Link
                 href="/insights"
@@ -241,11 +251,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4.5">
               {post.related.map((r) => (
-                <Link
-                  key={r.id}
-                  href={`/insights/${r.slug}`}
-                  className="flex flex-col gap-3.5 text-[#10141c] transition-transform duration-300 ease-out hover:-translate-y-1.5"
-                >
+                <Link key={r.id} href={`/insights/${r.slug}`} className="flex flex-col gap-3.5 text-[#10141c] transition-transform duration-300 ease-out hover:-translate-y-1.5">
                   {r.image ? (
                     <div className="relative aspect-4/3 w-full">
                       <CoverImage src={r.image} alt="" className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />

@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { message } from "antd";
+import { Input, Modal, message } from "antd";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
@@ -10,6 +10,8 @@ import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
+import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
+import type { PostTemplate } from "../lib/postTemplates";
 
 const API_PATH = "/v1/admin/posts";
 
@@ -29,7 +31,15 @@ interface PostRecord {
   authorRole: string | null;
   tags: string[] | null;
   featured: boolean | null;
+  layout: string | null;
 }
+
+const LAYOUTS = [
+  { value: "default", label: "Standard", hint: "Header with cover, contents sidebar, article" },
+  { value: "focused", label: "Focused", hint: "Centred article, no sidebar" },
+  { value: "wide", label: "Wide", hint: "Full-width article, no sidebar" },
+  { value: "landing", label: "Landing", hint: "Just the content: no header, author, share or related posts" },
+] as const;
 
 function slugify(text: string): string {
   return text
@@ -75,6 +85,8 @@ export default function PostEditorPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = id === "new";
   const { site } = useSite();
+  // A new post starts from a template (Blank is one of them); existing posts open directly.
+  const [seed, setSeed] = useState<PostTemplate | null>(null);
 
   const detailQuery = useQuery({
     queryKey: ["post-editor", id, site],
@@ -89,10 +101,12 @@ export default function PostEditorPage() {
     return <div style={{ padding: 48, textAlign: "center", color: "#6a7c90" }}>Loading…</div>;
   }
 
-  return <PostEditorForm key={id} id={id!} isNew={isNew} initial={detailQuery.data ?? null} />;
+  if (isNew && !seed) return <PostTemplatePicker onPick={setSeed} />;
+
+  return <PostEditorForm key={id} id={id!} isNew={isNew} initial={detailQuery.data ?? null} seed={seed} />;
 }
 
-function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; initial: PostRecord | null }) {
+function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boolean; initial: PostRecord | null; seed: PostTemplate | null }) {
   const navigate = useNavigate();
   const { site } = useSite();
   const queryClient = useQueryClient();
@@ -104,15 +118,16 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
   const [date, setDate] = useState(initial?.date ?? "");
   const [displayOrder, setDisplayOrder] = useState(initial?.displayOrder ?? 0);
   const [active, setActive] = useState(initial?.active ?? true);
-  const [category, setCategory] = useState(initial?.category ?? "insight");
+  const [category, setCategory] = useState(initial?.category ?? seed?.category ?? "insight");
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">((initial?.status as "DRAFT" | "PUBLISHED") ?? "DRAFT");
-  const [body, setBody] = useState(initial?.body ?? "");
+  const [body, setBody] = useState(initial?.body ?? seed?.body ?? "");
   const [authorName, setAuthorName] = useState(initial?.authorName ?? "");
   const [authorRole, setAuthorRole] = useState(initial?.authorRole ?? "");
-  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? seed?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
-  const initialScan = wordsAndOutline(initial?.body ?? "");
+  const [layout, setLayout] = useState(initial?.layout ?? seed?.layout ?? "default");
+  const initialScan = wordsAndOutline(initial?.body ?? seed?.body ?? "");
   const [words, setWords] = useState(initialScan.words);
   const [outline, setOutline] = useState<{ n: string; text: string }[]>(initialScan.outline);
   const [dirty, setDirty] = useState(false);
@@ -146,6 +161,7 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
         authorRole,
         tags,
         featured,
+        layout,
       };
       if (isNew) return contentApi.post(API_PATH, payload, { params: { site } });
       return contentApi.put(API_PATH, payload, { params: { site } });
@@ -174,6 +190,19 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
     saveAsDraft: async () => {
       const res = await saveMutation.mutateAsync("DRAFT");
       return (res.data.data as { slug: string | null }).slug;
+    },
+  });
+
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const templateMutation = useMutation({
+    mutationFn: () =>
+      contentApi.post(TEMPLATES_PATH, { name: templateName.trim(), description: title ? `Saved from “${title}”` : null, layout, category, tags, body }, { params: { site } }),
+    onSuccess: () => {
+      message.success("Saved as a template");
+      queryClient.invalidateQueries({ queryKey: ["post-templates", site] });
+      setTemplateOpen(false);
+      setTemplateName("");
     },
   });
 
@@ -298,6 +327,13 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
             )}
             <button
               type="button"
+              onClick={() => setTemplateOpen(true)}
+              style={{ minHeight: 40, padding: "0 16px", border: "1px solid #cfd2d6", background: "#ffffff", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".1em", color: "#3d4046", cursor: "pointer" }}
+            >
+              SAVE AS TEMPLATE
+            </button>
+            <button
+              type="button"
               onClick={() => saveMutation.mutate("DRAFT")}
               disabled={saveMutation.isPending}
               style={{
@@ -348,34 +384,44 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
         }}
       >
         <main style={{ flex: "1 1 640px", minWidth: 0, background: "#ffffff", border: "1px solid #e0e4e9" }}>
-          <div style={{ position: "relative" }}>
-            {image ? (
+          {image ? (
+            <div style={{ position: "relative" }}>
               <img src={mediaSrc(image)} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
-            ) : (
-              <div style={{ width: "100%", aspectRatio: "21/8", background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)" }} />
-            )}
-            <div style={{ position: "absolute", right: 14, bottom: 14, display: "flex", gap: 8 }}>
+              <div style={{ position: "absolute", right: 14, bottom: 14, display: "flex", gap: 8 }}>
+                {(["CHANGE COVER", "REMOVE"] as const).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => {
+                      if (l === "REMOVE") {
+                        setImage(null);
+                        setDirty(true);
+                      } else {
+                        setPickerTarget("cover");
+                        setPickerOpen(true);
+                      }
+                    }}
+                    style={{ padding: "9px 14px", border: "none", background: "rgba(255,255,255,.94)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", color: "#10314f", cursor: "pointer" }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: "14px clamp(20px,5vw,56px) 0" }}>
               <button
                 type="button"
                 onClick={() => {
                   setPickerTarget("cover");
                   setPickerOpen(true);
                 }}
-                style={{
-                  padding: "9px 14px",
-                  border: "none",
-                  background: "rgba(255,255,255,.94)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: ".1em",
-                  color: "#10314f",
-                  cursor: "pointer",
-                }}
+                style={{ padding: "8px 12px", border: "1px dashed #cfd2d6", background: "transparent", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", color: "#6a7c90", cursor: "pointer" }}
               >
-                CHANGE COVER
+                + ADD COVER IMAGE (OPTIONAL)
               </button>
             </div>
-          </div>
+          )}
 
           <div style={{ padding: "clamp(22px,4vw,44px) clamp(20px,5vw,56px) 12px", display: "flex", flexDirection: "column", gap: 18 }}>
             <textarea
@@ -428,22 +474,6 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
               </button>
             </div>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ display: "flex", justifyContent: "space-between", ...cardLabelStyle }}>
-                <span>Excerpt</span>
-                <span style={{ color: excerpt.length > 200 ? "#d4380d" : "#9aa3ad" }}>{excerpt.length} / 200</span>
-              </span>
-              <textarea
-                rows={3}
-                value={excerpt}
-                onChange={(e) => {
-                  setExcerpt(e.target.value);
-                  setDirty(true);
-                }}
-                placeholder="One or two sentences shown on cards and under the title"
-                style={{ border: "1px solid #dfe3e8", padding: "12px 14px", resize: "vertical", fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: 15, lineHeight: 1.55, color: "#10141c", outline: "none" }}
-              />
-            </label>
           </div>
 
           <RichTextEditor
@@ -514,7 +544,7 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
                     setDate(e.target.value);
                     setDirty(true);
                   }}
-                  placeholder="Jun 2, 2026"
+                  placeholder="Blank = today, when published"
                   style={inputStyle}
                 />
               </label>
@@ -595,7 +625,53 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
           </div>
 
           <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Author</div>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Page layout</div>
+            <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+              {LAYOUTS.map((l) => (
+                <label key={l.value} style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="layout"
+                    checked={layout === l.value}
+                    onChange={() => {
+                      setLayout(l.value);
+                      setDirty(true);
+                    }}
+                    style={{ marginTop: 3 }}
+                  />
+                  <span style={{ display: "flex", flexDirection: "column" }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: "#10314f" }}>{l.label}</span>
+                    <span style={{ fontSize: 12, color: "#6a7c90" }}>{l.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Summary (optional)</div>
+            <div style={{ padding: "14px 18px" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ display: "flex", justifyContent: "space-between", ...cardLabelStyle }}>
+                <span>Excerpt</span>
+                <span style={{ color: excerpt.length > 200 ? "#d4380d" : "#9aa3ad" }}>{excerpt.length} / 200</span>
+              </span>
+              <textarea
+                rows={3}
+                value={excerpt}
+                onChange={(e) => {
+                  setExcerpt(e.target.value);
+                  setDirty(true);
+                }}
+                placeholder="Left blank, it is taken from the start of the post"
+                style={{ border: "1px solid #dfe3e8", padding: "12px 14px", resize: "vertical", fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: 15, lineHeight: 1.55, color: "#10141c", outline: "none" }}
+              />
+            </label>
+            </div>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Author (optional)</div>
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span
@@ -701,6 +777,21 @@ function PostEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; in
           </div>
         </aside>
       </div>
+
+      <Modal
+        title="Save as template"
+        open={templateOpen}
+        onOk={() => templateName.trim() && templateMutation.mutate()}
+        okButtonProps={{ disabled: !templateName.trim(), loading: templateMutation.isPending }}
+        onCancel={() => setTemplateOpen(false)}
+        okText="Save"
+        destroyOnHidden
+      >
+        <Input autoFocus value={templateName} onChange={(e) => setTemplateName(e.target.value)} onPressEnter={() => templateName.trim() && templateMutation.mutate()} placeholder="Template name, e.g. Monthly newsletter" maxLength={80} />
+        <p style={{ marginTop: 10, fontSize: 12, color: "#6a7c90" }}>
+          Saves the current content, layout, category and tags as a starting point for new posts. Title, cover, author and dates are not included.
+        </p>
+      </Modal>
 
       <MediaPickerModal
         open={pickerOpen}

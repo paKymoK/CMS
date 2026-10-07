@@ -1,0 +1,11 @@
+{
+  "www.youtube-nocookie.com": { "kind": "video", "pathPrefix": "" },
+  "player.vimeo.com": { "kind": "video", "pathPrefix": "" },
+  "www.loom.com": { "kind": "video", "pathPrefix": "/embed/" },
+  "open.spotify.com": { "kind": "audio", "pathPrefix": "/embed/" },
+  "docs.google.com": { "kind": "form", "pathPrefix": "/forms/" },
+  "tally.so": { "kind": "form", "pathPrefix": "" },
+  "form.typeform.com": { "kind": "form", "pathPrefix": "" },
+  "form.jotform.com": { "kind": "form", "pathPrefix": "" },
+  "forms.office.com": { "kind": "form", "pathPrefix": "" }
+}

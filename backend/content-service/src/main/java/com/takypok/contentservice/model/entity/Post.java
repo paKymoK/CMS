@@ -33,5 +33,9 @@ public class Post extends IdEntity {
   private JsonNode tags;
 
   private Boolean featured;
+
+  /** default | focused | wide | landing — see PostServiceImpl.LAYOUTS. */
+  private String layout;
+
   @Version private Integer version;
 }
