@@ -17,6 +17,9 @@ const AUTOROTATE_DEG_PER_S = 2.1;
 const DRAG_DEG_PER_PX = 0.45;
 const FRICTION = 0.94;
 const TILT_DEG = 14;
+// d3's rotate() puts longitude -rotationLon at the view centre, so this opens
+// the globe facing Vietnam (~106°E) instead of the Atlantic.
+const INITIAL_ROTATION = -106;
 // The sphere/canvas sit inset 26px from the outer (marker-layer) container
 // on every side — projection must use the sphere's own diameter, not the
 // outer container's, or the dot field renders shifted and mis-scaled
@@ -34,7 +37,7 @@ export function Globe({ offices }: { offices: Office[] }) {
   const reducedMotion = usePrefersReducedMotion();
 
   const dotsRef = useRef<GlobeDot[] | null>(null);
-  const rotationRef = useRef(0);
+  const rotationRef = useRef(INITIAL_ROTATION);
   const velocityRef = useRef(0);
   const dragRef = useRef<{ lastX: number } | null>(null);
   const hoveredIndexRef = useRef<number | null>(null);
