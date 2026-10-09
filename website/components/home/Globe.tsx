@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { CoverImage } from "@/components/ui/CoverImage";
 import type { Topology } from "topojson-specification";
 import type { Office } from "@/content/home/types";
@@ -28,6 +28,9 @@ const INITIAL_ROTATION = -106;
 // relative to the visible sphere circle.
 const SPHERE_INSET = 26;
 const CLOSE_DELAY_MS = 400;
+// Gap between the hovered dot's centre and the card edge; sized to the edge of
+// the marker's 44px hit area so the pointer can travel dot -> card without a dead zone.
+const CARD_OFFSET = 22;
 
 const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
@@ -138,8 +141,35 @@ export function Globe({ offices }: { offices: Office[] }) {
       el.style.opacity = String(limbFade);
       el.style.pointerEvents = "auto";
       el.style.transform = `translate3d(${p.x + SPHERE_INSET}px, ${p.y + SPHERE_INSET}px, 0) translate(-50%, -50%)`;
+
+      // Anchor the hover card to its dot: on the side facing the globe's
+      // centre (so it never runs off the outer edge), vertically centred on
+      // the dot and clamped inside the container.
+      if (i === hoveredIndexRef.current) {
+        const card = cardRef.current;
+        if (!card) return;
+        const w = card.offsetWidth;
+        const h = card.offsetHeight;
+        const mx = p.x + SPHERE_INSET;
+        const my = p.y + SPHERE_INSET;
+        const x = mx > size / 2 ? mx - CARD_OFFSET - w : mx + CARD_OFFSET;
+        const y = Math.max(0, Math.min(size - h, my - h / 2));
+        card.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        card.style.visibility = "visible";
+      }
     });
+    if (hoveredIndexRef.current !== null) {
+      const hp = view.project(offices[hoveredIndexRef.current].lon, offices[hoveredIndexRef.current].lat);
+      if ((!hp || hp.depth > 0.94) && cardRef.current) cardRef.current.style.visibility = "hidden";
+    }
   }, [offices, size]);
+
+  // Position the card as soon as it mounts (before paint) so it never flashes
+  // at the origin; also covers reduced-motion, where the frame loop is off.
+  useLayoutEffect(() => {
+    hoveredIndexRef.current = hoveredIndex;
+    draw();
+  }, [hoveredIndex, draw]);
 
   // Rotation loop: autorotate, drag with inertia, freeze on marker hover.
   useEffect(() => {
@@ -288,8 +318,8 @@ export function Globe({ offices }: { offices: Office[] }) {
           data-globe-card
           onPointerEnter={cancelClose}
           onPointerLeave={scheduleClose}
-          className="absolute cursor-auto top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
-          style={{ left: "50%" }}
+          className="absolute top-0 left-0 z-[6] w-[min(200px,calc(100%-16px))] cursor-auto rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
+          style={{ visibility: "hidden" }}
         >
           {active.image ? (
             <div className="relative h-[76px] w-full">
