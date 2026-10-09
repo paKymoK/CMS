@@ -27,6 +27,7 @@ const INITIAL_ROTATION = -106;
 // outer container's, or the dot field renders shifted and mis-scaled
 // relative to the visible sphere circle.
 const SPHERE_INSET = 26;
+const CLOSE_DELAY_MS = 400;
 
 const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
@@ -173,7 +174,9 @@ export function Globe({ offices }: { offices: Office[] }) {
   }, [draw, reducedMotion]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as Element).closest("[data-globe-marker]")) return;
+    const target = e.target as Element;
+    if (target.closest("[data-globe-marker], [data-globe-card]")) return;
+    closeOffice();
     dragRef.current = { lastX: e.clientX, lastY: e.clientY };
     velocityRef.current = 0;
     tiltVelocityRef.current = 0;
@@ -195,8 +198,29 @@ export function Globe({ offices }: { offices: Office[] }) {
     dragRef.current = null;
   };
 
-  const openOffice = (i: number) => setHoveredIndex(i);
-  const closeOffice = () => setHoveredIndex(null);
+  // The card is interactive (links/buttons), so leaving the marker must not
+  // close it straight away: closing is deferred briefly and cancelled if the
+  // pointer lands on the card (or back on a marker) in the meantime.
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+  const openOffice = (i: number) => {
+    cancelClose();
+    setHoveredIndex(i);
+  };
+  const closeOffice = () => {
+    cancelClose();
+    setHoveredIndex(null);
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimerRef.current = setTimeout(() => setHoveredIndex(null), CLOSE_DELAY_MS);
+  };
+  useEffect(() => cancelClose, []);
 
   const active = hoveredIndex !== null ? offices[hoveredIndex] : null;
 
@@ -243,7 +267,7 @@ export function Globe({ offices }: { offices: Office[] }) {
           style={{ width: 44, height: 44, opacity: 0 }}
           data-globe-marker
           onPointerEnter={() => openOffice(i)}
-          onPointerLeave={closeOffice}
+          onPointerLeave={scheduleClose}
           onClick={() => (hoveredIndex === i ? closeOffice() : openOffice(i))}
         >
           <span
@@ -261,7 +285,10 @@ export function Globe({ offices }: { offices: Office[] }) {
       {active && (
         <div
           ref={cardRef}
-          className="pointer-events-none absolute top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
+          data-globe-card
+          onPointerEnter={cancelClose}
+          onPointerLeave={scheduleClose}
+          className="absolute cursor-auto top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
           style={{ left: "50%" }}
         >
           {active.image ? (
@@ -278,6 +305,14 @@ export function Globe({ offices }: { offices: Office[] }) {
           <p className="px-3 pt-1 pb-3 text-[9px] leading-[1.5] whitespace-pre-line text-[#5a6b80]">
             {active.address}
           </p>
+          {active.link && (
+            <a
+              href={active.link.href}
+              className="mx-3 mb-3 inline-block text-[10px] font-semibold text-brand-primary hover:underline"
+            >
+              {active.link.label} →
+            </a>
+          )}
         </div>
       )}
     </div>

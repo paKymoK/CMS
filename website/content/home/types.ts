@@ -59,6 +59,8 @@ export type Office = {
   address: string;
   /** Shown in the globe hover card; falls back to the design placeholder when absent. */
   image?: string;
+  /** Optional "more" link rendered in the hover card; the card stays open while hovered so it is clickable. */
+  link?: { label: string; href: string };
 };
 
 export type HomeContent = {
