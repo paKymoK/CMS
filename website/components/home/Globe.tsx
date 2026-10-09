@@ -17,6 +17,8 @@ const AUTOROTATE_DEG_PER_S = 2.1;
 const DRAG_DEG_PER_PX = 0.45;
 const FRICTION = 0.94;
 const TILT_DEG = 14;
+// Vertical drag is clamped short of the poles so the globe can't flip over.
+const MAX_TILT_DEG = 75;
 // d3's rotate() puts longitude -rotationLon at the view centre, so this opens
 // the globe facing Vietnam (~106°E) instead of the Atlantic.
 const INITIAL_ROTATION = -106;
@@ -25,6 +27,8 @@ const INITIAL_ROTATION = -106;
 // outer container's, or the dot field renders shifted and mis-scaled
 // relative to the visible sphere circle.
 const SPHERE_INSET = 26;
+
+const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
 export function Globe({ offices }: { offices: Office[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,8 +42,10 @@ export function Globe({ offices }: { offices: Office[] }) {
 
   const dotsRef = useRef<GlobeDot[] | null>(null);
   const rotationRef = useRef(INITIAL_ROTATION);
+  const tiltRef = useRef(TILT_DEG);
   const velocityRef = useRef(0);
-  const dragRef = useRef<{ lastX: number } | null>(null);
+  const tiltVelocityRef = useRef(0);
+  const dragRef = useRef<{ lastX: number; lastY: number } | null>(null);
   const hoveredIndexRef = useRef<number | null>(null);
   useEffect(() => {
     hoveredIndexRef.current = hoveredIndex;
@@ -100,7 +106,7 @@ export function Globe({ offices }: { offices: Office[] }) {
     const view = createOrthographicView({
       size: sphereSize,
       rotationLon: rotationRef.current,
-      tiltDeg: TILT_DEG,
+      tiltDeg: tiltRef.current,
     });
     const projected = projectDots(dots, view);
     for (const p of projected) {
@@ -148,6 +154,10 @@ export function Globe({ offices }: { offices: Office[] }) {
       last = now;
 
       if (!dragRef.current) {
+        if (Math.abs(tiltVelocityRef.current) > 0.01) {
+          tiltRef.current = clampTilt(tiltRef.current + tiltVelocityRef.current);
+          tiltVelocityRef.current *= FRICTION;
+        }
         if (Math.abs(velocityRef.current) > 0.01) {
           rotationRef.current += velocityRef.current;
           velocityRef.current *= FRICTION;
@@ -164,16 +174,22 @@ export function Globe({ offices }: { offices: Office[] }) {
 
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as Element).closest("[data-globe-marker]")) return;
-    dragRef.current = { lastX: e.clientX };
+    dragRef.current = { lastX: e.clientX, lastY: e.clientY };
     velocityRef.current = 0;
+    tiltVelocityRef.current = 0;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.lastX;
+    const dy = e.clientY - dragRef.current.lastY;
     dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
     rotationRef.current += dx * DRAG_DEG_PER_PX;
     velocityRef.current = dx * DRAG_DEG_PER_PX;
+    // Dragging down pulls the surface down, i.e. brings the north into view.
+    tiltRef.current = clampTilt(tiltRef.current + dy * DRAG_DEG_PER_PX);
+    tiltVelocityRef.current = dy * DRAG_DEG_PER_PX;
   };
   const endDrag = () => {
     dragRef.current = null;
@@ -187,7 +203,7 @@ export function Globe({ offices }: { offices: Office[] }) {
   return (
     <div
       ref={containerRef}
-      className="relative flex-none cursor-grab touch-pan-y active:cursor-grabbing"
+      className="relative flex-none cursor-grab touch-none active:cursor-grabbing"
       style={{ width: "clamp(280px, 32vw, 360px)", aspectRatio: "1 / 1" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
