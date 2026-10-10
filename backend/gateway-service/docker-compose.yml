@@ -15,6 +15,8 @@ services:
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       GATEWAY_IO_WORKER_COUNT: ${GATEWAY_IO_WORKER_COUNT:-}
       SINGLE_TAB_REDIS_ON_FAILURE: ${SINGLE_TAB_REDIS_ON_FAILURE:-FAIL_OPEN}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
     # discovery-service isn't defined in this file — this depends_on only resolves when
     # this file is passed to compose alongside discovery-service's own, e.g.:
     #   docker compose -f ../discovery-service/docker-compose.yml -f docker-compose.yml up -d

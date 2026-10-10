@@ -18,7 +18,8 @@ services:
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
       JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
       # Qdrant/Ollama aren't part of this compose stack yet; defaults below only work if
       # they're reachable at localhost from inside the container (e.g. host networking).
       # Override with real hosts/URLs once those services are deployed.

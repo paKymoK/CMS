@@ -18,7 +18,8 @@ services:
       JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
       SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
     # discovery-service isn't defined in this file — this depends_on only resolves when
     # this file is passed to compose alongside discovery-service's own, e.g.:
     #   docker compose -f ../discovery-service/docker-compose.yml -f docker-compose.yml up -d

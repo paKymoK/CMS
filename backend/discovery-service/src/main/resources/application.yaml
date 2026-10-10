@@ -29,4 +29,13 @@ management:
   otlp:
     enabled: true
     tracing:
-      endpoint: http://localhost:4318/v1/traces
+      endpoint: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:http://localhost:4318/v1/metrics}
+        step: 15s
+        aggregation-temporality: cumulative
+        base-time-unit: seconds
+  opentelemetry:
+    resource-attributes:
+      service.instance.id: ${HOSTNAME:${random.uuid}}

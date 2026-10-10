@@ -21,6 +21,8 @@ services:
       - '/etc/alloy/config.alloy'
     ports:
       - "12345:12345"   # Alloy's own live-debugging UI (component graph, live log/metric preview)
+      - "4317:4317"     # OTLP gRPC receiver (services push metrics + traces here)
+      - "4318:4318"     # OTLP HTTP receiver (what Spring Boot uses)
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
@@ -33,6 +35,7 @@ services:
     environment:
       LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
       PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
+      TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
       APP_SCRAPE_TARGET: ${APP_SCRAPE_TARGET:-}
     networks:
       - takypok_default

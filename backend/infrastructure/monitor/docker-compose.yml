@@ -63,8 +63,8 @@ services:
       - '-config.file=/etc/tempo/tempo.yaml'
     ports:
       - "3200:3200"   # Tempo query API (used by Grafana datasource)
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
+      # OTLP receivers (4317/4318) are reached by Alloy over the docker network only —
+      # host 4317/4318 belong to Alloy now.
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo-data:/var/tempo

@@ -104,3 +104,40 @@ prometheus.remote_write "default" {
     url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")
   }
 }
+
+// ---- Services PUSH OTLP here (metrics + traces) ----
+// Metrics -> Prometheus (remote_write), traces -> Tempo. Services only know Alloy's address.
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+  output {
+    metrics = [otelcol.processor.batch.default.input]
+    traces  = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    metrics = [otelcol.exporter.prometheus.default.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// Maps service.name -> job and service.instance.id -> instance, so dashboards keep working.
+otelcol.exporter.prometheus "default" {
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = sys.env("TEMPO_OTLP_ENDPOINT")
+    tls {
+      insecure = true
+    }
+  }
+}

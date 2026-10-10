@@ -23,7 +23,8 @@ services:
       LDAP_PASSWORD: ${LDAP_PASSWORD:-admin_secret}
       LDAP_USER_SEARCH_BASE: ${LDAP_USER_SEARCH_BASE:-ou=users}
       LDAP_USER_SEARCH_FILTER: ${LDAP_USER_SEARCH_FILTER:-(cn={0})}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://tempo:4318/v1/traces}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # discovery-service isn't defined in this file — this depends_on only resolves when

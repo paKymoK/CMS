@@ -37,6 +37,8 @@ dependencies {
     api 'com.auth0:java-jwt:4.3.0'
 
     api 'io.micrometer:micrometer-registry-prometheus'
+    // Push metrics over OTLP to Prometheus's OTLP receiver (no scrape config needed per service)
+    api 'io.micrometer:micrometer-registry-otlp'
 
     //Open Telemetry
     api 'io.micrometer:context-propagation:1.1.3'

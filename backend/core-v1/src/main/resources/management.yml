@@ -4,7 +4,21 @@ management:
       probability: 1.0
   otlp:
     tracing:
-      endpoint: http://localhost:4318/v1/traces
+      endpoint: http://localhost:4318/v1/traces   # Alloy's OTLP receiver
+    # Metrics are PUSHED to Alloy's OTLP receiver, which remote_writes them to Prometheus
+    # (nothing scrapes services). Override with MANAGEMENT_OTLP_METRICS_EXPORT_URL in containers.
+    metrics:
+      export:
+        url: http://localhost:4318/v1/metrics
+        step: 15s
+        # Prometheus requires cumulative; seconds keeps existing *_seconds_* metric names
+        aggregation-temporality: cumulative
+        base-time-unit: seconds
+  opentelemetry:
+    resource-attributes:
+      # job = service.name (defaults to spring.application.name); instance must be unique
+      # per replica so scaled-out containers show up as separate instances in Grafana.
+      service.instance.id: ${HOSTNAME:${random.uuid}}
   endpoints:
     web:
       exposure:

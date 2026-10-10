@@ -7,9 +7,9 @@ services:
     container_name: discovery-service
     ports:
       - "8761:8761"
-    # No environment block: discovery-service's application.yaml hardcodes its OTLP
-    # tracing endpoint (http://localhost:4318/v1/traces) rather than reading it from an
-    # env var like every other service does — out of scope for this pass, left as-is.
+    environment:
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
     networks:
       - takypok_default
     logging:
