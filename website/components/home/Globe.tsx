@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { CoverImage } from "@/components/ui/CoverImage";
 import type { Topology } from "topojson-specification";
 import type { Office } from "@/content/home/types";
@@ -17,11 +17,22 @@ const AUTOROTATE_DEG_PER_S = 2.1;
 const DRAG_DEG_PER_PX = 0.45;
 const FRICTION = 0.94;
 const TILT_DEG = 14;
+// Vertical drag is clamped short of the poles so the globe can't flip over.
+const MAX_TILT_DEG = 75;
+// d3's rotate() puts longitude -rotationLon at the view centre, so this opens
+// the globe facing Vietnam (~106°E) instead of the Atlantic.
+const INITIAL_ROTATION = -106;
 // The sphere/canvas sit inset 26px from the outer (marker-layer) container
 // on every side — projection must use the sphere's own diameter, not the
 // outer container's, or the dot field renders shifted and mis-scaled
 // relative to the visible sphere circle.
 const SPHERE_INSET = 26;
+const CLOSE_DELAY_MS = 400;
+// Gap between the hovered dot's centre and the card edge; sized to the edge of
+// the marker's 44px hit area so the pointer can travel dot -> card without a dead zone.
+const CARD_OFFSET = 22;
+
+const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
 export function Globe({ offices }: { offices: Office[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,9 +45,11 @@ export function Globe({ offices }: { offices: Office[] }) {
   const reducedMotion = usePrefersReducedMotion();
 
   const dotsRef = useRef<GlobeDot[] | null>(null);
-  const rotationRef = useRef(0);
+  const rotationRef = useRef(INITIAL_ROTATION);
+  const tiltRef = useRef(TILT_DEG);
   const velocityRef = useRef(0);
-  const dragRef = useRef<{ lastX: number } | null>(null);
+  const tiltVelocityRef = useRef(0);
+  const dragRef = useRef<{ lastX: number; lastY: number } | null>(null);
   const hoveredIndexRef = useRef<number | null>(null);
   useEffect(() => {
     hoveredIndexRef.current = hoveredIndex;
@@ -97,7 +110,7 @@ export function Globe({ offices }: { offices: Office[] }) {
     const view = createOrthographicView({
       size: sphereSize,
       rotationLon: rotationRef.current,
-      tiltDeg: TILT_DEG,
+      tiltDeg: tiltRef.current,
     });
     const projected = projectDots(dots, view);
     for (const p of projected) {
@@ -128,8 +141,35 @@ export function Globe({ offices }: { offices: Office[] }) {
       el.style.opacity = String(limbFade);
       el.style.pointerEvents = "auto";
       el.style.transform = `translate3d(${p.x + SPHERE_INSET}px, ${p.y + SPHERE_INSET}px, 0) translate(-50%, -50%)`;
+
+      // Anchor the hover card to its dot: on the side facing the globe's
+      // centre (so it never runs off the outer edge), vertically centred on
+      // the dot and clamped inside the container.
+      if (i === hoveredIndexRef.current) {
+        const card = cardRef.current;
+        if (!card) return;
+        const w = card.offsetWidth;
+        const h = card.offsetHeight;
+        const mx = p.x + SPHERE_INSET;
+        const my = p.y + SPHERE_INSET;
+        const x = mx > size / 2 ? mx - CARD_OFFSET - w : mx + CARD_OFFSET;
+        const y = Math.max(0, Math.min(size - h, my - h / 2));
+        card.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        card.style.visibility = "visible";
+      }
     });
+    if (hoveredIndexRef.current !== null) {
+      const hp = view.project(offices[hoveredIndexRef.current].lon, offices[hoveredIndexRef.current].lat);
+      if ((!hp || hp.depth > 0.94) && cardRef.current) cardRef.current.style.visibility = "hidden";
+    }
   }, [offices, size]);
+
+  // Position the card as soon as it mounts (before paint) so it never flashes
+  // at the origin; also covers reduced-motion, where the frame loop is off.
+  useLayoutEffect(() => {
+    hoveredIndexRef.current = hoveredIndex;
+    draw();
+  }, [hoveredIndex, draw]);
 
   // Rotation loop: autorotate, drag with inertia, freeze on marker hover.
   useEffect(() => {
@@ -145,6 +185,10 @@ export function Globe({ offices }: { offices: Office[] }) {
       last = now;
 
       if (!dragRef.current) {
+        if (Math.abs(tiltVelocityRef.current) > 0.01) {
+          tiltRef.current = clampTilt(tiltRef.current + tiltVelocityRef.current);
+          tiltVelocityRef.current *= FRICTION;
+        }
         if (Math.abs(velocityRef.current) > 0.01) {
           rotationRef.current += velocityRef.current;
           velocityRef.current *= FRICTION;
@@ -160,31 +204,60 @@ export function Globe({ offices }: { offices: Office[] }) {
   }, [draw, reducedMotion]);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as Element).closest("[data-globe-marker]")) return;
-    dragRef.current = { lastX: e.clientX };
+    const target = e.target as Element;
+    if (target.closest("[data-globe-marker], [data-globe-card]")) return;
+    closeOffice();
+    dragRef.current = { lastX: e.clientX, lastY: e.clientY };
     velocityRef.current = 0;
+    tiltVelocityRef.current = 0;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.lastX;
+    const dy = e.clientY - dragRef.current.lastY;
     dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
     rotationRef.current += dx * DRAG_DEG_PER_PX;
     velocityRef.current = dx * DRAG_DEG_PER_PX;
+    // Dragging down pulls the surface down, i.e. brings the north into view.
+    tiltRef.current = clampTilt(tiltRef.current + dy * DRAG_DEG_PER_PX);
+    tiltVelocityRef.current = dy * DRAG_DEG_PER_PX;
   };
   const endDrag = () => {
     dragRef.current = null;
   };
 
-  const openOffice = (i: number) => setHoveredIndex(i);
-  const closeOffice = () => setHoveredIndex(null);
+  // The card is interactive (links/buttons), so leaving the marker must not
+  // close it straight away: closing is deferred briefly and cancelled if the
+  // pointer lands on the card (or back on a marker) in the meantime.
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+  const openOffice = (i: number) => {
+    cancelClose();
+    setHoveredIndex(i);
+  };
+  const closeOffice = () => {
+    cancelClose();
+    setHoveredIndex(null);
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimerRef.current = setTimeout(() => setHoveredIndex(null), CLOSE_DELAY_MS);
+  };
+  useEffect(() => cancelClose, []);
 
   const active = hoveredIndex !== null ? offices[hoveredIndex] : null;
 
   return (
     <div
       ref={containerRef}
-      className="relative flex-none cursor-grab touch-pan-y active:cursor-grabbing"
+      className="relative flex-none cursor-grab touch-none active:cursor-grabbing"
       style={{ width: "clamp(280px, 32vw, 360px)", aspectRatio: "1 / 1" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -224,7 +297,7 @@ export function Globe({ offices }: { offices: Office[] }) {
           style={{ width: 44, height: 44, opacity: 0 }}
           data-globe-marker
           onPointerEnter={() => openOffice(i)}
-          onPointerLeave={closeOffice}
+          onPointerLeave={scheduleClose}
           onClick={() => (hoveredIndex === i ? closeOffice() : openOffice(i))}
         >
           <span
@@ -242,8 +315,11 @@ export function Globe({ offices }: { offices: Office[] }) {
       {active && (
         <div
           ref={cardRef}
-          className="pointer-events-none absolute top-1/2 z-[6] w-[min(200px,calc(100%-16px))] -translate-y-1/2 rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
-          style={{ left: "50%" }}
+          data-globe-card
+          onPointerEnter={cancelClose}
+          onPointerLeave={scheduleClose}
+          className="absolute top-0 left-0 z-[6] w-[min(200px,calc(100%-16px))] cursor-auto rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
+          style={{ visibility: "hidden" }}
         >
           {active.image ? (
             <div className="relative h-[76px] w-full">
@@ -259,6 +335,14 @@ export function Globe({ offices }: { offices: Office[] }) {
           <p className="px-3 pt-1 pb-3 text-[9px] leading-[1.5] whitespace-pre-line text-[#5a6b80]">
             {active.address}
           </p>
+          {active.link && (
+            <a
+              href={active.link.href}
+              className="mx-3 mb-3 inline-block text-[10px] font-semibold text-brand-primary hover:underline"
+            >
+              {active.link.label} →
+            </a>
+          )}
         </div>
       )}
     </div>
