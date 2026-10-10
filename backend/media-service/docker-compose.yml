@@ -5,9 +5,13 @@ services:
       dockerfile: media-service/Dockerfile
     image: takypok/media-service
     container_name: media-service
+    labels:
+      # Alloy skips docker-log collection for this container; it reads the log file instead
+      logging.source: file
     ports:
       - "8082:8082"
     environment:
+      LOG_DIR: /logs
       AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
@@ -27,6 +31,9 @@ services:
     depends_on:
       discovery-service:
         condition: service_healthy
+    volumes:
+      # Host dir the Alloy reads from (default: backend/logs); must match alloy's LOG_HOST_DIR
+      - ${LOG_HOST_DIR:-../logs}:/logs
     networks:
       - takypok_default
     logging:

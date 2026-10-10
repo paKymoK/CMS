@@ -26,6 +26,7 @@ services:
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
+      - ${LOG_HOST_DIR:-../../logs}:/var/log/takypok:ro   # service log files (default: backend/logs)
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/lib/docker/:/var/lib/docker:ro
@@ -35,6 +36,7 @@ services:
     environment:
       LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
       PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
+      LOG_PATH_GLOB: ${LOG_PATH_GLOB:-/var/log/takypok/*/*.log}
       TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
       APP_SCRAPE_TARGET: ${APP_SCRAPE_TARGET:-}
     networks:

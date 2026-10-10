@@ -8,6 +8,14 @@ discovery.docker "containers" {
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
+  // Containers labelled logging.source=file write a log file that is collected below
+  // (file source); skip their docker stdout so lines aren't ingested twice.
+  rule {
+    source_labels = ["__meta_docker_container_label_logging_source"]
+    regex         = "file"
+    action        = "drop"
+  }
+
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
@@ -55,6 +63,54 @@ loki.process "containers" {
 loki.write "default" {
   endpoint {
     url = sys.env("LOKI_URL")
+  }
+}
+
+// ---- Logs from files: works the same with or without Docker ----
+// Services write <LOG_DIR>/<service>/app.log (core-v1 log4j2 RollingFile). Point LOG_PATH_GLOB at
+// wherever that directory is mounted/visible to Alloy. Rotated .log.gz files are not matched.
+
+local.file_match "app_logs" {
+  path_targets = [{"__path__" = sys.env("LOG_PATH_GLOB")}]
+}
+
+discovery.relabel "app_logs" {
+  targets = local.file_match.app_logs.targets
+
+  // <dir>/<service>/app.log -> service; container is set too so existing dashboards/alerts still match
+  rule {
+    source_labels = ["__path__"]
+    regex         = ".*/([^/]+)/[^/]+\\.log$"
+    target_label  = "service"
+  }
+  rule {
+    source_labels = ["__path__"]
+    regex         = ".*/([^/]+)/[^/]+\\.log$"
+    target_label  = "container"
+  }
+}
+
+loki.source.file "app_logs" {
+  targets    = discovery.relabel.app_logs.output
+  forward_to = [loki.process.app_logs.receiver]
+}
+
+loki.process "app_logs" {
+  forward_to = [loki.write.default.receiver]
+
+  // Keep stack traces attached to the line that started them
+  stage.multiline {
+    firstline = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:"
+    max_lines = 500
+  }
+  // "<date> <time> <app> LEVEL ..." (file layout has no ANSI codes)
+  stage.regex {
+    expression = "^\\S+\\s+\\S+\\s+\\S+\\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR)\\s"
+  }
+  stage.labels {
+    values = {
+      level = "level",
+    }
   }
 }
 

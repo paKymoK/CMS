@@ -23,6 +23,7 @@ COPY --from=builder /app/media-service/build/libs/*.jar app.jar
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
 ENV FFPROBE_PATH=/usr/bin/ffprobe
 
+RUN mkdir -p /logs && chown spring:spring /logs
 USER spring
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
     CMD wget -qO- http://localhost:8082/actuator/health | grep -q '"status":"UP"' || exit 1

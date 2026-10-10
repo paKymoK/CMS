@@ -2,16 +2,37 @@
 
 <Configuration>
     <Properties>
-        <Property name="LOG_PATTERN">%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} %style{${spring:spring.application.name}}{blue} %highlight{${LOG_LEVEL_PATTERN:-%-5.5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, INFO=green, TRACE=green} %style{[XRequestId:%X{X-Request-Id}][UserId:%X{User-Id}]}{yellow bold} [%15.15t] %style{%-40.40c{1.}}{cyan}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}</Property>
+        <Property name="LOG_PATTERN">%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} %style{${spring:spring.application.name}}{blue} %highlight{${LOG_LEVEL_PATTERN:-%-5.5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, INFO=green, TRACE=green} %style{[XRequestId:%X{X-Request-Id}][UserId:%X{User-Id}]}{yellow bold} trace_id=%X{traceId} span_id=%X{spanId} [%15.15t] %style{%-40.40c{1.}}{cyan}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}</Property>
+        <!-- Same layout as the console, minus ANSI colors, so Alloy can parse it from disk. -->
+        <Property name="FILE_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} ${spring:spring.application.name} %-5.5p [XRequestId:%X{X-Request-Id}][UserId:%X{User-Id}] trace_id=%X{traceId} span_id=%X{spanId} [%15.15t] %-40.40c{1.}: %m%n%wEx</Property>
+        <!-- Defaults to ./logs under the JVM working directory (backend/logs when run from the
+             backend root). Containers set LOG_DIR=/logs and bind-mount it to the host. -->
+        <Property name="LOG_DIR">${env:LOG_DIR:-./logs}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT" follow="true">
             <PatternLayout disableAnsi="false" pattern="${LOG_PATTERN}"/>
         </Console>
+        <RollingFile name="File"
+                     fileName="${LOG_DIR}/${spring:spring.application.name}/app.log"
+                     filePattern="${LOG_DIR}/${spring:spring.application.name}/app-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_DIR}/${spring:spring.application.name}" maxDepth="1">
+                    <IfFileName glob="app-*.log.gz"/>
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Root additivity="false" level="INFO">
             <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
         </Root>
     </Loggers>
 </Configuration>

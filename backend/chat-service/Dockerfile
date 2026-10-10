@@ -18,6 +18,7 @@ RUN addgroup -S spring && adduser -S spring -G spring
 WORKDIR /app
 
 COPY --from=builder /app/chat-service/build/libs/*.jar app.jar
+RUN mkdir -p /logs && chown spring:spring /logs
 USER spring
 HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
     CMD wget -qO- http://localhost:8083/actuator/health | grep -q '"status":"UP"' || exit 1
