@@ -5,19 +5,19 @@ import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { JsonLd, organizationJsonLd } from "@/lib/seo/jsonld";
 import { getHomeContent, getPreviewHomeContent } from "@/lib/cms/homeContent";
+import { sectionIntro } from "@/lib/sectionIntro";
 import { PREVIEW_TOKEN_COOKIE } from "@/lib/cms/previewCookie";
 import { DraftBanner } from "@/components/preview/DraftBanner";
-import { WaveBand } from "@/components/home/WaveBand";
-import { Services } from "@/components/home/Services";
-import { TestimonialsCarousel } from "@/components/home/TestimonialsCarousel";
+import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { AssistantBand } from "@/components/home/AssistantBand";
+import { WhatWeDo } from "@/components/home/WhatWeDo";
+import { Testimonials } from "@/components/home/Testimonials";
 import { GlobalDelivery } from "@/components/home/GlobalDelivery";
-import { WorkforceBand } from "@/components/home/WorkforceBand";
+import { ExtendedWorkforce } from "@/components/home/ExtendedWorkforce";
 import { CaseStudies } from "@/components/home/CaseStudies";
-import { BuildingTomorrowBanner } from "@/components/home/BuildingTomorrowBanner";
-import { Insights } from "@/components/home/Insights";
-import { Certifications } from "@/components/home/Certifications";
+import { InsightsAccordion } from "@/components/home/InsightsAccordion";
+import { Recognition } from "@/components/home/Recognition";
 import { ContactForm } from "@/components/home/ContactForm";
-import { BackToTop } from "@/components/ui/BackToTop";
 
 const TITLE = "CMC Global - Leading software development company since 1993";
 const DESCRIPTION =
@@ -52,21 +52,30 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     <>
       {isPreview && <DraftBanner />}
       <JsonLd data={organizationJsonLd()} />
-      <WaveBand />
-      <Services services={content.services} />
-      <TestimonialsCarousel testimonials={content.testimonials} />
-      <GlobalDelivery stats={content.stats} offices={content.offices} />
-      <WorkforceBand />
-      <CaseStudies caseStudies={content.caseStudies} />
-      <BuildingTomorrowBanner />
-      <Insights insights={content.insights} />
-      <Certifications
+      <HeroCarousel slides={content.sections?.hero_slide ?? []} />
+      {content.sections?.assistant_band?.[0] && (
+        <AssistantBand band={content.sections.assistant_band[0]} />
+      )}
+      <WhatWeDo services={content.services} intro={sectionIntro(content, "whatwedo")} />
+      <Testimonials
+        testimonials={content.testimonials}
+        intro={sectionIntro(content, "testimonials")}
+      />
+      <GlobalDelivery
+        stats={content.stats}
+        offices={content.offices}
+        intro={sectionIntro(content, "global")}
+      />
+      <ExtendedWorkforce band={content.sections?.feature_band?.[0]} />
+      <CaseStudies caseStudies={content.caseStudies} intro={sectionIntro(content, "cases")} />
+      <InsightsAccordion insights={content.insights} intro={sectionIntro(content, "insights")} />
+      <Recognition
         awards={content.awards}
         certifications={content.certifications}
         partners={content.partners}
+        intro={sectionIntro(content, "recognition")}
       />
-      <ContactForm />
-      <BackToTop />
+      <ContactForm intro={sectionIntro(content, "contact")} />
     </>
   );
 }

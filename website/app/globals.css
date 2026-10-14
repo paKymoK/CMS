@@ -12,6 +12,16 @@
   --brand-primary-dark: #0a2540;
   --brand-accent: #00bbe4;
   --brand-surface: #f6f9fc;
+
+  /* Figma design tokens ("CMC Global - Website 2026", Homepage frame). */
+  --cmc-navy: #002d68;
+  --cmc-navy-deep: #001449;
+  --cmc-blue: #0083ff;
+  --cmc-sky: #00bbff;
+  --cmc-sky-active: #00a9ff;
+  --cmc-ink: #7e7e7e;
+  --cmc-tint: #edf5ff;
+  --cmc-tint-2: #e2f1ff;
 }
 
 @theme inline {
@@ -21,12 +31,15 @@
   --color-brand-primary-dark: var(--brand-primary-dark);
   --color-brand-accent: var(--brand-accent);
   --color-brand-surface: var(--brand-surface);
-  --font-sans: var(--font-montserrat);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-ibm-plex-mono);
   /* Redesigned homepage body sections only — see components/home/*.
      Kept separate from font-sans/font-mono so the header/footer (unchanged)
      keep Montserrat/IBM Plex Mono. */
   --font-mono-wave: var(--font-jetbrains-mono);
+  --color-cmc-navy: var(--cmc-navy);
+  --color-cmc-blue: var(--cmc-blue);
+  --color-cmc-sky: var(--cmc-sky);
   --font-wave-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -408,4 +421,520 @@ body {
 }
 .rich-body [data-embed="audio"] iframe {
   height: 152px;
+}
+
+
+/* Design-scale layout: the hero/assistant bands are drawn on a 1920px artboard, so anything inside
+   a `.design-canvas` can size itself in artboard pixels via `calc(<px> * var(--u))` and scale with
+   the band's own width (container query units), exactly matching the Figma at every desktop size. */
+.design-canvas {
+  container-type: inline-size;
+  --u: calc(100cqw / 1920);
+}
+
+/* Eyebrow used above every section heading in the design: short rule + 15px SemiBold navy caps. */
+.cmc-eyebrow {
+  position: relative;
+  padding-left: 29px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: 0;
+  color: var(--cmc-navy);
+  text-transform: uppercase;
+}
+.cmc-eyebrow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 17px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cmc-navy);
+}
+
+/* ---- Hero carousel (components/home/HeroCarousel.tsx) ------------------------------------------
+   Below 1280px the copy is an ordinary stacked block; from 1280px up it is placed on the 1920px
+   artboard through the per-slide custom properties the component sets (--l/--r/--t/--w, --ts/--ss/
+   --bs sizes, --ta alignment). */
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: var(--ai, center);
+  padding: 112px 24px 96px;
+  text-align: var(--ta, center);
+  color: var(--fg, #fff);
+}
+.hero-title {
+  font-size: clamp(30px, 8vw, 44px);
+  font-weight: var(--tw, 600);
+  line-height: var(--tl, 1.15);
+  white-space: pre-line;
+  text-wrap: balance;
+}
+.hero-title--gradient,
+.hero-sub--gradient {
+  background-image: linear-gradient(135deg, #ffffff 30%, #0054c7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-sub {
+  margin-top: 12px;
+  font-size: clamp(16px, 4.4vw, 20px);
+  font-weight: var(--sw, 600);
+  line-height: var(--sl, 1.32);
+  max-width: 640px;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  margin-top: var(--cm, 28px);
+  padding: 0 var(--cp, 24px);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  border-radius: 999px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+.hero-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0, 40, 110, 0.28);
+  filter: brightness(1.04);
+}
+.hero-cta--white {
+  background: #fff;
+  color: #001449;
+}
+.hero-cta--blue {
+  background: linear-gradient(110deg, #00b5f7, #00519c);
+  color: #fff;
+}
+.hero-cta--light {
+  background: linear-gradient(120deg, #ffffff 35%, #8ab8ee 100%);
+  color: #002255;
+}
+@media (min-width: 1280px) {
+  .hero-copy {
+    position: absolute;
+    left: var(--l, auto);
+    right: var(--r, auto);
+    top: var(--t);
+    width: var(--w);
+    padding: 0;
+    transform: var(--tf, none);
+  }
+  .hero-title {
+    font-size: max(24px, var(--ts));
+    max-width: var(--tmw, none);
+  }
+  .hero-sub {
+    margin-top: var(--sm, 12px);
+    font-size: max(14px, var(--ss));
+    max-width: none;
+  }
+  .hero-cta {
+    height: max(36px, calc(44 * var(--u)));
+    margin-top: var(--cm);
+    padding: 0 var(--cp);
+    font-size: max(13px, calc(16 * var(--u)));
+  }
+}
+.hero-seg {
+  width: calc(64 * var(--u));
+  min-width: 28px;
+  height: 5px;
+  border-radius: 16px;
+  background: #d9d9d9;
+  transition: background-color 0.3s ease;
+}
+.hero-seg[aria-current="true"] {
+  background: #00a9ff;
+}
+
+/* ---- Assistant band (components/home/AssistantBand.tsx) ----------------------------------------
+   Idle desktop state reproduces the Figma "AI Chatbot" frame: 563px band, 1400px card hanging 108px
+   from the top (clipped by the band), headline 46px in, bar 46px under the headline, lower-third
+   menu 99px under the bar. Once a conversation starts the band grows to fit. */
+.asst-band {
+  position: relative;
+  overflow: hidden;
+  background: #06174a;
+  padding: 40px 16px;
+}
+.asst-card {
+  position: relative;
+  margin: 0 auto;
+  max-width: 1400px;
+  padding: 36px 20px 28px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 24px;
+  backdrop-filter: blur(10px);
+  background: linear-gradient(
+    125deg,
+    rgba(217, 217, 217, 0.42) 0%,
+    rgba(115, 115, 115, 0.07) 19%,
+    rgba(217, 217, 217, 0.14) 47%,
+    rgba(8, 33, 88, 0.5) 71%,
+    rgba(217, 217, 217, 0.5) 100%
+  );
+  box-shadow: 0 24px 60px rgba(2, 10, 40, 0.35);
+}
+.asst-title {
+  text-align: center;
+  font-size: clamp(26px, 6.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.09;
+  color: #fff;
+  white-space: pre-line;
+}
+.asst-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 1002px);
+  height: 64px;
+  margin: 24px auto 0;
+  padding: 0 16px 0 14px;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  border-radius: 13px;
+  background: linear-gradient(
+    115deg,
+    #d9d9d9 0%,
+    #baf4ff 19%,
+    #d9d9d9 47%,
+    #e2fcff 71%,
+    rgba(217, 217, 217, 0.8) 100%
+  );
+  box-shadow: 0 10px 30px rgba(3, 20, 70, 0.25);
+}
+.asst-bar-orb {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 34px;
+}
+.asst-bar-input {
+  flex: 1;
+  min-width: 0;
+  /* Two lines on phones so the whole greeting shows; one line from 640px (see below). */
+  height: 2.86em;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: #000;
+  font-size: 15px;
+  line-height: 1.43;
+  outline: none;
+}
+@media (max-width: 479px) {
+  .asst-bar-input {
+    font-size: 13.5px;
+  }
+  .asst-bar-orb {
+    width: 28px;
+    height: 26px;
+  }
+}
+@media (max-width: 399px) {
+  /* Narrowest phones: the greeting needs three lines. */
+  .asst-bar {
+    height: auto;
+    padding-block: 10px;
+  }
+  .asst-bar-input {
+    height: 4.29em;
+  }
+}
+@media (min-width: 640px) {
+  .asst-bar-input {
+    height: 1.43em;
+  }
+}
+.asst-bar-input::placeholder {
+  color: #000;
+  opacity: 1;
+}
+.asst-bar-send {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: #0a468b;
+  transition: transform 0.15s ease;
+}
+.asst-bar-send:hover {
+  transform: scale(1.1);
+}
+.asst-bar-send:disabled {
+  opacity: 0.5;
+}
+.asst-bar-wrap {
+  width: min(100%, 1002px);
+  margin-inline: auto;
+}
+.asst-nav {
+  margin-top: 28px;
+}
+@media (min-width: 1280px) {
+  .asst-band {
+    padding: 0;
+    height: calc(563 * var(--u));
+  }
+  .asst-band--open {
+    height: auto;
+    padding-bottom: calc(40 * var(--u));
+  }
+  .asst-card {
+    width: calc(1400 * var(--u));
+    max-width: none;
+    margin-top: calc(108 * var(--u));
+    padding: calc(46 * var(--u)) 0 calc(48 * var(--u));
+    border-radius: calc(24 * var(--u));
+    min-height: calc(625 * var(--u));
+  }
+  .asst-band--open .asst-card {
+    min-height: 0;
+  }
+  .asst-title {
+    font-size: max(30px, calc(40 * var(--u)));
+  }
+  .asst-bar {
+    width: calc(1002 * var(--u));
+    height: calc(100 * var(--u));
+    margin-top: calc(46 * var(--u));
+    padding: 0 calc(28 * var(--u)) 0 calc(35 * var(--u));
+    gap: calc(35 * var(--u));
+  }
+  .asst-bar-wrap {
+    width: calc(1002 * var(--u));
+  }
+  .asst-bar-orb {
+    width: calc(50 * var(--u));
+    height: calc(46 * var(--u));
+  }
+  .asst-bar-input {
+    font-size: max(15px, calc(20 * var(--u)));
+  }
+  .asst-bar-send {
+    width: calc(29 * var(--u));
+    height: calc(29 * var(--u));
+  }
+  .asst-nav {
+    margin-top: calc(99 * var(--u));
+  }
+  .asst-band--open .asst-nav {
+    margin-top: calc(40 * var(--u));
+  }
+}
+
+/* Stacked (< 1280px) hero: the artboard keeps copy clear of the artwork, a narrow layout can't, so a
+   soft scrim sits behind the copy. Hidden on the artboard layout. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.hero-scrim--dark {
+  background: linear-gradient(to bottom, rgba(0, 8, 30, 0.66), rgba(0, 8, 30, 0.3) 62%, rgba(0, 8, 30, 0));
+}
+.hero-scrim--light {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72) 58%, rgba(255, 255, 255, 0));
+}
+@media (min-width: 1280px) {
+  .hero-scrim {
+    display: none;
+  }
+}
+
+/* ---- What We Do (components/home/WhatWeDo.tsx) -------------------------------------------------
+   Same artboard model as the hero: from 1280px every length is an artboard pixel × --u. The card
+   strip is a looping carousel; --cw/--gap/--step drive both the layout and the slide distance. */
+.wwd {
+  --cw: 244px;
+  --gap: 24px;
+  --step: calc(var(--cw) + var(--gap));
+  position: relative;
+  padding: 56px 0 56px;
+  background: linear-gradient(180deg, #edf5ff, #effaff);
+}
+.wwd-head {
+  margin: 28px auto 0;
+  max-width: 834px;
+  padding: 0 24px;
+  text-align: center;
+}
+.wwd-title {
+  font-size: clamp(28px, 6.4vw, 40px);
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  background-image: linear-gradient(90deg, #0077ff 0%, #001c51 43%, #007690 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.wwd-body {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #000;
+}
+.wwd-viewport {
+  margin-top: 36px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.wwd-track {
+  display: flex;
+  gap: var(--gap);
+  width: max-content;
+  padding-left: 24px;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+.wwd-track--instant {
+  transition: none;
+}
+.wwd-card {
+  position: relative;
+  flex: none;
+  width: var(--cw);
+  height: calc(var(--cw) * 383 / 244);
+  overflow: hidden;
+  border-radius: 14px;
+  background: #0b2a55;
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+}
+.wwd-card:focus-visible {
+  box-shadow: 0 0 0 3px #00a9ff;
+}
+.wwd-card-title {
+  position: absolute;
+  z-index: 2;
+  top: 6.5%;
+  left: 6.5%;
+  max-width: 74%;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-shadow: 0 1px 10px rgba(0, 20, 60, 0.35);
+}
+.wwd-card-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to bottom,
+    rgba(1, 42, 80, 0.82),
+    rgba(28, 50, 100, 0.72) 59%,
+    #000c27
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.wwd-card-desc {
+  position: absolute;
+  top: 61.6%;
+  left: 6.5%;
+  width: 82.8%;
+  font-size: 15px;
+  line-height: 1.32;
+  transform: translateY(10px);
+  transition: transform 0.35s ease;
+}
+.wwd-card:hover .wwd-card-veil,
+.wwd-card:focus-visible .wwd-card-veil,
+.wwd-card:focus .wwd-card-veil {
+  opacity: 1;
+}
+.wwd-card:hover .wwd-card-desc,
+.wwd-card:focus-visible .wwd-card-desc,
+.wwd-card:focus .wwd-card-desc {
+  transform: none;
+}
+.wwd-arrows {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 32px;
+}
+.wwd-arrow {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0.2px solid #000;
+  border-radius: 50%;
+  color: #686868;
+  background: transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.wwd-arrow:hover {
+  background: #fff;
+  color: #0077ff;
+}
+@media (min-width: 1280px) {
+  .wwd {
+    --cw: calc(244 * var(--u));
+    --gap: calc(30 * var(--u));
+    min-height: calc(790 * var(--u));
+    padding: calc(37 * var(--u)) 0 0;
+  }
+  .wwd-eyebrow-wrap {
+    padding-left: calc(236 * var(--u));
+  }
+  .wwd-head {
+    margin-top: calc(19 * var(--u));
+    max-width: none;
+    width: calc(834 * var(--u));
+    padding: 0;
+  }
+  .wwd-title {
+    font-size: max(32px, calc(46 * var(--u)));
+  }
+  .wwd-body {
+    margin-top: calc(11 * var(--u));
+    font-size: max(15px, calc(20 * var(--u)));
+  }
+  .wwd-viewport {
+    margin-top: calc(57 * var(--u));
+  }
+  .wwd-track {
+    padding-left: calc(16 * var(--u));
+  }
+  .wwd-card {
+    border-radius: calc(14 * var(--u));
+  }
+  .wwd-card-title {
+    font-size: max(14px, calc(20 * var(--u)));
+  }
+  .wwd-card-desc {
+    font-size: max(12px, calc(15 * var(--u)));
+  }
+  .wwd-arrows {
+    margin-top: calc(40 * var(--u));
+    gap: calc(13 * var(--u));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wwd-track,
+  .wwd-card-veil,
+  .wwd-card-desc {
+    transition: none;
+  }
 }

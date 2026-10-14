@@ -1,56 +1,170 @@
 "use client";
 
-// Presentational only — matches ContactCta.tsx's precedent: no backend to
-// submit to yet, so the form doesn't post anywhere.
-const FIELDS = [
-  { name: "fullName", type: "text", placeholder: "Full name*" },
-  { name: "email", type: "email", placeholder: "Email*" },
-  { name: "phone", type: "tel", placeholder: "Phone number*" },
-  { name: "company", type: "text", placeholder: "Company name*" },
-  { name: "jobTitle", type: "text", placeholder: "Job title*" },
-  { name: "industry", type: "text", placeholder: "Industry*" },
-] as const;
+import { useState } from "react";
+import type { SectionIntro } from "@/content/home/types";
 
-export function ContactForm() {
+const FALLBACK_INTRO: SectionIntro = {
+  section: "contact",
+  title: "Maximize Your ROI in the Cloud\nLet's Chat!",
+};
+
+const inputBase = "ctc-input";
+
+/**
+ * "Let's Chat" (Figma "contact"): gradient heading and the contact form on a pale-blue wash, with
+ * the round back-to-top button at the bottom right. The form validates in the browser but doesn't
+ * post anywhere yet — there is no contact endpoint in the backend — so submitting only shows a
+ * confirmation.
+ */
+export function ContactForm({ intro = FALLBACK_INTRO }: { intro?: SectionIntro }) {
+  const [sent, setSent] = useState(false);
+
   return (
-    <section
-      id="contact"
-      className="py-[clamp(56px,7vw,96px)]"
-      style={{ background: "linear-gradient(#f2f7fd,#e7f0fa)" }}
-    >
-      <div className="px-6">
-        <h2 className="mx-auto mb-8 max-w-[560px] text-center text-[clamp(18px,2.4vw,24px)] font-bold tracking-[0.02em] text-brand-primary uppercase">
-          Maximize your ROI in the cloud
-          <br />
-          Let&apos;s chat!
+    <section id="contact" aria-labelledby="contact-title" className="design-canvas">
+      <div className="ctc">
+        <h2 id="contact-title" className="sec-title ctc-title">
+          {intro.title}
         </h2>
 
         <form
-          onSubmit={(e) => e.preventDefault()}
-          className="mx-auto grid max-w-[620px] grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5 border border-[#e0e4e9] bg-white p-[30px]"
+          className="ctc-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSent(true);
+          }}
         >
-          {FIELDS.map((field) => (
+          <label className="ctc-field ctc-field--wide">
+            <span className="sr-only">Purpose</span>
             <input
-              key={field.name}
-              type={field.type}
-              name={field.name}
-              placeholder={field.placeholder}
-              className="min-w-0 border border-[#dfe3e8] px-3.5 py-3.5 text-sm outline-none transition-colors duration-150 focus:border-brand-primary"
+              className={inputBase}
+              name="purpose"
+              type="text"
+              placeholder="Purpose*"
+              required
             />
-          ))}
-          <textarea
-            name="message"
-            rows={3}
-            placeholder="Message*"
-            className="col-span-full min-w-0 resize-y border border-[#dfe3e8] px-3.5 py-3.5 text-sm outline-none transition-colors duration-150 focus:border-brand-primary"
-          />
-          <button
-            type="submit"
-            className="font-mono-wave col-span-full min-h-11 bg-brand-primary py-3.5 text-xs tracking-[0.1em] text-white transition-colors hover:bg-brand-primary-dark"
-          >
-            SEND MESSAGE
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Full name</span>
+            <input
+              className={inputBase}
+              name="fullName"
+              type="text"
+              placeholder="Full Name*"
+              required
+              autoComplete="name"
+            />
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Email</span>
+            <input
+              className={inputBase}
+              name="email"
+              type="email"
+              placeholder="Email*"
+              required
+              autoComplete="email"
+            />
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Phone number</span>
+            <input
+              className={inputBase}
+              name="phone"
+              type="tel"
+              placeholder="Phone Number*"
+              required
+              autoComplete="tel"
+            />
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Company name</span>
+            <input
+              className={inputBase}
+              name="company"
+              type="text"
+              placeholder="Company Name*"
+              required
+              autoComplete="organization"
+            />
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Job title</span>
+            <input
+              className={inputBase}
+              name="jobTitle"
+              type="text"
+              placeholder="Job Title*"
+              required
+              autoComplete="organization-title"
+            />
+          </label>
+          <label className="ctc-field">
+            <span className="sr-only">Industry</span>
+            <input className={inputBase} name="industry" type="text" placeholder="Industry" />
+          </label>
+          <label className="ctc-field ctc-field--wide">
+            <span className="sr-only">Message</span>
+            <textarea
+              className={inputBase}
+              name="message"
+              rows={3}
+              placeholder="Message*"
+              required
+            />
+          </label>
+          <label className="ctc-field ctc-field--wide">
+            <span className="sr-only">Book a meeting</span>
+            <input
+              className={inputBase}
+              name="meetingDate"
+              type="text"
+              placeholder="Book Meeting*"
+              required
+              onFocus={(e) => (e.currentTarget.type = "date")}
+              onBlur={(e) => {
+                if (!e.currentTarget.value) e.currentTarget.type = "text";
+              }}
+            />
+          </label>
+          <label className="ctc-field ctc-field--wide">
+            <span className="sr-only">Time (GMT +7)</span>
+            <input
+              className={inputBase}
+              name="meetingTime"
+              type="text"
+              placeholder="Time (GMT +7)*"
+              required
+              onFocus={(e) => (e.currentTarget.type = "time")}
+              onBlur={(e) => {
+                if (!e.currentTarget.value) e.currentTarget.type = "text";
+              }}
+            />
+          </label>
+          <button type="submit" className="ctc-submit">
+            Submit
           </button>
+          {sent && (
+            <p className="ctc-note" role="status">
+              Thank you — your message is ready to send. (This form isn&apos;t connected to a
+              backend yet.)
+            </p>
+          )}
         </form>
+
+        <button
+          type="button"
+          className="ctc-top"
+          aria-label="Back to top"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-1/2 w-1/2 fill-none stroke-current stroke-2"
+            aria-hidden
+          >
+            <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
       </div>
     </section>
   );

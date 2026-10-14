@@ -26,6 +26,17 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
   { label: "Careers" },
 ];
 
+/** Desktop header order, per the Figma "Header" component. (PRIMARY_NAV above still drives the
+ * mobile bottom bar until that is redesigned.) */
+export const HEADER_NAV: PrimaryNavItem[] = [
+  { label: "About Us", hasDropdown: true, href: "/#about" },
+  { label: "Services", hasDropdown: true, href: "/#whatwedo" },
+  { label: "Industries", hasDropdown: true },
+  { label: "Insights", href: "/insights" },
+  { label: "Career" },
+  { label: "Contact", href: "/#contact" },
+];
+
 export const NAV_SECTIONS: NavSection[] = [
   { id: "overview", label: "Overview" },
   { id: "whatwedo", label: "What We Do" },

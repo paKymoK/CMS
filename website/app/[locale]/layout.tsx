@@ -1,4 +1,4 @@
-import { Montserrat, IBM_Plex_Mono, JetBrains_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Mono, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -8,13 +8,15 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import "../globals.css";
+import "../sections.css";
 
-// Real site's body/heading font, confirmed via computed-style inspection
-// (getComputedStyle(...).fontFamily === "Montserrat, sans-serif") on 2026-08-27.
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+// The Figma design ("CMC Global - Website 2026") uses Inter for every piece of type, in its
+// "24pt" optical size. The variable font's opsz axis reproduces that: with font-optical-sizing
+// (default auto) large headings get the tighter display cut, so line breaks match the artboard.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin", "vietnamese"],
+  axes: ["opsz"],
 });
 
 // Mono accent font for eyebrow labels / stat & slide-counter text in the
@@ -57,13 +59,14 @@ export default async function LocaleLayout(
   return (
     <html
       lang={locale}
-      className={`${montserrat.variable} ${ibmPlexMono.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${ibmPlexMono.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
         <NextIntlClientProvider>
           <SiteHeader />
-          <main className="flex-1">{props.children}</main>
-          <SiteFooter footerNav={content.footerNav} />
+          {/* Content is designed for a 1920px artboard and capped there (wider screens are unsupported). */}
+          <main className="mx-auto w-full max-w-[1920px] flex-1">{props.children}</main>
+          <SiteFooter footerNav={content.footerNav} footer={content.sections?.site_footer?.[0]} />
           <MobileBottomNav />
         </NextIntlClientProvider>
       </body>

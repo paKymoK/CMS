@@ -5,6 +5,7 @@ export type Stat = {
 };
 
 export type CaseStudy = {
+  slug?: string;
   title: string;
   date: string;
   category: string;
@@ -12,7 +13,9 @@ export type CaseStudy = {
 };
 
 export type InsightItem = {
+  slug?: string;
   title: string;
+  date?: string;
   image?: string;
 };
 
@@ -21,20 +24,21 @@ export type LogoBadge = {
   logo?: string;
 };
 
-export type FlankLogo = {
-  name: string;
-  /** Card background color behind the logo wordmark (placeholder, per handoff). */
-  color: string;
-};
-
 export type Testimonial = {
   name: string;
   title: string;
   company: string;
   quote?: string;
+  /** Portrait on the right half of the quote card. */
   photo?: string;
-  /** The two client-logo cards flanking the centre quote card on this slide. */
-  flankLogos?: [FlankLogo, FlankLogo];
+  /** Client logo on the quote card (dark artwork, light background). */
+  logo?: string;
+  /** Abstract artwork behind the quote text. */
+  backgroundImage?: string;
+  /** Logo variant for the brand card shown beside neighbouring slides, and that card's gradient. */
+  flankLogo?: string;
+  flankFrom?: string;
+  flankTo?: string;
 };
 
 export type FooterNavCategory = {
@@ -44,6 +48,8 @@ export type FooterNavCategory = {
 
 export type ServiceCard = {
   name: string;
+  /** Revealed on hover/tap over the card. */
+  description?: string;
   image?: string;
 };
 
@@ -63,6 +69,82 @@ export type Office = {
   link?: { label: string; href: string };
 };
 
+/** content_item type "hero_slide" — see content-service's HeroSlideFields. */
+export type HeroSlide = {
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  /** Text-placement preset from the design. */
+  layout?: "center" | "left" | "right" | "left-wide" | "bottom-left";
+  ctaStyle?: "white" | "blue" | "light";
+  backgroundImage?: string;
+  /** Transparent artwork drawn over the background colour/image. */
+  overlayImage?: string;
+  backgroundColor?: string;
+  backgroundColorEnd?: string;
+};
+
+/** content_item type "assistant_band" — see content-service's AssistantBandFields. */
+export type AssistantBand = {
+  title: string;
+  greeting: string;
+  welcome?: string;
+  suggestions?: string[];
+  backdropImage?: string;
+  orbImage?: string;
+};
+
+/** content_item type "section_intro" — see content-service's SectionIntroFields. */
+export type SectionIntro = {
+  /** The section's anchor id (whatwedo, testimonials, ...). */
+  section: string;
+  eyebrow?: string;
+  title: string;
+  body?: string;
+  /** Small label above the section's list (e.g. "Latest Case Study"). */
+  kicker?: string;
+  /** The section's "see all" link. */
+  linkLabel?: string;
+  linkUrl?: string;
+  /** Label of the section's primary button (e.g. "Read this letter"). */
+  buttonLabel?: string;
+};
+
+/** content_item type "feature_band" — see content-service's FeatureBandFields. */
+export type FeatureBand = {
+  eyebrow?: string;
+  title: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  image?: string;
+};
+
+/** content_item type "site_footer" — see content-service's SiteFooterFields. */
+export type SiteFooterContent = {
+  title: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  copyright?: string;
+  privacyLabel?: string;
+  privacyUrl?: string;
+  termsLabel?: string;
+  termsUrl?: string;
+  facebookUrl?: string;
+  twitterUrl?: string;
+  instagramUrl?: string;
+};
+
+/** Generic content_item types, keyed by content_type; each list is in display order. */
+export type HomeSections = {
+  hero_slide?: HeroSlide[];
+  assistant_band?: AssistantBand[];
+  section_intro?: SectionIntro[];
+  feature_band?: FeatureBand[];
+  site_footer?: SiteFooterContent[];
+};
+
 export type HomeContent = {
   stats: Stat[];
   services: ServiceCard[];
@@ -74,4 +156,5 @@ export type HomeContent = {
   partners: LogoBadge[];
   testimonials: Testimonial[];
   footerNav: FooterNavCategory[];
+  sections?: HomeSections;
 };

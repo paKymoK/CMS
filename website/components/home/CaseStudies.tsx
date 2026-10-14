@@ -1,70 +1,90 @@
+import { Link } from "@/i18n/navigation";
+import { DiagonalArrow } from "@/components/ui/DiagonalArrow";
 import { CoverImage } from "@/components/ui/CoverImage";
-import { Reveal } from "@/components/ui/Reveal";
 import { Placeholder } from "@/components/ui/Placeholder";
-import type { CaseStudy } from "@/content/home/types";
+import type { CaseStudy, SectionIntro } from "@/content/home/types";
 
-const TONES = ["warm", "cool", "navy", "dark"] as const;
+const FALLBACK_INTRO: SectionIntro = {
+  section: "cases",
+  eyebrow: "Case Studies",
+  title: "Stories of Transformation",
+  kicker: "Latest Case Study",
+  linkLabel: "Explore all Case Studies",
+  linkUrl: "#cases",
+};
 
-export function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
+/**
+ * "Stories of Transformation" (Figma "Stories of Transformation"): four photo cards in a row, each
+ * with a category tag. On hover/focus the photo grows to full size and a grey panel slides up with
+ * the date and headline (always shown on touch screens, which can't hover). Cards open the case
+ * study's page.
+ */
+export function CaseStudies({
+  caseStudies,
+  intro = FALLBACK_INTRO,
+}: {
+  caseStudies: CaseStudy[];
+  intro?: SectionIntro;
+}) {
   return (
-    <section id="cases" className="py-[clamp(56px,7vw,96px)]">
-      <div className="mx-auto max-w-[1120px] px-6">
-        <Reveal className="text-center">
-          <div className="font-mono-wave text-[11px] tracking-[0.16em] text-[#5a5d64] uppercase">
-            — Case Studies
+    <section id="cases" aria-labelledby="cases-title" className="design-canvas">
+      <div className="cs sec">
+        <div className="sec-eyebrow-wrap">
+          <div className="cmc-eyebrow">{intro.eyebrow ?? "Case Studies"}</div>
+        </div>
+        <h2 id="cases-title" className="sec-title cs-title">
+          {intro.title}
+        </h2>
+        {intro.kicker && <p className="cs-kicker">{intro.kicker}</p>}
+
+        <div className="cs-grid">
+          {caseStudies.slice(0, 4).map((study) => {
+            const inner = (
+              <>
+                <div className="cs-img">
+                  {study.image ? (
+                    <CoverImage
+                      src={study.image}
+                      alt=""
+                      sizes="(min-width: 1280px) 18vw, (min-width: 900px) 24vw, 46vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <Placeholder
+                      tone="dark"
+                      label="Case study image"
+                      className="absolute inset-0"
+                    />
+                  )}
+                </div>
+                <span className="cs-tag">{study.category}</span>
+                <div className="cs-info">
+                  <p className="cs-date">{study.date}</p>
+                  <div className="cs-rule" aria-hidden />
+                  <h3 className="cs-name">{study.title}</h3>
+                </div>
+              </>
+            );
+            return study.slug ? (
+              <Link key={study.title} href={`/case-studies/${study.slug}`} className="cs-card">
+                {inner}
+              </Link>
+            ) : (
+              <div key={study.title} className="cs-card" tabIndex={0}>
+                {inner}
+              </div>
+            );
+          })}
+        </div>
+
+        {intro.linkLabel && intro.linkUrl && (
+          <div className="cs-more">
+            <a href={intro.linkUrl} className="sec-link">
+              {intro.linkLabel}
+              <DiagonalArrow />
+            </a>
           </div>
-          <h2 className="mt-3.5 mb-11 text-[clamp(24px,3.2vw,34px)] font-bold tracking-[-0.02em] text-brand-primary">
-            Stories of Transformation
-          </h2>
-        </Reveal>
-
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(224px,1fr))] gap-5">
-          {caseStudies.map((cs, i) => (
-            <Reveal key={cs.title} delayMs={100 + i * 80} travelPx={24}>
-              <a
-                href="#"
-                className="group relative block h-[328px] overflow-hidden bg-[#061225]"
-              >
-                {cs.image ? (
-                  <CoverImage
-                    src={cs.image}
-                    alt={cs.title}
-                    className="absolute inset-0 scale-[1.05] object-cover transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
-                    sizes="(min-width: 1120px) 260px, 33vw"
-                  />
-                ) : (
-                  <Placeholder
-                    tone={TONES[i % TONES.length]}
-                    label=""
-                    className="absolute inset-0 scale-[1.05] transition-transform duration-[900ms] ease-[cubic-bezier(.25,1,.5,1)] group-hover:scale-[1.02]"
-                  />
-                )}
-                <div
-                  className="absolute inset-0 opacity-85 transition-opacity duration-200 ease-linear group-hover:opacity-95"
-                  style={{ background: "linear-gradient(transparent 32%, rgba(3,9,22,.92))" }}
-                />
-                <div className="font-mono-wave absolute top-3.5 left-3.5 text-[9px] tracking-[0.06em] text-[#cfe1f6] uppercase">
-                  {cs.category}
-                </div>
-                <div className="absolute right-3.5 bottom-3.5 left-3.5 text-white transition-transform duration-200 group-hover:-translate-y-0.5">
-                  <div className="font-mono-wave mb-2 text-[9px] tracking-[0.08em] text-[#8fb5e8] uppercase">
-                    {cs.date}
-                  </div>
-                  <h3 className="line-clamp-4 text-[14px] leading-[1.42] font-bold">{cs.title}</h3>
-                </div>
-              </a>
-            </Reveal>
-          ))}
-        </div>
-
-        <div className="mt-7 text-right">
-          <a
-            href="#"
-            className="font-mono-wave text-[11px] tracking-[0.08em] text-brand-primary uppercase transition-colors hover:text-brand-primary-dark"
-          >
-            Explore All Case Studies ↗
-          </a>
-        </div>
+        )}
       </div>
     </section>
   );

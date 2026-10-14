@@ -12,14 +12,123 @@ import type { HomeContent } from "./types";
  * content/nav.ts since they never change per-region.
  */
 export const homeContentEn: HomeContent = {
+  // Text-only stand-ins for the CMS-managed hero/assistant content, used only when the CMS is
+  // unreachable (imagery comes from the CMS media library, so the fallback has none).
+  sections: {
+    section_intro: [
+      {
+        section: "whatwedo",
+        eyebrow: "What We Do",
+        title: "Architecting Your Next-Gen Digital Core",
+        body: "We accelerate your digital evolution by blending advanced AI engineering, robust cloud infrastructure, and deep domain expertise.",
+      },
+      { section: "testimonials", eyebrow: "Testimonials", title: "Hear More from Our Clients" },
+      {
+        section: "global",
+        eyebrow: "Global Delivery",
+        title:
+          "Seamless global presence. Non-stop innovation.\nWe accelerate the digital evolution across every time zone",
+      },
+      {
+        section: "cases",
+        eyebrow: "Case Studies",
+        title: "Stories of Transformation",
+        kicker: "Latest Case Study",
+        linkLabel: "Explore all Case Studies",
+        linkUrl: "#cases",
+      },
+      {
+        section: "insights",
+        eyebrow: "Insights",
+        title: "Building Tomorrow Together",
+        linkLabel: "Explore all Insights",
+        linkUrl: "/insights",
+      },
+      {
+        section: "recognition",
+        title: "Global Recognition for Innovative Engineering",
+        body: "Our technical expertise and proven business impact earn us industry-leading awards and elite credentials.",
+      },
+      { section: "contact", title: "Maximize Your ROI in the Cloud\nLet's Chat!" },
+    ],
+    feature_band: [
+      {
+        eyebrow: "Your Extended Tech Workforce",
+        title: "Scale your tech capabilities with precision and agility",
+        body: "Expand your engineering bandwidth with flexible, cross-functional tech teams that seamlessly align with your workflows and scale as your goals evolve.",
+        ctaLabel: "Meet our experts",
+        ctaUrl: "#contact",
+      },
+    ],
+    site_footer: [
+      {
+        title: "Let's connect",
+        ctaLabel: "Get in touch",
+        ctaUrl: "#contact",
+        copyright: "©2026 CMC Global. All rights reserved",
+        privacyLabel: "Privacy & Policy",
+        privacyUrl: "#",
+        termsLabel: "Terms & Condition",
+        termsUrl: "#",
+      },
+    ],
+    hero_slide: [
+      {
+        title: "Riding The Next Wave of AI Transformation",
+        subtitle: "Reinvent Your Base - Scale Without Limits - Engineer Your Tomorrow",
+        ctaLabel: "Contact Us",
+        ctaUrl: "#contact",
+        layout: "center",
+        ctaStyle: "white",
+        backgroundColor: "#000812",
+        backgroundColorEnd: "#00152d",
+      },
+    ],
+    assistant_band: [
+      {
+        title: "The Intelligent Way To Know More About CMC",
+        greeting: "Welcome to CMC Global. What brings you here today?",
+        welcome:
+          "Thank you for checking out our services. If you don’t mind me asking, what brings you to CMC Global today?",
+        suggestions: ["Tell me about CMC", "What service do you have?", "Show me your AI Capabilities"],
+      },
+    ],
+  },
   services: [
-    { name: "AI & Digital Strategy Advisory" },
-    { name: "Data & AI Solutions" },
-    { name: "Digital & Cloud Solutions" },
-    { name: "Enterprise Solutions" },
-    { name: "Infrastructure & Managed Services" },
-    { name: "Cybersecurity" },
-    { name: "Software Engineering" },
+    {
+      name: "AI & Digital Strategy Advisory",
+      description:
+        "Align your vision with execution through strategic roadmaps that de-risk your digital transformation and accelerate time-to-market.",
+    },
+    {
+      name: "Data & AI Solutions",
+      description:
+        "Standardize complex data silos into actionable intelligence to automate operations and unlock new revenue streams.",
+    },
+    {
+      name: "Digital & Cloud Solutions",
+      description:
+        "Migrate and modernize your infrastructure with scalable, high-performance cloud environments built for ultimate business agility.",
+    },
+    {
+      name: "Enterprise Solutions",
+      description:
+        "Streamline core business operations by seamlessly integrating tailored ERP and CRM platforms.",
+    },
+    {
+      name: "Infrastructure & App Managed Services",
+      description:
+        "Ensure 24/7 operational resilience and peak performance. Simultaneously, lower overhead by optimizing costs and resource efficiency.",
+    },
+    {
+      name: "Cybersecurity",
+      description:
+        "Safeguard digital assets, ensure strict compliance, and build trust with a proactive, zero-trust security framework.",
+    },
+    {
+      name: "Software Engineering",
+      description: "Deliver high-quality, custom applications at global speed with elite tech talent.",
+    },
   ],
   stats: [
     { value: "32+", label: "Years Of Experience", note: "Part of CMC Corporation, founded 1993." },
@@ -89,148 +198,102 @@ export const homeContentEn: HomeContent = {
       address: "DACH market\nFrankfurt am Main, Germany",
     },
   ],
-  // Titles/dates/categories transcribed verbatim from the prototype markup.
   caseStudies: [
     {
-      title: "38% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software",
-      date: "Jun 2, 2026",
+      title: "36% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software",
+      date: "June 25, 2026",
       category: "Agentic AI Software Delivery",
     },
     {
       title: "15% Increase In Revenue With AI Energy Trading System",
-      date: "Jun 2, 2026",
+      date: "June 20, 2026",
       category: "AI-Powered Trading & Forecasting",
     },
     {
-      title: "30% Ticket Return Reduced With Smart Field Service Software Using Azure OpenAI",
-      date: "Jun 2, 2026",
+      title: "30% Trips Return Reduced With Smart Field Service Software Using Azure Open AI",
+      date: "June 2, 2026",
       category: "AI-Powered Field Operations",
     },
     {
-      title: "Beyond Innovation: Revolv CTO On Why Trust And “Unbreakable Connectivity” Won The Deal",
-      date: "Jun 2, 2026",
+      title: "Beyond a Vendor: Envato CTO on Why Trust and “Unbreakable Connectivity” Won the Deal",
+      date: "March 2, 2026",
       category: "Software Engineering",
     },
   ],
-  // Captions transcribed verbatim from the prototype's initIns().
   insights: [
-    { title: "Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation" },
-    { title: "AI Workshop Series: Turning Pilots Into Production Across The Enterprise" },
-    { title: "Bridging Talent And Technology: Our New Delivery Centre In Ho Chi Minh City" },
-    { title: "AI Business Insight Night: What Boards Are Asking About AI In 2026" },
+    {
+      title: "Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation",
+      date: "August 28, 2026",
+    },
+    { title: "APEC Workshop: Putting AI And Digital Transformation Into Practice", date: "July 18, 2026" },
+    { title: "CMC Global Signs A Cooperation MOU With New Zealand Partners", date: "July 4, 2026" },
+    { title: "CMC Global x Salesforce: Accelerating Enterprise AI Adoption", date: "June 20, 2026" },
+    { title: "Event Highlights: Building The Next Generation Of Engineers", date: "June 6, 2026" },
   ],
   awards: [
-    { name: "Award 1", logo: "/images/awards/award-1.png" },
-    { name: "Award 2", logo: "/images/awards/award-2.png" },
-    { name: "Award 3", logo: "/images/awards/award-3.png" },
-    { name: "Award 4", logo: "/images/awards/award-4.png" },
-    { name: "Award 5", logo: "/images/awards/award-5.png" },
+    { name: "Award 1" },
+    { name: "Award 2" },
+    { name: "Award 3" },
+    { name: "Award 4" },
+    { name: "Award 5" },
   ],
   certifications: [
-    { name: "ISO 9001", logo: "/images/certs/cert-9001.png" },
-    { name: "ISO 27001", logo: "/images/certs/cert-iso27001.png" },
-    { name: "ITIL", logo: "/images/certs/cert-itil.png" },
-    { name: "PCI-DSS", logo: "/images/certs/cert-pcidss.svg" },
-    { name: "AWS Advanced Tier Services", logo: "/images/certs/cert-aws-tier.png" },
+    { name: "ISO 9001" },
+    { name: "ISO 27001" },
+    { name: "ITIL" },
+    { name: "PCI-DSS" },
+    { name: "AWS Advanced Tier Services" },
   ],
   partners: [
-    { name: "ITIL", logo: "/images/partners/partner-itil.png" },
-    { name: "AWS", logo: "/images/partners/partner-aws.svg" },
-    { name: "Google Cloud", logo: "/images/partners/partner-google-cloud.webp" },
-    { name: "UiPath", logo: "/images/partners/partner-uipath.png" },
-    { name: "ISTQB", logo: "/images/partners/partner-istqb.png" },
+    { name: "ITIL" },
+    { name: "AWS" },
+    { name: "Google Cloud" },
+    { name: "UiPath" },
+    { name: "ISTQB" },
   ],
-  // Transcribed verbatim from the prototype's initTestimonials() data array.
   testimonials: [
     {
       name: "Mr. Nick Benjamin",
       title: "CTO",
       company: "envato",
-      quote: "CMC Global’s happy culture shows up in different ways. One is that CMC Global is very dedicated and they walk the extra mile.",
-      flankLogos: [
-        { name: "northstar", color: "#121212" },
-        { name: "RSUPPORT", color: "#b91c22" },
-      ],
+      quote:
+        "CMC Global’s helped us in a number of different ways. One is that CMC Global’s actually delivered what they said they would do. And so for me, that’s foundational.",
+      flankFrom: "#87e64c",
+      flankTo: "#000000",
     },
     {
-      name: "Ms. Elena Rojas",
-      title: "VP Engineering",
-      company: "northstar",
-      quote: "They took our roadmap seriously from week one. The team scaled from four engineers to eighteen without a dip in delivery quality.",
-      flankLogos: [
-        { name: "RSUPPORT", color: "#b91c22" },
-        { name: "envato", color: "#0b63c5" },
-      ],
-    },
-    {
-      name: "Mr. Jun Park",
-      title: "Head of Product",
+      name: "Mr. Kim Teak Joong",
+      title: "CTO",
       company: "RSUPPORT",
-      quote: "What impressed us was the handover. Documentation, tests, runbooks — everything was where it should be when we took it in-house.",
-      flankLogos: [
-        { name: "envato", color: "#0b63c5" },
-        { name: "northstar", color: "#121212" },
-      ],
+      quote:
+        "CMC Global’s greatest strength lies in its proactive approach to understanding and addressing customer needs.",
+      flankFrom: "#ad0021",
+      flankTo: "#47000d",
     },
     {
-      name: "Mr. Hiroshi Tanaka",
-      title: "CIO",
-      company: "Mitsui",
-      quote: "A genuine partner rather than a vendor. They pushed back when our spec was wrong, which is exactly what we needed.",
-      flankLogos: [
-        { name: "northstar", color: "#121212" },
-        { name: "RSUPPORT", color: "#b91c22" },
-      ],
+      name: "Mr. Le Minh",
+      title: "Chief Product Officer",
+      company: "northstar",
+      quote:
+        "Flexibility is definitely one of the character that we value most about CMC Global.",
+      flankFrom: "#404040",
+      flankTo: "#000000",
     },
   ],
-  // Real category labels and real link labels, extracted from the live footer's DOM text.
   footerNav: [
     {
-      label: "World-class IT Outsourcing",
+      label: "Services",
       links: [
-        "Custom Software Development",
-        "Software Maintenance",
-        "Legacy Migration",
-        "Testing Services",
+        "Consulting & Strategy",
+        "Data & AI",
+        "Digital & Cloud",
+        "Digital Engineering",
+        "Enterprise Solutions",
+        "Managed Services",
       ],
     },
-    {
-      label: "Digital Transformation",
-      links: [
-        "Cloud Professional Services",
-        "Data & Analytics",
-        "Artificial Intelligence Solutions",
-        "RPA Services",
-        "Low Code",
-      ],
-    },
-    {
-      label: "CMC Solutions",
-      links: [
-        "IoT Smart Device – CIVAMs Face",
-        "CMC Social Listening",
-        "CMC Chatbot",
-        "C-ID Reader",
-        "C-CA",
-        "SOC",
-      ],
-    },
-    {
-      label: "Model",
-      links: ["Project-based", "Staff Augmentation", "Hybrid", "Results Based"],
-    },
-    {
-      label: "About Us",
-      links: ["CMC Global", "CMC Corporation", "Company Profile"],
-    },
-    {
-      label: "Case Studies",
-      links: ["Customer Stories", "Industry", "Business Size"],
-    },
-    {
-      label: "Resources",
-      links: ["Blog", "Ebooks & Whitepapers", "News & Events"],
-    },
-    { label: "Careers", links: ["Careers"] },
+    { label: "Industries", links: ["Banking, Finance & Insurance", "Healthcare", "Manufacturing"] },
+    { label: "Insights", links: ["Perspectives", "Case Studies", "Blogs", "Client Speak"] },
+    { label: "About", links: ["Our Organization", "Our Partners", "Our Leaders", "Newsroom", "Events"] },
   ],
 };

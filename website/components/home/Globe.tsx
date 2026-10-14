@@ -34,7 +34,14 @@ const CARD_OFFSET = 22;
 
 const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
-export function Globe({ offices }: { offices: Office[] }) {
+export function Globe({
+  offices,
+  width = "clamp(280px, 32vw, 360px)",
+}: {
+  offices: Office[];
+  /** CSS width of the whole marker layer (the sphere is this minus 2×26px). */
+  width?: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const markerRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -159,7 +166,10 @@ export function Globe({ offices }: { offices: Office[] }) {
       }
     });
     if (hoveredIndexRef.current !== null) {
-      const hp = view.project(offices[hoveredIndexRef.current].lon, offices[hoveredIndexRef.current].lat);
+      const hp = view.project(
+        offices[hoveredIndexRef.current].lon,
+        offices[hoveredIndexRef.current].lat,
+      );
       if ((!hp || hp.depth > 0.94) && cardRef.current) cardRef.current.style.visibility = "hidden";
     }
   }, [offices, size]);
@@ -258,7 +268,7 @@ export function Globe({ offices }: { offices: Office[] }) {
     <div
       ref={containerRef}
       className="relative flex-none cursor-grab touch-none active:cursor-grabbing"
-      style={{ width: "clamp(280px, 32vw, 360px)", aspectRatio: "1 / 1" }}
+      style={{ width, aspectRatio: "1 / 1" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -318,21 +328,27 @@ export function Globe({ offices }: { offices: Office[] }) {
           data-globe-card
           onPointerEnter={cancelClose}
           onPointerLeave={scheduleClose}
-          className="absolute top-0 left-0 z-[6] w-[min(200px,calc(100%-16px))] cursor-auto rounded-[3px] bg-white shadow-[0_14px_34px_rgba(16,58,102,.22)]"
+          className="absolute top-0 left-0 z-[6] w-[min(257px,calc(100%-16px))] cursor-auto rounded-[4px] bg-white shadow-[0_2px_6.3px_rgba(0,0,0,.29)]"
           style={{ visibility: "hidden" }}
         >
-          {active.image ? (
-            <div className="relative h-[76px] w-full">
-              <CoverImage src={active.image} alt={active.city} className="object-cover" sizes="200px" />
-            </div>
-          ) : (
-            <Placeholder tone="light" label="OFFICE PHOTO" className="h-[76px]" />
-          )}
-          <div className="flex items-center gap-2 px-3 pt-2.5">
-            <span className="h-2.5 w-[15px] flex-none rounded-[1px]" style={{ background: active.flag }} />
-            <span className="text-[11.5px] font-bold text-[#10314f]">{active.city}</span>
+          {/* The design's office card: inset photo, flag + city, then the address. */}
+          <div className="relative mx-2 mt-[9px] h-[105px] overflow-hidden bg-[#dfe6ee]">
+            {active.image ? (
+              <CoverImage
+                src={active.image}
+                alt={active.city}
+                className="object-cover"
+                sizes="260px"
+              />
+            ) : (
+              <Placeholder tone="light" label="OFFICE PHOTO" className="h-full" />
+            )}
           </div>
-          <p className="px-3 pt-1 pb-3 text-[9px] leading-[1.5] whitespace-pre-line text-[#5a6b80]">
+          <div className="mx-3 mt-3 flex items-center gap-2 text-[15px] leading-[1.5] font-semibold text-black">
+            <span className="h-4 w-6 flex-none rounded-[1px]" style={{ background: active.flag }} />
+            {active.city}
+          </div>
+          <p className="mx-3 mt-1 mb-3.5 text-[10px] leading-[1.39] whitespace-pre-line text-black">
             {active.address}
           </p>
           {active.link && (
