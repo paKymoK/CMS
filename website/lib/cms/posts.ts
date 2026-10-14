@@ -1,5 +1,6 @@
 import type { PostDetail, PostSummary } from "./types";
 import { resolveMediaUrls } from "./media";
+import { cmsFetch } from "./cmsFetch";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -16,7 +17,7 @@ export async function getPosts(params?: { tag?: string; q?: string }): Promise<P
   const qs = search.toString();
 
   try {
-    const res = await fetch(`${CMS_BASE}/content-service/v1/posts${qs ? `?${qs}` : ""}`, {
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/posts${qs ? `?${qs}` : ""}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) {
@@ -38,7 +39,7 @@ export async function getPosts(params?: { tag?: string; q?: string }): Promise<P
  */
 export async function getPreviewPost(slug: string, token: string): Promise<PostDetail | null> {
   try {
-    const res = await fetch(
+    const res = await cmsFetch(
       `${CMS_BASE}/content-service/v1/preview/posts/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`,
       { cache: "no-store" },
     );
@@ -56,7 +57,7 @@ export async function getPreviewPost(slug: string, token: string): Promise<PostD
 
 export async function getPost(slug: string): Promise<PostDetail | null> {
   try {
-    const res = await fetch(`${CMS_BASE}/content-service/v1/posts/${encodeURIComponent(slug)}`, {
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/posts/${encodeURIComponent(slug)}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) {

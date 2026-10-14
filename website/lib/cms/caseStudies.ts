@@ -1,5 +1,6 @@
 import type { CaseStudyDetail } from "./types";
 import { resolveMediaUrls } from "./media";
+import { cmsFetch } from "./cmsFetch";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -9,7 +10,7 @@ const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
  */
 export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null> {
   try {
-    const res = await fetch(
+    const res = await cmsFetch(
       `${CMS_BASE}/content-service/v1/case-studies/${encodeURIComponent(slug)}`,
       { next: { revalidate: 60 } },
     );
@@ -33,7 +34,7 @@ export async function getPreviewCaseStudy(
   token: string,
 ): Promise<CaseStudyDetail | null> {
   try {
-    const res = await fetch(
+    const res = await cmsFetch(
       `${CMS_BASE}/content-service/v1/preview/case-studies/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`,
       { cache: "no-store" },
     );

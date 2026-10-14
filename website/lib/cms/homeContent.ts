@@ -1,6 +1,7 @@
 import type { HomeContent } from "@/content/home/types";
 import { homeContentEn } from "@/content/home/en";
 import { resolveMediaUrls } from "./media";
+import { cmsFetch } from "./cmsFetch";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -17,7 +18,7 @@ const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
  */
 export async function getHomeContent(): Promise<HomeContent> {
   try {
-    const res = await fetch(`${CMS_BASE}/content-service/v1/home`, {
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/home`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) {
@@ -41,7 +42,7 @@ export async function getHomeContent(): Promise<HomeContent> {
  * see that error. cache: "no-store" — this must never share getHomeContent's ISR cache entry.
  */
 export async function getPreviewHomeContent(token: string): Promise<HomeContent> {
-  const res = await fetch(
+  const res = await cmsFetch(
     `${CMS_BASE}/content-service/v1/preview/home?token=${encodeURIComponent(token)}`,
     { cache: "no-store" },
   );
