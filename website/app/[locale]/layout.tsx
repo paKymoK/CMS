@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import "../globals.css";
 import "../sections.css";
+import "../about.css";
 
 // The Figma design ("CMC Global - Website 2026") uses Inter for every piece of type, in its
 // "24pt" optical size. The variable font's opsz axis reproduces that: with font-optical-sizing

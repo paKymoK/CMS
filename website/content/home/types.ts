@@ -109,6 +109,8 @@ export type SectionIntro = {
   linkUrl?: string;
   /** Label of the section's primary button (e.g. "Read this letter"). */
   buttonLabel?: string;
+  /** Decorative artwork used by the section. */
+  image?: string;
 };
 
 /** content_item type "feature_band" — see content-service's FeatureBandFields. */
@@ -136,6 +138,44 @@ export type SiteFooterContent = {
   instagramUrl?: string;
 };
 
+/** A headline figure shown verbatim. */
+export type StatFigure = { value: string; label: string };
+
+/** content_item type "about_hero" — see content-service's AboutHeroFields. */
+export type AboutHero = {
+  breadcrumb?: string;
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  image?: string;
+  stats?: StatFigure[];
+};
+
+/** content_item type "about_intro" — see content-service's AboutIntroFields. */
+export type AboutIntro = {
+  eyebrow?: string;
+  title: string;
+  /** Paragraphs separated by blank lines. */
+  body?: string;
+  image?: string;
+  decorImage?: string;
+  /** Heading above the growth figures, which come from the Stats CMS screen. */
+  statsTitle?: string;
+};
+
+/** content_item type "about_statement" — the Vision (dark) and Mission (light) bands. */
+export type AboutStatement = {
+  variant: "vision" | "mission";
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  image?: string;
+};
+
+/** content_item type "leader" — one member of the leadership team. */
+export type Leader = { name: string; title?: string; photo?: string };
+
 /** Generic content_item types, keyed by content_type; each list is in display order. */
 export type HomeSections = {
   hero_slide?: HeroSlide[];
@@ -143,6 +183,10 @@ export type HomeSections = {
   section_intro?: SectionIntro[];
   feature_band?: FeatureBand[];
   site_footer?: SiteFooterContent[];
+  about_hero?: AboutHero[];
+  about_intro?: AboutIntro[];
+  about_statement?: AboutStatement[];
+  leader?: Leader[];
 };
 
 export type HomeContent = {

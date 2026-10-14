@@ -15,13 +15,22 @@ const FALLBACK_INTRO: SectionIntro = {
     "Seamless global presence. Non-stop innovation.\nWe accelerate the digital evolution across every time zone",
 };
 
-/** Where each stat sits on the 1920px artboard (CMS order: years, countries, clients, partners, employees). */
-const STAT_POSITIONS: { left: number; top: number; align?: "center" }[] = [
+/** Where each stat sits on the 1920px artboard, keyed by its label so editors can reorder the Stats
+ * screen freely (the About page shows the same figures in its own order). */
+const STAT_POSITIONS: Record<string, { left: number; top: number; align?: "center" }> = {
+  "years of experience": { left: 401, top: 478 },
+  countries: { left: 1402, top: 478 },
+  "global clients": { left: 515, top: 666 },
+  "business partners": { left: 1250, top: 666 },
+  employees: { left: 830, top: 854, align: "center" },
+};
+/** Fallback slots, in order, for a stat whose label isn't one of the five above. */
+const SPARE_POSITIONS = [
   { left: 401, top: 478 },
   { left: 1402, top: 478 },
   { left: 515, top: 666 },
   { left: 1250, top: 666 },
-  { left: 830, top: 854, align: "center" },
+  { left: 830, top: 854, align: "center" as const },
 ];
 
 function parseStat(value: string): { target: number; suffix: string } {
@@ -171,7 +180,11 @@ export function GlobalDelivery({
               stat={stat}
               active={active}
               delayMs={i * STAGGER_MS}
-              position={STAT_POSITIONS[i] ?? STAT_POSITIONS[0]}
+              position={
+                STAT_POSITIONS[stat.label.trim().toLowerCase()] ??
+                SPARE_POSITIONS[i] ??
+                SPARE_POSITIONS[0]
+              }
             />
           ))}
         </div>

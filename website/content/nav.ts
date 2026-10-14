@@ -21,7 +21,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
   // listing page exists (only /case-studies/[slug] detail pages are built so far).
   { label: "Case Studies", hasDropdown: true, href: "/#cases" },
   { label: "Insights", href: "/insights" },
-  { label: "About Us", hasDropdown: true },
+  { label: "About Us", href: "/about" },
   { label: "Resources", hasDropdown: true },
   { label: "Careers" },
 ];
@@ -29,7 +29,7 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 /** Desktop header order, per the Figma "Header" component. (PRIMARY_NAV above still drives the
  * mobile bottom bar until that is redesigned.) */
 export const HEADER_NAV: PrimaryNavItem[] = [
-  { label: "About Us", hasDropdown: true, href: "/#about" },
+  { label: "About Us", href: "/about" },
   { label: "Services", hasDropdown: true, href: "/#whatwedo" },
   { label: "Industries", hasDropdown: true },
   { label: "Insights", href: "/insights" },
