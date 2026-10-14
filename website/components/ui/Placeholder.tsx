@@ -19,18 +19,21 @@ export function Placeholder({
   label,
   tone = "navy",
   className = "",
+  fill = false,
   style,
   children,
 }: {
   label: string;
   tone?: keyof typeof STRIPES;
   className?: string;
+  /** Cover the parent (absolute inset-0) instead of sizing itself. */
+  fill?: boolean;
   style?: CSSProperties;
   children?: ReactNode;
 }) {
   return (
     <div
-      className={`relative overflow-hidden ${className}`}
+      className={`${fill ? "absolute inset-0" : "relative"} overflow-hidden ${className}`}
       style={{ background: STRIPES[tone], ...style }}
     >
       <span

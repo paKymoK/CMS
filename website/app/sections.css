@@ -129,6 +129,11 @@
   color: #fff;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.57);
 }
+.tst-card--plain .tst-name {
+  /* no artwork behind the name (CMS down): switch from white-on-artwork to dark-on-grey */
+  color: #002950;
+  text-shadow: none;
+}
 .tst-photo {
   position: relative;
   aspect-ratio: 570 / 388;

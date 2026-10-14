@@ -38,7 +38,7 @@ function Card({
           className="object-cover"
         />
       ) : (
-        <Placeholder tone="dark" label="Service Image" className="absolute inset-0" />
+        <Placeholder tone="dark" label="Service Image" fill />
       )}
       <h3 className="wwd-card-title">{service.name}</h3>
       {service.description && (

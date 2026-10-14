@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CoverImage } from "@/components/ui/CoverImage";
+import { Placeholder } from "@/components/ui/Placeholder";
 import { DiagonalArrow } from "@/components/ui/DiagonalArrow";
 import { Link } from "@/i18n/navigation";
 import type { InsightItem, SectionIntro } from "@/content/home/types";
@@ -111,7 +112,7 @@ export function InsightsAccordion({
                   width: `${(RANK_W[rank] / STAGE_W) * 100}%`,
                 }}
               >
-                {item.image && (
+                {item.image ? (
                   <div className="ins-panel-img">
                     <CoverImage
                       src={item.image}
@@ -120,6 +121,8 @@ export function InsightsAccordion({
                       className="object-cover"
                     />
                   </div>
+                ) : (
+                  <Placeholder tone="navy" label="Insight image" fill />
                 )}
                 <div className="ins-scrim" aria-hidden />
                 {item.date && <span className="ins-date">{item.date}</span>}

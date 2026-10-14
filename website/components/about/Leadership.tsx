@@ -1,4 +1,5 @@
 import { CoverImage } from "@/components/ui/CoverImage";
+import { Placeholder } from "@/components/ui/Placeholder";
 import type { Leader, SectionIntro } from "@/content/home/types";
 
 const FALLBACK_INTRO: SectionIntro = {
@@ -62,7 +63,7 @@ export function Leadership({
                 style={{ "--lx": x, "--ly": y } as React.CSSProperties}
               >
                 <div className="abt-leader-card">
-                  {leader.photo && (
+                  {leader.photo ? (
                     <div className="abt-leader-photo">
                       <CoverImage
                         src={leader.photo}
@@ -71,6 +72,8 @@ export function Leadership({
                         className="object-cover object-top"
                       />
                     </div>
+                  ) : (
+                    <Placeholder tone="light" label="Portrait" fill />
                   )}
                 </div>
                 <p className="abt-leader-name">

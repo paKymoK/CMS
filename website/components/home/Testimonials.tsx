@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CoverImage } from "@/components/ui/CoverImage";
+import { Placeholder } from "@/components/ui/Placeholder";
 import type { SectionIntro, Testimonial } from "@/content/home/types";
 
 const FALLBACK_INTRO: SectionIntro = {
@@ -106,7 +107,7 @@ export function Testimonials({
             return (
               <article
                 key={`card-${i}`}
-                className="tst-card"
+                className={`tst-card${t.backgroundImage ? "" : " tst-card--plain"}`}
                 data-pos={active ? "center" : "hidden"}
                 aria-hidden={!active}
                 aria-label={`${t.name}, ${t.title}, ${t.company}`}
@@ -135,13 +136,15 @@ export function Testimonials({
                   </div>
                 </div>
                 <div className="tst-photo">
-                  {t.photo && (
+                  {t.photo ? (
                     <CoverImage
                       src={t.photo}
                       alt={t.name}
                       sizes="(min-width: 1280px) 30vw, 90vw"
                       className="object-cover"
                     />
+                  ) : (
+                    <Placeholder tone="light" label="Portrait" fill />
                   )}
                 </div>
               </article>

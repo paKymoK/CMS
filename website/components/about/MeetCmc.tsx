@@ -1,4 +1,5 @@
 import { CoverImage } from "@/components/ui/CoverImage";
+import { Placeholder } from "@/components/ui/Placeholder";
 import type { AboutIntro, Stat } from "@/content/home/types";
 
 /**
@@ -31,13 +32,15 @@ export function MeetCmc({ intro, stats }: { intro: AboutIntro; stats: Stat[] }) 
 
         <div className="abt-meet-grid">
           <div className="abt-meet-photo">
-            {intro.image && (
+            {intro.image ? (
               <CoverImage
                 src={intro.image}
                 alt="CMC Global teammates"
                 sizes="(min-width: 1280px) 38vw, 90vw"
                 className="object-contain"
               />
+            ) : (
+              <Placeholder tone="light" label="Team photo" fill />
             )}
           </div>
           <div className="abt-meet-body">

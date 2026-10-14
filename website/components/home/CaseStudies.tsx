@@ -50,11 +50,7 @@ export function CaseStudies({
                       className="object-cover"
                     />
                   ) : (
-                    <Placeholder
-                      tone="dark"
-                      label="Case study image"
-                      className="absolute inset-0"
-                    />
+                    <Placeholder tone="dark" label="Case study image" fill />
                   )}
                 </div>
                 <span className="cs-tag">{study.category}</span>
