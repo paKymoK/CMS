@@ -31,3 +31,5 @@ Thumbs.db
 
 # Service log files (core-v1 log4j2 RollingFile)
 logs/
+
+design/
