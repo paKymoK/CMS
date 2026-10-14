@@ -16,6 +16,7 @@ export type FieldType =
   | "image"
   | "datetime"
   | "string-list"
+  | "stat-list"
   | "json";
 
 export interface FieldOption {
@@ -33,8 +34,13 @@ export interface FieldConfig {
   showInTable?: boolean;
 }
 
+/** Which sidebar group a screen lives in. */
+export type ResourceGroup = "home" | "about" | "site";
+
 export interface ResourceConfig {
   key: string;
+  /** Sidebar group; defaults to "home". */
+  group?: ResourceGroup;
   label: string;
   apiPath: string;
   titleField: string;
@@ -51,7 +57,7 @@ export interface ResourceConfig {
 }
 
 const scalarDefault = (type: FieldType) =>
-  !["textarea", "json", "string-list"].includes(type);
+  !["textarea", "json", "string-list", "stat-list"].includes(type);
 
 function field(config: FieldConfig): FieldConfig {
   return { showInTable: scalarDefault(config.type), ...config };
@@ -234,6 +240,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "section-intros",
+    group: "site",
     label: "Section Intros",
     apiPath: "/v1/admin/content-items",
     contentType: "section_intro",
@@ -252,6 +259,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "linkLabel", label: "\"See all\" link label", type: "text" }),
       field({ name: "linkUrl", label: "\"See all\" link URL", type: "text" }),
       field({ name: "buttonLabel", label: "Button label", type: "text" }),
+      field({ name: "image", label: "Decorative artwork", type: "image" }),
     ],
   },
   {
@@ -271,6 +279,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "site-footer",
+    group: "site",
     label: "Site Footer",
     apiPath: "/v1/admin/content-items",
     contentType: "site_footer",
@@ -287,6 +296,80 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "facebookUrl", label: "Facebook URL (empty hides the icon)", type: "text" }),
       field({ name: "twitterUrl", label: "Twitter / X URL", type: "text" }),
       field({ name: "instagramUrl", label: "Instagram URL", type: "text" }),
+    ],
+  },
+  {
+    key: "about-hero",
+    group: "about",
+    label: "About · Hero",
+    apiPath: "/v1/admin/content-items",
+    contentType: "about_hero",
+    titleField: "title",
+    fields: [
+      field({ name: "breadcrumb", label: "Breadcrumb", type: "text" }),
+      field({ name: "title", label: "Headline", type: "textarea", required: true }),
+      field({ name: "subtitle", label: "Intro line", type: "textarea" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text" }),
+      field({ name: "ctaUrl", label: "Button link", type: "text" }),
+      field({ name: "image", label: "Background photo", type: "image" }),
+      field({ name: "stats", label: "Three figures (value + label)", type: "stat-list" }),
+    ],
+  },
+  {
+    key: "about-intro",
+    group: "about",
+    label: "About · Meet CMC Global",
+    apiPath: "/v1/admin/content-items",
+    contentType: "about_intro",
+    titleField: "title",
+    fields: [
+      field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+      field({ name: "title", label: "Heading", type: "text", required: true }),
+      field({ name: "body", label: "Story (blank line between paragraphs)", type: "textarea" }),
+      field({ name: "image", label: "Team collage (transparent PNG/WebP)", type: "image" }),
+      field({ name: "decorImage", label: "Background artwork", type: "image" }),
+      field({
+        name: "statsTitle",
+        label: "Heading above the growth figures (the figures come from the Stats screen)",
+        type: "text",
+      }),
+    ],
+  },
+  {
+    key: "about-statements",
+    group: "about",
+    label: "About · Vision & Mission",
+    apiPath: "/v1/admin/content-items",
+    contentType: "about_statement",
+    titleField: "eyebrow",
+    fields: [
+      field({
+        name: "variant",
+        label: "Band",
+        type: "select",
+        required: true,
+        options: [
+          { label: "Vision (dark, big headline)", value: "vision" },
+          { label: "Mission (light, paragraph)", value: "mission" },
+        ],
+      }),
+      field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+      field({ name: "title", label: "Headline (Vision)", type: "textarea" }),
+      field({ name: "body", label: "Paragraph (Mission)", type: "textarea" }),
+      field({ name: "image", label: "Image", type: "image" }),
+    ],
+  },
+  {
+    key: "leaders",
+    group: "about",
+    label: "About · Leadership",
+    apiPath: "/v1/admin/content-items",
+    contentType: "leader",
+    titleField: "name",
+    fields: [
+      field({ name: "name", label: "Name", type: "text", required: true }),
+      field({ name: "title", label: "Role", type: "text" }),
+      field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
     ],
   },
   {

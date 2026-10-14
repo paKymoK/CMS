@@ -531,6 +531,40 @@ function FieldInput({
       </Form.Item>
     );
   }
+  if (f.type === "stat-list") {
+    return (
+      <Form.Item label={f.label}>
+        <Form.List name={f.name}>
+          {(fields, { add, remove }) => (
+            <div className="flex flex-col gap-2">
+              {fields.map((field) => (
+                <div key={field.key} className="flex items-start gap-2">
+                  <Form.Item
+                    name={[field.name, "value"]}
+                    rules={[{ required: true, message: "Value" }]}
+                    style={{ width: 110, marginBottom: 0 }}
+                  >
+                    <Input placeholder="33+" />
+                  </Form.Item>
+                  <Form.Item
+                    name={[field.name, "label"]}
+                    rules={[{ required: true, message: "Label" }]}
+                    style={{ flex: 1, marginBottom: 0 }}
+                  >
+                    <Input placeholder="Years of engineering excellence" />
+                  </Form.Item>
+                  <Button icon={<DeleteOutlined />} onClick={() => remove(field.name)} aria-label="Remove" />
+                </div>
+              ))}
+              <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ value: "", label: "" })}>
+                Add figure
+              </Button>
+            </div>
+          )}
+        </Form.List>
+      </Form.Item>
+    );
+  }
   if (f.type === "string-list") {
     return (
       <Form.Item name={f.name} label={f.label} rules={rules}>

@@ -45,9 +45,17 @@ ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO content_type (key, label, field_schema)
 VALUES ('section_intro', 'Section intro',
-        '{"section": "string", "eyebrow": "string", "title": "textarea", "body": "textarea", "kicker": "string", "linkLabel": "string", "linkUrl": "string", "buttonLabel": "string"}'::jsonb),
+        '{"section": "string", "eyebrow": "string", "title": "textarea", "body": "textarea", "kicker": "string", "linkLabel": "string", "linkUrl": "string", "buttonLabel": "string", "image": "image"}'::jsonb),
        ('feature_band', 'Feature band',
         '{"eyebrow": "string", "title": "textarea", "body": "textarea", "ctaLabel": "string", "ctaUrl": "string", "image": "image"}'::jsonb),
+       ('about_hero', 'About hero',
+        '{"breadcrumb": "string", "title": "textarea", "subtitle": "textarea", "ctaLabel": "string", "ctaUrl": "string", "image": "image", "stats": "stat-list"}'::jsonb),
+       ('about_intro', 'About intro',
+        '{"eyebrow": "string", "title": "string", "body": "textarea", "image": "image", "decorImage": "image", "statsTitle": "string"}'::jsonb),
+       ('about_statement', 'About statement',
+        '{"variant": "select", "eyebrow": "string", "title": "textarea", "body": "textarea", "image": "image"}'::jsonb),
+       ('leader', 'Leader',
+        '{"name": "string", "title": "string", "photo": "image"}'::jsonb),
        ('site_footer', 'Site footer',
         '{"title": "string", "ctaLabel": "string", "ctaUrl": "string", "copyright": "string", "privacyLabel": "string", "privacyUrl": "string", "termsLabel": "string", "termsUrl": "string", "facebookUrl": "string", "twitterUrl": "string", "instagramUrl": "string"}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
@@ -136,14 +144,55 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "facebookUrl": "#", "twitterUrl": "#", "instagramUrl": "#"
 }'::jsonb, 0, 'PUBLISHED');
 
+
+-- ── 'en' About page (copy and imagery from the Figma "About Us" frame) ─────────────────────────
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'about_hero', '{
+  "breadcrumb": "About Us",
+  "title": "Transforming Ideas into Global Impact, Together",
+  "subtitle": "We unite passionate experts with advanced technology to scale your most ambitious digital vision",
+  "ctaLabel": "Meet the people behind our promise", "ctaUrl": "#leaders",
+  "image": "/media-service/images/dc66d6ec-213b-555b-976d-f4c389750a75.webp",
+  "stats": [
+    {"value": "33+", "label": "Years of Engineering Excellence"},
+    {"value": "3000+", "label": "Engineering Experts"},
+    {"value": "10+", "label": "Global Offices"}
+  ]
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_intro', '{
+  "eyebrow": "Meet CMC Global", "title": "Meet CMC Global",
+  "body": "At CMC Global, we believe true digital transformation is not about chasing the next big trend. It’s about mastering it to redefine what’s possible, and making technology work seamlessly for the business. Built on the deep technical foundation of CMC Corporation, we exist to turn complex technology into your clearest competitive advantage.\n\nAs global business enters the AI-first landscape, we architect intelligent, future-ready organizations from the ground up. By bridging technical mastery with global scale, we stand as the reliable partner behind your boldest ambitions, helping over 300 global leaders modernize with certainty and unlock steady growth.",
+  "image": "/media-service/images/4cdf62ba-f05f-5384-9ed3-b224308cd66b.webp", "decorImage": "/media-service/images/853efbb8-b6d5-583d-be2e-5a07468c2da9.webp",
+  "statsTitle": "Our Growth in Numbers"
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_statement', '{
+  "variant": "vision", "eyebrow": "Our Vision",
+  "title": "Establishing a global presence\n& providing world-class services",
+  "image": "/media-service/images/3e0f1666-e7d6-58f9-9b7f-ad905b8cea24.webp"
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_statement', '{
+  "variant": "mission", "eyebrow": "Our Mission",
+  "body": "Our mission is simple: to make complex technology work for people and businesses, everywhere.\n\nWe empower organizations to grow with confidence through practical innovation, while building a culture where talent thrives, learns, and creates meaningful impact every day.",
+  "image": "/media-service/images/3c11354d-e12c-5ab8-bb7b-9e8e1dfb5339.webp"
+}'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "leaders", "eyebrow": "Our People", "title": "Leadership Team",
+  "image": "/media-service/images/b0ec2e5c-6d91-5d0d-9880-697ad31c24d2.webp"
+}'::jsonb, 7, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Ho Thanh Tung", "title": "President of CMC Global", "photo": "/media-service/images/bcffa7c5-5272-56dd-bba1-04801dd02208.webp"}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Dang Ngoc Bao", "title": "Chief Executive Officer of CMC Global", "photo": "/media-service/images/a02e0ce2-c478-58c7-8179-d2d377b79737.webp"}'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Viet Bach", "title": "Deputy CEO / Chief Delivery Officer of CMC Global", "photo": "/media-service/images/eae5d034-5a79-544d-80f1-80fabc1bf1b4.webp"}'::jsonb, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Ms. Hoang Thi Thanh Hoa", "title": "Chief Finance Officer of CMC Global", "photo": "/media-service/images/0aa04ce3-4345-5884-862e-288364fe0a0f.webp"}'::jsonb, 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Cao Cuong", "title": "Chief Sales Officer of CMC Global", "photo": "/media-service/images/c7c6d745-7a25-50a5-a901-52512e5f71a4.webp"}'::jsonb, 4, 'PUBLISHED');
+
 -- ── 'en' homepage content ──────────────────────────────────────────────────────────────────────
 -- Stats
 INSERT INTO stat (site_id, value, label, note, display_order, status)
 VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', 'Part of CMC Corporation, founded 1993.', 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), '30+', 'Countries', 'Delivery presence across three regions.', 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), '3000+', 'Employees', 'Across delivery centres worldwide.', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '300+', 'Global Clients', 'Bosch, Honda, AIA, IBM, LINE and more.', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '35+', 'Business Partners', 'AWS, Google Cloud, UiPath, Salesforce.', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), '3000+', 'Employees', 'Across delivery centres worldwide.', 4, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), '30+', 'Countries', 'Delivery presence across three regions.', 4, 'PUBLISHED');
 
 -- Service cards (copy + imagery from the Figma "Architect" frame; the Digital & Cloud and Software
 -- images are the earlier seed photos, since the design file embeds none for those two).

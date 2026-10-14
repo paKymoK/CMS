@@ -5,7 +5,7 @@
 //
 // No per-item icons: the sidebar numbers each group's items (01, 02, ...) instead, per the CMS
 // Admin design (see design/project/CMS Admin.dc.html) — AppShell computes that numbering.
-import { RESOURCES } from "./resources";
+import { RESOURCES, type ResourceGroup } from "./resources";
 
 export interface NavItem {
   /** Route path for a leaf item; a stable, route-less id for a group (has `items`). */
@@ -15,16 +15,18 @@ export interface NavItem {
   items?: NavItem[];
 }
 
+const inGroup = (group: ResourceGroup) =>
+  RESOURCES.filter((r) => (r.group ?? "home") === group).map((r) => ({
+    key: `/content/${r.key}`,
+    label: r.label,
+  }));
+
 export const NAVIGATION: NavItem[] = [
-  {
-    key: "home-page",
-    label: "Home Page",
-    // Derived from RESOURCES rather than duplicated here, so adding/renaming a content type
-    // in resources.ts is the only edit needed — this list can't drift out of sync with it.
-    items: RESOURCES.map((r) => ({ key: `/content/${r.key}`, label: r.label })),
-  },
-  // Next page ships as one more entry here, e.g.:
-  // { key: "about-page", label: "About Page", items: [...] },
+  // Derived from RESOURCES rather than duplicated here, so adding/renaming a content type in
+  // resources.ts is the only edit needed — these lists can't drift out of sync with it.
+  { key: "home-page", label: "Home Page", items: inGroup("home") },
+  { key: "about-page", label: "About Page", items: inGroup("about") },
+  { key: "site-wide", label: "Site-wide", items: inGroup("site") },
   {
     key: "library",
     label: "Library",

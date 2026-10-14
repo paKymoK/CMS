@@ -345,3 +345,25 @@ body {
     width: 100% !important;
   }
 }
+
+
+/* The sidebar menu scrolls on its own; keep a thin visible scrollbar so the screens below the fold
+   (About, Site-wide) are discoverable. */
+.cms-sider .ant-menu {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 217, 238, 0.45) transparent;
+}
+.cms-sider .ant-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.cms-sider .ant-menu::-webkit-scrollbar-thumb {
+  background: rgba(201, 217, 238, 0.4);
+  border-radius: 3px;
+}
+
+/* Denser menu rows so more screens fit above the fold. */
+.cms-sider .ant-menu-item {
+  height: 34px;
+  line-height: 34px;
+  margin-block: 2px;
+}

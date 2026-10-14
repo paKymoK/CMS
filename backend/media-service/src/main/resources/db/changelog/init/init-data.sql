@@ -60,5 +60,16 @@ VALUES
        ('1a2f3035-18e5-5e98-a380-41deb5d17037', 'insight-2.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('bee4b527-26bc-55ca-9c08-6eefd30ed5e6', 'insight-3.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('fd16a859-67a3-572e-9823-3388b3eecab4', 'insight-4.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('5ac98d1f-ebad-5aa3-9c9d-abb0d53dc289', 'insight-5.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('5ac98d1f-ebad-5aa3-9c9d-abb0d53dc289', 'insight-5.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('dc66d6ec-213b-555b-976d-f4c389750a75', 'about-hero.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('4cdf62ba-f05f-5384-9ed3-b224308cd66b', 'about-meet.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('853efbb8-b6d5-583d-be2e-5a07468c2da9', 'about-mesh.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('3e0f1666-e7d6-58f9-9b7f-ad905b8cea24', 'about-vision.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('3c11354d-e12c-5ab8-bb7b-9e8e1dfb5339', 'about-mission.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('b0ec2e5c-6d91-5d0d-9880-697ad31c24d2', 'about-ring.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('bcffa7c5-5272-56dd-bba1-04801dd02208', 'leader-tung.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('a02e0ce2-c478-58c7-8179-d2d377b79737', 'leader-bao.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('eae5d034-5a79-544d-80f1-80fabc1bf1b4', 'leader-bach.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('0aa04ce3-4345-5884-862e-288364fe0a0f', 'leader-hoa.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('c7c6d745-7a25-50a5-a901-52512e5f71a4', 'leader-cuong.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;

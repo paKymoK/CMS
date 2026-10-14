@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Layout, Menu, Select, Button, Empty } from "antd";
 import type { MenuProps } from "antd";
 import { LogoutOutlined, EyeOutlined, MenuOutlined } from "@ant-design/icons";
@@ -83,6 +83,13 @@ export default function AppShell() {
   });
 
   const menuItems = useMemo(() => toMenuItems(NAVIGATION), []);
+
+  // The menu scrolls on its own, so bring the screen you're on into view (e.g. after a deep link).
+  useEffect(() => {
+    document
+      .querySelector(".cms-sider .ant-menu-item-selected")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [location.pathname]);
   const crumbGroup = findGroupLabel(NAVIGATION, location.pathname) ?? "";
   const pageTitle = findLeafLabel(NAVIGATION, location.pathname) ?? "";
 
