@@ -1,6 +1,5 @@
 package com.takypok.contentservice.model.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +10,11 @@ public class TestimonialCreateRequest {
   @NotBlank private String name;
   private String company;
   private String photo;
-  private JsonNode flankLogos;
+  private String logo;
+  private String backgroundImage;
+  private String flankLogo;
+  private String flankFrom;
+  private String flankTo;
   private String title;
   private String quote;
   private Integer displayOrder;

@@ -10,6 +10,7 @@ import lombok.Setter;
 public class ServiceCardUpdateRequest {
   @NotNull private Long id;
   @NotBlank private String name;
+  private String description;
   private String image;
   private Integer displayOrder;
   private Boolean active;

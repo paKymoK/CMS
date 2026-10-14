@@ -36,6 +36,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
     ServiceCard card = new ServiceCard();
     card.setSiteId(siteId);
     card.setName(request.getName());
+    card.setDescription(request.getDescription());
     card.setImage(request.getImage());
     card.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
     card.setActive(request.getActive() != null ? request.getActive() : true);
@@ -49,6 +50,7 @@ public class ServiceCardServiceImpl implements ServiceCardService {
         .flatMap(
             card -> {
               card.setName(request.getName());
+              card.setDescription(request.getDescription());
               card.setImage(request.getImage());
               if (request.getDisplayOrder() != null)
                 card.setDisplayOrder(request.getDisplayOrder());

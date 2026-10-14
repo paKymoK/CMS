@@ -34,6 +34,27 @@ const STATUS_OPTIONS = [
   { label: "Published", value: "PUBLISHED" },
 ];
 
+const ENVELOPE_KEYS = ["id", "displayOrder", "active", "status"] as const;
+
+// Generic content_item rows keep their editable fields inside `data`; the list/drawer work on the
+// flattened shape every typed resource already has, so these two convert at the API boundary only.
+function flattenItem(row: Record<string, unknown>): Row {
+  return { ...(row.data as Record<string, unknown>), ...row } as Row;
+}
+
+function toItemPayload(
+  contentType: string,
+  values: Record<string, unknown>,
+): Record<string, unknown> {
+  const envelope: Record<string, unknown> = { contentType };
+  const data: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(values)) {
+    if ((ENVELOPE_KEYS as readonly string[]).includes(k)) envelope[k] = v;
+    else if (v !== undefined && v !== null && v !== "") data[k] = v;
+  }
+  return { ...envelope, data };
+}
+
 // "Case Studies" -> "Case Study", "Testimonials" -> "Testimonial", "Stats" -> "Stat".
 function singularize(label: string): string {
   return label.replace(/ies$/, "y").replace(/s$/, "");
@@ -90,9 +111,17 @@ export default function ContentPage() {
     queryKey: listKey,
     queryFn: async () => {
       const { data } = await contentApi.get(resource!.apiPath, {
-        params: { site, ...(typeFilter ? { type: typeFilter } : {}) },
+        params: {
+          site,
+          ...(resource!.contentType
+            ? { type: resource!.contentType }
+            : typeFilter
+              ? { type: typeFilter }
+              : {}),
+        },
       });
-      return data.data as Row[];
+      const items = data.data as Record<string, unknown>[];
+      return (resource!.contentType ? items.map(flattenItem) : items) as Row[];
     },
     enabled: !!resource && !!site,
   });
@@ -101,10 +130,11 @@ export default function ContentPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (values: Record<string, unknown>) => {
+      const body = resource!.contentType ? toItemPayload(resource!.contentType, values) : values;
       if (editing) {
-        return contentApi.put(resource!.apiPath, values, { params: { site } });
+        return contentApi.put(resource!.apiPath, body, { params: { site } });
       }
-      return contentApi.post(resource!.apiPath, values, { params: { site } });
+      return contentApi.post(resource!.apiPath, body, { params: { site } });
     },
     onSuccess: () => {
       message.success(editing ? "Updated" : "Created");
@@ -125,8 +155,20 @@ export default function ContentPage() {
   // Flips just `active`, resending the row's other fields unchanged — same PUT contract the
   // drawer's full save uses, just triggered from the list instead of opening it.
   const toggleActiveMutation = useMutation({
-    mutationFn: async (row: Row) =>
-      contentApi.put(resource!.apiPath, { ...row, active: !row.active }, { params: { site } }),
+    mutationFn: async (row: Row) => {
+      const next = { ...row, active: !row.active };
+      const body = resource!.contentType
+        ? {
+            id: row.id,
+            contentType: resource!.contentType,
+            data: row.data,
+            displayOrder: row.displayOrder,
+            active: next.active,
+            status: row.status,
+          }
+        : next;
+      return contentApi.put(resource!.apiPath, body, { params: { site } });
+    },
     onSuccess: invalidate,
   });
 
@@ -188,7 +230,9 @@ export default function ContentPage() {
     saveMutation.mutate(values);
   };
 
-  const rows = (listQuery.data ?? []).filter((r) => (typeFilter ? r.type === typeFilter : true));
+  const rows = (listQuery.data ?? []).filter((r) =>
+    typeFilter && !resource.contentType ? r.type === typeFilter : true,
+  );
   const publishedCount = rows.filter((r) => r.status === "PUBLISHED").length;
   const imgField = resource.fields.find((f) => f.type === "image");
   const singular = singularize(resource.label);

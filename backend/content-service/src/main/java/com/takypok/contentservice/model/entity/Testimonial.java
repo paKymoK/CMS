@@ -1,6 +1,5 @@
 package com.takypok.contentservice.model.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.core.model.IdEntity;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,8 +17,19 @@ public class Testimonial extends IdEntity {
   private String company;
   private String photo;
 
-  /** [{name, color}, {name, color}] — never translated, just a name+colour placeholder pair. */
-  private JsonNode flankLogos;
+  /** The client's logo on the quote card (dark artwork, drawn on a light background). */
+  private String logo;
+
+  /** Abstract artwork behind the quote text. */
+  private String backgroundImage;
+
+  /**
+   * Logo variant for the brand card that flanks the neighbouring slides, and that card's gradient.
+   */
+  private String flankLogo;
+
+  private String flankFrom;
+  private String flankTo;
 
   private String title;
   private String quote;

@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 public class ServiceCardCreateRequest {
   @NotBlank private String name;
+  private String description;
   private String image;
   private Integer displayOrder;
   private Boolean active;

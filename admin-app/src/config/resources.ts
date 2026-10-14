@@ -39,6 +39,9 @@ export interface ResourceConfig {
   apiPath: string;
   titleField: string;
   fields: FieldConfig[];
+  /** Present => backed by the generic content_item table (apiPath is /v1/admin/content-items):
+   * `fields` are stored inside the item's `data`, and this is the content_type key. */
+  contentType?: string;
   supportsTypeFilter?: boolean;
   typeFilterOptions?: FieldOption[];
   /** Present => this resource has a dedicated editor route (rich body, slug, etc.) instead of the
@@ -73,7 +76,8 @@ export const RESOURCES: ResourceConfig[] = [
     titleField: "name",
     fields: [
       field({ name: "name", label: "Name", type: "text", required: true }),
-      field({ name: "image", label: "Service image", type: "image" }),
+      field({ name: "description", label: "Description (shown on hover)", type: "textarea" }),
+      field({ name: "image", label: "Service image (portrait, ~2:3)", type: "image" }),
     ],
   },
   {
@@ -156,11 +160,11 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "title", label: "Title", type: "text" }),
       field({ name: "photo", label: "Photo", type: "image" }),
       field({ name: "quote", label: "Quote", type: "textarea" }),
-      field({
-        name: "flankLogos",
-        label: "Flank logos (JSON array of {name, color})",
-        type: "json",
-      }),
+      field({ name: "logo", label: "Client logo (on the quote card)", type: "image" }),
+      field({ name: "backgroundImage", label: "Quote card artwork", type: "image" }),
+      field({ name: "flankLogo", label: "Logo for the side brand card (light artwork)", type: "image" }),
+      field({ name: "flankFrom", label: "Side card gradient start (#RRGGBB)", type: "text" }),
+      field({ name: "flankTo", label: "Side card gradient end (#RRGGBB)", type: "text" }),
     ],
   },
   {
@@ -171,6 +175,118 @@ export const RESOURCES: ResourceConfig[] = [
     fields: [
       field({ name: "label", label: "Label", type: "text", required: true }),
       field({ name: "links", label: "Links", type: "string-list" }),
+    ],
+  },
+  {
+    key: "hero-slides",
+    label: "Hero Slides",
+    apiPath: "/v1/admin/content-items",
+    contentType: "hero_slide",
+    titleField: "title",
+    fields: [
+      field({ name: "title", label: "Title (line breaks are kept)", type: "textarea", required: true }),
+      field({ name: "subtitle", label: "Subtitle / body", type: "textarea" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text" }),
+      field({ name: "ctaUrl", label: "Button link (e.g. #contact or https://…)", type: "text" }),
+      field({
+        name: "layout",
+        label: "Text layout",
+        type: "select",
+        required: true,
+        options: [
+          { label: "Centered (white)", value: "center" },
+          { label: "Left (white, light weight)", value: "left" },
+          { label: "Right (navy, with body text)", value: "right" },
+          { label: "Left, large (gradient)", value: "left-wide" },
+          { label: "Bottom left (photo slide)", value: "bottom-left" },
+        ],
+      }),
+      field({
+        name: "ctaStyle",
+        label: "Button style",
+        type: "select",
+        options: [
+          { label: "White", value: "white" },
+          { label: "Blue gradient", value: "blue" },
+          { label: "Light gradient", value: "light" },
+        ],
+      }),
+      field({ name: "backgroundImage", label: "Background image", type: "image" }),
+      field({ name: "overlayImage", label: "Overlay artwork (transparent PNG/WebP)", type: "image" }),
+      field({ name: "backgroundColor", label: "Background colour (#RRGGBB)", type: "text" }),
+      field({ name: "backgroundColorEnd", label: "Gradient end colour (#RRGGBB)", type: "text" }),
+    ],
+  },
+  {
+    key: "assistant-band",
+    label: "Assistant Band",
+    apiPath: "/v1/admin/content-items",
+    contentType: "assistant_band",
+    titleField: "title",
+    fields: [
+      field({ name: "title", label: "Heading", type: "textarea", required: true }),
+      field({ name: "greeting", label: "Input placeholder", type: "text", required: true }),
+      field({ name: "welcome", label: "First assistant message", type: "textarea" }),
+      field({ name: "suggestions", label: "Suggested questions", type: "string-list" }),
+      field({ name: "backdropImage", label: "Backdrop image", type: "image" }),
+      field({ name: "orbImage", label: "Orb image", type: "image" }),
+    ],
+  },
+  {
+    key: "section-intros",
+    label: "Section Intros",
+    apiPath: "/v1/admin/content-items",
+    contentType: "section_intro",
+    titleField: "title",
+    fields: [
+      field({
+        name: "section",
+        label: "Section (anchor id, e.g. whatwedo)",
+        type: "text",
+        required: true,
+      }),
+      field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+      field({ name: "title", label: "Heading", type: "textarea", required: true }),
+      field({ name: "body", label: "Paragraph", type: "textarea" }),
+      field({ name: "kicker", label: "Small label above the list", type: "text" }),
+      field({ name: "linkLabel", label: "\"See all\" link label", type: "text" }),
+      field({ name: "linkUrl", label: "\"See all\" link URL", type: "text" }),
+      field({ name: "buttonLabel", label: "Button label", type: "text" }),
+    ],
+  },
+  {
+    key: "feature-band",
+    label: "Feature Band",
+    apiPath: "/v1/admin/content-items",
+    contentType: "feature_band",
+    titleField: "title",
+    fields: [
+      field({ name: "eyebrow", label: "Eyebrow (blue line above the heading)", type: "text" }),
+      field({ name: "title", label: "Heading", type: "textarea", required: true }),
+      field({ name: "body", label: "Paragraph", type: "textarea" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text" }),
+      field({ name: "ctaUrl", label: "Button link", type: "text" }),
+      field({ name: "image", label: "Background photo (wide, ~16:10)", type: "image" }),
+    ],
+  },
+  {
+    key: "site-footer",
+    label: "Site Footer",
+    apiPath: "/v1/admin/content-items",
+    contentType: "site_footer",
+    titleField: "title",
+    fields: [
+      field({ name: "title", label: "Heading (e.g. Let's connect)", type: "text", required: true }),
+      field({ name: "ctaLabel", label: "Link label (e.g. Get in touch)", type: "text" }),
+      field({ name: "ctaUrl", label: "Link URL", type: "text" }),
+      field({ name: "copyright", label: "Copyright line", type: "text" }),
+      field({ name: "privacyLabel", label: "Privacy link label", type: "text" }),
+      field({ name: "privacyUrl", label: "Privacy link URL", type: "text" }),
+      field({ name: "termsLabel", label: "Terms link label", type: "text" }),
+      field({ name: "termsUrl", label: "Terms link URL", type: "text" }),
+      field({ name: "facebookUrl", label: "Facebook URL (empty hides the icon)", type: "text" }),
+      field({ name: "twitterUrl", label: "Twitter / X URL", type: "text" }),
+      field({ name: "instagramUrl", label: "Instagram URL", type: "text" }),
     ],
   },
   {

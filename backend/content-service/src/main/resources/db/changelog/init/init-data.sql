@@ -34,6 +34,108 @@ VALUES ('faq', 'FAQ',
         '{"question": "string", "answer": "textarea"}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
+-- 'hero_slide' / 'assistant_band' back the homepage's hero carousel and AI-assistant band (see
+-- HeroSlideFields / AssistantBandFields). Further design sections are added the same way.
+INSERT INTO content_type (key, label, field_schema)
+VALUES ('hero_slide', 'Hero slide',
+        '{"title": "textarea", "subtitle": "textarea", "ctaLabel": "string", "ctaUrl": "string", "layout": "select", "ctaStyle": "select", "backgroundImage": "image", "overlayImage": "image", "backgroundColor": "string", "backgroundColorEnd": "string"}'::jsonb),
+       ('assistant_band', 'Assistant band',
+        '{"title": "textarea", "greeting": "string", "welcome": "textarea", "suggestions": "string-list", "backdropImage": "image", "orbImage": "image"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+INSERT INTO content_type (key, label, field_schema)
+VALUES ('section_intro', 'Section intro',
+        '{"section": "string", "eyebrow": "string", "title": "textarea", "body": "textarea", "kicker": "string", "linkLabel": "string", "linkUrl": "string", "buttonLabel": "string"}'::jsonb),
+       ('feature_band', 'Feature band',
+        '{"eyebrow": "string", "title": "textarea", "body": "textarea", "ctaLabel": "string", "ctaUrl": "string", "image": "image"}'::jsonb),
+       ('site_footer', 'Site footer',
+        '{"title": "string", "ctaLabel": "string", "ctaUrl": "string", "copyright": "string", "privacyLabel": "string", "privacyUrl": "string", "termsLabel": "string", "termsUrl": "string", "facebookUrl": "string", "twitterUrl": "string", "instagramUrl": "string"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+-- ── 'en' hero slides + assistant band (copy and imagery from the Figma "Homepage" frame) ───────
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
+  "title": "Riding The Next Wave of AI Transformation",
+  "subtitle": "Reinvent Your Base - Scale Without Limits - Engineer Your Tomorrow",
+  "ctaLabel": "Contact Us", "ctaUrl": "#contact", "layout": "center", "ctaStyle": "white",
+  "backgroundColor": "#000812", "backgroundColorEnd": "#00152d",
+  "overlayImage": "/media-service/images/6fad6d33-2060-592e-8d65-2a4509f37041.webp"
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
+  "title": "Powering Innovation with\nSecured AI – Shielded by\n7 Layers of Unbreakable\nCybersecurity",
+  "ctaLabel": "Learn More", "ctaUrl": "#whatwedo", "layout": "left", "ctaStyle": "blue",
+  "backgroundImage": "/media-service/images/9db704ef-6cc6-58ca-a2b3-cf6334572868.webp"
+}'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
+  "title": "AI Survival Guide To Thrive In The Next Tech Revolution",
+  "subtitle": "A guide for the AI era, providing actionable frameworks to build readiness today for tomorrow’s challenges.",
+  "ctaLabel": "Download Ebook", "ctaUrl": "#contact", "layout": "right", "ctaStyle": "blue",
+  "backgroundImage": "/media-service/images/84dbc07a-e485-58da-bb26-35531e4354f5.webp"
+}'::jsonb, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
+  "title": "Your Trusted\nAI Transformation Partner",
+  "subtitle": "Committed to Your Success, Every Step of the Way",
+  "ctaLabel": "Meet Our Experts", "ctaUrl": "#about", "layout": "left-wide", "ctaStyle": "light",
+  "backgroundImage": "/media-service/images/3151c00c-c83b-5420-8cbc-9d2e8dc94d3f.webp"
+}'::jsonb, 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
+  "title": "CMC Global Officially Recognized As\nGreat Place to Work",
+  "layout": "bottom-left",
+  "backgroundImage": "/media-service/images/cbe9a60d-ded8-57d5-8768-d0a097bf260e.webp"
+}'::jsonb, 4, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'assistant_band', '{
+  "title": "The Intelligent Way To Know More About CMC",
+  "greeting": "Welcome to CMC Global. What brings you here today?",
+  "welcome": "Thank you for checking out our services. If you don’t mind me asking, what brings you to CMC Global today?",
+  "suggestions": ["Tell me about CMC", "What service do you have?", "Show me your AI Capabilities"],
+  "backdropImage": "/media-service/images/1c1e9133-7b8f-5156-9e7b-12d893778be2.webp",
+  "orbImage": "/media-service/images/1ab3964b-82d6-5e66-99ed-97baeae4fa0b.webp"
+}'::jsonb, 0, 'PUBLISHED');
+
+-- Section intros (eyebrow / heading / paragraph / list label / "see all" link), keyed by anchor id.
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "whatwedo", "eyebrow": "What We Do",
+  "title": "Architecting Your Next-Gen Digital Core",
+  "body": "We accelerate your digital evolution by blending advanced AI engineering, robust cloud infrastructure, and deep domain expertise."
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "testimonials", "eyebrow": "Testimonials", "title": "Hear More from Our Clients"
+}'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "global", "eyebrow": "Global Delivery",
+  "title": "Seamless global presence. Non-stop innovation.\nWe accelerate the digital evolution across every time zone"
+}'::jsonb, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "cases", "eyebrow": "Case Studies", "title": "Stories of Transformation",
+  "kicker": "Latest Case Study", "linkLabel": "Explore all Case Studies", "linkUrl": "#cases"
+}'::jsonb, 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "insights", "eyebrow": "Insights", "title": "Building Tomorrow Together",
+  "linkLabel": "Explore all Insights", "linkUrl": "/insights", "buttonLabel": "Read this letter"
+}'::jsonb, 4, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "recognition", "title": "Global Recognition for Innovative Engineering",
+  "body": "Our technical expertise and proven business impact earn us industry-leading awards and elite credentials."
+}'::jsonb, 5, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
+  "section": "contact", "title": "Maximize Your ROI in the Cloud\nLet''s Chat!"
+}'::jsonb, 6, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'feature_band', '{
+  "eyebrow": "Your Extended Tech Workforce",
+  "title": "Scale your tech capabilities with precision and agility",
+  "body": "Expand your engineering bandwidth with flexible, cross-functional tech teams that seamlessly align with your workflows and scale as your goals evolve.",
+  "ctaLabel": "Meet our experts", "ctaUrl": "#contact",
+  "image": "/media-service/images/b5bf601b-153d-5766-9252-af68a3813c1b.webp"
+}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'site_footer', '{
+  "title": "Let''s connect", "ctaLabel": "Get in touch", "ctaUrl": "#contact",
+  "copyright": "©2026 CMC Global. All rights reserved",
+  "privacyLabel": "Privacy & Policy", "privacyUrl": "#",
+  "termsLabel": "Terms & Condition", "termsUrl": "#",
+  "facebookUrl": "#", "twitterUrl": "#", "instagramUrl": "#"
+}'::jsonb, 0, 'PUBLISHED');
+
 -- ── 'en' homepage content ──────────────────────────────────────────────────────────────────────
 -- Stats
 INSERT INTO stat (site_id, value, label, note, display_order, status)
@@ -43,15 +145,16 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', '
        ((SELECT id FROM site WHERE code = 'en'), '35+', 'Business Partners', 'AWS, Google Cloud, UiPath, Salesforce.', 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '3000+', 'Employees', 'Across delivery centres worldwide.', 4, 'PUBLISHED');
 
--- Service cards
-INSERT INTO service_card (site_id, name, image, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'AI & Digital Strategy Advisory', '/media-service/images/2574eac9-a2eb-53b2-8f68-4d92fe1cb693.jpg', 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Data & AI Solutions', '/media-service/images/c9b37ed5-2066-5eb5-ad97-c65ee570f169.jpg', 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Digital & Cloud Solutions', '/media-service/images/f51d0009-870c-5977-981a-c3363a34c43d.jpg', 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Enterprise Solutions', '/media-service/images/46be6f5f-5307-529c-b232-340bd10160e6.jpg', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Infrastructure & Managed Services', '/media-service/images/c669401a-2b4c-5209-a122-c189cb3853b1.jpg', 4, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Cybersecurity', '/media-service/images/3ce83b57-2093-5948-9b9c-a8494c0f16c1.jpg', 5, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Software Engineering', '/media-service/images/411d3736-e1cc-50df-86ec-b7c288743f1f.jpg', 6, 'PUBLISHED');
+-- Service cards (copy + imagery from the Figma "Architect" frame; the Digital & Cloud and Software
+-- images are the earlier seed photos, since the design file embeds none for those two).
+INSERT INTO service_card (site_id, name, description, image, display_order, status)
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'AI & Digital Strategy Advisory', 'Align your vision with execution through strategic roadmaps that de-risk your digital transformation and accelerate time-to-market.', '/media-service/images/61a49aad-7b67-5d9b-b905-35ba55bf6995.webp', 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Data & AI Solutions', 'Standardize complex data silos into actionable intelligence to automate operations and unlock new revenue streams.', '/media-service/images/13d2553a-7ea7-59aa-be16-35da6fe3d283.webp', 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Digital & Cloud Solutions', 'Migrate and modernize your infrastructure with scalable, high-performance cloud environments built for ultimate business agility.', '/media-service/images/f51d0009-870c-5977-981a-c3363a34c43d.jpg', 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Enterprise Solutions', 'Streamline core business operations by seamlessly integrating tailored ERP and CRM platforms.', '/media-service/images/0680bca6-d0bd-5ef4-9270-7a68851b9d1a.webp', 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Infrastructure & App Managed Services', 'Ensure 24/7 operational resilience and peak performance. Simultaneously, lower overhead by optimizing costs and resource efficiency.', '/media-service/images/f767d391-9f18-57de-ac67-b5e11500c2ab.webp', 4, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Cybersecurity', 'Safeguard digital assets, ensure strict compliance, and build trust with a proactive, zero-trust security framework.', '/media-service/images/5fa84228-af83-51e8-b466-a44b65772133.webp', 5, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Software Engineering', 'Deliver high-quality, custom applications at global speed with elite tech talent.', '/media-service/images/411d3736-e1cc-50df-86ec-b7c288743f1f.jpg', 6, 'PUBLISHED');
 
 -- Offices
 INSERT INTO office (site_id, lat, lon, flag_color, big, city, address, image, display_order, status)
@@ -91,66 +194,52 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 1', '/media-ser
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'ISTQB', '/media-service/images/07747331-7981-5bca-933a-88482dbc0eb0.png', 4, 'PUBLISHED');
 
 -- Testimonials — before case_study, which can reference one
-INSERT INTO testimonial (site_id, name, company, photo, flank_logos, title, quote, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'Mr. Nick Benjamin', 'envato', '/media-service/images/c63d3ad1-e521-58a4-8cc5-40867140b712.jpg',
-        '[{"name": "northstar", "color": "#121212"}, {"name": "RSUPPORT", "color": "#b91c22"}]'::jsonb,
-        'CTO', 'CMC Global’s happy culture shows up in different ways. One is that CMC Global is very dedicated and they walk the extra mile.', 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Ms. Elena Rojas', 'northstar', '/media-service/images/5fdcd7eb-90e6-5cd6-aee4-0f24b33e3893.jpg',
-        '[{"name": "RSUPPORT", "color": "#b91c22"}, {"name": "envato", "color": "#0b63c5"}]'::jsonb,
-        'VP Engineering', 'They took our roadmap seriously from week one. The team scaled from four engineers to eighteen without a dip in delivery quality.', 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Mr. Jun Park', 'RSUPPORT', '/media-service/images/df05f992-0541-5566-89ec-b1f12fee908f.jpg',
-        '[{"name": "envato", "color": "#0b63c5"}, {"name": "northstar", "color": "#121212"}]'::jsonb,
-        'Head of Product', 'What impressed us was the handover. Documentation, tests, runbooks — everything was where it should be when we took it in-house.', 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Mr. Hiroshi Tanaka', 'Mitsui', '/media-service/images/6a74dbb9-1f24-54bb-a8ea-8b8428c0276c.jpg',
-        '[{"name": "northstar", "color": "#121212"}, {"name": "RSUPPORT", "color": "#b91c22"}]'::jsonb,
-        'CIO', 'A genuine partner rather than a vendor. They pushed back when our spec was wrong, which is exactly what we needed.', 3, 'PUBLISHED');
+INSERT INTO testimonial (site_id, name, company, photo, logo, background_image, flank_logo, flank_from, flank_to, title, quote, display_order, status)
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'Mr. Nick Benjamin', 'envato', '/media-service/images/63da191a-82c2-5927-8b35-fc70df49c616.webp', '/media-service/images/e126ca3b-4a8f-5b7c-acd6-d69b5d1c0645.svg', '/media-service/images/6b06cfc9-e9de-58f9-8b06-54215ee22391.webp', '/media-service/images/62e8fd32-66b7-5df6-9dcc-72e80d3ca63a.svg', '#87e64c', '#000000',
+        'CTO', 'CMC Global’s helped us in a number of different ways. One is that CMC Global’s actually delivered what they said they would do. And so for me, that’s foundational. It’s important that when CMC Global say they can deliver teams, expertise or capability that they’re able to. And the second thing that I value is that actually many of the team members are actually coming with their own ideas and actually bringing alternative viewpoints for us to consider.', 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Mr. Kim Teak Joong', 'RSUPPORT', '/media-service/images/6ff4916f-16d9-5431-b03b-1d416a701ac3.webp', '/media-service/images/c759c17b-3318-5bc1-b142-baf9f985974a.webp', '/media-service/images/1dcb33c5-df5d-5f6b-ac75-bb1d31629984.webp', '/media-service/images/c14a4559-239a-54ec-9cec-cbdb12aef99d.webp', '#ad0021', '#47000d',
+        'CTO', 'CMC Global’s greatest strength lies in its proactive approach to understanding and addressing customer needs. When challenges arise, CMC Global views them from the customer’s perspective and proposes effective solutions. This problem-solving mindset fosters a strong sense of trust, making it clear that we are not just collaborating but growing together as true strategic partners.', 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Mr. Le Minh', 'northstar', '/media-service/images/275a9039-92da-57d2-8678-fa64d11c4b7b.webp', '/media-service/images/367285f7-e062-5b36-bcdf-5ba64e6ecf1f.svg', '/media-service/images/b4aa8aaf-eaf1-5723-96ab-d70b2e7f0383.webp', '/media-service/images/728d1a6c-faf3-5411-8962-101a145430ca.svg', '#404040', '#000000',
+        'Chief Product Officer', 'Flexibility is definitely one of the character that we value most about CMC Global. Flexibility in terms of the number of headcounts that we hire, flexibility in terms of how you collaborate with us, flexibility in terms of the skills that we need to hire. Your technical knowledge is also something I definitely value a lot. And having your guidance in terms of what are the capabilities we should grow is definitely a key part of the future collaboration that I would love to see continuously with CMC Global.', 2, 'PUBLISHED');
 
 -- Footer navigation
 INSERT INTO footer_nav_category (site_id, label, links, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'World-class IT Outsourcing',
-        '["Custom Software Development", "Software Maintenance", "Legacy Migration", "Testing Services"]'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Digital Transformation',
-        '["Cloud Professional Services", "Data & Analytics", "Artificial Intelligence Solutions", "RPA Services", "Low Code"]'::jsonb, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'CMC Solutions',
-        '["IoT Smart Device – CIVAMs Face", "CMC Social Listening", "CMC Chatbot", "C-ID Reader", "C-CA", "SOC"]'::jsonb, 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Model',
-        '["Project-based", "Staff Augmentation", "Hybrid", "Results Based"]'::jsonb, 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'About Us',
-        '["CMC Global", "CMC Corporation", "Company Profile"]'::jsonb, 4, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Case Studies',
-        '["Customer Stories", "Industry", "Business Size"]'::jsonb, 5, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Resources',
-        '["Blog", "Ebooks & Whitepapers", "News & Events"]'::jsonb, 6, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Careers',
-        '["Careers"]'::jsonb, 7, 'PUBLISHED');
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'Services',
+        '["Consulting & Strategy", "Data & AI", "Digital & Cloud", "Digital Engineering", "Enterprise Solutions", "Managed Services"]'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Industries',
+        '["Banking, Finance & Insurance", "Healthcare", "Manufacturing"]'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'Insights',
+        '["Perspectives", "Case Studies", "Blogs", "Client Speak"]'::jsonb, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'About',
+        '["Our Organization", "Our Partners", "Our Leaders", "Newsroom", "Events"]'::jsonb, 3, 'PUBLISHED');
 
 -- ── 'en' Insights posts and Case Studies ──────────────────────────────────────────────────────
 
 -- Case studies. Results reuse only the figures already stated in each seeded title; the last one
 -- is linked to the envato testimonial, the others stay unlinked (exercises the 'no quote' page path).
 INSERT INTO case_study (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection-software', 'Jun 2, 2026', '/media-service/images/f193eedf-82c6-544a-a03a-1e4c4753711e.png', '38% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software', 'Agentic AI Software Delivery',
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection-software', 'June 25, 2026', '/media-service/images/8bb34389-3409-5daa-8fb3-f70433d5e357.webp', '36% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software', 'Agentic AI Software Delivery',
         'How agentic AI across the delivery lifecycle lifted productivity and shortened QA for an intrusion detection software team.',
         ''
                '<h2>The challenge</h2><p>A security software team needed to ship faster without loosening quality gates. This sample case study outlines the approach.</p>'
                '<h2>The approach</h2><p>Agentic AI was introduced across development and testing, with engineers reviewing and steering the output at each step.</p>'
                '<h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
-        '[{"label":"Higher productivity","value":"38%"},{"label":"Faster QA","value":"40%"}]'::jsonb, NULL, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'ai-energy-trading-system', 'Jun 2, 2026', '/media-service/images/89705d24-d075-5d3e-a945-d4caf115a1ef.webp', '15% Increase In Revenue With AI Energy Trading System', 'AI-Powered Trading & Forecasting',
+        '[{"label":"Higher productivity","value":"36%"},{"label":"Faster QA","value":"40%"}]'::jsonb, NULL, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'ai-energy-trading-system', 'June 20, 2026', '/media-service/images/89705d24-d075-5d3e-a945-d4caf115a1ef.webp', '15% Increase In Revenue With AI Energy Trading System', 'AI-Powered Trading & Forecasting',
         'An AI-powered trading and forecasting system that grew revenue for an energy trading business.',
         ''
                '<h2>The challenge</h2><p>Energy markets move quickly and forecasting errors are expensive. This sample case study outlines the approach.</p>'
                '<h2>The approach</h2><p>Forecasting models were integrated into the trading workflow so recommendations arrived where decisions were made.</p>'
                '<h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
         '[{"label":"Increase in revenue","value":"15%"}]'::jsonb, NULL, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'smart-field-service-azure-openai', 'Jun 2, 2026', '/media-service/images/598d8c53-00aa-51a1-9c9f-b5bc5a8aafc2.webp', '30% Ticket Return Reduced With Smart Field Service Software Using Azure OpenAI', 'AI-Powered Field Operations',
+       ((SELECT id FROM site WHERE code = 'en'), 'smart-field-service-azure-openai', 'June 2, 2026', '/media-service/images/41f122a5-ac66-524a-a8ea-655c9e94f8e0.webp', '30% Trips Return Reduced With Smart Field Service Software Using Azure Open AI', 'AI-Powered Field Operations',
         'Smart field service software built on Azure OpenAI that reduced repeat visits and ticket returns.',
         ''
                '<h2>The challenge</h2><p>Field technicians were returning to the same jobs because the right information was not available on site. This sample case study outlines the approach.</p>'
                '<h2>The approach</h2><p>An assistant built on Azure OpenAI surfaced guidance and history to technicians during the job.</p>'
                '<h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
         '[{"label":"Fewer ticket returns","value":"30%"}]'::jsonb, NULL, 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'unbreakable-connectivity-trust-won-the-deal', 'Jun 2, 2026', '/media-service/images/2cd9e6d6-29ed-5836-a255-0df42c96604c.webp', 'Beyond Innovation: Revolv CTO On Why Trust And “Unbreakable Connectivity” Won The Deal', 'Software Engineering',
+       ((SELECT id FROM site WHERE code = 'en'), 'unbreakable-connectivity-trust-won-the-deal', 'March 2, 2026', '/media-service/images/822f35e9-222b-50b0-92ae-bf0fd7cda6ce.webp', 'Beyond a Vendor: Envato CTO on Why Trust and “Unbreakable Connectivity” Won the Deal', 'Software Engineering',
         'Why trust and dependable connectivity, not just price, decided a long-term engineering partnership.',
         ''
                '<h2>The challenge</h2><p>Choosing an engineering partner is a trust decision as much as a technical one. This sample case study outlines what mattered.</p>'
@@ -160,35 +249,28 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection
 
 -- Posts
 INSERT INTO post (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital-economy-dialogue-2026', 'insight', '/media-service/images/cc6d4e10-5da6-5020-9de4-e5effc9d51de.webp', 'Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation',
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital-economy-dialogue-2026', 'insight', '/media-service/images/7adbffc8-3d0b-58ef-9fce-1baa08a502a3.webp', 'Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation',
         'How a new round of bilateral dialogue is shaping cooperation on AI and the digital economy — and what it means for technology teams building across both markets.',
-        'Jun 2, 2026',
-        '<p>Cross-border cooperation on AI and the digital economy is moving from announcements to working practice. This sample article outlines the themes such a dialogue tends to cover.</p>'
-               '<h2>Why bilateral cooperation matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and data practices decide how quickly a product can move between regions.</p>'
-               '<h2>What technology teams should watch</h2><p>Regulation, data residency and skills pipelines are the practical constraints. Teams that plan for them early spend less time reworking architecture later.</p>'
-               '<h2>Where we go from here</h2><p>Editors: replace this sample copy with the real write-up for your region.</p>',
+        'August 28, 2026',
+        '<p>How a new round of bilateral dialogue is shaping cooperation on AI and the digital economy — and what it means for technology teams building across both markets. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
         'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["ai","events","partnerships"]'::jsonb, true, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'ai-workshop-series-pilots-into-production', 'insight', '/media-service/images/75239b3d-8291-54ba-8a9d-f42614038105.webp', 'AI Workshop Series: Turning Pilots Into Production Across The Enterprise',
-        'Most enterprise AI pilots stall before production. A practical look at what separates the ones that ship.',
-        'May 20, 2026',
-        '<p>A pilot proves an idea can work. Production proves it can keep working. This sample article walks through the gap between the two.</p>'
-               '<h2>Start from the workflow, not the model</h2><p>Pilots that ship are anchored to a specific team process with a named owner and a measurable outcome.</p>'
-               '<h2>Plan for evaluation early</h2><p>Decide how quality will be measured before the first demo, so improvement is something you can show rather than describe.</p>'
-               '<h2>Hand over properly</h2><p>Editors: replace this sample copy with the real write-up for your region.</p>',
-        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["ai","engineering"]'::jsonb, false, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'new-delivery-centre-ho-chi-minh-city', 'insight', '/media-service/images/b51a01dd-ccf7-53f5-b6aa-31b63a6628cb.webp', 'Bridging Talent And Technology: Our New Delivery Centre In Ho Chi Minh City',
-        'Why we are growing engineering capacity in Ho Chi Minh City, and how it changes the way we staff and support client teams.',
-        'May 6, 2026',
-        '<p>Delivery capacity close to the people building it makes teams easier to staff, support and grow. This sample article describes the idea behind a new delivery centre.</p>'
-               '<h2>Closer to talent</h2><p>A local centre gives clients access to a deeper engineering pool and shortens the time it takes to stand up a team.</p>'
-               '<h2>Closer to clients</h2><p>Overlapping working hours and shared tooling keep collaboration simple.</p>'
-               '<h2>What comes next</h2><p>Editors: replace this sample copy with the real write-up for your region.</p>',
-        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["delivery","company-news"]'::jsonb, false, 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'ai-business-insight-night-what-boards-are-asking', 'insight', '/media-service/images/31d94776-c11b-5fb6-a5d2-f431a143dbf2.webp', 'AI Business Insight Night: What Boards Are Asking About AI In 2026',
-        'The questions boards are raising about AI in 2026 — and a framework for answering them without the hype.',
-        'Apr 22, 2026',
-        '<p>Boards are asking sharper questions about AI than they were a year ago. This sample article groups them into three themes.</p>'
-               '<h2>Value</h2><p>Where will AI change cost, revenue or risk, and how will we know it has?</p>'
-               '<h2>Risk</h2><p>Data handling, model behaviour and accountability need clear owners before scale, not after.</p>'
-               '<h2>Capability</h2><p>Editors: replace this sample copy with the real write-up for your region.</p>',
-        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["ai","events","governance"]'::jsonb, false, 3, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), 'apec-workshop-ai-digital-transformation', 'insight', '/media-service/images/1a2f3035-18e5-5e98-a380-41deb5d17037.webp', 'APEC Workshop: Putting AI And Digital Transformation Into Practice',
+        'Highlights from a regional workshop on turning AI strategy into delivery across the Asia-Pacific.',
+        'July 18, 2026',
+        '<p>Highlights from a regional workshop on turning AI strategy into delivery across the Asia-Pacific. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
+        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["ai","events"]'::jsonb, false, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'cmc-global-new-zealand-cooperation-mou', 'insight', '/media-service/images/bee4b527-26bc-55ca-9c08-6eefd30ed5e6.webp', 'CMC Global Signs A Cooperation MOU With New Zealand Partners',
+        'A new memorandum of understanding opens joint work on digital talent and technology delivery.',
+        'July 4, 2026',
+        '<p>A new memorandum of understanding opens joint work on digital talent and technology delivery. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
+        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["partnerships","events"]'::jsonb, false, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'cmc-global-salesforce-enterprise-ai', 'insight', '/media-service/images/fd16a859-67a3-572e-9823-3388b3eecab4.webp', 'CMC Global x Salesforce: Accelerating Enterprise AI Adoption',
+        'How the partnership helps enterprises move from CRM pilots to AI-assisted operations.',
+        'June 20, 2026',
+        '<p>How the partnership helps enterprises move from CRM pilots to AI-assisted operations. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
+        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["partnerships","ai"]'::jsonb, false, 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'cmc-global-community-day-2026', 'insight', '/media-service/images/5ac98d1f-ebad-5aa3-9c9d-abb0d53dc289.webp', 'Event Highlights: Building The Next Generation Of Engineers',
+        'A look back at the event that brought engineers, students and partners together.',
+        'June 6, 2026',
+        '<p>A look back at the event that brought engineers, students and partners together. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
+        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["events"]'::jsonb, false, 4, 'PUBLISHED');

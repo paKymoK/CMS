@@ -39,7 +39,11 @@ public class TestimonialServiceImpl implements TestimonialService {
     testimonial.setName(request.getName());
     testimonial.setCompany(request.getCompany());
     testimonial.setPhoto(request.getPhoto());
-    testimonial.setFlankLogos(request.getFlankLogos());
+    testimonial.setLogo(request.getLogo());
+    testimonial.setBackgroundImage(request.getBackgroundImage());
+    testimonial.setFlankLogo(request.getFlankLogo());
+    testimonial.setFlankFrom(request.getFlankFrom());
+    testimonial.setFlankTo(request.getFlankTo());
     testimonial.setTitle(request.getTitle());
     testimonial.setQuote(request.getQuote());
     testimonial.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
@@ -56,7 +60,11 @@ public class TestimonialServiceImpl implements TestimonialService {
               testimonial.setName(request.getName());
               testimonial.setCompany(request.getCompany());
               testimonial.setPhoto(request.getPhoto());
-              testimonial.setFlankLogos(request.getFlankLogos());
+              testimonial.setLogo(request.getLogo());
+              testimonial.setBackgroundImage(request.getBackgroundImage());
+              testimonial.setFlankLogo(request.getFlankLogo());
+              testimonial.setFlankFrom(request.getFlankFrom());
+              testimonial.setFlankTo(request.getFlankTo());
               testimonial.setTitle(request.getTitle());
               testimonial.setQuote(request.getQuote());
               if (request.getDisplayOrder() != null)

@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS service_card
     id             bigserial PRIMARY KEY,
     site_id        bigint  NOT NULL REFERENCES site (id),
     name           character varying NOT NULL,
+    description    text,              -- revealed on hover/tap over the card
     image          character varying, -- nullable: falls back to a design placeholder when absent
     display_order  integer NOT NULL DEFAULT 0,
     active         boolean NOT NULL DEFAULT true,
@@ -121,9 +122,11 @@ CREATE TABLE IF NOT EXISTS testimonial
     name           character varying NOT NULL,
     company        character varying,
     photo          character varying,
-    -- [{name, color}, {name, color}] — the two flanking client-logo placeholder cards.
-    -- Never translated, so plain jsonb rather than anything locale-aware.
-    flank_logos    jsonb,
+    logo             character varying, -- client logo on the quote card (dark artwork)
+    background_image character varying, -- abstract artwork behind the quote text
+    flank_logo       character varying, -- logo variant for the brand card flanking neighbouring slides
+    flank_from       character varying, -- that card's gradient start (#RRGGBB)
+    flank_to         character varying, -- ... and end
     title          character varying,
     quote          text,
     display_order  integer NOT NULL DEFAULT 0,

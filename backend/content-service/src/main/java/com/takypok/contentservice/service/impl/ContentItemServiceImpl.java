@@ -85,4 +85,15 @@ public class ContentItemServiceImpl implements ContentItemService {
         .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
             siteId, contentType, "PUBLISHED", true);
   }
+
+  @Override
+  public Flux<ContentItem> getAllPublished(Long siteId) {
+    return contentItemRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
+        siteId, "PUBLISHED", true);
+  }
+
+  @Override
+  public Flux<ContentItem> getEveryItem(Long siteId) {
+    return contentItemRepository.findAllBySiteIdOrderByDisplayOrderAsc(siteId);
+  }
 }

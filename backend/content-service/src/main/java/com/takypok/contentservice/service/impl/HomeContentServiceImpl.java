@@ -1,8 +1,11 @@
 package com.takypok.contentservice.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.entity.LogoBadge;
 import com.takypok.contentservice.model.response.HomeContentResponse;
 import com.takypok.contentservice.service.CaseStudyService;
+import com.takypok.contentservice.service.ContentItemService;
 import com.takypok.contentservice.service.FooterNavCategoryService;
 import com.takypok.contentservice.service.HomeContentService;
 import com.takypok.contentservice.service.LogoBadgeService;
@@ -11,16 +14,19 @@ import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.ServiceCardService;
 import com.takypok.contentservice.service.StatService;
 import com.takypok.contentservice.service.TestimonialService;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Composes all 8 content repositories (10 public sources, since award/certification/partner all
- * read from the one LogoBadge table) into the site's single public HomeContentResponse. Uses the
- * Mono.zip array-combinator overload since the fluent zip only goes up to 8 sources and there are
- * 10 here.
+ * Composes all 8 content repositories + the generic content_item table (11 sources, since
+ * award/certification/partner all read from the one LogoBadge table) into the site's single public
+ * HomeContentResponse. Uses the Mono.zip array-combinator overload since the fluent zip only goes
+ * up to 8 sources and there are 10 here.
  */
 @Component
 @RequiredArgsConstructor
@@ -34,6 +40,7 @@ public class HomeContentServiceImpl implements HomeContentService {
   private final LogoBadgeService logoBadgeService;
   private final TestimonialService testimonialService;
   private final FooterNavCategoryService footerNavCategoryService;
+  private final ContentItemService contentItemService;
 
   @Override
   public Mono<HomeContentResponse> getHomeContent(Long siteId) {
@@ -46,7 +53,10 @@ public class HomeContentServiceImpl implements HomeContentService {
     Mono<List<HomeContentResponse.ServiceCard>> services =
         serviceCardService
             .getPublished(siteId)
-            .map(s -> new HomeContentResponse.ServiceCard(s.getName(), s.getImage()))
+            .map(
+                s ->
+                    new HomeContentResponse.ServiceCard(
+                        s.getName(), s.getDescription(), s.getImage()))
             .collectList();
 
     Mono<List<HomeContentResponse.Office>> offices =
@@ -70,7 +80,7 @@ public class HomeContentServiceImpl implements HomeContentService {
             .map(
                 c ->
                     new HomeContentResponse.CaseStudy(
-                        c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
+                        c.getSlug(), c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
             .collectList();
 
     // Only "insight"-category posts render on the homepage today — other categories exist for
@@ -79,7 +89,10 @@ public class HomeContentServiceImpl implements HomeContentService {
         postService
             .getPublished(siteId)
             .filter(p -> "insight".equals(p.getCategory()))
-            .map(p -> new HomeContentResponse.Insight(p.getTitle(), p.getImage()))
+            .map(
+                p ->
+                    new HomeContentResponse.Insight(
+                        p.getSlug(), p.getTitle(), p.getDate(), p.getImage()))
             .collectList();
 
     Mono<List<HomeContentResponse.LogoBadge>> awards =
@@ -109,7 +122,11 @@ public class HomeContentServiceImpl implements HomeContentService {
                         t.getCompany(),
                         t.getQuote(),
                         t.getPhoto(),
-                        t.getFlankLogos()))
+                        t.getLogo(),
+                        t.getBackgroundImage(),
+                        t.getFlankLogo(),
+                        t.getFlankFrom(),
+                        t.getFlankTo()))
             .collectList();
 
     Mono<List<HomeContentResponse.FooterNavCategory>> footerNav =
@@ -129,7 +146,8 @@ public class HomeContentServiceImpl implements HomeContentService {
             certifications,
             partners,
             testimonials,
-            footerNav);
+            footerNav,
+            sectionsOf(contentItemService.getAllPublished(siteId)));
 
     return Mono.zip(
         sources,
@@ -144,7 +162,8 @@ public class HomeContentServiceImpl implements HomeContentService {
                 (List<HomeContentResponse.LogoBadge>) results[6],
                 (List<HomeContentResponse.LogoBadge>) results[7],
                 (List<HomeContentResponse.Testimonial>) results[8],
-                (List<HomeContentResponse.FooterNavCategory>) results[9]));
+                (List<HomeContentResponse.FooterNavCategory>) results[9],
+                (Map<String, List<JsonNode>>) results[10]));
   }
 
   /**
@@ -175,7 +194,10 @@ public class HomeContentServiceImpl implements HomeContentService {
             .map(
                 list ->
                     list.stream()
-                        .map(s -> new HomeContentResponse.ServiceCard(s.getName(), s.getImage()))
+                        .map(
+                            s ->
+                                new HomeContentResponse.ServiceCard(
+                                    s.getName(), s.getDescription(), s.getImage()))
                         .toList());
 
     Mono<List<HomeContentResponse.Office>> offices =
@@ -205,7 +227,11 @@ public class HomeContentServiceImpl implements HomeContentService {
                         .map(
                             c ->
                                 new HomeContentResponse.CaseStudy(
-                                    c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
+                                    c.getSlug(),
+                                    c.getTitle(),
+                                    c.getDate(),
+                                    c.getCategory(),
+                                    c.getImage()))
                         .toList());
 
     // Same "insight"-only filter as getHomeContent — a preview of a draft "press-release"-category
@@ -218,7 +244,10 @@ public class HomeContentServiceImpl implements HomeContentService {
                 list ->
                     list.stream()
                         .filter(p -> "insight".equals(p.getCategory()))
-                        .map(p -> new HomeContentResponse.Insight(p.getTitle(), p.getImage()))
+                        .map(
+                            p ->
+                                new HomeContentResponse.Insight(
+                                    p.getSlug(), p.getTitle(), p.getDate(), p.getImage()))
                         .toList());
 
     Mono<List<HomeContentResponse.LogoBadge>> awards =
@@ -248,7 +277,11 @@ public class HomeContentServiceImpl implements HomeContentService {
                                     t.getCompany(),
                                     t.getQuote(),
                                     t.getPhoto(),
-                                    t.getFlankLogos()))
+                                    t.getLogo(),
+                                    t.getBackgroundImage(),
+                                    t.getFlankLogo(),
+                                    t.getFlankFrom(),
+                                    t.getFlankTo()))
                         .toList());
 
     Mono<List<HomeContentResponse.FooterNavCategory>> footerNav =
@@ -274,7 +307,8 @@ public class HomeContentServiceImpl implements HomeContentService {
             certifications,
             partners,
             testimonials,
-            footerNav);
+            footerNav,
+            sectionsOf(contentItemService.getEveryItem(siteId)));
 
     return Mono.zip(
         sources,
@@ -289,7 +323,24 @@ public class HomeContentServiceImpl implements HomeContentService {
                 (List<HomeContentResponse.LogoBadge>) results[6],
                 (List<HomeContentResponse.LogoBadge>) results[7],
                 (List<HomeContentResponse.Testimonial>) results[8],
-                (List<HomeContentResponse.FooterNavCategory>) results[9]));
+                (List<HomeContentResponse.FooterNavCategory>) results[9],
+                (Map<String, List<JsonNode>>) results[10]));
+  }
+
+  /** Groups items by content_type, keeping display order inside each group. */
+  private static Mono<Map<String, List<JsonNode>>> sectionsOf(Flux<ContentItem> items) {
+    return items
+        .collectList()
+        .map(
+            list -> {
+              Map<String, List<JsonNode>> grouped = new LinkedHashMap<>();
+              for (ContentItem item : list) {
+                grouped
+                    .computeIfAbsent(item.getContentType(), k -> new java.util.ArrayList<>())
+                    .add(item.getData());
+              }
+              return grouped;
+            });
   }
 
   private static HomeContentResponse.LogoBadge toLogoBadge(LogoBadge badge) {
