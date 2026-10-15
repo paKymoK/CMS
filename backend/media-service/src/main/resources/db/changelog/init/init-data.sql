@@ -87,5 +87,9 @@ VALUES
        ('204d0d9c-f5db-5e51-97d6-a8ddca9cbac4', 'industry-sol-backbase-bespoke.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('bb93e760-87b5-58ca-8255-5b764ed57104', 'industry-sol-open-platform.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('e888ce94-9f48-5b4a-bd25-c63f0b2375a3', 'industry-sol-open-bespoke.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('fc3fa6de-1a2f-51fc-b168-fda2c1c889c0', 'logo-backbase.svg', '.svg', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('fc3fa6de-1a2f-51fc-b168-fda2c1c889c0', 'logo-backbase.svg', '.svg', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('13c10ea3-a2a6-5eab-a68a-54bba2708cab', 'value-commitment.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('c9926596-5469-5d41-aec8-b4c3cc8792c7', 'value-creativity.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('f9e51d36-62d2-58d7-9828-f3a6918ced82', 'value-customer.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('03a414f9-4a03-583a-b3f7-649961c1b52e', 'value-speed.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;

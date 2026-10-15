@@ -52,6 +52,12 @@ export const homeContentEn: HomeContent = {
       { section: "contact", title: "Maximize Your ROI in the Cloud\nLet's Chat!" },
       { section: "leaders", eyebrow: "Our People", title: "Leadership Team" },
       {
+        section: "values",
+        eyebrow: "Our Values 4C",
+        title: "The DNA of Our Growth",
+        body: "We empower our global team to do their best work in a culture of dedication, creativity, and global collaboration.",
+      },
+      {
         section: "industry-solutions",
         eyebrow: "Solutions",
         title: "Our Solutions",
@@ -210,6 +216,12 @@ export const homeContentEn: HomeContent = {
         eyebrow: "Our Mission",
         body: "Our mission is simple: to make complex technology work for people and businesses, everywhere.\n\nWe empower organizations to grow with confidence through practical innovation, while building a culture where talent thrives, learns, and creates meaningful impact every day.",
       },
+    ],
+    about_value: [
+      { title: "Commitment" },
+      { title: "Creativity" },
+      { title: "Customer\nCentricity" },
+      { title: "Speed" },
     ],
     leader: [
       { name: "Mr. Ho Thanh Tung", title: "President of CMC Global" },

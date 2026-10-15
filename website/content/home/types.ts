@@ -173,6 +173,9 @@ export type AboutStatement = {
   image?: string;
 };
 
+/** content_item type "about_value" — one "Our Values 4C" photo card. */
+export type AboutValue = { title: string; image?: string };
+
 /** content_item type "leader" — one member of the leadership team. */
 export type Leader = { name: string; title?: string; photo?: string };
 
@@ -228,6 +231,7 @@ export type HomeSections = {
   about_intro?: AboutIntro[];
   about_statement?: AboutStatement[];
   leader?: Leader[];
+  about_value?: AboutValue[];
   industry_hero?: IndustryHero[];
   industry_solution?: IndustrySolution[];
   industry_reason?: IndustryReason[];

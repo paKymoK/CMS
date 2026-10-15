@@ -10,14 +10,14 @@ const FALLBACK_INTRO: SectionIntro = {
 
 // Where each card sits on the 1920px artboard: three on the first row, the rest centred below.
 const SLOTS: [number, number][] = [
-  [349, 208],
-  [776, 208],
-  [1205, 208],
-  [563, 601],
-  [990, 601],
+  [358, 246],
+  [794, 246],
+  [1233, 246],
+  [579, 604],
+  [1024, 604],
 ];
 const slot = (i: number): [number, number] =>
-  SLOTS[i] ?? [349 + (i % 3) * 427, 208 + Math.floor(i / 3) * 393];
+  SLOTS[i] ?? [358 + (i % 3) * 437, 246 + Math.floor(i / 3) * 358];
 
 /**
  * "Leadership Team" (Figma "Our People"): cut-out portraits on pale-blue cards with name and role

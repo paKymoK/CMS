@@ -252,7 +252,7 @@
     top: calc(1200 * var(--u));
   }
   .abt-meet-title {
-    margin: calc(19 * var(--u)) auto 0;
+    margin: calc(57 * var(--u)) auto 0;
     width: calc(700 * var(--u));
     padding: 0;
   }
@@ -316,7 +316,7 @@
 }
 .abt-band--mission {
   min-height: 460px;
-  background: linear-gradient(115deg, #76d1ff 6%, #d4e1ff 17%, #eff4ff 31%, #cfe9ff 100%);
+  background: linear-gradient(115deg, #d9f2ff 6%, #d4e2ff 17%, #eff5ff 31%, #f0fbff 100%);
   color: #1a202c;
 }
 .abt-vision-shade {
@@ -428,7 +428,7 @@
 .abt-leader-card {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 367 / 254;
+  aspect-ratio: 334 / 231;
   background:
     linear-gradient(to right, #abe3ff, #ffffff 94%),
     linear-gradient(135deg, #abe3ff, #e1e1e1);
@@ -494,7 +494,7 @@
     height: calc(651 * var(--u));
   }
   .abt-people-title {
-    margin: calc(19 * var(--u)) auto 0;
+    margin: calc(57 * var(--u)) auto 0;
     width: calc(700 * var(--u));
     padding: 0;
   }
@@ -508,12 +508,12 @@
   }
   .abt-leader {
     position: absolute;
-    width: calc(367 * var(--u));
+    width: calc(334 * var(--u));
     left: calc(var(--lx) * var(--u));
     top: calc(var(--ly) * var(--u));
   }
   .abt-leader-name {
-    margin-top: calc(13 * var(--u));
+    margin-top: calc(12 * var(--u));
   }
   .abt-leader-name strong {
     font-size: max(16px, calc(30 * var(--u)));
@@ -521,5 +521,85 @@
   .abt-leader-name span {
     margin-top: calc(4 * var(--u));
     font-size: max(13px, calc(20 * var(--u)));
+  }
+}
+
+/* ---- Our Values 4C ----------------------------------------------------------------------------- */
+.abt-values {
+  padding-bottom: 56px;
+  background: linear-gradient(160deg, #fff 6%, #fff 57%, #eff5ff 100%);
+}
+.abt-values-head {
+  padding: 16px 24px 0;
+  text-align: center;
+}
+.abt-values-head p {
+  max-width: 640px;
+  margin: 12px auto 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #1a202c;
+}
+.abt-values-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 28px 24px 0;
+}
+.abt-value {
+  position: relative;
+  overflow: hidden;
+  height: 300px;
+  border-radius: 19px;
+  background: #0b1f3f;
+}
+.abt-value h3 {
+  position: absolute;
+  inset: auto 20px 18px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.02;
+  color: #fff;
+  white-space: pre-line;
+}
+@media (min-width: 900px) {
+  .abt-values-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .abt-values {
+    height: calc(940 * var(--u));
+    padding-bottom: 0;
+  }
+  .abt-values .sec-eyebrow-wrap {
+    padding-top: calc(37 * var(--u));
+  }
+  .abt-values-head {
+    position: absolute;
+    inset: calc(85 * var(--u)) 0 auto 0;
+    padding: 0;
+  }
+  .abt-values-head p {
+    max-width: none;
+    margin-top: 0;
+    font-size: max(14px, calc(20 * var(--u)));
+    white-space: nowrap;
+  }
+  .abt-values-cards {
+    position: absolute;
+    left: calc(219 * var(--u));
+    top: calc(261 * var(--u));
+    width: calc(1481 * var(--u));
+    gap: calc(15 * var(--u));
+    margin: 0;
+  }
+  .abt-value {
+    height: calc(523 * var(--u));
+    border-radius: calc(19 * var(--u));
+  }
+  .abt-value h3 {
+    inset: auto calc(25 * var(--u)) calc(30 * var(--u));
+    font-size: max(20px, calc(35 * var(--u)));
   }
 }

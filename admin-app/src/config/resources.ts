@@ -442,6 +442,18 @@ export const RESOURCES: ResourceConfig[] = [
     ],
   },
   {
+    key: "about-values",
+    group: "about",
+    label: "About · Values (4C)",
+    apiPath: "/v1/admin/content-items",
+    contentType: "about_value",
+    titleField: "title",
+    fields: [
+      field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
+      field({ name: "image", label: "Photo", type: "image" }),
+    ],
+  },
+  {
     key: "banners",
     label: "Banners",
     apiPath: "/v1/admin/banners",

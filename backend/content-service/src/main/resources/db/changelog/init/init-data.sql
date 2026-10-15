@@ -58,6 +58,8 @@ VALUES ('section_intro', 'Section intro',
         '{"name": "string", "title": "string", "photo": "image"}'::jsonb),
        ('site_footer', 'Site footer',
         '{"title": "string", "ctaLabel": "string", "ctaUrl": "string", "copyright": "string", "privacyLabel": "string", "privacyUrl": "string", "termsLabel": "string", "termsUrl": "string", "facebookUrl": "string", "twitterUrl": "string", "instagramUrl": "string"}'::jsonb),
+       ('about_value', 'About value',
+        '{"title": "textarea", "image": "image"}'::jsonb),
        ('industry_hero', 'Industry hero',
         '{"breadcrumb": "string", "title": "textarea", "subtitle": "textarea", "ctaLabel": "string", "ctaUrl": "string", "image": "image", "stats": "stat-list"}'::jsonb),
        ('industry_solution', 'Industry solution',
@@ -196,6 +198,15 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'about_hero', '{
        ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Viet Bach", "title": "Deputy CEO / Chief Delivery Officer of CMC Global", "photo": "/media-service/images/eae5d034-5a79-544d-80f1-80fabc1bf1b4.webp"}'::jsonb, 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Ms. Hoang Thi Thanh Hoa", "title": "Chief Finance Officer of CMC Global", "photo": "/media-service/images/0aa04ce3-4345-5884-862e-288364fe0a0f.webp"}'::jsonb, 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Cao Cuong", "title": "Chief Sales Officer of CMC Global", "photo": "/media-service/images/c7c6d745-7a25-50a5-a901-52512e5f71a4.webp"}'::jsonb, 4, 'PUBLISHED');
+
+-- About page: Our Values 4C
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+VALUES
+       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{"section": "values", "eyebrow": "Our Values 4C", "title": "The DNA of Our Growth", "body": "We empower our global team to do their best work in a culture of dedication, creativity, and global collaboration."}'::jsonb, 13, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Commitment", "image": "/media-service/images/13c10ea3-a2a6-5eab-a68a-54bba2708cab.webp"}'::jsonb, 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Creativity", "image": "/media-service/images/c9926596-5469-5d41-aec8-b4c3cc8792c7.webp"}'::jsonb, 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Customer\nCentricity", "image": "/media-service/images/f9e51d36-62d2-58d7-9828-f3a6918ced82.webp"}'::jsonb, 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Speed", "image": "/media-service/images/03a414f9-4a03-583a-b3f7-649961c1b52e.webp"}'::jsonb, 3, 'PUBLISHED');
 
 -- Banking, Finance & Insurance industry page
 INSERT INTO content_item (site_id, content_type, data, display_order, status)

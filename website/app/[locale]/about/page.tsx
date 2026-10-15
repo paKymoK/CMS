@@ -9,6 +9,7 @@ import { AboutHero } from "@/components/about/AboutHero";
 import { MeetCmc } from "@/components/about/MeetCmc";
 import { StatementBand } from "@/components/about/StatementBand";
 import { Leadership } from "@/components/about/Leadership";
+import { Values } from "@/components/about/Values";
 
 const TITLE = "About Us | CMC Global";
 const DESCRIPTION =
@@ -43,6 +44,7 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
         intro={sectionIntro(content, "leaders")}
         ringImage={sectionIntro(content, "leaders")?.image}
       />
+      <Values values={s?.about_value ?? []} intro={sectionIntro(content, "values")} />
     </>
   );
 }
