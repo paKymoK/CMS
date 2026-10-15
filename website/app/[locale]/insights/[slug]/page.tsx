@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { CoverImage } from "@/components/ui/CoverImage";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -9,17 +8,9 @@ import { Link } from "@/i18n/navigation";
 import { getPost, getPreviewPost } from "@/lib/cms/posts";
 import { getPreviewToken } from "@/lib/cms/previewSession";
 import { DraftBanner } from "@/components/preview/DraftBanner";
-import { Placeholder } from "@/components/ui/Placeholder";
+import { InsightCard } from "@/components/insights/InsightCard";
+import { InsightsHero } from "@/components/insights/InsightsHero";
 import { ReadingProgress } from "@/components/insights/ReadingProgress";
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
 
 /**
  * Injects an id into every top-level <h2> in the (already server-sanitized by content-service on save) body HTML and
@@ -141,67 +132,23 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
       {landing ? (
         <h1 className="sr-only">{post.title}</h1>
       ) : (
-        <section className="mx-auto max-w-[1180px] px-6 pt-[150px] pb-16">
-          <div className={`grid items-center gap-[clamp(32px,5vw,64px)] ${post.image ? "grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))]" : "grid-cols-1"}`}>
-            <div className="min-w-0">
-              <nav className="font-mono-wave mb-5.5 flex flex-wrap items-center gap-2 text-[11px] tracking-[0.08em] text-[#6a7c90] uppercase">
-                <Link href="/" className="text-[#6a7c90]">
-                  {t("home")}
-                </Link>
-                <span>/</span>
-                <Link href="/insights" className="text-[#6a7c90]">
-                  {t("eyebrow")}
-                </Link>
-              </nav>
-              <div className="font-mono-wave mb-4 text-xs tracking-[0.16em] text-brand-primary uppercase">— {t("insightBadge")}</div>
-              <h1 className="font-sans text-[clamp(30px,3.8vw,46px)] leading-[1.16] font-bold tracking-[-0.02em] text-[#10314f] text-balance">{post.title}</h1>
-              {post.excerpt && <p className="mt-5 max-w-[560px] text-lg leading-[1.6] text-[#55585f] text-pretty">{post.excerpt}</p>}
-              <div className="mt-7.5 flex flex-wrap items-center gap-4.5 border-t border-[#e0e4e9] pt-5.5">
-                {post.authorName && (
-                  <>
-                    <div className="flex items-center gap-3">
-                      {post.authorAvatar ? (
-                        <div className="relative h-11 w-11 flex-none overflow-hidden rounded-full">
-                          <CoverImage src={post.authorAvatar} alt="" className="object-cover" sizes="44px" />
-                        </div>
-                      ) : (
-                        <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[radial-gradient(circle_at_34%_30%,#7cc4f7_0%,#1a6fc4_60%,#0c3f7d_100%)] text-sm font-bold text-white">
-                          {initials(post.authorName)}
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-bold text-[#10141c]">{post.authorName}</span>
-                        {post.authorRole && <span className="text-[13px] text-[#6a7c90]">{post.authorRole}</span>}
-                      </div>
-                    </div>
-                    <div className="h-7 w-px bg-[#e0e4e9]" />
-                  </>
-                )}
-                <div className="font-mono-wave flex flex-wrap items-center gap-3.5 text-xs tracking-[0.04em] text-[#5a5d64]">
-                  {post.date && (
-                    <>
-                      <span>{post.date}</span>
-                      <span className="h-1 w-1 rounded-full bg-[#cfd2d6]" />
-                    </>
-                  )}
-                  <span>
-                    {post.readMinutes} {t("minRead")}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {post.image && (
-              <div className="relative min-w-0">
-                <div className="relative aspect-4/3 w-full">
-                  <CoverImage src={post.image} alt="" className="object-cover" sizes="(min-width: 1180px) 590px, 100vw" priority />
-                </div>
-              </div>
+        <InsightsHero eyebrow={t("eyebrow")} title={post.title} image={post.image} small>
+          <div className="ins-hero-meta">
+            {post.authorName && (
+              <span>
+                <b>{post.authorName}</b>
+                {post.authorRole ? `, ${post.authorRole}` : ""}
+              </span>
             )}
+            {post.date && <span>{post.date}</span>}
+            <span>
+              {post.readMinutes} {t("minRead")}
+            </span>
           </div>
-        </section>
+        </InsightsHero>
       )}
 
-      <section className={`mx-auto flex max-w-[1180px] flex-wrap justify-center gap-[clamp(32px,6vw,80px)] px-6 pb-24 ${landing ? "pt-[130px]" : "pt-6"}`}>
+      <section className={`mx-auto flex max-w-[1180px] flex-wrap justify-center gap-[clamp(32px,6vw,80px)] px-6 pb-24 ${landing ? "pt-[130px]" : "pt-16"}`}>
         {sidebar && (
           <aside className="flex-[0_1_220px] min-w-[200px]">
             <div className="sticky top-[112px] flex flex-col gap-8.5">
@@ -249,21 +196,9 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
                 {t("viewAllInsights")}
               </Link>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4.5">
+            <div className="ins-grid ins-related">
               {post.related.map((r) => (
-                <Link key={r.id} href={`/insights/${r.slug}`} className="flex flex-col gap-3.5 text-[#10141c] transition-transform duration-300 ease-out hover:-translate-y-1.5">
-                  {r.image ? (
-                    <div className="relative aspect-4/3 w-full">
-                      <CoverImage src={r.image} alt="" className="object-cover" sizes="(min-width: 1120px) 260px, 33vw" />
-                    </div>
-                  ) : (
-                    <Placeholder tone="cool" label={t("eventPhotography")} className="aspect-4/3 w-full" />
-                  )}
-                  <span className="font-mono-wave text-[11px] tracking-[0.06em] text-[#5a5d64]">
-                    {r.date} · {r.readMinutes} {t("min")}
-                  </span>
-                  <span className="text-[17px] leading-[1.4] font-bold text-[#10141c] text-pretty">{r.title}</span>
-                </Link>
+                <InsightCard key={r.id} post={r} />
               ))}
             </div>
           </div>

@@ -1,0 +1,271 @@
+/*
+ * Insights pages (/insights and /insights/[slug]), drawn from the Figma "Insight" frame. Same
+ * artboard model as the other pages: inside a `.design-canvas` every length is an artboard pixel
+ * × --u from 1280px up, with a stacked layout below.
+ */
+
+/* ---- Hero -------------------------------------------------------------------------------------- */
+.ins-hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  min-height: 440px;
+  background: #001442;
+  color: #fff;
+}
+.ins-hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, rgba(0, 21, 45, 0.7) 0%, rgba(0, 21, 45, 0) 55%),
+    linear-gradient(100deg, rgba(0, 21, 45, 0.95) 0%, rgba(8, 69, 126, 0.35) 70%, rgba(8, 69, 126, 0) 100%);
+}
+.ins-hero-copy {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 120px 24px 40px;
+}
+.ins-hero-eyebrow {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.06;
+}
+.ins-hero-title {
+  margin-top: 10px;
+  font-size: clamp(34px, 9vw, 52px);
+  font-weight: 700;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+.ins-hero-title--sm {
+  font-size: clamp(26px, 6.5vw, 40px);
+  line-height: 1.15;
+}
+.ins-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 20px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.86);
+}
+.ins-hero-meta b {
+  font-weight: 600;
+  color: #fff;
+}
+.ins-hero-meta span + span::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 18px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+@media (min-width: 1280px) {
+  .ins-hero {
+    height: calc(684 * var(--u));
+    min-height: 0;
+  }
+  .ins-hero-copy {
+    padding: 0 0 calc(100 * var(--u)) calc(257 * var(--u));
+  }
+  .ins-hero-eyebrow {
+    font-size: max(24px, calc(40 * var(--u)));
+  }
+  .ins-hero-title {
+    max-width: calc(1100 * var(--u));
+    margin-top: calc(2 * var(--u));
+    font-size: max(40px, calc(70 * var(--u)));
+  }
+  .ins-hero-title--sm {
+    max-width: calc(1180 * var(--u));
+    font-size: max(30px, calc(52 * var(--u)));
+  }
+  .ins-hero-meta {
+    margin-top: calc(22 * var(--u));
+    font-size: max(14px, calc(18 * var(--u)));
+  }
+}
+
+/* ---- Listing ----------------------------------------------------------------------------------- */
+.ins-list {
+  padding: 40px 24px 64px;
+  background: #fff;
+}
+.ins-filter-tab {
+  display: inline-block;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #009ee8;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #0077b2;
+}
+.ins-filter {
+  border-bottom: 1px solid #033560;
+}
+.ins-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 24px 0 30px;
+}
+.ins-chip {
+  height: 43px;
+  padding: 0 27px;
+  border: 1px solid #5d5d5d;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #5d5d5d;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.ins-chip:hover {
+  border-color: #0077b2;
+  color: #0077b2;
+}
+.ins-chip[aria-pressed="true"] {
+  border-color: #0077b2;
+  background: #0077b2;
+  font-weight: 700;
+  color: #fff;
+}
+.ins-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+.ins-empty {
+  padding: 60px 0;
+  text-align: center;
+  font-size: 18px;
+  color: #5d5d5d;
+}
+.ins-more {
+  display: block;
+  margin: 40px auto 0;
+  height: 67px;
+  padding: 0 45px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(95deg, #0077b3 0%, #00a2f3 100%);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.ins-more:hover {
+  filter: brightness(1.08);
+}
+
+/* Article card */
+.ins-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c5c5c5;
+  background: #fff;
+  color: #1a202c;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ins-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(3, 53, 96, 0.14);
+}
+.ins-card-img {
+  position: relative;
+  height: 230px;
+  overflow: hidden;
+}
+.ins-card-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 22px;
+}
+.ins-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+.ins-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+.ins-card-tags li {
+  padding: 3px 14px;
+  border: 1px solid #bebebe;
+  font-size: 15px;
+  line-height: 17px;
+  color: #909090;
+}
+@media (min-width: 640px) {
+  .ins-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .ins-list {
+    padding: calc(54 * var(--u)) calc(258 * var(--u)) calc(110 * var(--u));
+  }
+  .ins-filter-tab {
+    padding-bottom: calc(12 * var(--u));
+    font-size: max(16px, calc(20 * var(--u)));
+  }
+  .ins-chips {
+    gap: calc(12 * var(--u));
+    padding: calc(30 * var(--u)) 0 calc(48 * var(--u));
+  }
+  .ins-chip {
+    height: calc(43 * var(--u));
+    padding: 0 calc(27 * var(--u));
+    font-size: max(14px, calc(16 * var(--u)));
+  }
+  .ins-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(49 * var(--u)) calc(30 * var(--u));
+    margin-top: 0;
+  }
+  .ins-card-img {
+    height: calc(289 * var(--u));
+  }
+  .ins-card-body {
+    min-height: calc(194 * var(--u));
+    gap: calc(18 * var(--u));
+    padding: calc(16 * var(--u)) calc(19 * var(--u)) calc(30 * var(--u));
+  }
+  .ins-card-title {
+    font-size: max(18px, calc(22 * var(--u)));
+  }
+  .ins-card-tags li {
+    padding: calc(3 * var(--u)) calc(14 * var(--u));
+    font-size: max(13px, calc(15 * var(--u)));
+  }
+  .ins-more {
+    height: calc(67 * var(--u));
+    margin-top: calc(49 * var(--u));
+    padding: 0 calc(45 * var(--u));
+    font-size: max(16px, calc(20 * var(--u)));
+  }
+}
+
+/* Related articles on the detail page sit outside a design-canvas, so give them a fixed scale. */
+.ins-related {
+  --u: 0.8px;
+}

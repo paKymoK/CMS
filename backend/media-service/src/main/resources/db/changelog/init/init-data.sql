@@ -71,5 +71,6 @@ VALUES
        ('a02e0ce2-c478-58c7-8179-d2d377b79737', 'leader-bao.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('eae5d034-5a79-544d-80f1-80fabc1bf1b4', 'leader-bach.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('0aa04ce3-4345-5884-862e-288364fe0a0f', 'leader-hoa.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('c7c6d745-7a25-50a5-a901-52512e5f71a4', 'leader-cuong.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('c7c6d745-7a25-50a5-a901-52512e5f71a4', 'leader-cuong.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('5618b749-88d7-5bc5-9e3f-6e499fdb3194', 'insights-hero.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;
