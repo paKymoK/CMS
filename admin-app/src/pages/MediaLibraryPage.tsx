@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload, Button, Spin, Empty, message, Popconfirm, Tabs } from "antd";
-import { InboxOutlined, DeleteOutlined } from "@ant-design/icons";
+import { InboxIcon, DeleteIcon } from "../components/icons";
 import Hls from "hls.js";
 import { useSite } from "../lib/useSite";
 import { siteLabel } from "../config/sites";
@@ -19,7 +19,7 @@ import {
 import { mediaSrc } from "../lib/media";
 
 const STATUS_STYLE: Record<VideoJob["status"], { bg: string; color: string; label: string }> = {
-  DONE: { bg: "#ffffff", color: "#0b63c5", label: "DONE" },
+  DONE: { bg: "#ffffff", color: "#0159be", label: "DONE" },
   FAILED: { bg: "#ffe1e1", color: "#a8071a", label: "FAILED" },
   QUEUED: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "QUEUED" },
   PROCESSING: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "PROCESSING" },
@@ -70,7 +70,7 @@ function Dropzone({
     >
       <div className="flex flex-wrap items-center justify-between gap-4 px-2 py-1">
         <div className="flex items-center gap-3">
-          <InboxOutlined style={{ fontSize: 22, color: "#00a9ff" }} />
+          <InboxIcon style={{ fontSize: 22, color: "#00a9ff" }} />
           <div className="text-left">
             <div style={{ fontSize: 15, fontWeight: 600, color: "#002d68" }}>
               Drop {noun} here, or browse
@@ -215,7 +215,7 @@ export default function MediaLibraryPage() {
                     style={{
                       position: "relative",
                       aspectRatio: "16/9",
-                      background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)",
+                      background: "repeating-linear-gradient(135deg, #001c51 0 6px, #003f88 6px 12px)",
                     }}
                   >
                     <span
@@ -244,7 +244,7 @@ export default function MediaLibraryPage() {
                     <Button
                       size="small"
                       danger
-                      icon={<DeleteOutlined />}
+                      icon={<DeleteIcon />}
                       style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
                     >
                       DELETE

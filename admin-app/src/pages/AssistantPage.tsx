@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Button, Popconfirm, message } from "antd";
-import { ArrowRightOutlined } from "@ant-design/icons";
+import { ArrowRightIcon } from "../components/icons";
 import { chatApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { siteLabel } from "../config/sites";
@@ -40,7 +40,7 @@ export default function AssistantPage() {
           position: "relative",
           overflow: "hidden",
           padding: "clamp(24px,4vw,44px)",
-          background: "linear-gradient(180deg, #03091a, #04102a, #061634)",
+          background: "linear-gradient(180deg, #00152d, #001449, #001c51)",
         }}
       >
         <div
@@ -70,12 +70,12 @@ export default function AssistantPage() {
               borderRadius: "50%",
               marginBottom: 18,
               background:
-                "radial-gradient(circle at 34% 30%, #eaf6ff 0%, #7cc4f7 42%, #1a6fc4 78%, #0c3f7d 100%)",
-              boxShadow: "0 0 22px rgba(90,180,255,.55)",
+                "radial-gradient(circle at 34% 30%, #d4f0ff 0%, #00bbff 42%, #0083ff 78%, #002d68 100%)",
+              boxShadow: "0 0 22px rgba(0,187,255,.55)",
             }}
           />
           <h2 style={{ margin: 0, fontSize: "clamp(20px,2.4vw,26px)", fontWeight: 700, color: "#ffffff" }}>
-            Knowledge base for <span style={{ color: "#43a4ff" }}>{label}</span>
+            Knowledge base for <span style={{ color: "#00bbff" }}>{label}</span>
           </h2>
           <p style={{ margin: "12px 0 24px", fontSize: 14, lineHeight: 1.6, color: "#dce7f5" }}>
             Re-ingests the public chatbot's knowledge from this site's curated documents. This
@@ -100,7 +100,7 @@ export default function AssistantPage() {
                 height: "auto",
                 fontSize: 14,
                 fontWeight: 600,
-                color: "#0d2b52",
+                color: "#001c51",
               }}
             >
               Re-ingest knowledge base
@@ -110,13 +110,13 @@ export default function AssistantPage() {
                   width: 36,
                   height: 36,
                   borderRadius: "50%",
-                  background: "#0b63c5",
+                  background: "#0159be",
                   color: "#ffffff",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <ArrowRightOutlined style={{ fontSize: 14 }} />
+                <ArrowRightIcon style={{ fontSize: 14 }} />
               </span>
             </Button>
           </Popconfirm>

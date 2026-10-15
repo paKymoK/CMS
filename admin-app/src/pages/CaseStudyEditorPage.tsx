@@ -269,7 +269,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 fontSize: 10,
                 letterSpacing: ".08em",
                 background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
-                color: pub ? "#0b63c5" : "#5a5d64",
+                color: pub ? "#0159be" : "#5a5d64",
               }}
             >
               {status}
@@ -358,7 +358,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
             {image ? (
               <img src={mediaSrc(image)} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
             ) : (
-              <div style={{ width: "100%", aspectRatio: "21/8", background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)" }} />
+              <div style={{ width: "100%", aspectRatio: "21/8", background: "repeating-linear-gradient(135deg, #001c51 0 6px, #003f88 6px 12px)" }} />
             )}
             <div style={{ position: "absolute", right: 14, bottom: 14, display: "flex", gap: 8 }}>
               <button

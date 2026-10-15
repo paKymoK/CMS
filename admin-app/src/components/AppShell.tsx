@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Layout, Menu, Select, Button, Empty } from "antd";
 import type { MenuProps } from "antd";
-import { LogoutOutlined, EyeOutlined, MenuOutlined } from "@ant-design/icons";
+import { LogoutIcon, EyeIcon, MenuIcon } from "./icons";
 import { useMutation } from "@tanstack/react-query";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -190,7 +190,7 @@ export default function AppShell() {
               fontWeight: 700,
               color: "#ffffff",
               background:
-                "radial-gradient(circle at 34% 30%, #7fdcff 0%, #0083ff 60%, #002d68 100%)",
+                "radial-gradient(circle at 34% 30%, #00bbff 0%, #0083ff 60%, #002d68 100%)",
             }}
           >
             {initialsOf(displayName)}
@@ -223,10 +223,10 @@ export default function AppShell() {
           <Button
             type="text"
             size="small"
-            icon={<LogoutOutlined />}
+            icon={<LogoutIcon />}
             onClick={logout}
             title="Log out"
-            style={{ color: "#7fdcff", flex: "none" }}
+            style={{ color: "#00bbff", flex: "none" }}
           />
         </div>
         </div>
@@ -282,7 +282,7 @@ export default function AppShell() {
                   cursor: "pointer",
                 }}
               >
-                <MenuOutlined />
+                <MenuIcon />
               </button>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{crumbGroup}</span>
               <span style={{ color: "#cfd2d6" }}>/</span>
@@ -300,7 +300,7 @@ export default function AppShell() {
                 }))}
               />
               <Button
-                icon={<EyeOutlined />}
+                icon={<EyeIcon />}
                 disabled={!site}
                 loading={previewMutation.isPending}
                 onClick={() => previewMutation.mutate()}

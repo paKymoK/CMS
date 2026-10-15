@@ -285,7 +285,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 fontSize: 10,
                 letterSpacing: ".08em",
                 background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
-                color: pub ? "#0b63c5" : "#5a5d64",
+                color: pub ? "#0159be" : "#5a5d64",
               }}
             >
               {status}
@@ -686,7 +686,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                     fontSize: 11,
                     fontWeight: 700,
                     color: "#ffffff",
-                    background: "radial-gradient(circle at 34% 30%, #7fdcff 0%, #0083ff 60%, #002d68 100%)",
+                    background: "radial-gradient(circle at 34% 30%, #00bbff 0%, #0083ff 60%, #002d68 100%)",
                   }}
                 >
                   {authorName ? initials(authorName) : "—"}
@@ -728,7 +728,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                     background: "#eaf4fb",
                     fontFamily: "var(--font-mono)",
                     fontSize: 11,
-                    color: "#0b63c5",
+                    color: "#0159be",
                   }}
                 >
                   #{t}
@@ -739,7 +739,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                       setTags(tags.filter((x) => x !== t));
                       setDirty(true);
                     }}
-                    style={{ width: 18, height: 18, border: "none", borderRadius: "50%", background: "rgba(11,99,197,.12)", color: "#0b63c5", fontSize: 12, lineHeight: 1, cursor: "pointer" }}
+                    style={{ width: 18, height: 18, border: "none", borderRadius: "50%", background: "rgba(1,89,190,.12)", color: "#0159be", fontSize: 12, lineHeight: 1, cursor: "pointer" }}
                   >
                     ×
                   </button>

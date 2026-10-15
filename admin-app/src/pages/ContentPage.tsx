@@ -17,7 +17,7 @@ import {
   Image,
   type FormInstance,
 } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined } from "@ant-design/icons";
+import { PlusIcon, EditIcon, DeleteIcon, PictureIcon } from "../components/icons";
 import dayjs from "dayjs";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
@@ -68,7 +68,7 @@ const placeholderThumbStyle = {
   width: 44,
   height: 44,
   flex: "none" as const,
-  background: "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)",
+  background: "repeating-linear-gradient(135deg, #001c51 0 6px, #003f88 6px 12px)",
 };
 
 // Falls back to the design's diagonal-stripe placeholder on load failure too, not just a missing
@@ -283,7 +283,7 @@ export default function ContentPage() {
               fontSize: 10,
               letterSpacing: ".08em",
               background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
-              color: pub ? "#0b63c5" : "#5a5d64",
+              color: pub ? "#0159be" : "#5a5d64",
             }}
           >
             {status}
@@ -319,7 +319,7 @@ export default function ContentPage() {
         <div className="flex justify-end gap-2">
           <Button
             size="small"
-            icon={<EditOutlined />}
+            icon={<EditIcon />}
             onClick={() => openEdit(row)}
             style={{
               fontFamily: "var(--font-mono)",
@@ -335,7 +335,7 @@ export default function ContentPage() {
             <Button
               size="small"
               danger
-              icon={<DeleteOutlined />}
+              icon={<DeleteIcon />}
               style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
             >
               DELETE
@@ -390,7 +390,7 @@ export default function ContentPage() {
             </div>
           )}
           <Button
-            icon={<PlusOutlined />}
+            icon={<PlusIcon />}
             onClick={openCreate}
             style={{
               minHeight: 44,
@@ -553,10 +553,10 @@ function FieldInput({
                   >
                     <Input placeholder="Years of engineering excellence" />
                   </Form.Item>
-                  <Button icon={<DeleteOutlined />} onClick={() => remove(field.name)} aria-label="Remove" />
+                  <Button icon={<DeleteIcon />} onClick={() => remove(field.name)} aria-label="Remove" />
                 </div>
               ))}
-              <Button type="dashed" icon={<PlusOutlined />} onClick={() => add({ value: "", label: "" })}>
+              <Button type="dashed" icon={<PlusIcon />} onClick={() => add({ value: "", label: "" })}>
                 Add figure
               </Button>
             </div>
@@ -582,7 +582,7 @@ function FieldInput({
           <Form.Item name={f.name} rules={rules} noStyle>
             <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />
           </Form.Item>
-          <Button icon={<PictureOutlined />} onClick={onOpenPicker}>
+          <Button icon={<PictureIcon />} onClick={onOpenPicker}>
             Choose
           </Button>
         </div>

@@ -145,7 +145,7 @@ export const TextAlignment = Extension.create({
 /** Named palette, not free colour: the website styles these names, and the sanitizer never has to
  * accept inline CSS. */
 export const TEXT_COLORS = {
-  blue: "#0b63c5",
+  blue: "#0159be",
   green: "#1f8a4c",
   orange: "#d46b08",
   red: "#d4380d",

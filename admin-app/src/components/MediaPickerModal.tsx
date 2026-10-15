@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, Tabs, Upload, Button, Spin, Empty, message } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadIcon } from "./icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Hls from "hls.js";
 import { useSite } from "../lib/useSite";
@@ -99,7 +99,7 @@ export default function MediaPickerModal({
         accept="image/*"
         className="mb-4 block"
       >
-        <Button icon={<UploadOutlined />}>Upload image</Button>
+        <Button icon={<UploadIcon />}>Upload image</Button>
       </Upload>
       {imagesQuery.isLoading ? (
         <Spin />
@@ -134,7 +134,7 @@ export default function MediaPickerModal({
         accept="video/*"
         className="mb-4 block"
       >
-        <Button icon={<UploadOutlined />}>Upload video</Button>
+        <Button icon={<UploadIcon />}>Upload video</Button>
       </Upload>
       {videosQuery.isLoading ? (
         <Spin />

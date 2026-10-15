@@ -9,7 +9,7 @@ const heroBg = {
   alignItems: "center",
   justifyContent: "center",
   padding: "24px 20px",
-  background: "linear-gradient(180deg, #03091a, #04102a, #061634)",
+  background: "linear-gradient(180deg, #00152d, #001449, #001c51)",
   fontFamily: "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif",
 };
 
@@ -93,7 +93,7 @@ export default function Callback() {
               padding: "0 26px",
               height: 44,
               fontWeight: 600,
-              color: "#0d2b52",
+              color: "#001c51",
             }}
           >
             Back to login

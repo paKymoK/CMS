@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "antd";
-import { ArrowRightOutlined } from "@ant-design/icons";
+import { ArrowRightIcon } from "../components/icons";
 import { useAuth } from "../auth/useAuth";
 import { SITES } from "../config/sites";
 
@@ -27,7 +27,7 @@ export default function Login() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "linear-gradient(180deg, #03091a, #04102a, #061634)",
+        background: "linear-gradient(180deg, #00152d, #001449, #001c51)",
         fontFamily: "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif",
       }}
     >
@@ -84,12 +84,12 @@ export default function Login() {
                 height: 40,
                 borderRadius: "50%",
                 background:
-                  "radial-gradient(circle at 34% 30%, #eaf6ff 0%, #7cc4f7 42%, #1a6fc4 78%, #0c3f7d 100%)",
-                boxShadow: "0 0 22px rgba(90,180,255,.55)",
+                  "radial-gradient(circle at 34% 30%, #d4f0ff 0%, #00bbff 42%, #0083ff 78%, #002d68 100%)",
+                boxShadow: "0 0 22px rgba(0,187,255,.55)",
               }}
             />
             <h1 style={{ margin: 0, fontSize: "clamp(22px,2.6vw,28px)", fontWeight: 700, color: "#ffffff", letterSpacing: "-.01em" }}>
-              CMC Global <span style={{ color: "#43a4ff" }}>CMS</span>
+              CMC Global <span style={{ color: "#00bbff" }}>CMS</span>
             </h1>
             <p style={{ margin: "8px 0 0", fontSize: 13.5, color: "#c9d9ee" }}>
               Sign in to manage site content
@@ -182,7 +182,7 @@ export default function Login() {
                       fontFamily: "var(--font-mono)",
                       fontSize: 10,
                       letterSpacing: ".06em",
-                      color: "#43a4ff",
+                      color: "#00bbff",
                       width: 18,
                     }}
                   >
@@ -239,7 +239,7 @@ export default function Login() {
                   height: "auto",
                   fontSize: 14,
                   fontWeight: 600,
-                  color: "#0d2b52",
+                  color: "#001c51",
                 }}
               >
                 <span style={{ paddingLeft: 22 }}>Sign in with CMC SSO</span>
@@ -249,13 +249,13 @@ export default function Login() {
                     width: 36,
                     height: 36,
                     borderRadius: "50%",
-                    background: "#0b63c5",
+                    background: "#0159be",
                     color: "#ffffff",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <ArrowRightOutlined style={{ fontSize: 14 }} />
+                  <ArrowRightIcon style={{ fontSize: 14 }} />
                 </span>
               </Button>
             )}

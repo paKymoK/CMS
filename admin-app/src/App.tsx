@@ -38,6 +38,10 @@ export default function App() {
           Button: {
             fontWeight: 600,
             primaryShadow: "none",
+            // The landing page's CTAs ("Contact Us", "see all") are pills.
+            borderRadius: 999,
+            borderRadiusLG: 999,
+            borderRadiusSM: 999,
           },
           Tabs: {
             inkBarColor: "#00a9ff",
