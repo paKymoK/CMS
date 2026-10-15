@@ -282,7 +282,7 @@ export default function ContentPage() {
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: ".08em",
-              background: pub ? "rgba(24,159,224,.12)" : "#eef1f4",
+              background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
               color: pub ? "#0b63c5" : "#5a5d64",
             }}
           >
@@ -325,8 +325,8 @@ export default function ContentPage() {
               fontFamily: "var(--font-mono)",
               fontSize: 10,
               letterSpacing: ".08em",
-              color: "#189fe0",
-              borderColor: "rgba(24,159,224,.4)",
+              color: "#00a9ff",
+              borderColor: "rgba(0,169,255,.4)",
             }}
           >
             EDIT
@@ -353,11 +353,11 @@ export default function ContentPage() {
           <div className="cms-eyebrow mb-3">
             — {groupLabelFor(resource.key)} · {site ? siteLabel(site) : ""}
           </div>
-          <h1 className="m-0" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#10314f" }}>
+          <h1 className="m-0" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}>
             {resource.label}
           </h1>
           <p className="mt-2 mb-0" style={{ fontSize: 15, lineHeight: 1.6, color: "#55585f" }}>
-            {rows.length} items · <span style={{ color: "#189fe0" }}>{publishedCount} published</span>
+            {rows.length} items · <span style={{ color: "#00a9ff" }}>{publishedCount} published</span>
             {siteSub ? ` on ${siteSub}` : ""}
           </p>
         </div>
@@ -379,7 +379,7 @@ export default function ContentPage() {
                       fontFamily: "inherit",
                       fontSize: 12.5,
                       fontWeight: 600,
-                      background: on ? "#0a2540" : "transparent",
+                      background: on ? "#001449" : "transparent",
                       color: on ? "#ffffff" : "#3c4858",
                     }}
                   >
@@ -396,7 +396,7 @@ export default function ContentPage() {
               minHeight: 44,
               padding: "0 22px",
               border: "none",
-              background: "#189fe0",
+              background: "#00a9ff",
               fontFamily: "var(--font-mono)",
               fontSize: 12,
               letterSpacing: ".1em",
@@ -434,7 +434,7 @@ export default function ContentPage() {
             <div className="cms-eyebrow mb-2">
               — {editing ? `Edit · ID ${editing.id}` : `New · ${site ? siteLabel(site) : ""}`}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.01em", color: "#10314f" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.01em", color: "#002d68" }}>
               {editing ? (editing[resource.titleField] as string) : `New ${singular.toLowerCase()}`}
             </div>
           </div>

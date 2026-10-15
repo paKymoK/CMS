@@ -22,7 +22,7 @@ function Card({ t, onPick, onDelete }: { t: PostTemplate; onPick: (t: PostTempla
         onClick={() => onPick(t)}
         style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", minHeight: 108, padding: "16px 18px", border: "none", background: "transparent", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}
       >
-        <span style={{ fontSize: 15, fontWeight: 600, color: "#10314f" }}>{t.name}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: "#002d68" }}>{t.name}</span>
         <span style={{ fontSize: 12.5, lineHeight: 1.5, color: "#6a7c90" }}>{t.description || "Saved template"}</span>
         <span style={{ ...labelStyle, marginTop: "auto", color: "#9aa3ad" }}>{t.layout} layout</span>
       </button>
@@ -61,11 +61,11 @@ export default function PostTemplatePicker({ onPick }: { onPick: (t: PostTemplat
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f6f9fc", padding: "28px clamp(16px,3vw,32px) 80px" }}>
+    <div style={{ minHeight: "100vh", background: "#edf5ff", padding: "28px clamp(16px,3vw,32px) 80px" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", display: "flex", flexDirection: "column", gap: 28 }}>
         <div>
           <div style={labelStyle}>Posts / New</div>
-          <h1 style={{ margin: "6px 0 4px", fontSize: 24, fontWeight: 700, color: "#10314f" }}>Start a new post</h1>
+          <h1 style={{ margin: "6px 0 4px", fontSize: 24, fontWeight: 700, color: "#002d68" }}>Start a new post</h1>
           <p style={{ margin: 0, fontSize: 14, color: "#6a7c90" }}>Pick a starting point. It only pre-fills the page; you can change everything.</p>
         </div>
 

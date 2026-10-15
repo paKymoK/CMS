@@ -203,7 +203,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
   const selectedTestimonial = testimonialsQuery.data?.find((t) => t.id === testimonialId) ?? null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f6f9fc" }}>
+    <div style={{ minHeight: "100vh", background: "#edf5ff" }}>
       <div style={{ padding: "0 0 16px" }}>
         <div
           style={{
@@ -215,7 +215,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
             padding: "10px 12px 10px 18px",
             flexWrap: "wrap",
             borderRadius: 18,
-            border: "1px solid rgba(24,159,224,.2)",
+            border: "1px solid rgba(0,169,255,.2)",
             background: "rgba(255,255,255,.88)",
             backdropFilter: "blur(24px)",
             boxShadow: "0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05)",
@@ -250,7 +250,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 style={{
                   fontSize: 15,
                   fontWeight: 600,
-                  color: "#10314f",
+                  color: "#002d68",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -268,7 +268,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 fontFamily: "var(--font-mono)",
                 fontSize: 10,
                 letterSpacing: ".08em",
-                background: pub ? "rgba(24,159,224,.12)" : "#eef1f4",
+                background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
                 color: pub ? "#0b63c5" : "#5a5d64",
               }}
             >
@@ -277,7 +277,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, color: "#6a7c90", display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbe4" }} />
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbff" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
             {site && (
@@ -309,12 +309,12 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
               style={{
                 minHeight: 40,
                 padding: "0 16px",
-                border: "1px solid rgba(24,159,224,.4)",
+                border: "1px solid rgba(0,169,255,.4)",
                 background: "#ffffff",
                 fontFamily: "var(--font-mono)",
                 fontSize: 11,
                 letterSpacing: ".1em",
-                color: "#189fe0",
+                color: "#00a9ff",
                 cursor: "pointer",
               }}
             >
@@ -328,7 +328,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 minHeight: 40,
                 padding: "0 20px",
                 border: "none",
-                background: "#189fe0",
+                background: "#00a9ff",
                 fontFamily: "var(--font-mono)",
                 fontSize: 11,
                 letterSpacing: ".1em",
@@ -374,7 +374,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   letterSpacing: ".1em",
-                  color: "#10314f",
+                  color: "#002d68",
                   cursor: "pointer",
                 }}
               >
@@ -397,19 +397,19 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 border: "none",
                 resize: "none",
                 padding: 0,
-                fontFamily: "Montserrat, Arial, sans-serif",
+                fontFamily: "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif",
                 fontSize: "clamp(24px,3vw,34px)",
                 lineHeight: 1.2,
                 fontWeight: 700,
                 letterSpacing: "-.02em",
-                color: "#10314f",
+                color: "#002d68",
                 outline: "none",
                 background: "transparent",
               }}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dfe3e8", background: "#f6f9fc" }}>
+              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dfe3e8", background: "#edf5ff" }}>
                 <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#6a7c90", whiteSpace: "nowrap" }}>
                   {siteSub ?? "site"}/case-studies/
                 </span>
@@ -467,7 +467,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
               gap: 12,
               padding: "14px clamp(20px,5vw,56px)",
               borderTop: "1px solid #e0e4e9",
-              background: "#f6f9fc",
+              background: "#edf5ff",
               fontFamily: "var(--font-mono)",
               fontSize: 11,
               letterSpacing: ".06em",
@@ -485,7 +485,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
           <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Publishing</div>
             <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dfe3e8", borderRadius: 999, background: "#f6f9fc" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dfe3e8", borderRadius: 999, background: "#edf5ff" }}>
                 {(["DRAFT", "PUBLISHED"] as const).map((s) => (
                   <button
                     key={s}
@@ -502,7 +502,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                       fontFamily: "inherit",
                       fontSize: 12.5,
                       fontWeight: 600,
-                      background: status === s ? "#0a2540" : "transparent",
+                      background: status === s ? "#001449" : "transparent",
                       color: status === s ? "#ffffff" : "#3c4858",
                     }}
                   >
@@ -553,7 +553,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                       border: "none",
                       cursor: "pointer",
                       padding: 0,
-                      background: active ? "#189fe0" : "#cfd2d6",
+                      background: active ? "#00a9ff" : "#cfd2d6",
                       transition: "background .2s",
                     }}
                   >
@@ -593,7 +593,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
               <button
                 type="button"
                 onClick={addResult}
-                style={{ border: "none", background: "transparent", color: "#189fe0", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
+                style={{ border: "none", background: "transparent", color: "#00a9ff", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
               >
                 + ADD
               </button>
@@ -661,8 +661,8 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
             </div>
             <div style={{ padding: "10px 18px 16px", display: "flex", flexDirection: "column" }}>
               {outline.map((o) => (
-                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#10314f" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#189fe0" }}>{o.n}</span>
+                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#002d68" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#00a9ff" }}>{o.n}</span>
                   {o.text}
                 </div>
               ))}

@@ -217,7 +217,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
   const pub = status === "PUBLISHED";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f6f9fc" }}>
+    <div style={{ minHeight: "100vh", background: "#edf5ff" }}>
       {/* Not sticky, unlike the standalone mockup — AppShell's own header already owns the
           viewport's top:0 sticky slot, and stacking a second one here would fight it. */}
       <div style={{ padding: "0 0 16px" }}>
@@ -231,7 +231,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
             padding: "10px 12px 10px 18px",
             flexWrap: "wrap",
             borderRadius: 18,
-            border: "1px solid rgba(24,159,224,.2)",
+            border: "1px solid rgba(0,169,255,.2)",
             background: "rgba(255,255,255,.88)",
             backdropFilter: "blur(24px)",
             boxShadow: "0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05)",
@@ -266,7 +266,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 style={{
                   fontSize: 15,
                   fontWeight: 600,
-                  color: "#10314f",
+                  color: "#002d68",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -284,7 +284,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 fontFamily: "var(--font-mono)",
                 fontSize: 10,
                 letterSpacing: ".08em",
-                background: pub ? "rgba(24,159,224,.12)" : "#eef1f4",
+                background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
                 color: pub ? "#0b63c5" : "#5a5d64",
               }}
             >
@@ -298,7 +298,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
-                  background: dirty ? "#fa8c16" : "#00bbe4",
+                  background: dirty ? "#fa8c16" : "#00bbff",
                 }}
               />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
@@ -339,12 +339,12 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
               style={{
                 minHeight: 40,
                 padding: "0 16px",
-                border: "1px solid rgba(24,159,224,.4)",
+                border: "1px solid rgba(0,169,255,.4)",
                 background: "#ffffff",
                 fontFamily: "var(--font-mono)",
                 fontSize: 11,
                 letterSpacing: ".1em",
-                color: "#189fe0",
+                color: "#00a9ff",
                 cursor: "pointer",
               }}
             >
@@ -358,7 +358,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 minHeight: 40,
                 padding: "0 20px",
                 border: "none",
-                background: "#189fe0",
+                background: "#00a9ff",
                 fontFamily: "var(--font-mono)",
                 fontSize: 11,
                 letterSpacing: ".1em",
@@ -401,7 +401,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                         setPickerOpen(true);
                       }
                     }}
-                    style={{ padding: "9px 14px", border: "none", background: "rgba(255,255,255,.94)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", color: "#10314f", cursor: "pointer" }}
+                    style={{ padding: "9px 14px", border: "none", background: "rgba(255,255,255,.94)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".1em", color: "#002d68", cursor: "pointer" }}
                   >
                     {l}
                   </button>
@@ -437,19 +437,19 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 border: "none",
                 resize: "none",
                 padding: 0,
-                fontFamily: "Montserrat, Arial, sans-serif",
+                fontFamily: "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif",
                 fontSize: "clamp(24px,3vw,34px)",
                 lineHeight: 1.2,
                 fontWeight: 700,
                 letterSpacing: "-.02em",
-                color: "#10314f",
+                color: "#002d68",
                 outline: "none",
                 background: "transparent",
               }}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dfe3e8", background: "#f6f9fc" }}>
+              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dfe3e8", background: "#edf5ff" }}>
                 <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#6a7c90", whiteSpace: "nowrap" }}>
                   {siteSub ?? "site"}/insights/
                 </span>
@@ -494,7 +494,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
               gap: 12,
               padding: "14px clamp(20px,5vw,56px)",
               borderTop: "1px solid #e0e4e9",
-              background: "#f6f9fc",
+              background: "#edf5ff",
               fontFamily: "var(--font-mono)",
               fontSize: 11,
               letterSpacing: ".06em",
@@ -511,7 +511,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
           <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Publishing</div>
             <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dfe3e8", borderRadius: 999, background: "#f6f9fc" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dfe3e8", borderRadius: 999, background: "#edf5ff" }}>
                 {(["DRAFT", "PUBLISHED"] as const).map((s) => (
                   <button
                     key={s}
@@ -528,7 +528,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                       fontFamily: "inherit",
                       fontSize: 12.5,
                       fontWeight: 600,
-                      background: status === s ? "#0a2540" : "transparent",
+                      background: status === s ? "#001449" : "transparent",
                       color: status === s ? "#ffffff" : "#3c4858",
                     }}
                   >
@@ -579,7 +579,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                       border: "none",
                       cursor: "pointer",
                       padding: 0,
-                      background: active ? "#189fe0" : "#cfd2d6",
+                      background: active ? "#00a9ff" : "#cfd2d6",
                       transition: "background .2s",
                     }}
                   >
@@ -640,7 +640,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                     style={{ marginTop: 3 }}
                   />
                   <span style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: "#10314f" }}>{l.label}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: "#002d68" }}>{l.label}</span>
                     <span style={{ fontSize: 12, color: "#6a7c90" }}>{l.hint}</span>
                   </span>
                 </label>
@@ -686,7 +686,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                     fontSize: 11,
                     fontWeight: 700,
                     color: "#ffffff",
-                    background: "radial-gradient(circle at 34% 30%, #7cc4f7 0%, #1a6fc4 60%, #0c3f7d 100%)",
+                    background: "radial-gradient(circle at 34% 30%, #7fdcff 0%, #0083ff 60%, #002d68 100%)",
                   }}
                 >
                   {authorName ? initials(authorName) : "—"}
@@ -767,8 +767,8 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
             </div>
             <div style={{ padding: "10px 18px 16px", display: "flex", flexDirection: "column" }}>
               {outline.map((o) => (
-                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#10314f" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#189fe0" }}>{o.n}</span>
+                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#002d68" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#00a9ff" }}>{o.n}</span>
                   {o.text}
                 </div>
               ))}

@@ -9,14 +9,14 @@ export default function App() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#189fe0",
-          colorLink: "#189fe0",
-          colorInfo: "#189fe0",
-          colorBgLayout: "#f6f9fc",
+          colorPrimary: "#00a9ff",
+          colorLink: "#00a9ff",
+          colorInfo: "#00a9ff",
+          colorBgLayout: "#edf5ff",
           colorBorder: "#e0e4e9",
           colorBorderSecondary: "#eef1f4",
           colorText: "#0f172a",
-          fontFamily: "'Montserrat', Arial, Helvetica, sans-serif",
+          fontFamily: "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif",
           borderRadius: 2,
         },
         components: {
@@ -30,7 +30,7 @@ export default function App() {
             itemBorderRadius: 8,
           },
           Table: {
-            headerBg: "#f6f9fc",
+            headerBg: "#edf5ff",
             headerColor: "#5a5d64",
             borderColor: "#e0e4e9",
             rowHoverBg: "#f9fbfd",
@@ -40,10 +40,10 @@ export default function App() {
             primaryShadow: "none",
           },
           Tabs: {
-            inkBarColor: "#189fe0",
-            itemActiveColor: "#10314f",
-            itemSelectedColor: "#10314f",
-            itemHoverColor: "#189fe0",
+            inkBarColor: "#00a9ff",
+            itemActiveColor: "#002d68",
+            itemSelectedColor: "#002d68",
+            itemHoverColor: "#00a9ff",
           },
           Drawer: {
             paddingLG: 24,

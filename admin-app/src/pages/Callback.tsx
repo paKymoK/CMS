@@ -10,7 +10,7 @@ const heroBg = {
   justifyContent: "center",
   padding: "24px 20px",
   background: "linear-gradient(180deg, #03091a, #04102a, #061634)",
-  fontFamily: "Montserrat, Arial, Helvetica, sans-serif",
+  fontFamily: "Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif",
 };
 
 export default function Callback() {

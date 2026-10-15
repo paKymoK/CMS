@@ -70,9 +70,9 @@ function Dropzone({
     >
       <div className="flex flex-wrap items-center justify-between gap-4 px-2 py-1">
         <div className="flex items-center gap-3">
-          <InboxOutlined style={{ fontSize: 22, color: "#189fe0" }} />
+          <InboxOutlined style={{ fontSize: 22, color: "#00a9ff" }} />
           <div className="text-left">
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#10314f" }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#002d68" }}>
               Drop {noun} here, or browse
             </div>
             <div className="cms-eyebrow mt-1" style={{ fontSize: 10 }}>
@@ -83,7 +83,7 @@ function Dropzone({
         <span
           style={{
             padding: "12px 20px",
-            background: "#189fe0",
+            background: "#00a9ff",
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             letterSpacing: ".1em",
@@ -262,7 +262,7 @@ export default function MediaLibraryPage() {
   return (
     <div>
       <div className="cms-eyebrow mb-3">— Library · {site ? siteLabel(site) : ""}</div>
-      <h1 className="mt-0 mb-5" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#10314f" }}>
+      <h1 className="mt-0 mb-5" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}>
         Media Library
       </h1>
       <Tabs

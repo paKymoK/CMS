@@ -44,7 +44,7 @@ const toolStyle = (on: boolean, disabled = false): CSSProperties => ({
   border: "none",
   cursor: disabled ? "default" : "pointer",
   opacity: disabled ? 0.35 : 1,
-  background: on ? "#0a2540" : "transparent",
+  background: on ? "#001449" : "transparent",
   color: on ? "#ffffff" : "#3d4046",
   fontFamily: "var(--font-mono)",
   fontSize: 12,
@@ -273,7 +273,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         {(Object.keys(TEXT_COLORS) as TextColorName[]).map((c) => (
           <ToolBtn
             key={c}
-            label={<span style={{ display: "inline-block", width: 12, height: 12, borderRadius: "50%", background: TEXT_COLORS[c], outline: s.color === c ? "2px solid #0a2540" : "none", outlineOffset: 1 }} />}
+            label={<span style={{ display: "inline-block", width: 12, height: 12, borderRadius: "50%", background: TEXT_COLORS[c], outline: s.color === c ? "2px solid #001449" : "none", outlineOffset: 1 }} />}
             title={`Text colour: ${c}`}
             on={false}
             onRun={() => (s.color === c ? chain().unsetTextColor().run() : chain().setTextColor(c).run())}
@@ -299,7 +299,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
       </div>
 
       {(s.figure || s.table || s.columns || s.accordion) && !sourceMode && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "4px 6px", border: "1px solid #e0e4e9", borderTop: "none", background: "#f6f9fc" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "4px 6px", border: "1px solid #e0e4e9", borderTop: "none", background: "#edf5ff" }}>
           {s.figure && (
             <>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#6a7c90", padding: "0 8px" }}>IMAGE</span>
@@ -341,7 +341,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           value={sourceHtml}
           onChange={(e) => setSourceHtml(e.target.value)}
           spellCheck={false}
-          style={{ display: "block", width: "100%", minHeight: 420, padding: 20, border: "none", outline: "none", fontFamily: "var(--font-mono)", fontSize: 12.5, lineHeight: 1.6, color: "#10141c", background: "#f6f9fc", resize: "vertical" }}
+          style={{ display: "block", width: "100%", minHeight: 420, padding: 20, border: "none", outline: "none", fontFamily: "var(--font-mono)", fontSize: 12.5, lineHeight: 1.6, color: "#10141c", background: "#edf5ff", resize: "vertical" }}
         />
       ) : (
         <EditorContent editor={editor} className="cms-rte-wrap" />

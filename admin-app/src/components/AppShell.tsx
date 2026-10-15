@@ -115,7 +115,7 @@ export default function AppShell() {
           position: "sticky",
           top: 0,
           height: "100vh",
-          background: "linear-gradient(180deg, #03091a, #04102a 60%, #061634)",
+          background: "linear-gradient(180deg, #001449, #00205a 60%, #002d68)",
         }}
       >
         {/* antd's Sider wraps children in its own .ant-layout-sider-children (display:block), so
@@ -190,7 +190,7 @@ export default function AppShell() {
               fontWeight: 700,
               color: "#ffffff",
               background:
-                "radial-gradient(circle at 34% 30%, #7cc4f7 0%, #1a6fc4 60%, #0c3f7d 100%)",
+                "radial-gradient(circle at 34% 30%, #7fdcff 0%, #0083ff 60%, #002d68 100%)",
             }}
           >
             {initialsOf(displayName)}
@@ -226,7 +226,7 @@ export default function AppShell() {
             icon={<LogoutOutlined />}
             onClick={logout}
             title="Log out"
-            style={{ color: "#8fd0ff", flex: "none" }}
+            style={{ color: "#7fdcff", flex: "none" }}
           />
         </div>
         </div>
@@ -246,7 +246,7 @@ export default function AppShell() {
               height: 64,
               padding: "0 12px 0 22px",
               borderRadius: 18,
-              border: "1px solid rgba(24,159,224,.2)",
+              border: "1px solid rgba(0,169,255,.2)",
               background: "rgba(255,255,255,.85)",
               backdropFilter: "blur(24px)",
               boxShadow: "0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05)",
@@ -278,7 +278,7 @@ export default function AppShell() {
                   border: "1px solid #dceaf5",
                   borderRadius: 8,
                   background: "#ffffff",
-                  color: "#189fe0",
+                  color: "#00a9ff",
                   cursor: "pointer",
                 }}
               >
@@ -286,7 +286,7 @@ export default function AppShell() {
               </button>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{crumbGroup}</span>
               <span style={{ color: "#cfd2d6" }}>/</span>
-              <span style={{ fontWeight: 600, color: "#10314f" }}>{pageTitle}</span>
+              <span style={{ fontWeight: 600, color: "#002d68" }}>{pageTitle}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <Select
@@ -305,11 +305,11 @@ export default function AppShell() {
                 loading={previewMutation.isPending}
                 onClick={() => previewMutation.mutate()}
                 style={{
-                  background: "linear-gradient(90deg, #189fe0, #00bbe4)",
+                  background: "linear-gradient(90deg, #00a9ff, #00bbff)",
                   border: "none",
                   color: "#ffffff",
                   fontWeight: 700,
-                  boxShadow: "0 10px 24px rgba(24,159,224,.36)",
+                  boxShadow: "0 10px 24px rgba(0,169,255,.36)",
                 }}
               >
                 <span className="cms-preview-label">Preview site ↗</span>
