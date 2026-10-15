@@ -17,6 +17,9 @@ export type FieldType =
   | "datetime"
   | "string-list"
   | "stat-list"
+  | "object-list"
+  | "multi-select"
+  | "content-ref"
   | "json";
 
 export interface FieldOption {
@@ -30,12 +33,18 @@ export interface FieldConfig {
   type: FieldType;
   required?: boolean;
   options?: FieldOption[];
+  /** object-list: the fields of each entry (text / textarea / image only). */
+  itemFields?: FieldConfig[];
+  /** object-list: label of the "add entry" button. */
+  addLabel?: string;
+  /** content-ref: pick one item of another content type; the stored value is its `valueField`. */
+  ref?: { contentType: string; valueField: string; labelField: string };
   /** Shown as a column in the list table. Defaults to true for scalar field types. */
   showInTable?: boolean;
 }
 
 /** Which sidebar group a screen lives in. */
-export type ResourceGroup = "home" | "about" | "industry" | "site";
+export type ResourceGroup = "home" | "about" | "industry" | "services" | "site";
 
 export interface ResourceConfig {
   key: string;
@@ -50,6 +59,8 @@ export interface ResourceConfig {
   contentType?: string;
   supportsTypeFilter?: boolean;
   typeFilterOptions?: FieldOption[];
+  /** Adds a "Duplicate" row action that opens the form prefilled from the row (slug suffixed). */
+  duplicable?: boolean;
   /** Present => this resource has a dedicated editor route (rich body, slug, etc.) instead of the
    * generic drawer form; ContentPage navigates here on row-click/"New" rather than opening the
    * drawer. `id` is the row id, or "new" for create. */
@@ -57,7 +68,7 @@ export interface ResourceConfig {
 }
 
 const scalarDefault = (type: FieldType) =>
-  !["textarea", "json", "string-list", "stat-list"].includes(type);
+  !["textarea", "json", "string-list", "stat-list", "object-list", "multi-select"].includes(type);
 
 function field(config: FieldConfig): FieldConfig {
   return { showInTable: scalarDefault(config.type), ...config };
@@ -451,6 +462,119 @@ export const RESOURCES: ResourceConfig[] = [
     fields: [
       field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
       field({ name: "image", label: "Photo", type: "image" }),
+    ],
+  },
+  {
+    key: "service-pages",
+    group: "services",
+    label: "Service pages",
+    apiPath: "/v1/admin/content-items",
+    contentType: "service_page",
+    titleField: "navLabel",
+    duplicable: true,
+    fields: [
+      field({ name: "navLabel", label: "Menu name", type: "text", required: true }),
+      field({ name: "shortLabel", label: "Breadcrumb name (defaults to the menu name)", type: "text", showInTable: false }),
+      field({ name: "slug", label: "URL slug", type: "text", required: true }),
+      field({
+        name: "category",
+        label: "Category",
+        type: "content-ref",
+        required: true,
+        ref: { contentType: "service_category", valueField: "slug", labelField: "name" },
+      }),
+      field({ name: "heroTitle", label: "Hero · Headline (line break allowed)", type: "textarea", required: true, showInTable: false }),
+      field({ name: "heroSubtitle", label: "Hero · Intro line", type: "textarea", showInTable: false }),
+      field({ name: "ctaLabel", label: "Hero · Button label", type: "text", showInTable: false }),
+      field({ name: "ctaUrl", label: "Hero · Button link", type: "text", showInTable: false }),
+      field({ name: "heroImage", label: "Hero · Artwork", type: "image", showInTable: false }),
+      field({ name: "heroStats", label: "Hero · Figures (optional, up to two)", type: "stat-list" }),
+      field({ name: "capabilitiesEyebrow", label: "Capabilities · Eyebrow", type: "text", showInTable: false }),
+      field({ name: "capabilitiesTitle", label: "Capabilities · Heading", type: "text", showInTable: false }),
+      field({ name: "capabilitiesSubtitle", label: "Capabilities · Description", type: "textarea", showInTable: false }),
+      field({
+        name: "capabilities",
+        label: "Capabilities (2 show as wide cards, 3+ as narrow ones)",
+        type: "object-list",
+        addLabel: "Add capability",
+        itemFields: [
+          field({ name: "title", label: "Title", type: "text", required: true }),
+          field({ name: "body", label: "Description", type: "textarea" }),
+          field({ name: "image", label: "Image", type: "image" }),
+        ],
+      }),
+      field({ name: "processTitle", label: "Process · Heading", type: "text", showInTable: false }),
+      field({ name: "processSubtitle", label: "Process · Description", type: "textarea", showInTable: false }),
+      field({
+        name: "processSteps",
+        label: "Process steps (in order)",
+        type: "object-list",
+        addLabel: "Add step",
+        itemFields: [
+          field({ name: "title", label: "Title", type: "text", required: true }),
+          field({ name: "image", label: "Image", type: "image" }),
+        ],
+      }),
+      field({ name: "storiesHeading", label: "Success stories · Left-column heading", type: "text", showInTable: false }),
+      field({
+        name: "caseStudies",
+        label: "Success stories · Case study slugs (first one supplies the figures)",
+        type: "string-list",
+      }),
+      field({ name: "reasonsTitle", label: "Reasons · Heading", type: "text", showInTable: false }),
+      field({ name: "reasonsSubtitle", label: "Reasons · Description", type: "textarea", showInTable: false }),
+      field({
+        name: "reasons",
+        label: "Reasons to partner (shown as a slider)",
+        type: "object-list",
+        addLabel: "Add reason",
+        itemFields: [
+          field({ name: "title", label: "Title", type: "text", required: true }),
+          field({ name: "body", label: "Text", type: "textarea" }),
+          field({ name: "image", label: "Large image", type: "image" }),
+          field({ name: "sideImage", label: "Small image", type: "image" }),
+        ],
+      }),
+      field({
+        name: "hiddenSections",
+        label: "Hide sections",
+        type: "multi-select",
+        options: [
+          { label: "Capabilities", value: "capabilities" },
+          { label: "Process", value: "process" },
+          { label: "Success stories", value: "stories" },
+          { label: "Reasons to partner", value: "reasons" },
+          { label: "Industries strip", value: "industries" },
+          { label: "Latest highlights", value: "highlights" },
+        ],
+      }),
+      field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false }),
+      field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false }),
+    ],
+  },
+  {
+    key: "service-categories",
+    group: "services",
+    label: "Service categories",
+    apiPath: "/v1/admin/content-items",
+    contentType: "service_category",
+    titleField: "name",
+    fields: [
+      field({ name: "name", label: "Name", type: "text", required: true }),
+      field({ name: "slug", label: "URL slug", type: "text", required: true }),
+    ],
+  },
+  {
+    key: "industry-cards",
+    group: "services",
+    label: "Industries strip",
+    apiPath: "/v1/admin/content-items",
+    contentType: "industry_card",
+    titleField: "label",
+    fields: [
+      field({ name: "label", label: "Name", type: "text", required: true }),
+      field({ name: "image", label: "Icon (transparent; empty shows the name as text)", type: "image" }),
+      field({ name: "url", label: "Link (empty = not a link)", type: "text" }),
     ],
   },
   {

@@ -1,5 +1,6 @@
 package com.takypok.contentservice.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.ContentItemCreateRequest;
@@ -41,6 +42,8 @@ public class ContentItemServiceImpl implements ContentItemService {
     return contentItemMapper
         .resolveAndValidate(request.getContentType(), request.getData())
         .flatMap(
+            data -> ensureUnique(siteId, request.getContentType(), data, null).thenReturn(data))
+        .flatMap(
             validatedData -> {
               ContentItem item = new ContentItem();
               item.setSiteId(siteId);
@@ -61,6 +64,10 @@ public class ContentItemServiceImpl implements ContentItemService {
             item ->
                 contentItemMapper
                     .resolveAndValidate(request.getContentType(), request.getData())
+                    .flatMap(
+                        data ->
+                            ensureUnique(siteId, request.getContentType(), data, item.getId())
+                                .thenReturn(data))
                     .flatMap(
                         validatedData -> {
                           item.setContentType(request.getContentType());
@@ -95,5 +102,36 @@ public class ContentItemServiceImpl implements ContentItemService {
   @Override
   public Flux<ContentItem> getEveryItem(Long siteId) {
     return contentItemRepository.findAllBySiteIdOrderByDisplayOrderAsc(siteId);
+  }
+
+  /**
+   * Service categories are keyed by slug and service pages by category + slug (they form the page
+   * URL), so a second item with the same key is rejected here rather than silently shadowed.
+   */
+  private Mono<Void> ensureUnique(Long siteId, String contentType, JsonNode data, Long selfId) {
+    boolean category = "service_category".equals(contentType);
+    if (!category && !"service_page".equals(contentType)) return Mono.empty();
+    String slug = data.path("slug").asText();
+    String parent = category ? "" : data.path("category").asText();
+    return contentItemRepository
+        .findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(siteId, contentType)
+        .filter(other -> !other.getId().equals(selfId))
+        .filter(
+            other ->
+                slug.equals(other.getData().path("slug").asText())
+                    && (category || parent.equals(other.getData().path("category").asText())))
+        .hasElements()
+        .flatMap(
+            taken ->
+                taken
+                    ? Mono.error(
+                        new ApplicationException(
+                            Message.Application.ERROR,
+                            "slug: another "
+                                + (category ? "category" : "service in this category")
+                                + " already uses \""
+                                + slug
+                                + "\""))
+                    : Mono.<Void>empty());
   }
 }

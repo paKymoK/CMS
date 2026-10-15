@@ -4,7 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { HEADER_NAV } from "@/content/nav";
+import { HEADER_NAV, type PrimaryNavItem } from "@/content/nav";
+import type { ServiceNav } from "@/lib/cms/services";
 
 const Chevron = ({ open = false }: { open?: boolean }) => (
   <svg
@@ -21,10 +22,23 @@ const Chevron = ({ open = false }: { open?: boolean }) => (
  * search, language and the sky-blue "Contact Us" pill. Lies over the top of the hero exactly as on the
  * artboard (the hero's top 58px is drawn underneath it) and scrolls away with the page.
  */
-export function SiteHeader() {
+export function SiteHeader({ serviceNav }: { serviceNav?: ServiceNav }) {
   const t = useTranslations("cta");
+  // The Services menu is built from the CMS: one column per category, its service pages beneath.
+  const navItems: PrimaryNavItem[] = HEADER_NAV.map((item) =>
+    item.label === "Services" && serviceNav && serviceNav.categories.length > 0
+      ? {
+          ...item,
+          hasDropdown: true,
+          groups: serviceNav.categories.map((c) => ({
+            label: c.name,
+            links: c.services.map((s) => ({ label: s.label, href: `/services/${c.slug}/${s.slug}` })),
+          })),
+        }
+      : item,
+  );
   const [openKey, setOpenKey] = useState<string | null>(null);
-  const openItem = HEADER_NAV.find((i) => i.label === openKey && i.children);
+  const openItem = navItems.find((i) => i.label === openKey && (i.children || i.groups));
 
   return (
     <header
@@ -51,9 +65,9 @@ export function SiteHeader() {
           aria-label="Primary"
           className="hidden items-center justify-center gap-[clamp(28px,3.9vw,76px)] text-base font-medium whitespace-nowrap text-[#7e7e7e] lg:flex"
         >
-          {HEADER_NAV.map((item) => {
+          {navItems.map((item) => {
             const cls = "flex items-center gap-1.5 leading-6 transition-colors hover:text-[#00a9ff]";
-            if (item.children) {
+            if (item.children || item.groups) {
               const open = openKey === item.label;
               return (
                 <button
@@ -119,24 +133,50 @@ export function SiteHeader() {
 
       {/* Dropdown panel (Figma "Service Dropdown"): a full-width navy band under the header with the
           sub-pages as light-blue links. */}
-      {openItem?.children && (
+      {openItem && (
         <div className="absolute inset-x-0 top-full bg-[#0e192e]">
-          <ul
-            className="mx-auto flex max-w-[1920px] flex-wrap gap-x-[clamp(32px,5vw,96px)] gap-y-3 py-[31px] pb-10"
-            style={{ paddingLeft: "min(13.4vw, 257px)", paddingRight: 24 }}
-          >
-            {openItem.children.map((child) => (
-              <li key={child.href}>
-                <Link
-                  href={child.href}
-                  className="text-base leading-none font-semibold text-[#b5e2ff] transition-colors hover:text-white"
-                  onClick={() => setOpenKey(null)}
-                >
-                  {child.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {openItem.groups ? (
+            <div
+              className="mx-auto flex max-w-[1920px] flex-wrap gap-x-[clamp(32px,5vw,96px)] gap-y-8 pt-[31px] pb-12"
+              style={{ paddingLeft: "min(13.4vw, 257px)", paddingRight: 24 }}
+            >
+              {openItem.groups.map((group) => (
+                <div key={group.label} className="min-w-[150px]">
+                  <div className="text-base leading-none font-semibold text-[#b5e2ff]">{group.label}</div>
+                  <ul className="mt-[22px] flex flex-col gap-[3px]">
+                    {group.links.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="text-base leading-[25px] text-white transition-colors hover:text-[#b5e2ff]"
+                          onClick={() => setOpenKey(null)}
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <ul
+              className="mx-auto flex max-w-[1920px] flex-wrap gap-x-[clamp(32px,5vw,96px)] gap-y-3 py-[31px] pb-10"
+              style={{ paddingLeft: "min(13.4vw, 257px)", paddingRight: 24 }}
+            >
+              {openItem.children?.map((child) => (
+                <li key={child.href}>
+                  <Link
+                    href={child.href}
+                    className="text-base leading-none font-semibold text-[#b5e2ff] transition-colors hover:text-white"
+                    onClick={() => setOpenKey(null)}
+                  >
+                    {child.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </header>

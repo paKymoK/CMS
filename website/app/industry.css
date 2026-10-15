@@ -605,6 +605,7 @@
 }
 .ind-stories-metrics dd {
   font-size: 16px;
+  line-height: 1.16;
   color: #040507;
 }
 .ind-stories-stack {

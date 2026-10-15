@@ -14,9 +14,12 @@ const FALLBACK_INTRO: SectionIntro = { section: "industry-stories", title: "Succ
 export function IndustryStories({
   stories,
   intro = FALLBACK_INTRO,
+  variant,
 }: {
   stories: IndustryStory[];
   intro?: SectionIntro;
+  /** Extra class on the section root, for pages whose layout differs slightly (service pages). */
+  variant?: string;
 }) {
   const n = stories.length;
   const [active, setActive] = useState(0);
@@ -27,7 +30,7 @@ export function IndustryStories({
 
   return (
     <section id="stories" aria-labelledby="ind-stories-title" className="design-canvas">
-      <div className="ind-stories sec">
+      <div className={`ind-stories sec${variant ? ` ${variant}` : ""}`}>
         <div className="sec-eyebrow-wrap">
           <div className="cmc-eyebrow">{intro.eyebrow ?? "Case Studies"}</div>
         </div>

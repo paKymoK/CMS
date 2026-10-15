@@ -63,6 +63,12 @@ public class AuthenticationConfig {
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, "/content-service/v1/case-studies/**")
                     .permitAll()
+                    // Services menu tree + service pages (see PublicServiceController).
+                    .pathMatchers(
+                        HttpMethod.GET,
+                        "/content-service/v1/services",
+                        "/content-service/v1/services/**")
+                    .permitAll()
                     // content-service's token-gated draft preview — anonymous at this layer (no
                     // JWT presented), but every request is validated against a minted,
                     // site-scoped, time-limited preview_token inside content-service itself (see

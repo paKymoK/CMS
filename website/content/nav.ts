@@ -9,6 +9,8 @@ export type PrimaryNavItem = {
   href?: string;
   /** Sub-pages listed in the header's dropdown panel. */
   children?: { label: string; href: string }[];
+  /** Grouped sub-pages (a heading with its links under it), for the Services dropdown. */
+  groups?: { label: string; links: { label: string; href: string }[] }[];
 };
 
 export type NavSection = {

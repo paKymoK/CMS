@@ -220,6 +220,9 @@ export type IndustryStory = {
   metrics?: StatFigure[];
 };
 
+/** content_item type "industry_card" — one card of the Industries strip on service pages. */
+export type IndustryCard = { label: string; image?: string; url?: string };
+
 /** Generic content_item types, keyed by content_type; each list is in display order. */
 export type HomeSections = {
   hero_slide?: HeroSlide[];
@@ -232,6 +235,7 @@ export type HomeSections = {
   about_statement?: AboutStatement[];
   leader?: Leader[];
   about_value?: AboutValue[];
+  industry_card?: IndustryCard[];
   industry_hero?: IndustryHero[];
   industry_solution?: IndustrySolution[];
   industry_reason?: IndustryReason[];

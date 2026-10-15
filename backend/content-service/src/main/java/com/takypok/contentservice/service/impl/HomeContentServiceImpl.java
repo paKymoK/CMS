@@ -335,6 +335,9 @@ public class HomeContentServiceImpl implements HomeContentService {
             list -> {
               Map<String, List<JsonNode>> grouped = new LinkedHashMap<>();
               for (ContentItem item : list) {
+                // Service pages are served by their own endpoints (/v1/services) — there can be
+                // dozens, so they stay out of the homepage payload.
+                if (item.getContentType().startsWith("service_")) continue;
                 grouped
                     .computeIfAbsent(item.getContentType(), k -> new java.util.ArrayList<>())
                     .add(item.getData());

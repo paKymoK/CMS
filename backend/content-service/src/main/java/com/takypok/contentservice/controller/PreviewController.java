@@ -5,10 +5,13 @@ import com.takypok.contentservice.model.response.CaseStudyDetailResponse;
 import com.takypok.contentservice.model.response.HomeContentResponse;
 import com.takypok.contentservice.model.response.PostDetailResponse;
 import com.takypok.contentservice.model.response.PreviewTokenResponse;
+import com.takypok.contentservice.model.response.ServiceNavResponse;
+import com.takypok.contentservice.model.response.ServicePageResponse;
 import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.HomeContentService;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.PreviewTokenService;
+import com.takypok.contentservice.service.ServiceCatalogService;
 import com.takypok.core.model.ResultMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +37,7 @@ public class PreviewController {
   private final HomeContentService homeContentService;
   private final PostService postService;
   private final CaseStudyService caseStudyService;
+  private final ServiceCatalogService serviceCatalogService;
 
   @GetMapping("/home")
   public Mono<ResultMessage<HomeContentResponse>> getHome(@RequestParam String token) {
@@ -59,6 +63,25 @@ public class PreviewController {
         .requireValidToken(token)
         .flatMap(
             previewToken -> caseStudyService.getPreviewDetailBySlug(previewToken.getSiteId(), slug))
+        .map(ResultMessage::success);
+  }
+
+  @GetMapping("/services")
+  public Mono<ResultMessage<ServiceNavResponse>> getServiceNav(@RequestParam String token) {
+    return previewTokenGuard
+        .requireValidToken(token)
+        .flatMap(previewToken -> serviceCatalogService.getNav(previewToken.getSiteId(), true))
+        .map(ResultMessage::success);
+  }
+
+  @GetMapping("/services/{category}/{slug}")
+  public Mono<ResultMessage<ServicePageResponse>> getService(
+      @PathVariable String category, @PathVariable String slug, @RequestParam String token) {
+    return previewTokenGuard
+        .requireValidToken(token)
+        .flatMap(
+            previewToken ->
+                serviceCatalogService.getPage(previewToken.getSiteId(), category, slug, true))
         .map(ResultMessage::success);
   }
 

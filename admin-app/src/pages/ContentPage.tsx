@@ -23,6 +23,7 @@ import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { siteLabel, SITES } from "../config/sites";
 import { findResource, type FieldConfig } from "../config/resources";
+import type { NamePath } from "antd/es/form/interface";
 import { NAVIGATION } from "../config/navigation";
 import MediaPickerModal from "../components/MediaPickerModal";
 import { mediaSrc } from "../lib/media";
@@ -103,7 +104,7 @@ export default function ContentPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
-  const [pickerField, setPickerField] = useState<string | null>(null);
+  const [pickerField, setPickerField] = useState<NamePath | null>(null);
 
   const listKey = ["content", resource?.key, site, typeFilter];
 
@@ -202,6 +203,20 @@ export default function ContentPage() {
         values[f.name] = dayjs(values[f.name] as string);
       }
     }
+    form.setFieldsValue(values);
+    setDrawerOpen(true);
+  };
+
+  // Opens the "new" form prefilled from an existing row: same content, a "-copy" slug, draft status.
+  const openDuplicate = (row: Row) => {
+    setEditing(null);
+    form.resetFields();
+    const values: Record<string, unknown> = { ...row };
+    delete values.id;
+    delete values.data;
+    if (typeof values.slug === "string") values.slug = `${values.slug}-copy`;
+    if (typeof values.navLabel === "string") values.navLabel = `${values.navLabel} (copy)`;
+    values.status = "DRAFT";
     form.setFieldsValue(values);
     setDrawerOpen(true);
   };
@@ -314,7 +329,7 @@ export default function ContentPage() {
     {
       title: "",
       key: "actions",
-      width: 150,
+      width: resource.duplicable ? 260 : 150,
       render: (_: unknown, row: Row) => (
         <div className="flex justify-end gap-2">
           <Button
@@ -331,6 +346,15 @@ export default function ContentPage() {
           >
             EDIT
           </Button>
+          {resource.duplicable && (
+            <Button
+              size="small"
+              onClick={() => openDuplicate(row)}
+              style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
+            >
+              DUPLICATE
+            </Button>
+          )}
           <Popconfirm title="Delete this item?" onConfirm={() => deleteMutation.mutate(row.id)}>
             <Button
               size="small"
@@ -441,7 +465,7 @@ export default function ContentPage() {
         }
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={480}
+        width={resource.fields.some((f) => f.type === "object-list") ? 720 : 480}
         footer={
           <div className="flex gap-2.5">
             <Button onClick={() => setDrawerOpen(false)}>Cancel</Button>
@@ -457,7 +481,7 @@ export default function ContentPage() {
               key={f.name}
               field={f}
               form={form}
-              onOpenPicker={() => setPickerField(f.name)}
+              onOpenPicker={(path) => setPickerField(path ?? f.name)}
             />
           ))}
           <Form.Item name="displayOrder" label="Display order">
@@ -491,7 +515,7 @@ function FieldInput({
 }: {
   field: FieldConfig;
   form: FormInstance;
-  onOpenPicker: () => void;
+  onOpenPicker: (path?: NamePath) => void;
 }) {
   const rules = f.required ? [{ required: true, message: `${f.label} is required` }] : [];
   const currentValue = Form.useWatch(f.name, form) as string | undefined;
@@ -528,6 +552,66 @@ function FieldInput({
     return (
       <Form.Item name={f.name} label={f.label} rules={rules}>
         <DatePicker showTime style={{ width: "100%" }} />
+      </Form.Item>
+    );
+  }
+  if (f.type === "multi-select") {
+    return (
+      <Form.Item name={f.name} label={f.label}>
+        <Select mode="multiple" options={f.options} allowClear />
+      </Form.Item>
+    );
+  }
+  if (f.type === "content-ref") {
+    return <ContentRefSelect field={f} rules={rules} />;
+  }
+  if (f.type === "object-list") {
+    return (
+      <Form.Item label={f.label}>
+        <Form.List name={f.name}>
+          {(entries, { add, remove, move }) => (
+            <div className="flex flex-col gap-3">
+              {entries.map((entry, index) => (
+                <div
+                  key={entry.key}
+                  style={{ border: "1px solid #dfe3e8", borderRadius: 6, padding: 12, background: "#fafbfc" }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="cms-eyebrow">
+                      {f.label.split("(")[0].trim()} · {index + 1}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button size="small" disabled={index === 0} onClick={() => move(index, index - 1)}>
+                        ↑
+                      </Button>
+                      <Button
+                        size="small"
+                        disabled={index === entries.length - 1}
+                        onClick={() => move(index, index + 1)}
+                      >
+                        ↓
+                      </Button>
+                      <Button size="small" danger icon={<DeleteIcon />} onClick={() => remove(entry.name)} aria-label="Remove" />
+                    </div>
+                  </div>
+                  {(f.itemFields ?? []).map((sub) => (
+                    <SubFieldInput
+                      key={sub.name}
+                      path={[entry.name, sub.name]}
+                      sub={sub}
+                      form={form}
+                      parent={f.name}
+                      onOpenPicker={onOpenPicker}
+                    />
+                  ))}
+                </div>
+              ))}
+              <Button type="dashed" icon={<PlusIcon />} onClick={() => add({})}>
+                {f.addLabel ?? "Add"}
+              </Button>
+            </div>
+          )}
+        </Form.List>
       </Form.Item>
     );
   }
@@ -592,6 +676,76 @@ function FieldInput({
   return (
     <Form.Item name={f.name} label={f.label} rules={rules}>
       <Input />
+    </Form.Item>
+  );
+}
+
+// A field inside an object-list entry: text, textarea or image only.
+function SubFieldInput({
+  path,
+  sub,
+  form,
+  parent,
+  onOpenPicker,
+}: {
+  path: (string | number)[];
+  sub: FieldConfig;
+  form: FormInstance;
+  parent: string;
+  onOpenPicker: (path?: NamePath) => void;
+}) {
+  const rules = sub.required ? [{ required: true, message: `${sub.label} is required` }] : [];
+  const current = Form.useWatch([parent, ...path], form) as string | undefined;
+  if (sub.type === "image") {
+    return (
+      <Form.Item label={sub.label} style={{ marginBottom: 12 }}>
+        <div className="flex items-center gap-3">
+          {current ? (
+            <Image src={mediaSrc(current)} width={48} height={48} className="object-cover rounded" />
+          ) : null}
+          <Form.Item name={path} rules={rules} noStyle>
+            <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />
+          </Form.Item>
+          <Button icon={<PictureIcon />} onClick={() => onOpenPicker([parent, ...path])}>
+            Choose
+          </Button>
+        </div>
+      </Form.Item>
+    );
+  }
+  return (
+    <Form.Item name={path} label={sub.label} rules={rules} style={{ marginBottom: 12 }}>
+      {sub.type === "textarea" ? <Input.TextArea rows={2} /> : <Input />}
+    </Form.Item>
+  );
+}
+
+// Dropdown of another content type's items (e.g. a service page's category), listing the item's
+// label but storing its `valueField` (the slug).
+function ContentRefSelect({
+  field: f,
+  rules,
+}: {
+  field: FieldConfig;
+  rules: { required: boolean; message: string }[];
+}) {
+  const { site } = useSite();
+  const q = useQuery({
+    queryKey: ["content-ref", f.ref?.contentType, site],
+    queryFn: async () => {
+      const { data } = await contentApi.get("/v1/admin/content-items", {
+        params: { site, type: f.ref!.contentType },
+      });
+      return (data.data as { data: Record<string, string> }[]).map((i) => ({
+        value: i.data[f.ref!.valueField],
+        label: i.data[f.ref!.labelField],
+      }));
+    },
+    enabled: !!site && !!f.ref,
+  });
+  return (
+    <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Select options={q.data ?? []} loading={q.isLoading} showSearch optionFilterProp="label" />
     </Form.Item>
   );
 }

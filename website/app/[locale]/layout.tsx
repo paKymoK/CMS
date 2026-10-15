@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getHomeContent } from "@/lib/cms/homeContent";
+import { getServiceNav } from "@/lib/cms/services";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -12,6 +13,7 @@ import "../sections.css";
 import "../about.css";
 import "../insights.css";
 import "../industry.css";
+import "../service.css";
 
 // The Figma design ("CMC Global - Website 2026") uses Inter for every piece of type, in its
 // "24pt" optical size. The variable font's opsz axis reproduces that: with font-optical-sizing
@@ -57,7 +59,7 @@ export default async function LocaleLayout(
 
   // Next dedupes identical concurrent fetch() calls within one render (Request Memoization),
   // so this and page.tsx's own getHomeContent() call cost one network round-trip, not two.
-  const content = await getHomeContent();
+  const [content, serviceNav] = await Promise.all([getHomeContent(), getServiceNav()]);
 
   return (
     <html
@@ -66,7 +68,7 @@ export default async function LocaleLayout(
     >
       <body className="flex min-h-full flex-col pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
         <NextIntlClientProvider>
-          <SiteHeader />
+          <SiteHeader serviceNav={serviceNav} />
           {/* Content is designed for a 1920px artboard and capped there (wider screens are unsupported). */}
           <main className="mx-auto w-full max-w-[1920px] flex-1">{props.children}</main>
           <SiteFooter footerNav={content.footerNav} footer={content.sections?.site_footer?.[0]} />
