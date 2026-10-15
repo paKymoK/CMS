@@ -35,7 +35,7 @@ export interface FieldConfig {
 }
 
 /** Which sidebar group a screen lives in. */
-export type ResourceGroup = "home" | "about" | "site";
+export type ResourceGroup = "home" | "about" | "industry" | "site";
 
 export interface ResourceConfig {
   key: string;
@@ -370,6 +370,75 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "name", label: "Name", type: "text", required: true }),
       field({ name: "title", label: "Role", type: "text" }),
       field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
+    ],
+  },
+  {
+    key: "industry-hero",
+    group: "industry",
+    label: "BFSI · Hero",
+    apiPath: "/v1/admin/content-items",
+    contentType: "industry_hero",
+    titleField: "title",
+    fields: [
+      field({ name: "breadcrumb", label: "Breadcrumb", type: "text" }),
+      field({ name: "title", label: "Headline", type: "textarea", required: true }),
+      field({ name: "subtitle", label: "Intro line", type: "textarea" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text" }),
+      field({ name: "ctaUrl", label: "Button link", type: "text" }),
+      field({ name: "image", label: "Artwork (transparent PNG/WebP)", type: "image" }),
+      field({ name: "stats", label: "Two figures (value + label)", type: "stat-list" }),
+    ],
+  },
+  {
+    key: "industry-solutions",
+    group: "industry",
+    label: "BFSI · Solutions",
+    apiPath: "/v1/admin/content-items",
+    contentType: "industry_solution",
+    titleField: "tabLabel",
+    fields: [
+      field({
+        name: "group",
+        label: "Group (arrows move between groups, e.g. Core Banking)",
+        type: "text",
+        required: true,
+      }),
+      field({ name: "tabLabel", label: "Tab name", type: "text", required: true }),
+      field({ name: "title", label: "Slide heading", type: "text" }),
+      field({ name: "logo", label: "Partner logo", type: "image" }),
+      field({ name: "image", label: "Photo", type: "image" }),
+      field({ name: "columnA", label: "First column (one bullet per line)", type: "textarea" }),
+      field({ name: "columnB", label: "Second column (one bullet per line)", type: "textarea" }),
+    ],
+  },
+  {
+    key: "industry-reasons",
+    group: "industry",
+    label: "BFSI · Reasons to partner",
+    apiPath: "/v1/admin/content-items",
+    contentType: "industry_reason",
+    titleField: "title",
+    fields: [
+      field({ name: "title", label: "Title", type: "text", required: true }),
+      field({ name: "image", label: "Image", type: "image" }),
+    ],
+  },
+  {
+    key: "industry-stories",
+    group: "industry",
+    label: "BFSI · Success stories",
+    apiPath: "/v1/admin/content-items",
+    contentType: "industry_story",
+    titleField: "title",
+    fields: [
+      field({ name: "tag", label: "Tag", type: "text" }),
+      field({ name: "title", label: "Title", type: "text", required: true }),
+      field({ name: "body", label: "Summary", type: "textarea" }),
+      field({ name: "image", label: "Photo", type: "image" }),
+      field({ name: "linkLabel", label: "Link label", type: "text" }),
+      field({ name: "linkUrl", label: "Link", type: "text" }),
+      field({ name: "heading", label: "Left-column heading (first story)", type: "text" }),
+      field({ name: "metrics", label: "Left-column figures (first story)", type: "stat-list" }),
     ],
   },
   {

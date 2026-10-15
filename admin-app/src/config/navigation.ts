@@ -26,6 +26,7 @@ export const NAVIGATION: NavItem[] = [
   // resources.ts is the only edit needed — these lists can't drift out of sync with it.
   { key: "home-page", label: "Home Page", items: inGroup("home") },
   { key: "about-page", label: "About Page", items: inGroup("about") },
+  { key: "industry-page", label: "Industry Page", items: inGroup("industry") },
   { key: "site-wide", label: "Site-wide", items: inGroup("site") },
   {
     key: "library",

@@ -31,7 +31,8 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 export const HEADER_NAV: PrimaryNavItem[] = [
   { label: "About Us", href: "/about" },
   { label: "Services", hasDropdown: true, href: "/#whatwedo" },
-  { label: "Industries", hasDropdown: true },
+  // Temporary: no dropdown while there is a single industry page.
+  { label: "Industries", href: "/industries/bfsi" },
   { label: "Insights", href: "/insights" },
   { label: "Career" },
   { label: "Contact", href: "/#contact" },

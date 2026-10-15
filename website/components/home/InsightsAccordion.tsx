@@ -65,6 +65,7 @@ export function InsightsAccordion({
         <h2 id="insights-title" className="sec-title ins-title">
           {intro.title}
         </h2>
+        {intro.body && <p className="ins-sub">{intro.body}</p>}
 
         {n > 1 && (
           <div className="ins-nav">
@@ -135,9 +136,9 @@ export function InsightsAccordion({
           <h3 className="ins-active-title" aria-live="polite">
             {current.title}
           </h3>
-          {current.slug && (
+          {current.slug && intro.buttonLabel && (
             <Link href={`/insights/${current.slug}`} className="ins-read">
-              {intro.buttonLabel ?? "Read this letter"}
+              {intro.buttonLabel}
             </Link>
           )}
         </div>

@@ -72,5 +72,20 @@ VALUES
        ('eae5d034-5a79-544d-80f1-80fabc1bf1b4', 'leader-bach.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('0aa04ce3-4345-5884-862e-288364fe0a0f', 'leader-hoa.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('c7c6d745-7a25-50a5-a901-52512e5f71a4', 'leader-cuong.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('5618b749-88d7-5bc5-9e3f-6e499fdb3194', 'insights-hero.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('5618b749-88d7-5bc5-9e3f-6e499fdb3194', 'insights-hero.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('3a73cbd5-77f2-505a-8d14-df5810e84d6c', 'industry-hero-cube.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('0af4798e-1f0c-58b6-a361-e390785af219', 'industry-sol-thoughtmachine.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('931098b1-d024-5cb4-9717-c8f81c17262e', 'industry-sol-temenos.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('2ed2d966-6dfd-5457-a75e-a29729c698d4', 'industry-why-1.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('b9d0c938-b897-5472-9592-656968ae58b3', 'industry-why-2.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('da830127-e869-5517-a0d0-b7a02bd0cc9b', 'industry-why-3.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('2fc766fc-8dd6-5710-b7ad-043e24ca5b68', 'industry-story-hdbank.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('d65d9edb-b5bf-5eca-9ed5-376df6b07558', 'industry-story-bank.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('098991db-c052-50be-9fb5-2b26b1ff2d10', 'logo-thoughtmachine.svg', '.svg', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('b845a55c-372e-579d-94a5-80e4a11944e4', 'logo-temenos.svg', '.svg', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('28d95483-6148-5146-8370-bccca734c023', 'industry-sol-backbase.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('204d0d9c-f5db-5e51-97d6-a8ddca9cbac4', 'industry-sol-backbase-bespoke.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('bb93e760-87b5-58ca-8255-5b764ed57104', 'industry-sol-open-platform.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('e888ce94-9f48-5b4a-bd25-c63f0b2375a3', 'industry-sol-open-bespoke.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('fc3fa6de-1a2f-51fc-b168-fda2c1c889c0', 'logo-backbase.svg', '.svg', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;

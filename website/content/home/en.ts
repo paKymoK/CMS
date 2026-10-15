@@ -51,6 +51,130 @@ export const homeContentEn: HomeContent = {
       },
       { section: "contact", title: "Maximize Your ROI in the Cloud\nLet's Chat!" },
       { section: "leaders", eyebrow: "Our People", title: "Leadership Team" },
+      {
+        section: "industry-solutions",
+        eyebrow: "Solutions",
+        title: "Our Solutions",
+        body: "Designed to modernize banking operations, strengthen resilience, and accelerate digital innovation.",
+      },
+      {
+        section: "industry-why",
+        eyebrow: "Why CMCG",
+        title: "Reasons to Partner with Us",
+        body: "Built for Finance Reliability, Speed, and Compliance",
+      },
+      {
+        section: "industry-stories",
+        eyebrow: "Case Studies",
+        title: "Success Stories",
+        body: "Real products. Real challenges. Real results.",
+      },
+      {
+        section: "industry-insights",
+        eyebrow: "Insights",
+        title: "Building Tomorrow Together",
+        body: "For building secure, efficient, and future-ready financial services.",
+        linkLabel: "Explore all Insights",
+        linkUrl: "/insights",
+      },
+    ],
+    industry_hero: [
+      {
+        breadcrumb: "Industries > Banking, Finance & Insurance",
+        title: "Accelerate Financial Innovation with Compliance at the Core",
+        subtitle: "Turning financial complexity into competitive advantage through intelligent technology.",
+        ctaLabel: "Let's talk!",
+        ctaUrl: "#contact",
+        stats: [
+          {
+            value: "15-20%",
+            label: "higher sales-conversion rates among banks thanks to experience-led banking transformations",
+          },
+          {
+            value: "25-30%",
+            label: "reduction in claims expenses after deploying digital claims transformations",
+          },
+        ],
+      },
+    ],
+    industry_solution: [
+      {
+        group: "Core Banking",
+        tabLabel: "Thought Machine Solution",
+        title: "Core Banking Solutions",
+        columnA:
+          "Smart contract customization\nIntegration with channels & fintech APIs\nCloud deployment & DevOps automation",
+        columnB: "Data migration & automated testing\n24/7 support & maintenance",
+      },
+      {
+        group: "Core Banking",
+        tabLabel: "Temenos Solution",
+        title: "Temenos Solution",
+        columnA:
+          "Module customization & integration resources\nBusiness analyst with banking domain expertise\nParameterization, scripting, and interface development",
+        columnB:
+          "Testing, defect resolution & technical documentation\nFlexible resources scaling across project phases",
+      },
+      {
+        group: "Digital Banking",
+        tabLabel: "Backbase Solution",
+        title: "Digital Banking Solutions",
+        columnA:
+          "Backbase implementation & configuration\nModule customization & branding\nAPI integration with core banking & fintech services",
+        columnB: "Performance optimization & upgrades\nOngoing support & enhancement",
+      },
+      {
+        group: "Digital Banking",
+        tabLabel: "Bespoke Solution",
+        title: "Digital Banking Solutions",
+        columnA:
+          "End-to-end solution design & architecture\nCustom UI/UX design and development\nAPI design & integration with any backend systems",
+        columnB: "Cloud-native or on-prem deployment\nLong-term maintenance & continuous improvement",
+      },
+      {
+        group: "Open Banking",
+        tabLabel: "Open banking platform (WSO2, Oracle, Temenos)",
+        title: "Open Banking Solutions",
+        columnA:
+          "Platform implementation & configuration\nAPI customization & branding\nIntegration with core banking & fintech",
+        columnB: "Compliance validation\nOngoing support & version upgrades",
+      },
+      {
+        group: "Open Banking",
+        tabLabel: "Bespoke Solution",
+        title: "Open Banking Solutions",
+        columnA:
+          "End-to-end API architecture & development\nCustom API gateway, security and monitoring\nFull integration strategy with legacy & modern systems",
+        columnB: "Regulatory compliance design and testing\nContinuous improvement & new API product creation",
+      },
+    ],
+    industry_reason: [
+      { title: "Financial Services DNA" },
+      { title: "Enterprise-grade Security" },
+      { title: "Modern Banking Ecosystem Expertise" },
+    ],
+    industry_story: [
+      {
+        tag: "BFSI",
+        title: "HD Bank\nBespoke Digital Banking Solution",
+        body: "One of leading Vietnamese banks offering a wide range of financial services, including retail, corporate banking and digital banking solutions",
+        linkLabel: "Read the case study →",
+        linkUrl: "/insights",
+        heading: "Bespoke Digital Banking Solution",
+        metrics: [
+          { value: "316", label: "MM" },
+          { value: "8", label: "Months" },
+          { value: "100%", label: "Milestone Completed" },
+          { value: "100%", label: "Customer Satisfied" },
+        ],
+      },
+      {
+        tag: "Banking & Finance",
+        title: "An Entrepreneurial Business Bank",
+        body: "A well-established bank offers a range of financial products and services include business and personal banking, equipment loans, working capital, acquisition financing, small business administration lending, cash management, and so on.",
+        linkLabel: "Read the case study →",
+        linkUrl: "/insights",
+      },
     ],
     about_hero: [
       {

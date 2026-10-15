@@ -1366,3 +1366,18 @@ textarea.ctc-input {
     font-size: max(13px, calc(16 * var(--u)));
   }
 }
+
+/* One-line description under the accordion heading (used on the industry page). */
+.ins-sub {
+  margin: 8px 24px 0;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1a202c;
+}
+@media (min-width: 1280px) {
+  .ins-sub {
+    margin: calc(-14 * var(--u)) 0 0;
+    font-size: max(14px, calc(20 * var(--u)));
+  }
+}

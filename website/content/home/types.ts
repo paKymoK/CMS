@@ -176,6 +176,47 @@ export type AboutStatement = {
 /** content_item type "leader" — one member of the leadership team. */
 export type Leader = { name: string; title?: string; photo?: string };
 
+/** content_item type "industry_hero" — the Banking, Finance & Insurance page's hero. */
+export type IndustryHero = {
+  breadcrumb?: string;
+  title: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  /** Artwork on the right (transparent). */
+  image?: string;
+  stats?: StatFigure[];
+};
+
+/** content_item type "industry_solution" — one slide (and tab) of the solutions carousel. */
+export type IndustrySolution = {
+  /** Carousel page this slide belongs to. */
+  group: string;
+  tabLabel: string;
+  title?: string;
+  logo?: string;
+  image?: string;
+  /** One bullet per line. */
+  columnA?: string;
+  columnB?: string;
+};
+
+/** content_item type "industry_reason" — one "reason to partner with us" card. */
+export type IndustryReason = { title: string; image?: string };
+
+/** content_item type "industry_story" — one success-story card. */
+export type IndustryStory = {
+  tag?: string;
+  title: string;
+  body?: string;
+  image?: string;
+  linkLabel?: string;
+  linkUrl?: string;
+  /** Left-column heading and figures (read from the first story). */
+  heading?: string;
+  metrics?: StatFigure[];
+};
+
 /** Generic content_item types, keyed by content_type; each list is in display order. */
 export type HomeSections = {
   hero_slide?: HeroSlide[];
@@ -187,6 +228,10 @@ export type HomeSections = {
   about_intro?: AboutIntro[];
   about_statement?: AboutStatement[];
   leader?: Leader[];
+  industry_hero?: IndustryHero[];
+  industry_solution?: IndustrySolution[];
+  industry_reason?: IndustryReason[];
+  industry_story?: IndustryStory[];
 };
 
 export type HomeContent = {

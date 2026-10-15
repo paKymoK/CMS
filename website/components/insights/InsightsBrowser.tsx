@@ -54,7 +54,7 @@ export function InsightsBrowser({ posts }: { posts: PostSummary[] }) {
         )}
 
         {filtered.length > shown && (
-          <button type="button" className="ins-more" onClick={() => setShown((n) => n + PAGE_SIZE)}>
+          <button type="button" className="ins-showmore" onClick={() => setShown((n) => n + PAGE_SIZE)}>
             Show More
           </button>
         )}

@@ -11,6 +11,7 @@ import "../globals.css";
 import "../sections.css";
 import "../about.css";
 import "../insights.css";
+import "../industry.css";
 
 // The Figma design ("CMC Global - Website 2026") uses Inter for every piece of type, in its
 // "24pt" optical size. The variable font's opsz axis reproduces that: with font-optical-sizing
