@@ -971,6 +971,10 @@
   padding: 3px 0;
   animation: rec-marquee var(--rec-dur, 40s) linear infinite;
 }
+/* Awards and Partners drift right to left; the Certificates row (middle) runs the other way. */
+.rec-row[data-row="1"] .rec-track {
+  animation-direction: reverse;
+}
 .rec-row:hover .rec-track {
   animation-play-state: paused;
 }
