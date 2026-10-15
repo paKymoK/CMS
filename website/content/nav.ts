@@ -7,6 +7,8 @@ export type PrimaryNavItem = {
   hasDropdown?: boolean;
   /** Real destination, if this item has one yet — falls back to "#" (unwired) when omitted. */
   href?: string;
+  /** Sub-pages listed in the header's dropdown panel. */
+  children?: { label: string; href: string }[];
 };
 
 export type NavSection = {
@@ -31,8 +33,16 @@ export const PRIMARY_NAV: PrimaryNavItem[] = [
 export const HEADER_NAV: PrimaryNavItem[] = [
   { label: "About Us", href: "/about" },
   { label: "Services", hasDropdown: true, href: "/#whatwedo" },
-  // Temporary: no dropdown while there is a single industry page.
-  { label: "Industries", href: "/industries/bfsi" },
+  {
+    label: "Industries",
+    hasDropdown: true,
+    // Healthcare and Automotive have no design yet, so their pages don't exist (the links 404).
+    children: [
+      { label: "Banking, Finance & Insurance", href: "/industries/bfsi" },
+      { label: "Healthcare", href: "/industries/healthcare" },
+      { label: "Automotive", href: "/industries/automotive" },
+    ],
+  },
   { label: "Insights", href: "/insights" },
   { label: "Career" },
   { label: "Contact", href: "/#contact" },

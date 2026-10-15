@@ -1,12 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { HEADER_NAV } from "@/content/nav";
 
-const Chevron = () => (
-  <svg viewBox="0 0 8 5" className="h-[5px] w-2 fill-none stroke-current stroke-[1.4]" aria-hidden>
+const Chevron = ({ open = false }: { open?: boolean }) => (
+  <svg
+    viewBox="0 0 8 5"
+    className={`h-[5px] w-2 fill-none stroke-current stroke-[1.4] transition-transform ${open ? "rotate-180" : ""}`}
+    aria-hidden
+  >
     <path d="m1 1 3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
@@ -18,11 +23,17 @@ const Chevron = () => (
  */
 export function SiteHeader() {
   const t = useTranslations("cta");
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const openItem = HEADER_NAV.find((i) => i.label === openKey && i.children);
 
   return (
     <header
       className="absolute inset-x-0 top-0 z-[100] h-[58px] bg-white"
       style={{ boxShadow: "0 4px 9.8px rgba(0,0,0,.15)" }}
+      onMouseLeave={() => setOpenKey(null)}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpenKey(null);
+      }}
     >
       <div className="mx-auto grid h-full w-full max-w-[1458px] grid-cols-[auto_1fr_auto] items-center gap-6 px-6 lg:grid-cols-[1fr_auto_1fr]">
         <Link href="/" className="flex items-center" aria-label="CMC Global home">
@@ -41,19 +52,37 @@ export function SiteHeader() {
           className="hidden items-center justify-center gap-[clamp(28px,3.9vw,76px)] text-base font-medium whitespace-nowrap text-[#7e7e7e] lg:flex"
         >
           {HEADER_NAV.map((item) => {
+            const cls = "flex items-center gap-1.5 leading-6 transition-colors hover:text-[#00a9ff]";
+            if (item.children) {
+              const open = openKey === item.label;
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  className={`${cls} ${open ? "text-[#00a9ff]" : ""}`}
+                  aria-expanded={open}
+                  aria-haspopup="true"
+                  onMouseEnter={() => setOpenKey(item.label)}
+                  onFocus={() => setOpenKey(item.label)}
+                  onClick={() => setOpenKey(open ? null : item.label)}
+                >
+                  {item.label}
+                  <Chevron open={open} />
+                </button>
+              );
+            }
             const inner = (
               <>
                 {item.label}
                 {item.hasDropdown && <Chevron />}
               </>
             );
-            const cls = "flex items-center gap-1.5 leading-6 transition-colors hover:text-[#00a9ff]";
             return item.href ? (
-              <Link key={item.label} href={item.href} className={cls}>
+              <Link key={item.label} href={item.href} className={cls} onMouseEnter={() => setOpenKey(null)}>
                 {inner}
               </Link>
             ) : (
-              <a key={item.label} href="#" className={cls}>
+              <a key={item.label} href="#" className={cls} onMouseEnter={() => setOpenKey(null)}>
                 {inner}
               </a>
             );
@@ -87,6 +116,29 @@ export function SiteHeader() {
           </a>
         </div>
       </div>
+
+      {/* Dropdown panel (Figma "Service Dropdown"): a full-width navy band under the header with the
+          sub-pages as light-blue links. */}
+      {openItem?.children && (
+        <div className="absolute inset-x-0 top-full bg-[#0e192e]">
+          <ul
+            className="mx-auto flex max-w-[1920px] flex-wrap gap-x-[clamp(32px,5vw,96px)] gap-y-3 py-[31px] pb-10"
+            style={{ paddingLeft: "min(13.4vw, 257px)", paddingRight: 24 }}
+          >
+            {openItem.children.map((child) => (
+              <li key={child.href}>
+                <Link
+                  href={child.href}
+                  className="text-base leading-none font-semibold text-[#b5e2ff] transition-colors hover:text-white"
+                  onClick={() => setOpenKey(null)}
+                >
+                  {child.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </header>
   );
 }
