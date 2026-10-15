@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SectionIntro } from "@/content/home/types";
 
 const FALLBACK_INTRO: SectionIntro = {
@@ -12,14 +12,24 @@ const inputBase = "ctc-input";
 
 /**
  * "Let's Chat" (Figma "contact"): gradient heading and the contact form on a pale-blue wash, with
- * the round back-to-top button at the bottom right. The form validates in the browser but doesn't
+ * a floating round back-to-top button fixed to the bottom right of the viewport. The form validates in the browser but doesn't
  * post anywhere yet — there is no contact endpoint in the backend — so submitting only shows a
  * confirmation.
  */
 export function ContactForm({ intro = FALLBACK_INTRO }: { intro?: SectionIntro }) {
   const [sent, setSent] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+
+  // Floats at the bottom right of the viewport once you've scrolled past the first screen.
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 480);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
+    <>
     <section id="contact" aria-labelledby="contact-title" className="design-canvas">
       <div className="ctc">
         <h2 id="contact-title" className="sec-title ctc-title">
@@ -151,21 +161,23 @@ export function ContactForm({ intro = FALLBACK_INTRO }: { intro?: SectionIntro }
           )}
         </form>
 
-        <button
-          type="button"
-          className="ctc-top"
-          aria-label="Back to top"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-1/2 w-1/2 fill-none stroke-current stroke-2"
-            aria-hidden
-          >
-            <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
       </div>
     </section>
+    <button
+      type="button"
+      className={`ctc-top${showTop ? " ctc-top--visible" : ""}`}
+      aria-label="Back to top"
+      tabIndex={showTop ? 0 : -1}
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        className="h-1/2 w-1/2 fill-none stroke-current stroke-2"
+        aria-hidden
+      >
+        <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+    </>
   );
 }

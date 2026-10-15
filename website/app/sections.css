@@ -1149,8 +1149,32 @@ textarea.ctc-input {
   font-size: 14px;
   color: #0159be;
 }
+/* Floating back-to-top: fixed to the viewport's bottom right at every size, fades in after scrolling. */
 .ctc-top {
-  display: none;
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #00a9ff;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+.ctc-top--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.ctc-top--visible:hover {
+  transform: translateY(-2px);
 }
 @media (min-width: 640px) {
   .ctc-form {
@@ -1183,25 +1207,6 @@ textarea.ctc-input {
   .ctc-submit {
     min-height: max(48px, calc(57 * var(--u)));
     font-size: max(15px, calc(18 * var(--u)));
-  }
-  .ctc-top {
-    position: absolute;
-    left: calc(1583 * var(--u));
-    bottom: calc(78 * var(--u));
-    display: grid;
-    place-items: center;
-    width: calc(56 * var(--u));
-    height: calc(56 * var(--u));
-    min-width: 44px;
-    min-height: 44px;
-    border-radius: 50%;
-    background: #00a9ff;
-    color: #fff;
-    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s ease;
-  }
-  .ctc-top:hover {
-    transform: translateY(-2px);
   }
 }
 
