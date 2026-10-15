@@ -373,8 +373,8 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
       </div>
 
       <div
+        className="cms-editor-body"
         style={{
-          maxWidth: 1240,
           margin: "0 auto",
           padding: "28px clamp(16px,3vw,32px) 80px",
           display: "flex",

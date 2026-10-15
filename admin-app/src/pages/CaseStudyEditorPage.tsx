@@ -343,8 +343,8 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
       </div>
 
       <div
+        className="cms-editor-body"
         style={{
-          maxWidth: 1180,
           margin: "0 auto",
           padding: "0 0 80px",
           display: "flex",

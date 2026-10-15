@@ -318,10 +318,10 @@ export default function AppShell() {
           </Header>
         </div>
         <Content
+          className="cms-content"
           style={{
             flex: 1,
             width: "100%",
-            maxWidth: 1180,
             margin: "0 auto",
             padding: "36px clamp(16px,3vw,32px) 64px",
           }}

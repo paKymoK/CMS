@@ -367,3 +367,30 @@ body {
   line-height: 34px;
   margin-block: 2px;
 }
+
+/* Wide screens: the shell and editors used a fixed 1180–1240px column, which looks small on
+   anything bigger than a 13" laptop. Let the column grow in steps and scale the UI slightly at
+   very large widths (antd sizes are px, so `zoom` is the least invasive way to scale it all). */
+.cms-content {
+  max-width: 1180px;
+}
+.cms-editor-body {
+  max-width: 1240px;
+}
+
+@media (min-width: 1600px) {
+  .cms-content { max-width: 1440px; }
+  .cms-editor-body { max-width: 1500px; }
+}
+
+@media (min-width: 1920px) {
+  html { zoom: 1.1; }
+  .cms-content { max-width: 1600px; }
+  .cms-editor-body { max-width: 1680px; }
+}
+
+@media (min-width: 2400px) {
+  html { zoom: 1.25; }
+  .cms-content { max-width: 1760px; }
+  .cms-editor-body { max-width: 1840px; }
+}
