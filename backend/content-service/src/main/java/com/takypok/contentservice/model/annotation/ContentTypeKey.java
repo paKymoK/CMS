@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a ContentFields implementation with the content_type.key it serializes for.
+ * Marks a ContentFields implementation with the content_item.content_type value it serializes for.
  *
  * <p>Deliberately different from Workflow's TicketDetail persistence, which embeds the Java class's
  * fully-qualified name directly in the stored jsonb (io.r2dbc.postgresql, via

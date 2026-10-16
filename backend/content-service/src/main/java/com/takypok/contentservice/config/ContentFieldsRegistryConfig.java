@@ -14,10 +14,8 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Classpath-scans for ContentFields implementations carrying @ContentTypeKey, once at startup —
  * same mechanism as Workflow's TicketConfig, but keyed by the annotation's stable string value
- * instead of exposed as a bare Set the caller has to filter every time. A content_type whose key
- * isn't in this map (including every type still on the flexible tier) falls back to
- * GenericContentFields in ContentDataReader/ContentItemMapper — this registry only needs entries
- * for the strict tier.
+ * instead of exposed as a bare Set the caller has to filter every time. This map is the only
+ * content-type registry: ContentItemMapper rejects a content_item whose type isn't in it.
  */
 @Configuration
 public class ContentFieldsRegistryConfig {

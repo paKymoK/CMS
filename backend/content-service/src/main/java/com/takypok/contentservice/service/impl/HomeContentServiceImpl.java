@@ -33,9 +33,9 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class HomeContentServiceImpl implements HomeContentService {
   /**
-   * Types with their own field in the response; everything else is a generic section. The
-   * service_* types are served by /v1/services — there can be dozens, so they stay out of the
-   * homepage payload. Banners are not part of HomeContent yet (unused by the current homepage).
+   * Types with their own field in the response; everything else is a generic section. The service_*
+   * types are served by /v1/services — there can be dozens, so they stay out of the homepage
+   * payload. Banners are not part of HomeContent yet (unused by the current homepage).
    */
   private static final Set<String> DEDICATED_TYPES =
       Set.of(
@@ -111,9 +111,7 @@ public class HomeContentServiceImpl implements HomeContentService {
   private List<HomeContentResponse.ServiceCard> services(List<ContentItem> items) {
     return fieldsOf(items, "service_card", ServiceCardFields.class).stream()
         .map(
-            s ->
-                new HomeContentResponse.ServiceCard(
-                    s.getName(), s.getDescription(), s.getImage()))
+            s -> new HomeContentResponse.ServiceCard(s.getName(), s.getDescription(), s.getImage()))
         .toList();
   }
 

@@ -1,49 +1,28 @@
 package com.takypok.contentservice.model.mapper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.model.content.ContentFields;
 import com.takypok.contentservice.model.content.types.FaqFields;
-import com.takypok.contentservice.model.entity.ContentType;
-import com.takypok.contentservice.repository.ContentTypeRepository;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.reflections.Reflections;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 /**
- * No Spring context needed for the parts that don't touch the DB — ContentFieldsRegistryConfig's
- * classpath scan and jakarta.validation.Validator both work standalone. ContentTypeRepository is
- * mocked since it's an R2dbcRepository (too many inherited methods to hand-write a fake) and
- * exercising a real Postgres round-trip belongs in an integration test, not this unit test.
+ * No Spring context needed — ContentFieldsRegistryConfig's classpath scan and
+ * jakarta.validation.Validator both work standalone, and the mapper no longer touches the DB.
  */
-@ExtendWith(MockitoExtension.class)
 class ContentItemMapperTest {
   private final ObjectMapper objectMapper = ConfigObjectMapper.objectMapper();
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-
-  @Mock private ContentTypeRepository contentTypeRepository;
-
-  private ContentType activeFaqType;
-
-  @BeforeEach
-  void setUp() {
-    activeFaqType = new ContentType();
-    activeFaqType.setKey("faq");
-    activeFaqType.setActive(true);
-  }
 
   @Test
   void reflectionsScanDiscoversFaqFieldsUnderItsContentTypeKey() {
@@ -57,8 +36,7 @@ class ContentItemMapperTest {
   }
 
   @Test
-  void strictTypeAcceptsValidDataAndDropsUnknownFields() {
-    when(contentTypeRepository.findByKey("faq")).thenReturn(Mono.just(activeFaqType));
+  void registeredTypeAcceptsValidDataAndDropsUnknownFields() {
     ContentItemMapper mapper = mapperWithRegistry(Map.of("faq", FaqFields.class));
     JsonNode input =
         objectMapper
@@ -70,20 +48,17 @@ class ContentItemMapperTest {
     StepVerifier.create(mapper.resolveAndValidate("faq", input))
         .assertNext(
             result -> {
-              org.junit.jupiter.api.Assertions.assertEquals(
-                  "What is this?", result.get("question").asText());
-              org.junit.jupiter.api.Assertions.assertEquals(
-                  "A generic content item.", result.get("answer").asText());
+              assertEquals("What is this?", result.get("question").asText());
+              assertEquals("A generic content item.", result.get("answer").asText());
               assertTrue(
                   result.get("unexpectedField") == null,
-                  "unknown fields must not survive re-serialization through the strict class");
+                  "unknown fields must not survive re-serialization through the type's class");
             })
         .verifyComplete();
   }
 
   @Test
-  void strictTypeRejectsMissingRequiredField() {
-    when(contentTypeRepository.findByKey("faq")).thenReturn(Mono.just(activeFaqType));
+  void registeredTypeRejectsMissingRequiredField() {
     ContentItemMapper mapper = mapperWithRegistry(Map.of("faq", FaqFields.class));
     JsonNode input = objectMapper.createObjectNode().put("question", "What is this?");
     // no "answer" — FaqFields.answer is @NotBlank
@@ -95,27 +70,7 @@ class ContentItemMapperTest {
   }
 
   @Test
-  void unregisteredContentTypeStillFallsBackToGenericOnceTypeExists() {
-    ContentType notYetStrictType = new ContentType();
-    notYetStrictType.setKey("not-yet-a-real-type");
-    notYetStrictType.setActive(true);
-    when(contentTypeRepository.findByKey("not-yet-a-real-type"))
-        .thenReturn(Mono.just(notYetStrictType));
-    ContentItemMapper mapper = mapperWithRegistry(Map.of());
-    JsonNode input =
-        objectMapper.createObjectNode().put("whatever", "no strict class registered yet");
-
-    StepVerifier.create(mapper.resolveAndValidate("not-yet-a-real-type", input))
-        .assertNext(
-            result ->
-                org.junit.jupiter.api.Assertions.assertEquals(
-                    "no strict class registered yet", result.get("whatever").asText()))
-        .verifyComplete();
-  }
-
-  @Test
-  void unknownContentTypeIsRejectedWithAFriendlyErrorBeforeAnyValidation() {
-    when(contentTypeRepository.findByKey("does-not-exist")).thenReturn(Mono.empty());
+  void unregisteredContentTypeIsRejected() {
     ContentItemMapper mapper = mapperWithRegistry(Map.of());
 
     StepVerifier.create(
@@ -127,22 +82,8 @@ class ContentItemMapperTest {
         .verify();
   }
 
-  @Test
-  void inactiveContentTypeIsRejectedWithAFriendlyError() {
-    ContentType inactiveType = new ContentType();
-    inactiveType.setKey("retired-type");
-    inactiveType.setActive(false);
-    when(contentTypeRepository.findByKey("retired-type")).thenReturn(Mono.just(inactiveType));
-    ContentItemMapper mapper = mapperWithRegistry(Map.of());
-
-    StepVerifier.create(mapper.resolveAndValidate("retired-type", objectMapper.createObjectNode()))
-        .expectErrorMatches(
-            e -> e instanceof ApplicationException && e.getMessage().contains("not active"))
-        .verify();
-  }
-
   private ContentItemMapper mapperWithRegistry(
       Map<String, Class<? extends ContentFields>> registry) {
-    return new ContentItemMapper(objectMapper, validator, registry, contentTypeRepository);
+    return new ContentItemMapper(objectMapper, validator, registry);
   }
 }

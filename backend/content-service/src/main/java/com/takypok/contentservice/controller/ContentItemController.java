@@ -16,12 +16,11 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 /**
- * Admin CRUD for any content type registered in content_type — covers every future
- * content_item-backed section through one controller, the same way.
- * ?type= here is mandatory, since content_item spans arbitrarily many unrelated content types and
- * "every type for this site" isn't a meaningful admin-app screen. Posts and case studies are the
- * exception: they carry slug/sanitizing rules and are written through /v1/admin/posts and
- * /v1/admin/case-studies instead.
+ * Admin CRUD for any content type registered with a @ContentTypeKey class — covers every future
+ * content_item-backed section through one controller, the same way. ?type= here is mandatory, since
+ * content_item spans arbitrarily many unrelated content types and "every type for this site" isn't
+ * a meaningful admin-app screen. Posts and case studies are the exception: they carry
+ * slug/sanitizing rules and are written through /v1/admin/posts and /v1/admin/case-studies instead.
  */
 @RestController
 @RequiredArgsConstructor

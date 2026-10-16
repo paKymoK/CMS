@@ -7,7 +7,9 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import reactor.core.publisher.Mono;
 
-/** URL-slug generation shared by the content types that have a detail page (posts, case studies). */
+/**
+ * URL-slug generation shared by the content types that have a detail page (posts, case studies).
+ */
 final class Slugs {
   private static final Pattern DIACRITICS = Pattern.compile("\\p{M}");
   private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]+");
@@ -24,10 +26,7 @@ final class Slugs {
    * @param taken whether a slug is already used by another item of the same type and site
    */
   static Mono<String> resolve(
-      String requestedSlug,
-      String title,
-      String fallback,
-      Function<String, Mono<Boolean>> taken) {
+      String requestedSlug, String title, String fallback, Function<String, Mono<Boolean>> taken) {
     if (requestedSlug != null && !requestedSlug.isBlank()) {
       String slug = slugify(requestedSlug, fallback);
       return taken
@@ -48,9 +47,7 @@ final class Slugs {
     String candidate = attempt == 1 ? baseSlug : baseSlug + "-" + attempt;
     return taken
         .apply(candidate)
-        .flatMap(
-            isTaken ->
-                isTaken ? dedupe(baseSlug, attempt + 1, taken) : Mono.just(candidate));
+        .flatMap(isTaken -> isTaken ? dedupe(baseSlug, attempt + 1, taken) : Mono.just(candidate));
   }
 
   static String slugify(String text, String fallback) {

@@ -14,41 +14,13 @@ CREATE TABLE IF NOT EXISTS site
     modified_by jsonb
 );
 
--- Registry of content types available through the generic content_item table (below) — per
--- cms-platform-plan.md's "generic content model" decision. A new section/component is a row here
--- (+ one small Java class implementing ContentFields for its strict fields, or none if it stays on
--- the fully-dynamic GenericContentFields fallback), not a new table/entity/repository/controller/
--- service. Every other kind of content lives there too — see content_item.
---
--- Global, not site-scoped: a content type (e.g. "testimonial") is the same shape in every
--- region — the site-specific part is the content_item rows themselves, not the type definition.
---
--- field_schema is descriptive metadata for admin-app to render a form dynamically (field name ->
--- input type) — it is NOT what enforces validity. Validation of content_item.data happens
--- server-side against the matching Java ContentFields class before a row is ever persisted (see
--- ContentDataWriter's registry lookup + explicit Validator.validate() call) — the same pattern
--- Workflow's TicketMapper uses for Ticket.detail. field_schema going stale relative to the Java
--- class is a UI-affordance bug, not a data-integrity one.
-CREATE TABLE IF NOT EXISTS content_type
-(
-    id           bigserial PRIMARY KEY,
-    key          character varying(64) NOT NULL UNIQUE, -- matches a ContentFields registry entry
-    label        character varying     NOT NULL,
-    field_schema jsonb                 NOT NULL DEFAULT '{}',
-    active       boolean               NOT NULL DEFAULT true,
-    created_at   timestamp with time zone,
-    created_by   jsonb,
-    modified_at  timestamp with time zone,
-    modified_by  jsonb
-);
-
 -- The one content table, per cms-platform-plan.md's "generic content model" decision log entry.
 -- Every piece of site content (a post, a case study, a stat, an office, a hero slide, a service
 -- page, ...) is a row here, identified by `content_type`. They all share one envelope — site_id,
 -- display_order, active, status, version, timestamps — kept as real, typed, indexed columns
 -- (exactly what every query filters/sorts by); only the genuinely type-specific fields go into
--- `data`, so a new content type is a new content_type row + optional Java ContentFields class, not
--- a new table.
+-- `data`, so a new content type is a new Java ContentFields class (@ContentTypeKey), not a new table.
+-- There is deliberately no content_type registry table: the Java classes are the registry.
 --
 -- Envelope semantics: `status` (DRAFT/PUBLISHED — the public API only ever returns PUBLISHED+active
 -- rows; admin sees everything) and `version` (Spring Data R2DBC's @Version optimistic-locking
@@ -65,8 +37,8 @@ CREATE TABLE IF NOT EXISTS content_item
 (
     id             bigserial PRIMARY KEY,
     site_id        bigint            NOT NULL REFERENCES site (id),
-    content_type   character varying NOT NULL REFERENCES content_type (key),
-    data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see content_type above
+    content_type   character varying NOT NULL, -- must match a @ContentTypeKey class; checked in ContentItemMapper
+    data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see ContentItemMapper
     display_order  integer           NOT NULL DEFAULT 0,
     active         boolean           NOT NULL DEFAULT true,
     status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),

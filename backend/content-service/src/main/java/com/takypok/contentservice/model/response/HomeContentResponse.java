@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * {@code sections} carries every generic content_item type (hero_slide, assistant_band, ...) keyed
  * by content_type, each list in display order and holding the items' validated {@code data} objects
- * — so a new design section is a content_type row plus website code, with no change here.
+ * — so a new design section is a ContentFields class plus website code, with no change here.
  *
  * <p>Mirrors the landing page's content/home/types.ts HomeContent field-for-field. Only PUBLISHED +
  * active rows ever land here — draft/inactive content never reaches the public API. Banner is

@@ -12,6 +12,7 @@ import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.HomeContentService;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.PreviewTokenService;
+import com.takypok.contentservice.service.ServiceCatalogService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import org.junit.jupiter.api.Test;
@@ -34,10 +35,16 @@ class PreviewControllerTest {
   @Mock private HomeContentService homeContentService;
   @Mock private PostService postService;
   @Mock private CaseStudyService caseStudyService;
+  @Mock private ServiceCatalogService serviceCatalogService;
 
   private PreviewController controller() {
     return new PreviewController(
-        previewTokenGuard, previewTokenService, homeContentService, postService, caseStudyService);
+        previewTokenGuard,
+        previewTokenService,
+        homeContentService,
+        postService,
+        caseStudyService,
+        serviceCatalogService);
   }
 
   private static PreviewToken tokenForSite(Long siteId) {
