@@ -4,15 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.takypok.contentservice.model.entity.Post;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.model.entity.ContentItem;
+import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
-import com.takypok.contentservice.repository.PostRepository;
+import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,28 +37,56 @@ import reactor.test.StepVerifier;
  */
 @ExtendWith(MockitoExtension.class)
 class PostServiceImplTest {
+  private final ObjectMapper objectMapper = ConfigObjectMapper.objectMapper();
 
-  @Mock private PostRepository postRepository;
+  @Mock private ContentItemRepository contentItemRepository;
+  @Mock private ContentItemMapper contentItemMapper;
+
+  private PostServiceImpl service;
+
+  @BeforeEach
+  void setUp() {
+    service = new PostServiceImpl(contentItemRepository, contentItemMapper, objectMapper);
+    // validation itself is ContentItemMapperTest's job: pass the data through unchanged
+    lenient()
+        .when(contentItemMapper.resolveAndValidate(eq("post"), any(JsonNode.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(1)));
+  }
+
+  private ContentItem post(long id, long siteId, String json) throws Exception {
+    ContentItem item = new ContentItem();
+    item.setId(id);
+    item.setSiteId(siteId);
+    item.setContentType("post");
+    item.setData(objectMapper.readTree(json));
+    item.setDisplayOrder(0);
+    item.setActive(true);
+    item.setStatus("PUBLISHED");
+    return item;
+  }
+
+  private void saveEchoesItem() {
+    when(contentItemRepository.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+  }
 
   @Test
-  void publishedDetailLookupNeverLeaksAnotherSitesPostForTheSameSlug() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    Post siteOnesPost = new Post();
-    siteOnesPost.setId(1L);
-    siteOnesPost.setSiteId(1L);
-    siteOnesPost.setSlug("shared-slug");
-    siteOnesPost.setTitle("Site 1's post");
-    siteOnesPost.setCategory("insight");
+  void publishedDetailLookupNeverLeaksAnotherSitesPostForTheSameSlug() throws Exception {
+    ContentItem siteOnesPost =
+        post(
+            1L,
+            1L,
+            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's post\",\"category\":\"insight\"}");
 
     // Site 1 has a published post at this slug...
-    when(postRepository.findBySiteIdAndSlugAndStatusAndActive(1L, "shared-slug", "PUBLISHED", true))
+    when(contentItemRepository.findBySlug(1L, "post", "shared-slug"))
         .thenReturn(Mono.just(siteOnesPost));
-    when(postRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-            1L, "PUBLISHED", true))
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                1L, "post", "PUBLISHED", true))
         .thenReturn(Flux.just(siteOnesPost));
     // ...but site 2 does not, even though the slug string is identical.
-    when(postRepository.findBySiteIdAndSlugAndStatusAndActive(2L, "shared-slug", "PUBLISHED", true))
-        .thenReturn(Mono.empty());
+    when(contentItemRepository.findBySlug(2L, "post", "shared-slug")).thenReturn(Mono.empty());
 
     StepVerifier.create(service.getPublishedDetailBySlug(1L, "shared-slug"))
         .assertNext(detail -> assertEquals("Site 1's post", detail.title()))
@@ -63,29 +98,40 @@ class PostServiceImplTest {
   }
 
   @Test
+  void publishedDetailHidesADraftPost() throws Exception {
+    ContentItem draft = post(1L, 1L, "{\"slug\":\"wip\",\"title\":\"Work in progress\"}");
+    draft.setStatus("DRAFT");
+    when(contentItemRepository.findBySlug(1L, "post", "wip")).thenReturn(Mono.just(draft));
+
+    StepVerifier.create(service.getPublishedDetailBySlug(1L, "wip"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
+
+  @Test
   void listingOnlyEverQueriesTheResolvedSiteNeverAnother() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    when(postRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-            2L, "PUBLISHED", true))
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                2L, "post", "PUBLISHED", true))
         .thenReturn(Flux.empty());
 
     StepVerifier.create(service.searchPublished(2L, null, null))
         .assertNext(list -> assertEquals(0, list.size()))
         .verifyComplete();
 
-    verify(postRepository)
-        .findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(2L, "PUBLISHED", true);
-    verify(postRepository, never())
-        .findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(1L, "PUBLISHED", true);
+    verify(contentItemRepository)
+        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+            2L, "post", "PUBLISHED", true);
+    verify(contentItemRepository, never())
+        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+            1L, "post", "PUBLISHED", true);
   }
 
   @Test
   void theSameSlugStringCanIndependentlyExistInTwoDifferentSites() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    when(postRepository.existsBySiteIdAndSlug(1L, "same-slug")).thenReturn(Mono.just(false));
-    when(postRepository.existsBySiteIdAndSlug(2L, "same-slug")).thenReturn(Mono.just(false));
-    when(postRepository.save(any(Post.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(contentItemRepository.findBySlug(1L, "post", "same-slug")).thenReturn(Mono.empty());
+    when(contentItemRepository.findBySlug(2L, "post", "same-slug")).thenReturn(Mono.empty());
+    saveEchoesItem();
 
     PostCreateRequest request = new PostCreateRequest();
     request.setTitle("Some Title");
@@ -94,20 +140,33 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
     StepVerifier.create(service.create(2L, request)).expectNextCount(1).verifyComplete();
 
-    ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
-    verify(postRepository, times(2)).save(captor.capture());
-    assertEquals("same-slug", captor.getAllValues().get(0).getSlug());
+    ArgumentCaptor<ContentItem> captor = ArgumentCaptor.forClass(ContentItem.class);
+    verify(contentItemRepository, times(2)).save(captor.capture());
+    assertEquals("same-slug", captor.getAllValues().get(0).getData().get("slug").asText());
     assertEquals(1L, captor.getAllValues().get(0).getSiteId());
-    assertEquals("same-slug", captor.getAllValues().get(1).getSlug());
+    assertEquals("same-slug", captor.getAllValues().get(1).getData().get("slug").asText());
     assertEquals(2L, captor.getAllValues().get(1).getSiteId());
   }
 
   @Test
+  void aSlugAlreadyUsedByAnotherPostInTheSameSiteIsRejected() throws Exception {
+    when(contentItemRepository.findBySlug(1L, "post", "taken"))
+        .thenReturn(Mono.just(post(9L, 1L, "{\"slug\":\"taken\",\"title\":\"x\"}")));
+
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("Some Title");
+    request.setSlug("taken");
+
+    StepVerifier.create(service.create(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+    verify(contentItemRepository, never()).save(any(ContentItem.class));
+  }
+
+  @Test
   void createCleansBenignLeftoversAndRejectsDangerousBodies() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    when(postRepository.existsBySiteIdAndSlug(1L, "s")).thenReturn(Mono.just(false));
-    when(postRepository.save(any(Post.class)))
-        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    when(contentItemRepository.findBySlug(1L, "post", "s")).thenReturn(Mono.empty());
+    saveEchoesItem();
 
     PostCreateRequest request = new PostCreateRequest();
     request.setTitle("T");
@@ -116,35 +175,35 @@ class PostServiceImplTest {
 
     StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
 
-    ArgumentCaptor<Post> captor = ArgumentCaptor.forClass(Post.class);
-    verify(postRepository).save(captor.capture());
-    assertEquals("<p>ok</p>", captor.getValue().getBody());
+    ArgumentCaptor<ContentItem> captor = ArgumentCaptor.forClass(ContentItem.class);
+    verify(contentItemRepository).save(captor.capture());
+    assertEquals("<p>ok</p>", captor.getValue().getData().get("body").asText());
 
     request.setBody("<p>ok</p><script>alert(1)</script>");
     StepVerifier.create(service.create(1L, request))
         .expectError(ApplicationException.class)
         .verify();
-    verify(postRepository, times(1)).save(any(Post.class)); // the rejected body was never saved
+    // the rejected body was never saved
+    verify(contentItemRepository, times(1)).save(any(ContentItem.class));
   }
 
   @Test
-  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesPostForTheSameSlug() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    Post siteOnesDraft = new Post();
-    siteOnesDraft.setId(1L);
-    siteOnesDraft.setSiteId(1L);
-    siteOnesDraft.setSlug("shared-slug");
-    siteOnesDraft.setTitle("Site 1's draft");
-    siteOnesDraft.setCategory("insight");
+  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesPostForTheSameSlug() throws Exception {
+    ContentItem siteOnesDraft =
+        post(
+            1L,
+            1L,
+            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's draft\",\"category\":\"insight\"}");
     siteOnesDraft.setStatus("DRAFT");
     siteOnesDraft.setActive(false);
 
-    when(postRepository.findBySiteIdAndSlug(1L, "shared-slug"))
+    when(contentItemRepository.findBySlug(1L, "post", "shared-slug"))
         .thenReturn(Mono.just(siteOnesDraft));
-    when(postRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-            1L, "PUBLISHED", true))
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                1L, "post", "PUBLISHED", true))
         .thenReturn(Flux.empty());
-    when(postRepository.findBySiteIdAndSlug(2L, "shared-slug")).thenReturn(Mono.empty());
+    when(contentItemRepository.findBySlug(2L, "post", "shared-slug")).thenReturn(Mono.empty());
 
     StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
         .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))
@@ -157,10 +216,8 @@ class PostServiceImplTest {
 
   @Test
   void blankExcerptDateAndAuthorAreFilledOrLeftEmptyInsteadOfRejected() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
-    when(postRepository.existsBySiteIdAndSlug(1L, "just-a-title")).thenReturn(Mono.just(false));
-    when(postRepository.save(any(Post.class)))
-        .thenAnswer(inv -> Mono.just((Post) inv.getArgument(0)));
+    when(contentItemRepository.findBySlug(1L, "post", "just-a-title")).thenReturn(Mono.empty());
+    saveEchoesItem();
 
     PostCreateRequest request = new PostCreateRequest();
     request.setTitle("Just a title");
@@ -170,17 +227,18 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(1L, request))
         .assertNext(
             post -> {
-              assertEquals("Hi First paragraph of the post.", post.getExcerpt());
-              assertNotNull(post.getDate());
-              assertEquals("default", post.getLayout());
-              assertNull(post.getAuthorName());
+              assertEquals("Hi First paragraph of the post.", post.excerpt());
+              assertNotNull(post.date());
+              assertEquals("default", post.layout());
+              assertEquals("insight", post.category());
+              assertEquals("PUBLISHED", post.status());
+              assertNull(post.authorName());
             })
         .verifyComplete();
   }
 
   @Test
   void unknownLayoutIsRejected() {
-    PostServiceImpl service = new PostServiceImpl(postRepository);
     PostCreateRequest request = new PostCreateRequest();
     request.setTitle("T");
     request.setLayout("fancy");

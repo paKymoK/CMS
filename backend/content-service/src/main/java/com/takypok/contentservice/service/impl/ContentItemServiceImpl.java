@@ -23,7 +23,8 @@ public class ContentItemServiceImpl implements ContentItemService {
    * Types with rules the generic path doesn't apply (rich-text sanitizing, slug generation), so
    * they are written only through their own service and endpoint.
    */
-  private static final Set<String> SPECIALIZED_TYPES = Set.of(CaseStudyServiceImpl.TYPE);
+  private static final Set<String> SPECIALIZED_TYPES =
+      Set.of(CaseStudyServiceImpl.TYPE, PostServiceImpl.TYPE);
 
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
@@ -74,7 +75,7 @@ public class ContentItemServiceImpl implements ContentItemService {
     }
     return getById(request.getId(), siteId)
         .filter(item -> !SPECIALIZED_TYPES.contains(item.getContentType()))
-        .switchIfEmpty(Mono.error(specializedTypeError(CaseStudyServiceImpl.TYPE)))
+        .switchIfEmpty(Mono.error(specializedTypeError("case_study or post")))
         .flatMap(
             item ->
                 contentItemMapper

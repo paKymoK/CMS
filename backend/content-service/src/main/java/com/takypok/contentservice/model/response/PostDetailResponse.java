@@ -1,7 +1,6 @@
 package com.takypok.contentservice.model.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.takypok.contentservice.model.entity.Post;
 import java.util.List;
 
 public record PostDetailResponse(
@@ -22,23 +21,23 @@ public record PostDetailResponse(
     int readMinutes,
     List<PostSummaryResponse> related) {
 
-  public static PostDetailResponse from(Post post, List<PostSummaryResponse> related) {
+  public static PostDetailResponse from(PostResponse post, List<PostSummaryResponse> related) {
     return new PostDetailResponse(
-        post.getId(),
-        post.getSlug(),
-        post.getTitle(),
-        post.getExcerpt(),
-        post.getBody(),
-        post.getImage(),
-        post.getDate(),
-        post.getCategory(),
-        post.getTags(),
-        post.getAuthorName(),
-        post.getAuthorRole(),
-        post.getAuthorBio(),
-        post.getAuthorAvatar(),
-        post.getLayout() != null ? post.getLayout() : "default",
-        ReadTimeCalculator.minutesFor(post.getBody()),
+        post.id(),
+        post.slug(),
+        post.title(),
+        post.excerpt(),
+        post.body(),
+        post.image(),
+        post.date(),
+        post.category(),
+        post.tags(),
+        post.authorName(),
+        post.authorRole(),
+        post.authorBio(),
+        post.authorAvatar(),
+        post.layout() != null ? post.layout() : "default",
+        ReadTimeCalculator.minutesFor(post.body()),
         related);
   }
 }

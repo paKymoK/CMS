@@ -36,6 +36,20 @@ class ContentItemServiceImplTest {
   }
 
   @Test
+  void postsCannotBeCreatedThroughTheGenericPath() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper);
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("post");
+
+    StepVerifier.create(service.create(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+
+    verify(contentItemRepository, never()).save(any(ContentItem.class));
+  }
+
+  @Test
   void caseStudiesCannotBeUpdatedThroughTheGenericPath() {
     ContentItemServiceImpl service =
         new ContentItemServiceImpl(contentItemRepository, contentItemMapper);

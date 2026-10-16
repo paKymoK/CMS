@@ -1,6 +1,6 @@
 -- content-service initial data: the tenant registry, the content-type registry, and the 'en'
 -- homepage / Insights / Case Study content, so a fresh environment stands up with a complete site
--- instead of empty tables.
+-- instead of empty tables. Everything is a content_item row; see init-schema.sql.
 --
 -- site_id is always resolved by site code, never hardcoded. Posts and case studies carry SAMPLE copy
 -- (clearly marked 'Editors: replace this sample copy') so the detail pages render end to end — it is
@@ -88,6 +88,26 @@ VALUES ('service_card', 'Service card',
         '{"name": "string", "company": "string", "title": "string", "photo": "image", "quote": "textarea", "logo": "image", "backgroundImage": "image", "flankLogo": "image", "flankFrom": "string", "flankTo": "string"}'::jsonb),
        ('case_study', 'Case study',
         '{"title": "string", "slug": "string", "date": "string", "category": "string", "image": "image", "summary": "textarea", "body": "richtext", "results": "stat-list", "testimonialId": "number"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
+-- Everything else that used to have a table each (stat, post, logo badges, footer navigation,
+-- banner) is a content_item too; see StatFields / PostFields / LogoBadgeFields / ... The three logo
+-- strips are separate types sharing one field shape.
+INSERT INTO content_type (key, label, field_schema)
+VALUES ('stat', 'Stat',
+        '{"value": "string", "label": "string", "note": "string"}'::jsonb),
+       ('award', 'Award',
+        '{"name": "string", "logo": "image"}'::jsonb),
+       ('certification', 'Certification',
+        '{"name": "string", "logo": "image"}'::jsonb),
+       ('partner', 'Partner',
+        '{"name": "string", "logo": "image"}'::jsonb),
+       ('footer_nav_category', 'Footer nav category',
+        '{"label": "string", "links": "string-list"}'::jsonb),
+       ('banner', 'Banner',
+        '{"title": "string", "body": "textarea", "image": "image", "ctaLabel": "string", "ctaUrl": "string", "activeFrom": "datetime", "activeUntil": "datetime"}'::jsonb),
+       ('post', 'Post',
+        '{"title": "string", "slug": "string", "category": "string", "image": "image", "excerpt": "textarea", "date": "string", "body": "richtext", "authorName": "string", "authorRole": "string", "authorBio": "textarea", "authorAvatar": "image", "tags": "string-list", "featured": "boolean", "layout": "select"}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 -- ── 'en' hero slides + assistant band (copy and imagery from the Figma "Homepage" frame) ───────
@@ -301,12 +321,17 @@ VALUES
 
 -- ── 'en' homepage content ──────────────────────────────────────────────────────────────────────
 -- Stats
-INSERT INTO stat (site_id, value, label, note, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', 'Part of CMC Corporation, founded 1993.', 0, 'PUBLISHED'),
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'stat', jsonb_strip_nulls(jsonb_build_object(
+       'value', value,
+       'label', label,
+       'note', note)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', 'Part of CMC Corporation, founded 1993.', 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '3000+', 'Employees', 'Across delivery centres worldwide.', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '300+', 'Global Clients', 'Bosch, Honda, AIA, IBM, LINE and more.', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), '35+', 'Business Partners', 'AWS, Google Cloud, UiPath, Salesforce.', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), '30+', 'Countries', 'Delivery presence across three regions.', 4, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), '30+', 'Countries', 'Delivery presence across three regions.', 4, 'PUBLISHED')
+) AS v (site_id, value, label, note, display_order, status);
 
 -- Service cards (copy + imagery from the Figma "Architect" frame; the Digital & Cloud and Software
 -- images are the earlier seed photos, since the design file embeds none for those two).
@@ -353,8 +378,11 @@ Frankfurt am Main, Germany', '/media-service/images/249edde3-116e-551f-a8c5-c51e
 ) AS v (site_id, lat, lon, flag_color, big, city, address, image, display_order, status);
 
 -- Logo badges (awards / certifications / partners)
-INSERT INTO logo_badge (site_id, type, name, logo, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 1', '/media-service/images/5237a74e-adf6-5ccf-ad9b-43bc8be17680.png', 0, 'PUBLISHED'),
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, lower(type), jsonb_strip_nulls(jsonb_build_object(
+       'name', name,
+       'logo', logo)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 1', '/media-service/images/5237a74e-adf6-5ccf-ad9b-43bc8be17680.png', 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 2', '/media-service/images/f93ca49b-06b3-5103-8a91-6cbdd25f2eb5.png', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 3', '/media-service/images/22d6810f-169d-5d72-8b15-c2c0244c661d.png', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 4', '/media-service/images/dc7e4f60-7000-5105-ae05-bcb3faee39ec.png', 3, 'PUBLISHED'),
@@ -368,7 +396,8 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 1', '/media-ser
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'AWS', '/media-service/images/1fc2bdd1-3a47-575d-9e2c-1335a584f408.svg', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'Google Cloud', '/media-service/images/adccd9b4-0f69-5a4e-9f3f-5c748a2778d5.webp', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'UiPath', '/media-service/images/fc905c4f-0f16-5f1f-94a0-5dda8d926e1f.png', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'ISTQB', '/media-service/images/07747331-7981-5bca-933a-88482dbc0eb0.png', 4, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'ISTQB', '/media-service/images/07747331-7981-5bca-933a-88482dbc0eb0.png', 4, 'PUBLISHED')
+) AS v (site_id, type, name, logo, display_order, status);
 
 -- Testimonials — before the case studies below, which can reference one
 INSERT INTO content_item (site_id, content_type, data, display_order, status)
@@ -392,15 +421,19 @@ FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'Mr. Nick Benjamin', 'env
 ) AS v (site_id, name, company, photo, logo, background_image, flank_logo, flank_from, flank_to, title, quote, display_order, status);
 
 -- Footer navigation
-INSERT INTO footer_nav_category (site_id, label, links, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'Services',
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'footer_nav_category', jsonb_strip_nulls(jsonb_build_object(
+       'label', label,
+       'links', links)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'Services',
         '["Consulting & Strategy", "Data & AI", "Digital & Cloud", "Digital Engineering", "Enterprise Solutions", "Managed Services"]'::jsonb, 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Industries',
         '["Banking, Finance & Insurance", "Healthcare", "Manufacturing"]'::jsonb, 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Insights',
         '["Perspectives", "Case Studies", "Blogs", "Client Speak"]'::jsonb, 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'About',
-        '["Our Organization", "Our Partners", "Our Leaders", "Newsroom", "Events"]'::jsonb, 3, 'PUBLISHED');
+        '["Our Organization", "Our Partners", "Our Leaders", "Newsroom", "Events"]'::jsonb, 3, 'PUBLISHED')
+) AS v (site_id, label, links, display_order, status);
 
 -- ── 'en' Insights posts and Case Studies ──────────────────────────────────────────────────────
 
@@ -448,8 +481,21 @@ FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-det
 ) AS v (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status);
 
 -- Posts
-INSERT INTO post (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital-economy-dialogue-2026', 'insight', '/media-service/images/7adbffc8-3d0b-58ef-9fce-1baa08a502a3.webp', 'Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation',
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'post', jsonb_strip_nulls(jsonb_build_object(
+       'slug', slug,
+       'category', category,
+       'image', image,
+       'title', title,
+       'excerpt', excerpt,
+       'date', date,
+       'body', body,
+       'authorName', author_name,
+       'authorRole', author_role,
+       'authorBio', author_bio,
+       'tags', tags,
+       'featured', featured)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital-economy-dialogue-2026', 'insight', '/media-service/images/7adbffc8-3d0b-58ef-9fce-1baa08a502a3.webp', 'Vietnam-China AI and Digital Economy Dialogue 2026: A New Chapter for Bilateral Tech Cooperation',
         'How a new round of bilateral dialogue is shaping cooperation on AI and the digital economy — and what it means for technology teams building across both markets.',
         'August 28, 2026',
         '<p>How a new round of bilateral dialogue is shaping cooperation on AI and the digital economy — and what it means for technology teams building across both markets. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
@@ -473,4 +519,5 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital-econo
         'A look back at the event that brought engineers, students and partners together.',
         'June 6, 2026',
         '<p>A look back at the event that brought engineers, students and partners together. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
-        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["Events"]'::jsonb, false, 4, 'PUBLISHED');
+        'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["Events"]'::jsonb, false, 4, 'PUBLISHED')
+) AS v (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status);

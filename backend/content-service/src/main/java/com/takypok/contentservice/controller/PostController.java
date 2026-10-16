@@ -1,10 +1,10 @@
 package com.takypok.contentservice.controller;
 
 import com.takypok.contentservice.config.CmsAdminGuard;
-import com.takypok.contentservice.model.entity.Post;
 import com.takypok.contentservice.model.entity.Site;
 import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
+import com.takypok.contentservice.model.response.PostResponse;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SiteService;
 import com.takypok.core.model.ResultMessage;
@@ -24,7 +24,7 @@ public class PostController {
   private final CmsAdminGuard cmsAdminGuard;
 
   @GetMapping("")
-  public Mono<ResultMessage<List<Post>>> get(
+  public Mono<ResultMessage<List<PostResponse>>> get(
       @RequestParam String site, Authentication authentication) {
     return authorizedSite(site, authentication)
         .flatMap(resolved -> postService.getAll(resolved.getId()))
@@ -32,7 +32,7 @@ public class PostController {
   }
 
   @GetMapping("/{id}")
-  public Mono<ResultMessage<Post>> getById(
+  public Mono<ResultMessage<PostResponse>> getById(
       @PathVariable Long id, @RequestParam String site, Authentication authentication) {
     return authorizedSite(site, authentication)
         .flatMap(resolved -> postService.getById(id, resolved.getId()))
@@ -40,7 +40,7 @@ public class PostController {
   }
 
   @PostMapping("")
-  public Mono<ResultMessage<Post>> create(
+  public Mono<ResultMessage<PostResponse>> create(
       @RequestParam String site,
       @Valid @RequestBody PostCreateRequest request,
       Authentication authentication) {
@@ -50,7 +50,7 @@ public class PostController {
   }
 
   @PutMapping("")
-  public Mono<ResultMessage<Post>> update(
+  public Mono<ResultMessage<PostResponse>> update(
       @RequestParam String site,
       @Valid @RequestBody PostUpdateRequest request,
       Authentication authentication) {

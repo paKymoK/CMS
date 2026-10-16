@@ -1,117 +1,220 @@
 package com.takypok.contentservice.service.impl;
 
-import com.takypok.contentservice.model.entity.Post;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.model.content.types.PostFields;
+import com.takypok.contentservice.model.entity.ContentItem;
+import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.model.response.PostDetailResponse;
+import com.takypok.contentservice.model.response.PostResponse;
 import com.takypok.contentservice.model.response.PostSummaryResponse;
-import com.takypok.contentservice.repository.PostRepository;
+import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
-import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+/**
+ * Posts are content_item rows of type "post"; this service keeps what is specific to them — slug
+ * generation/uniqueness, rich-text sanitizing, layout validation, derived excerpt/date and the
+ * "related" rail — on top of the generic table.
+ */
 @Component
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
-  private static final Pattern DIACRITICS = Pattern.compile("\\p{M}");
-  private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]+");
+  static final String TYPE = "post";
   private static final int MAX_RELATED = 3;
   private static final Set<String> LAYOUTS = Set.of("default", "focused", "wide", "landing");
   private static final int EXCERPT_MAX = 200;
   private static final DateTimeFormatter DISPLAY_DATE =
       DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
 
-  private final PostRepository postRepository;
+  private final ContentItemRepository contentItemRepository;
+  private final ContentItemMapper contentItemMapper;
+  private final ObjectMapper objectMapper;
 
   @Override
-  public Mono<List<Post>> getAll(Long siteId) {
-    return postRepository.findAllBySiteIdOrderByDisplayOrderAsc(siteId).collectList();
+  public Mono<List<PostResponse>> getAll(Long siteId) {
+    return contentItemRepository
+        .findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(siteId, TYPE)
+        .map(this::toResponse)
+        .collectList();
   }
 
   @Override
-  public Mono<Post> getById(Long id, Long siteId) {
-    return postRepository
+  public Mono<PostResponse> getById(Long id, Long siteId) {
+    return findItem(id, siteId).map(this::toResponse);
+  }
+
+  @Override
+  public Mono<PostResponse> create(Long siteId, PostCreateRequest request) {
+    // defer: sanitizeOrReject / validLayout throw, and that must surface as a Mono error, not at
+    // assembly time
+    return Mono.defer(
+        () -> {
+          String status = request.getStatus() != null ? request.getStatus() : "DRAFT";
+          PostFields fields = new PostFields();
+          fields.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
+          fields.setLayout(validLayout(request.getLayout()));
+          fields.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
+          copyShared(
+              fields,
+              status,
+              request.getImage(),
+              request.getTitle(),
+              request.getExcerpt(),
+              request.getDate(),
+              request.getBody(),
+              request.getAuthorName(),
+              request.getAuthorRole(),
+              request.getAuthorBio(),
+              request.getAuthorAvatar(),
+              request.getTags());
+          return save(
+              siteId,
+              new ContentItem(),
+              request.getSlug(),
+              fields,
+              request.getDisplayOrder(),
+              request.getActive(),
+              status);
+        });
+  }
+
+  @Override
+  public Mono<PostResponse> update(Long siteId, PostUpdateRequest request) {
+    return findItem(request.getId(), siteId)
+        .flatMap(
+            item ->
+                Mono.defer(
+                    () -> {
+                      PostFields existing = toFields(item);
+                      String status =
+                          request.getStatus() != null ? request.getStatus() : item.getStatus();
+                      PostFields fields = new PostFields();
+                      fields.setCategory(
+                          request.getCategory() != null
+                              ? request.getCategory()
+                              : existing.getCategory());
+                      fields.setLayout(
+                          request.getLayout() != null
+                              ? validLayout(request.getLayout())
+                              : existing.getLayout());
+                      fields.setFeatured(
+                          request.getFeatured() != null
+                              ? request.getFeatured()
+                              : existing.getFeatured());
+                      copyShared(
+                          fields,
+                          status,
+                          request.getImage(),
+                          request.getTitle(),
+                          request.getExcerpt(),
+                          request.getDate(),
+                          request.getBody(),
+                          request.getAuthorName(),
+                          request.getAuthorRole(),
+                          request.getAuthorBio(),
+                          request.getAuthorAvatar(),
+                          request.getTags());
+                      return save(
+                          siteId,
+                          item,
+                          request.getSlug(),
+                          fields,
+                          request.getDisplayOrder(),
+                          request.getActive(),
+                          request.getStatus());
+                    }));
+  }
+
+  /** The fields create and update treat identically: replaced wholesale from the request. */
+  private static void copyShared(
+      PostFields fields,
+      String status,
+      String image,
+      String title,
+      String excerpt,
+      String date,
+      String body,
+      String authorName,
+      String authorRole,
+      String authorBio,
+      String authorAvatar,
+      JsonNode tags) {
+    String cleanBody = RichTextSanitizer.sanitizeOrReject(body);
+    fields.setImage(image);
+    fields.setTitle(title);
+    fields.setBody(cleanBody);
+    fields.setExcerpt(excerptOrDerived(excerpt, cleanBody));
+    fields.setDate(dateOrToday(date, status));
+    fields.setAuthorName(authorName);
+    fields.setAuthorRole(authorRole);
+    fields.setAuthorBio(authorBio);
+    fields.setAuthorAvatar(authorAvatar);
+    fields.setTags(tags);
+  }
+
+  /** Resolves the slug, validates and persists {@code item} (new, or the row being updated). */
+  private Mono<PostResponse> save(
+      Long siteId,
+      ContentItem item,
+      String requestedSlug,
+      PostFields fields,
+      Integer displayOrder,
+      Boolean active,
+      String status) {
+    return resolveSlug(siteId, item.getId(), requestedSlug, fields.getTitle())
+        .flatMap(
+            slug -> {
+              fields.setSlug(slug);
+              return contentItemMapper.resolveAndValidate(TYPE, objectMapper.valueToTree(fields));
+            })
+        .flatMap(
+            data -> {
+              item.setSiteId(siteId);
+              item.setContentType(TYPE);
+              item.setData(data);
+              if (displayOrder != null) item.setDisplayOrder(displayOrder);
+              else if (item.getDisplayOrder() == null) item.setDisplayOrder(0);
+              if (active != null) item.setActive(active);
+              else if (item.getActive() == null) item.setActive(true);
+              if (status != null) item.setStatus(status);
+              else if (item.getStatus() == null) item.setStatus("DRAFT");
+              return contentItemRepository.save(item);
+            })
+        .map(this::toResponse);
+  }
+
+  private Mono<ContentItem> findItem(Long id, Long siteId) {
+    return contentItemRepository
         .findByIdAndSiteId(id, siteId)
+        .filter(item -> TYPE.equals(item.getContentType()))
         .switchIfEmpty(
             Mono.error(new ApplicationException(Message.Application.ERROR, "Post not found")));
   }
 
-  @Override
-  public Mono<Post> create(Long siteId, PostCreateRequest request) {
-    // defer: sanitizeOrReject throws, and that must surface as a Mono error, not at assembly time
-    return Mono.defer(() -> doCreate(siteId, request));
+  private PostFields toFields(ContentItem item) {
+    return objectMapper.convertValue(
+        item.getData() != null ? item.getData() : objectMapper.createObjectNode(),
+        PostFields.class);
   }
 
-  private Mono<Post> doCreate(Long siteId, PostCreateRequest request) {
-    Post post = new Post();
-    post.setSiteId(siteId);
-    post.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
-    post.setImage(request.getImage());
-    post.setTitle(request.getTitle());
-    post.setDisplayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
-    post.setActive(request.getActive() != null ? request.getActive() : true);
-    post.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
-    post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
-    post.setExcerpt(excerptOrDerived(request.getExcerpt(), post.getBody()));
-    post.setDate(dateOrToday(request.getDate(), post.getStatus()));
-    post.setLayout(validLayout(request.getLayout()));
-    post.setAuthorName(request.getAuthorName());
-    post.setAuthorRole(request.getAuthorRole());
-    post.setAuthorBio(request.getAuthorBio());
-    post.setAuthorAvatar(request.getAuthorAvatar());
-    post.setTags(request.getTags());
-    post.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
-    return resolveSlug(siteId, null, request.getSlug(), request.getTitle())
-        .flatMap(
-            slug -> {
-              post.setSlug(slug);
-              return postRepository.save(post);
-            });
-  }
-
-  @Override
-  public Mono<Post> update(Long siteId, PostUpdateRequest request) {
-    return getById(request.getId(), siteId)
-        .flatMap(
-            post -> {
-              if (request.getCategory() != null) post.setCategory(request.getCategory());
-              post.setImage(request.getImage());
-              post.setTitle(request.getTitle());
-              if (request.getDisplayOrder() != null)
-                post.setDisplayOrder(request.getDisplayOrder());
-              if (request.getActive() != null) post.setActive(request.getActive());
-              if (request.getStatus() != null) post.setStatus(request.getStatus());
-              post.setBody(RichTextSanitizer.sanitizeOrReject(request.getBody()));
-              post.setExcerpt(excerptOrDerived(request.getExcerpt(), post.getBody()));
-              post.setDate(dateOrToday(request.getDate(), post.getStatus()));
-              if (request.getLayout() != null) post.setLayout(validLayout(request.getLayout()));
-              post.setAuthorName(request.getAuthorName());
-              post.setAuthorRole(request.getAuthorRole());
-              post.setAuthorBio(request.getAuthorBio());
-              post.setAuthorAvatar(request.getAuthorAvatar());
-              post.setTags(request.getTags());
-              if (request.getFeatured() != null) post.setFeatured(request.getFeatured());
-              return resolveSlug(siteId, post.getId(), request.getSlug(), request.getTitle())
-                  .flatMap(
-                      slug -> {
-                        post.setSlug(slug);
-                        return postRepository.save(post);
-                      });
-            });
+  private PostResponse toResponse(ContentItem item) {
+    return PostResponse.from(item, toFields(item));
   }
 
   static String validLayout(String layout) {
@@ -141,35 +244,36 @@ public class PostServiceImpl implements PostService {
 
   @Override
   public Mono<Void> delete(Long id, Long siteId) {
-    return getById(id, siteId).flatMap(postRepository::delete);
+    return findItem(id, siteId).flatMap(contentItemRepository::delete);
   }
 
   @Override
-  public Flux<Post> getPublished(Long siteId) {
-    return postRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-        siteId, "PUBLISHED", true);
+  public Flux<PostResponse> getPublished(Long siteId) {
+    return contentItemRepository
+        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+            siteId, TYPE, "PUBLISHED", true)
+        .map(this::toResponse);
   }
 
   @Override
   public Mono<PostDetailResponse> getPublishedDetailBySlug(Long siteId, String slug) {
-    return postRepository
-        .findBySiteIdAndSlugAndStatusAndActive(siteId, slug, "PUBLISHED", true)
-        .switchIfEmpty(
-            Mono.error(new ApplicationException(Message.Application.ERROR, "Post not found")))
-        .flatMap(
-            post ->
-                getPublished(siteId)
-                    .collectList()
-                    .map(all -> relatedTo(post, all))
-                    .map(related -> PostDetailResponse.from(post, related)));
+    return detailOf(
+        siteId,
+        contentItemRepository
+            .findBySlug(siteId, TYPE, slug)
+            .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())));
   }
 
   @Override
   public Mono<PostDetailResponse> getPreviewDetailBySlug(Long siteId, String slug) {
-    return postRepository
-        .findBySiteIdAndSlug(siteId, slug)
+    return detailOf(siteId, contentItemRepository.findBySlug(siteId, TYPE, slug));
+  }
+
+  private Mono<PostDetailResponse> detailOf(Long siteId, Mono<ContentItem> lookup) {
+    return lookup
         .switchIfEmpty(
             Mono.error(new ApplicationException(Message.Application.ERROR, "Post not found")))
+        .map(this::toResponse)
         .flatMap(
             post ->
                 getPublished(siteId)
@@ -186,20 +290,20 @@ public class PostServiceImpl implements PostService {
         .filter(
             post ->
                 normalizedQuery == null
-                    || ((post.getTitle() != null ? post.getTitle() : "")
+                    || ((post.title() != null ? post.title() : "")
                             + " "
-                            + (post.getExcerpt() != null ? post.getExcerpt() : ""))
+                            + (post.excerpt() != null ? post.excerpt() : ""))
                         .toLowerCase()
                         .contains(normalizedQuery))
         .map(PostSummaryResponse::from)
         .collectList();
   }
 
-  private boolean tagsContain(Post post, String tag) {
-    if (post.getTags() == null || !post.getTags().isArray()) {
+  private boolean tagsContain(PostResponse post, String tag) {
+    if (post.tags() == null || !post.tags().isArray()) {
       return false;
     }
-    for (var node : post.getTags()) {
+    for (var node : post.tags()) {
       if (tag.equalsIgnoreCase(node.asText())) {
         return true;
       }
@@ -208,21 +312,21 @@ public class PostServiceImpl implements PostService {
   }
 
   /** Same-category first (excluding self), backfilled with the next most-recent others. */
-  private List<PostSummaryResponse> relatedTo(Post post, List<Post> published) {
-    List<Post> sameCategory = new ArrayList<>();
-    List<Post> others = new ArrayList<>();
-    for (Post candidate : published) {
-      if (candidate.getId().equals(post.getId())) {
+  private List<PostSummaryResponse> relatedTo(PostResponse post, List<PostResponse> published) {
+    List<PostResponse> sameCategory = new ArrayList<>();
+    List<PostResponse> others = new ArrayList<>();
+    for (PostResponse candidate : published) {
+      if (candidate.id().equals(post.id())) {
         continue;
       }
-      if (candidate.getCategory() != null && candidate.getCategory().equals(post.getCategory())) {
+      if (candidate.category() != null && candidate.category().equals(post.category())) {
         sameCategory.add(candidate);
       } else {
         others.add(candidate);
       }
     }
-    List<Post> combined = new ArrayList<>(sameCategory);
-    for (Post candidate : others) {
+    List<PostResponse> combined = new ArrayList<>(sameCategory);
+    for (PostResponse candidate : others) {
       if (combined.size() >= MAX_RELATED) {
         break;
       }
@@ -231,59 +335,15 @@ public class PostServiceImpl implements PostService {
     return combined.stream().limit(MAX_RELATED).map(PostSummaryResponse::from).toList();
   }
 
-  /**
-   * Blank slug on create/update → derive one from the title and de-dupe within the site (-2, -3,
-   * ...). An explicitly-supplied slug that collides with a *different* post in the same site is
-   * rejected outright — silently renaming a slug someone typed on purpose would break whatever link
-   * they meant to publish.
-   */
   private Mono<String> resolveSlug(
       Long siteId, Long excludeId, String requestedSlug, String title) {
-    if (requestedSlug != null && !requestedSlug.isBlank()) {
-      String slug = slugify(requestedSlug);
-      Mono<Boolean> collision =
-          excludeId != null
-              ? postRepository.existsBySiteIdAndSlugAndIdNot(siteId, slug, excludeId)
-              : postRepository.existsBySiteIdAndSlug(siteId, slug);
-      return collision.flatMap(
-          taken ->
-              taken
-                  ? Mono.error(
-                      new ApplicationException(
-                          Message.Application.ERROR, "Slug already in use: " + slug))
-                  : Mono.just(slug));
-    }
-    return dedupeSlug(siteId, excludeId, slugify(title), 1);
+    return Slugs.resolve(requestedSlug, title, "post", slug -> slugTaken(siteId, slug, excludeId));
   }
 
-  private Mono<String> dedupeSlug(Long siteId, Long excludeId, String baseSlug, int attempt) {
-    String candidate = attempt == 1 ? baseSlug : baseSlug + "-" + attempt;
-    Mono<Boolean> collision =
-        excludeId != null
-            ? postRepository.existsBySiteIdAndSlugAndIdNot(siteId, candidate, excludeId)
-            : postRepository.existsBySiteIdAndSlug(siteId, candidate);
-    return collision.flatMap(
-        taken ->
-            taken ? dedupeSlug(siteId, excludeId, baseSlug, attempt + 1) : Mono.just(candidate));
-  }
-
-  private static String slugify(String text) {
-    if (text == null) {
-      return "post";
-    }
-    String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
-    String withoutDiacritics = DIACRITICS.matcher(normalized).replaceAll("");
-    String slug = NON_ALPHANUMERIC.matcher(withoutDiacritics.toLowerCase()).replaceAll("-");
-    slug = slug.replaceAll("^-+|-+$", "");
-    String[] words = slug.split("-");
-    int wordLimit = Math.min(words.length, 7);
-    StringBuilder result = new StringBuilder();
-    for (int i = 0; i < wordLimit; i++) {
-      if (result.length() > 0) {
-        result.append("-");
-      }
-      result.append(words[i]);
-    }
-    return result.length() > 0 ? result.toString() : "post";
+  private Mono<Boolean> slugTaken(Long siteId, String slug, Long excludeId) {
+    return contentItemRepository
+        .findBySlug(siteId, TYPE, slug)
+        .filter(other -> excludeId == null || !other.getId().equals(excludeId))
+        .hasElement();
   }
 }

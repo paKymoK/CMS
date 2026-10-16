@@ -1,7 +1,6 @@
 package com.takypok.contentservice.model.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.takypok.contentservice.model.entity.Post;
 
 /** Card shape for the Insights listing and for a detail page's "related" rail. */
 public record PostSummaryResponse(
@@ -17,18 +16,18 @@ public record PostSummaryResponse(
     int readMinutes,
     Boolean featured) {
 
-  public static PostSummaryResponse from(Post post) {
+  public static PostSummaryResponse from(PostResponse post) {
     return new PostSummaryResponse(
-        post.getId(),
-        post.getSlug(),
-        post.getTitle(),
-        post.getExcerpt(),
-        post.getImage(),
-        post.getDate(),
-        post.getCategory(),
-        post.getTags(),
-        post.getAuthorName(),
-        ReadTimeCalculator.minutesFor(post.getBody()),
-        post.getFeatured());
+        post.id(),
+        post.slug(),
+        post.title(),
+        post.excerpt(),
+        post.image(),
+        post.date(),
+        post.category(),
+        post.tags(),
+        post.authorName(),
+        ReadTimeCalculator.minutesFor(post.body()),
+        post.featured());
   }
 }

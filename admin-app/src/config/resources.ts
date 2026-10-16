@@ -78,7 +78,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "stats",
     label: "Stats",
-    apiPath: "/v1/admin/stats",
+    apiPath: "/v1/admin/content-items",
+    contentType: "stat",
     titleField: "label",
     fields: [
       field({ name: "value", label: "Value", type: "text", required: true }),
@@ -142,28 +143,34 @@ export const RESOURCES: ResourceConfig[] = [
     ],
   },
   {
-    key: "logo-badges",
-    label: "Logo Badges",
-    apiPath: "/v1/admin/logo-badges",
+    key: "awards",
+    label: "Awards",
+    apiPath: "/v1/admin/content-items",
+    contentType: "award",
     titleField: "name",
-    supportsTypeFilter: true,
-    typeFilterOptions: [
-      { label: "Award", value: "AWARD" },
-      { label: "Certification", value: "CERTIFICATION" },
-      { label: "Partner", value: "PARTNER" },
-    ],
     fields: [
-      field({
-        name: "type",
-        label: "Type",
-        type: "select",
-        required: true,
-        options: [
-          { label: "Award", value: "AWARD" },
-          { label: "Certification", value: "CERTIFICATION" },
-          { label: "Partner", value: "PARTNER" },
-        ],
-      }),
+      field({ name: "name", label: "Name", type: "text", required: true }),
+      field({ name: "logo", label: "Logo", type: "image", required: true }),
+    ],
+  },
+  {
+    key: "certifications",
+    label: "Certifications",
+    apiPath: "/v1/admin/content-items",
+    contentType: "certification",
+    titleField: "name",
+    fields: [
+      field({ name: "name", label: "Name", type: "text", required: true }),
+      field({ name: "logo", label: "Logo", type: "image", required: true }),
+    ],
+  },
+  {
+    key: "partners",
+    label: "Partners",
+    apiPath: "/v1/admin/content-items",
+    contentType: "partner",
+    titleField: "name",
+    fields: [
       field({ name: "name", label: "Name", type: "text", required: true }),
       field({ name: "logo", label: "Logo", type: "image", required: true }),
     ],
@@ -190,7 +197,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "footer-nav-categories",
     label: "Footer Nav Categories",
-    apiPath: "/v1/admin/footer-nav-categories",
+    apiPath: "/v1/admin/content-items",
+    contentType: "footer_nav_category",
     titleField: "label",
     fields: [
       field({ name: "label", label: "Label", type: "text", required: true }),
@@ -583,7 +591,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "banners",
     label: "Banners",
-    apiPath: "/v1/admin/banners",
+    apiPath: "/v1/admin/content-items",
+    contentType: "banner",
     titleField: "title",
     fields: [
       field({ name: "title", label: "Title", type: "text", required: true }),

@@ -15,11 +15,9 @@ import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -35,8 +33,6 @@ import reactor.core.publisher.Mono;
 public class CaseStudyServiceImpl implements CaseStudyService {
   static final String TYPE = "case_study";
   private static final String TESTIMONIAL_TYPE = "testimonial";
-  private static final Pattern DIACRITICS = Pattern.compile("\\p{M}");
-  private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[^a-z0-9]+");
   private static final int MAX_RELATED = 3;
 
   private final ContentItemRepository contentItemRepository;
@@ -281,28 +277,8 @@ public class CaseStudyServiceImpl implements CaseStudyService {
 
   private Mono<String> resolveSlug(
       Long siteId, Long excludeId, String requestedSlug, String title) {
-    if (requestedSlug != null && !requestedSlug.isBlank()) {
-      String slug = slugify(requestedSlug);
-      return slugTaken(siteId, slug, excludeId)
-          .flatMap(
-              taken ->
-                  taken
-                      ? Mono.error(
-                          new ApplicationException(
-                              Message.Application.ERROR, "Slug already in use: " + slug))
-                      : Mono.just(slug));
-    }
-    return dedupeSlug(siteId, excludeId, slugify(title), 1);
-  }
-
-  private Mono<String> dedupeSlug(Long siteId, Long excludeId, String baseSlug, int attempt) {
-    String candidate = attempt == 1 ? baseSlug : baseSlug + "-" + attempt;
-    return slugTaken(siteId, candidate, excludeId)
-        .flatMap(
-            taken ->
-                taken
-                    ? dedupeSlug(siteId, excludeId, baseSlug, attempt + 1)
-                    : Mono.just(candidate));
+    return Slugs.resolve(
+        requestedSlug, title, "case-study", slug -> slugTaken(siteId, slug, excludeId));
   }
 
   private Mono<Boolean> slugTaken(Long siteId, String slug, Long excludeId) {
@@ -310,25 +286,5 @@ public class CaseStudyServiceImpl implements CaseStudyService {
         .findBySlug(siteId, TYPE, slug)
         .filter(other -> excludeId == null || !other.getId().equals(excludeId))
         .hasElement();
-  }
-
-  private static String slugify(String text) {
-    if (text == null) {
-      return "case-study";
-    }
-    String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
-    String withoutDiacritics = DIACRITICS.matcher(normalized).replaceAll("");
-    String slug = NON_ALPHANUMERIC.matcher(withoutDiacritics.toLowerCase()).replaceAll("-");
-    slug = slug.replaceAll("^-+|-+$", "");
-    String[] words = slug.split("-");
-    int wordLimit = Math.min(words.length, 7);
-    StringBuilder result = new StringBuilder();
-    for (int i = 0; i < wordLimit; i++) {
-      if (result.length() > 0) {
-        result.append("-");
-      }
-      result.append(words[i]);
-    }
-    return result.length() > 0 ? result.toString() : "case-study";
   }
 }
