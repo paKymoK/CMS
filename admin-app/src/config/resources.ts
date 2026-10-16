@@ -89,7 +89,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "services",
     label: "Services",
-    apiPath: "/v1/admin/services",
+    apiPath: "/v1/admin/content-items",
+    contentType: "service_card",
     titleField: "name",
     fields: [
       field({ name: "name", label: "Name", type: "text", required: true }),
@@ -100,7 +101,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "offices",
     label: "Offices",
-    apiPath: "/v1/admin/offices",
+    apiPath: "/v1/admin/content-items",
+    contentType: "office",
     titleField: "city",
     fields: [
       field({ name: "city", label: "City", type: "text", required: true }),
@@ -169,7 +171,8 @@ export const RESOURCES: ResourceConfig[] = [
   {
     key: "testimonials",
     label: "Testimonials",
-    apiPath: "/v1/admin/testimonials",
+    apiPath: "/v1/admin/content-items",
+    contentType: "testimonial",
     titleField: "name",
     fields: [
       field({ name: "name", label: "Name", type: "text", required: true }),

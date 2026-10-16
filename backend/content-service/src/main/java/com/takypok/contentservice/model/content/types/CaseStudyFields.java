@@ -1,0 +1,36 @@
+package com.takypok.contentservice.model.content.types;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.takypok.contentservice.model.annotation.ContentTypeKey;
+import com.takypok.contentservice.model.content.ContentFields;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * A case study. The slug is the URL segment of its detail page and is unique per site (enforced by
+ * the uq_content_item_case_study_slug index and resolved by CaseStudyServiceImpl).
+ */
+@Getter
+@Setter
+@ContentTypeKey("case_study")
+public class CaseStudyFields implements ContentFields {
+  @NotBlank private String title;
+  private String slug;
+
+  /** Display string (e.g. "Jun 2, 2026"), not a real date type. */
+  private String date;
+
+  private String image;
+  private String category;
+  private String summary;
+
+  /** Rich text (HTML), sanitized by CaseStudyServiceImpl before it is stored. */
+  private String body;
+
+  /** [{"value":"40%","label":"Faster deployment cycle"}] — headline figures on the detail page. */
+  private JsonNode results;
+
+  /** content_item id of a "testimonial" item of the same site; null when there is no quote. */
+  private Long testimonialId;
+}

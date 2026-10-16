@@ -10,6 +10,7 @@ import com.takypok.contentservice.service.ContentItemService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -18,6 +19,12 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 public class ContentItemServiceImpl implements ContentItemService {
+  /**
+   * Types with rules the generic path doesn't apply (rich-text sanitizing, slug generation), so
+   * they are written only through their own service and endpoint.
+   */
+  private static final Set<String> SPECIALIZED_TYPES = Set.of(CaseStudyServiceImpl.TYPE);
+
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
 
@@ -39,6 +46,9 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   @Override
   public Mono<ContentItem> create(Long siteId, ContentItemCreateRequest request) {
+    if (SPECIALIZED_TYPES.contains(request.getContentType())) {
+      return Mono.error(specializedTypeError(request.getContentType()));
+    }
     return contentItemMapper
         .resolveAndValidate(request.getContentType(), request.getData())
         .flatMap(
@@ -59,7 +69,12 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   @Override
   public Mono<ContentItem> update(Long siteId, ContentItemUpdateRequest request) {
+    if (SPECIALIZED_TYPES.contains(request.getContentType())) {
+      return Mono.error(specializedTypeError(request.getContentType()));
+    }
     return getById(request.getId(), siteId)
+        .filter(item -> !SPECIALIZED_TYPES.contains(item.getContentType()))
+        .switchIfEmpty(Mono.error(specializedTypeError(CaseStudyServiceImpl.TYPE)))
         .flatMap(
             item ->
                 contentItemMapper
@@ -79,6 +94,12 @@ public class ContentItemServiceImpl implements ContentItemService {
                           if (request.getStatus() != null) item.setStatus(request.getStatus());
                           return contentItemRepository.save(item);
                         }));
+  }
+
+  private static ApplicationException specializedTypeError(String contentType) {
+    return new ApplicationException(
+        Message.Application.ERROR,
+        "Content type " + contentType + " is managed through its own endpoint");
   }
 
   @Override

@@ -2,16 +2,21 @@ package com.takypok.contentservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.takypok.contentservice.model.entity.CaseStudy;
-import com.takypok.contentservice.model.entity.Testimonial;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.model.entity.ContentItem;
+import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
-import com.takypok.contentservice.repository.CaseStudyRepository;
-import com.takypok.contentservice.repository.TestimonialRepository;
+import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,29 +30,58 @@ import reactor.test.StepVerifier;
  */
 @ExtendWith(MockitoExtension.class)
 class CaseStudyServiceImplTest {
+  private final ObjectMapper objectMapper = ConfigObjectMapper.objectMapper();
 
-  @Mock private CaseStudyRepository caseStudyRepository;
-  @Mock private TestimonialRepository testimonialRepository;
+  @Mock private ContentItemRepository contentItemRepository;
+  @Mock private ContentItemMapper contentItemMapper;
+
+  private CaseStudyServiceImpl service;
+
+  @BeforeEach
+  void setUp() {
+    service = new CaseStudyServiceImpl(contentItemRepository, contentItemMapper, objectMapper);
+    // validation itself is ContentItemMapperTest's job: pass the data through unchanged
+    lenient()
+        .when(contentItemMapper.resolveAndValidate(eq("case_study"), any(JsonNode.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(1)));
+  }
+
+  private ContentItem caseStudy(long id, long siteId, String json) throws Exception {
+    ContentItem item = new ContentItem();
+    item.setId(id);
+    item.setSiteId(siteId);
+    item.setContentType("case_study");
+    item.setData(objectMapper.readTree(json));
+    item.setDisplayOrder(0);
+    item.setActive(true);
+    item.setStatus("PUBLISHED");
+    return item;
+  }
+
+  private ContentItem testimonial(long id, long siteId) {
+    ContentItem item = new ContentItem();
+    item.setId(id);
+    item.setSiteId(siteId);
+    item.setContentType("testimonial");
+    item.setData(objectMapper.createObjectNode().put("name", "A client"));
+    return item;
+  }
 
   @Test
-  void publishedDetailLookupNeverLeaksAnotherSitesCaseStudyForTheSameSlug() {
-    CaseStudyServiceImpl service =
-        new CaseStudyServiceImpl(caseStudyRepository, testimonialRepository);
-    CaseStudy siteOnes = new CaseStudy();
-    siteOnes.setId(1L);
-    siteOnes.setSiteId(1L);
-    siteOnes.setSlug("shared-slug");
-    siteOnes.setTitle("Site 1's case study");
-    siteOnes.setCategory("cloud");
+  void publishedDetailLookupNeverLeaksAnotherSitesCaseStudyForTheSameSlug() throws Exception {
+    ContentItem siteOnes =
+        caseStudy(
+            1L,
+            1L,
+            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's case study\",\"category\":\"cloud\"}");
 
-    when(caseStudyRepository.findBySiteIdAndSlugAndStatusAndActive(
-            1L, "shared-slug", "PUBLISHED", true))
+    when(contentItemRepository.findBySlug(1L, "case_study", "shared-slug"))
         .thenReturn(Mono.just(siteOnes));
-    when(caseStudyRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-            1L, "PUBLISHED", true))
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                1L, "case_study", "PUBLISHED", true))
         .thenReturn(Flux.just(siteOnes));
-    when(caseStudyRepository.findBySiteIdAndSlugAndStatusAndActive(
-            2L, "shared-slug", "PUBLISHED", true))
+    when(contentItemRepository.findBySlug(2L, "case_study", "shared-slug"))
         .thenReturn(Mono.empty());
 
     StepVerifier.create(service.getPublishedDetailBySlug(1L, "shared-slug"))
@@ -60,11 +94,20 @@ class CaseStudyServiceImplTest {
   }
 
   @Test
+  void publishedDetailHidesADraftCaseStudy() throws Exception {
+    ContentItem draft = caseStudy(1L, 1L, "{\"slug\":\"wip\",\"title\":\"Work in progress\"}");
+    draft.setStatus("DRAFT");
+    when(contentItemRepository.findBySlug(1L, "case_study", "wip")).thenReturn(Mono.just(draft));
+
+    StepVerifier.create(service.getPublishedDetailBySlug(1L, "wip"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
+
+  @Test
   void creatingACaseStudyWithAnotherSitesTestimonialIdIsRejected() {
-    CaseStudyServiceImpl service =
-        new CaseStudyServiceImpl(caseStudyRepository, testimonialRepository);
     // testimonial 5 belongs to site 1, not site 2
-    when(testimonialRepository.findByIdAndSiteId(5L, 2L)).thenReturn(Mono.empty());
+    when(contentItemRepository.findByIdAndSiteId(5L, 2L)).thenReturn(Mono.empty());
 
     CaseStudyCreateRequest request = new CaseStudyCreateRequest();
     request.setTitle("A case study");
@@ -74,48 +117,99 @@ class CaseStudyServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
 
-    verify(caseStudyRepository, never()).save(any(CaseStudy.class));
+    verify(contentItemRepository, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void creatingACaseStudyLinkedToAnItemThatIsNotATestimonialIsRejected() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(caseStudy(5L, 1L, "{\"title\":\"Not a quote\"}")));
+
+    CaseStudyCreateRequest request = new CaseStudyCreateRequest();
+    request.setTitle("A case study");
+    request.setTestimonialId(5L);
+
+    StepVerifier.create(service.create(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+
+    verify(contentItemRepository, never()).save(any(ContentItem.class));
   }
 
   @Test
   void creatingACaseStudyWithItsOwnSitesTestimonialSucceeds() {
-    CaseStudyServiceImpl service =
-        new CaseStudyServiceImpl(caseStudyRepository, testimonialRepository);
-    Testimonial ownTestimonial = new Testimonial();
-    ownTestimonial.setId(5L);
-    ownTestimonial.setSiteId(1L);
-    when(testimonialRepository.findByIdAndSiteId(5L, 1L)).thenReturn(Mono.just(ownTestimonial));
-    when(caseStudyRepository.existsBySiteIdAndSlug(1L, "a-case-study"))
-        .thenReturn(Mono.just(false));
-    when(caseStudyRepository.save(any(CaseStudy.class)))
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(testimonial(5L, 1L)));
+    when(contentItemRepository.findBySlug(1L, "case_study", "a-case-study"))
+        .thenReturn(Mono.empty());
+    when(contentItemRepository.save(any(ContentItem.class)))
         .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
     CaseStudyCreateRequest request = new CaseStudyCreateRequest();
     request.setTitle("A case study");
     request.setTestimonialId(5L);
 
-    StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(
+            created -> {
+              assertEquals("a-case-study", created.slug());
+              assertEquals(5L, created.testimonialId());
+              assertEquals("DRAFT", created.status());
+              assertEquals(true, created.active());
+            })
+        .verifyComplete();
   }
 
   @Test
-  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesCaseStudyForTheSameSlug() {
-    CaseStudyServiceImpl service =
-        new CaseStudyServiceImpl(caseStudyRepository, testimonialRepository);
-    CaseStudy siteOnesDraft = new CaseStudy();
-    siteOnesDraft.setId(1L);
-    siteOnesDraft.setSiteId(1L);
-    siteOnesDraft.setSlug("shared-slug");
-    siteOnesDraft.setTitle("Site 1's draft");
-    siteOnesDraft.setCategory("cloud");
+  void aTakenSlugGetsANumericSuffixWhenGeneratedFromTheTitle() throws Exception {
+    when(contentItemRepository.findBySlug(1L, "case_study", "a-case-study"))
+        .thenReturn(Mono.just(caseStudy(9L, 1L, "{\"slug\":\"a-case-study\",\"title\":\"x\"}")));
+    when(contentItemRepository.findBySlug(1L, "case_study", "a-case-study-2"))
+        .thenReturn(Mono.empty());
+    when(contentItemRepository.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+    CaseStudyCreateRequest request = new CaseStudyCreateRequest();
+    request.setTitle("A case study");
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(created -> assertEquals("a-case-study-2", created.slug()))
+        .verifyComplete();
+  }
+
+  @Test
+  void anExplicitlyRequestedTakenSlugIsRejected() throws Exception {
+    when(contentItemRepository.findBySlug(1L, "case_study", "taken"))
+        .thenReturn(Mono.just(caseStudy(9L, 1L, "{\"slug\":\"taken\",\"title\":\"x\"}")));
+
+    CaseStudyCreateRequest request = new CaseStudyCreateRequest();
+    request.setTitle("A case study");
+    request.setSlug("taken");
+
+    StepVerifier.create(service.create(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
+
+  @Test
+  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesCaseStudyForTheSameSlug()
+      throws Exception {
+    ContentItem siteOnesDraft =
+        caseStudy(
+            1L,
+            1L,
+            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's draft\",\"category\":\"cloud\"}");
     siteOnesDraft.setStatus("DRAFT");
     siteOnesDraft.setActive(false);
 
-    when(caseStudyRepository.findBySiteIdAndSlug(1L, "shared-slug"))
+    when(contentItemRepository.findBySlug(1L, "case_study", "shared-slug"))
         .thenReturn(Mono.just(siteOnesDraft));
-    when(caseStudyRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-            1L, "PUBLISHED", true))
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                1L, "case_study", "PUBLISHED", true))
         .thenReturn(Flux.empty());
-    when(caseStudyRepository.findBySiteIdAndSlug(2L, "shared-slug")).thenReturn(Mono.empty());
+    when(contentItemRepository.findBySlug(2L, "case_study", "shared-slug"))
+        .thenReturn(Mono.empty());
 
     StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
         .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))

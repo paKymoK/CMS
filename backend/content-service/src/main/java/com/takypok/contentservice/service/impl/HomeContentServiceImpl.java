@@ -1,46 +1,53 @@
 package com.takypok.contentservice.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.model.content.types.CaseStudyFields;
+import com.takypok.contentservice.model.content.types.OfficeFields;
+import com.takypok.contentservice.model.content.types.ServiceCardFields;
+import com.takypok.contentservice.model.content.types.TestimonialFields;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.entity.LogoBadge;
 import com.takypok.contentservice.model.response.HomeContentResponse;
-import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.ContentItemService;
 import com.takypok.contentservice.service.FooterNavCategoryService;
 import com.takypok.contentservice.service.HomeContentService;
 import com.takypok.contentservice.service.LogoBadgeService;
-import com.takypok.contentservice.service.OfficeService;
 import com.takypok.contentservice.service.PostService;
-import com.takypok.contentservice.service.ServiceCardService;
 import com.takypok.contentservice.service.StatService;
-import com.takypok.contentservice.service.TestimonialService;
 import java.util.LinkedHashMap;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Composes all 8 content repositories + the generic content_item table (11 sources, since
- * award/certification/partner all read from the one LogoBadge table) into the site's single public
- * HomeContentResponse. Uses the Mono.zip array-combinator overload since the fluent zip only goes
- * up to 8 sources and there are 10 here.
+ * Composes the typed tables (stats, posts, logo badges, footer nav) and the generic content_item
+ * table into the site's single public HomeContentResponse. content_item is read once per request:
+ * service cards, offices, case studies and testimonials are picked out of it by type, and every
+ * other type lands in {@code sections}. Uses the Mono.zip array-combinator overload since the
+ * fluent zip only goes up to 8 sources.
  */
 @Component
 @RequiredArgsConstructor
 @SuppressWarnings("unchecked")
 public class HomeContentServiceImpl implements HomeContentService {
   private final StatService statService;
-  private final ServiceCardService serviceCardService;
-  private final OfficeService officeService;
-  private final CaseStudyService caseStudyService;
   private final PostService postService;
   private final LogoBadgeService logoBadgeService;
-  private final TestimonialService testimonialService;
   private final FooterNavCategoryService footerNavCategoryService;
   private final ContentItemService contentItemService;
+  private final ObjectMapper objectMapper;
+
+  /**
+   * Types with their own field in the response; everything else is a generic section. The
+   * service_* types are served by /v1/services — there can be dozens, so they stay out of the
+   * homepage payload.
+   */
+  private static final Set<String> DEDICATED_TYPES =
+      Set.of("service_card", "office", "case_study", "testimonial");
 
   @Override
   public Mono<HomeContentResponse> getHomeContent(Long siteId) {
@@ -50,38 +57,11 @@ public class HomeContentServiceImpl implements HomeContentService {
             .map(s -> new HomeContentResponse.Stat(s.getValue(), s.getLabel(), s.getNote()))
             .collectList();
 
-    Mono<List<HomeContentResponse.ServiceCard>> services =
-        serviceCardService
-            .getPublished(siteId)
-            .map(
-                s ->
-                    new HomeContentResponse.ServiceCard(
-                        s.getName(), s.getDescription(), s.getImage()))
-            .collectList();
-
-    Mono<List<HomeContentResponse.Office>> offices =
-        officeService
-            .getPublished(siteId)
-            .map(
-                o ->
-                    new HomeContentResponse.Office(
-                        o.getCity(),
-                        o.getLat(),
-                        o.getLon(),
-                        o.getFlagColor(),
-                        o.getBig(),
-                        o.getAddress(),
-                        o.getImage()))
-            .collectList();
-
-    Mono<List<HomeContentResponse.CaseStudy>> caseStudies =
-        caseStudyService
-            .getPublished(siteId)
-            .map(
-                c ->
-                    new HomeContentResponse.CaseStudy(
-                        c.getSlug(), c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
-            .collectList();
+    Mono<List<ContentItem>> items =
+        contentItemService.getAllPublished(siteId).collectList().cache();
+    Mono<List<HomeContentResponse.ServiceCard>> services = items.map(this::toServices);
+    Mono<List<HomeContentResponse.Office>> offices = items.map(this::toOffices);
+    Mono<List<HomeContentResponse.CaseStudy>> caseStudies = items.map(this::toCaseStudies);
 
     // Only "insight"-category posts render on the homepage today — other categories exist for
     // future post types (per the decision log) but aren't part of HomeContent yet.
@@ -111,23 +91,7 @@ public class HomeContentServiceImpl implements HomeContentService {
             .map(HomeContentServiceImpl::toLogoBadge)
             .collectList();
 
-    Mono<List<HomeContentResponse.Testimonial>> testimonials =
-        testimonialService
-            .getPublished(siteId)
-            .map(
-                t ->
-                    new HomeContentResponse.Testimonial(
-                        t.getName(),
-                        t.getTitle(),
-                        t.getCompany(),
-                        t.getQuote(),
-                        t.getPhoto(),
-                        t.getLogo(),
-                        t.getBackgroundImage(),
-                        t.getFlankLogo(),
-                        t.getFlankFrom(),
-                        t.getFlankTo()))
-            .collectList();
+    Mono<List<HomeContentResponse.Testimonial>> testimonials = items.map(this::toTestimonials);
 
     Mono<List<HomeContentResponse.FooterNavCategory>> footerNav =
         footerNavCategoryService
@@ -147,7 +111,7 @@ public class HomeContentServiceImpl implements HomeContentService {
             partners,
             testimonials,
             footerNav,
-            sectionsOf(contentItemService.getAllPublished(siteId)));
+            items.map(HomeContentServiceImpl::sectionsOf));
 
     return Mono.zip(
         sources,
@@ -188,51 +152,11 @@ public class HomeContentServiceImpl implements HomeContentService {
                                     s.getValue(), s.getLabel(), s.getNote()))
                         .toList());
 
-    Mono<List<HomeContentResponse.ServiceCard>> services =
-        serviceCardService
-            .getAll(siteId)
-            .map(
-                list ->
-                    list.stream()
-                        .map(
-                            s ->
-                                new HomeContentResponse.ServiceCard(
-                                    s.getName(), s.getDescription(), s.getImage()))
-                        .toList());
-
-    Mono<List<HomeContentResponse.Office>> offices =
-        officeService
-            .getAll(siteId)
-            .map(
-                list ->
-                    list.stream()
-                        .map(
-                            o ->
-                                new HomeContentResponse.Office(
-                                    o.getCity(),
-                                    o.getLat(),
-                                    o.getLon(),
-                                    o.getFlagColor(),
-                                    o.getBig(),
-                                    o.getAddress(),
-                                    o.getImage()))
-                        .toList());
-
-    Mono<List<HomeContentResponse.CaseStudy>> caseStudies =
-        caseStudyService
-            .getAll(siteId)
-            .map(
-                list ->
-                    list.stream()
-                        .map(
-                            c ->
-                                new HomeContentResponse.CaseStudy(
-                                    c.getSlug(),
-                                    c.getTitle(),
-                                    c.getDate(),
-                                    c.getCategory(),
-                                    c.getImage()))
-                        .toList());
+    Mono<List<ContentItem>> items =
+        contentItemService.getEveryItem(siteId).collectList().cache();
+    Mono<List<HomeContentResponse.ServiceCard>> services = items.map(this::toServices);
+    Mono<List<HomeContentResponse.Office>> offices = items.map(this::toOffices);
+    Mono<List<HomeContentResponse.CaseStudy>> caseStudies = items.map(this::toCaseStudies);
 
     // Same "insight"-only filter as getHomeContent — a preview of a draft "press-release"-category
     // post (once that category is actually used) still shouldn't render on the homepage preview,
@@ -263,26 +187,7 @@ public class HomeContentServiceImpl implements HomeContentService {
             .getAll(siteId, "PARTNER")
             .map(list -> list.stream().map(HomeContentServiceImpl::toLogoBadge).toList());
 
-    Mono<List<HomeContentResponse.Testimonial>> testimonials =
-        testimonialService
-            .getAll(siteId)
-            .map(
-                list ->
-                    list.stream()
-                        .map(
-                            t ->
-                                new HomeContentResponse.Testimonial(
-                                    t.getName(),
-                                    t.getTitle(),
-                                    t.getCompany(),
-                                    t.getQuote(),
-                                    t.getPhoto(),
-                                    t.getLogo(),
-                                    t.getBackgroundImage(),
-                                    t.getFlankLogo(),
-                                    t.getFlankFrom(),
-                                    t.getFlankTo()))
-                        .toList());
+    Mono<List<HomeContentResponse.Testimonial>> testimonials = items.map(this::toTestimonials);
 
     Mono<List<HomeContentResponse.FooterNavCategory>> footerNav =
         footerNavCategoryService
@@ -308,7 +213,7 @@ public class HomeContentServiceImpl implements HomeContentService {
             partners,
             testimonials,
             footerNav,
-            sectionsOf(contentItemService.getEveryItem(siteId)));
+            items.map(HomeContentServiceImpl::sectionsOf));
 
     return Mono.zip(
         sources,
@@ -327,23 +232,73 @@ public class HomeContentServiceImpl implements HomeContentService {
                 (Map<String, List<JsonNode>>) results[10]));
   }
 
-  /** Groups items by content_type, keeping display order inside each group. */
-  private static Mono<Map<String, List<JsonNode>>> sectionsOf(Flux<ContentItem> items) {
-    return items
-        .collectList()
+  /** Groups the generic items by content_type, keeping display order inside each group. */
+  private static Map<String, List<JsonNode>> sectionsOf(List<ContentItem> items) {
+    Map<String, List<JsonNode>> grouped = new LinkedHashMap<>();
+    for (ContentItem item : items) {
+      String type = item.getContentType();
+      if (DEDICATED_TYPES.contains(type) || type.startsWith("service_")) continue;
+      grouped.computeIfAbsent(type, k -> new java.util.ArrayList<>()).add(item.getData());
+    }
+    return grouped;
+  }
+
+  private <T> List<T> fieldsOf(List<ContentItem> items, String type, Class<T> fieldsClass) {
+    return items.stream()
+        .filter(i -> type.equals(i.getContentType()))
+        .map(i -> objectMapper.convertValue(i.getData(), fieldsClass))
+        .toList();
+  }
+
+  private List<HomeContentResponse.ServiceCard> toServices(List<ContentItem> items) {
+    return fieldsOf(items, "service_card", ServiceCardFields.class).stream()
         .map(
-            list -> {
-              Map<String, List<JsonNode>> grouped = new LinkedHashMap<>();
-              for (ContentItem item : list) {
-                // Service pages are served by their own endpoints (/v1/services) — there can be
-                // dozens, so they stay out of the homepage payload.
-                if (item.getContentType().startsWith("service_")) continue;
-                grouped
-                    .computeIfAbsent(item.getContentType(), k -> new java.util.ArrayList<>())
-                    .add(item.getData());
-              }
-              return grouped;
-            });
+            s ->
+                new HomeContentResponse.ServiceCard(
+                    s.getName(), s.getDescription(), s.getImage()))
+        .toList();
+  }
+
+  private List<HomeContentResponse.Office> toOffices(List<ContentItem> items) {
+    return fieldsOf(items, "office", OfficeFields.class).stream()
+        .map(
+            o ->
+                new HomeContentResponse.Office(
+                    o.getCity(),
+                    o.getLat(),
+                    o.getLon(),
+                    o.getFlagColor(),
+                    Boolean.TRUE.equals(o.getBig()),
+                    o.getAddress(),
+                    o.getImage()))
+        .toList();
+  }
+
+  private List<HomeContentResponse.CaseStudy> toCaseStudies(List<ContentItem> items) {
+    return fieldsOf(items, "case_study", CaseStudyFields.class).stream()
+        .map(
+            c ->
+                new HomeContentResponse.CaseStudy(
+                    c.getSlug(), c.getTitle(), c.getDate(), c.getCategory(), c.getImage()))
+        .toList();
+  }
+
+  private List<HomeContentResponse.Testimonial> toTestimonials(List<ContentItem> items) {
+    return fieldsOf(items, "testimonial", TestimonialFields.class).stream()
+        .map(
+            t ->
+                new HomeContentResponse.Testimonial(
+                    t.getName(),
+                    t.getTitle(),
+                    t.getCompany(),
+                    t.getQuote(),
+                    t.getPhoto(),
+                    t.getLogo(),
+                    t.getBackgroundImage(),
+                    t.getFlankLogo(),
+                    t.getFlankFrom(),
+                    t.getFlankTo()))
+        .toList();
   }
 
   private static HomeContentResponse.LogoBadge toLogoBadge(LogoBadge badge) {

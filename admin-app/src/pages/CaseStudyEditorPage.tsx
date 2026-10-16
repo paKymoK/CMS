@@ -124,8 +124,14 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
   const testimonialsQuery = useQuery({
     queryKey: ["testimonials-picker", site],
     queryFn: async () => {
-      const { data } = await contentApi.get("/v1/admin/testimonials", { params: { site } });
-      return data.data as Testimonial[];
+      // Testimonials are generic content items: the fields live inside `data`.
+      const { data } = await contentApi.get("/v1/admin/content-items", {
+        params: { site, type: "testimonial" },
+      });
+      return (data.data as { id: number; data: Omit<Testimonial, "id"> }[]).map((row) => ({
+        ...row.data,
+        id: row.id,
+      })) as Testimonial[];
     },
     enabled: !!site,
   });

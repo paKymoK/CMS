@@ -1,11 +1,9 @@
 package com.takypok.contentservice.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.takypok.contentservice.model.entity.CaseStudy;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.response.ServiceNavResponse;
 import com.takypok.contentservice.model.response.ServicePageResponse;
-import com.takypok.contentservice.repository.CaseStudyRepository;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ServiceCatalogService;
 import com.takypok.core.exception.ApplicationException;
@@ -24,7 +22,6 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   static final String PAGE = "service_page";
 
   private final ContentItemRepository contentItemRepository;
-  private final CaseStudyRepository caseStudyRepository;
 
   private Flux<ContentItem> items(Long siteId, String type, boolean preview) {
     return preview
@@ -106,7 +103,8 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
               if (slugs != null && slugs.isArray()) slugs.forEach(s -> wanted.add(s.asText()));
 
               return Flux.fromIterable(wanted)
-                  .concatMap(s -> caseStudyRepository.findBySiteIdAndSlug(siteId, s))
+                  .concatMap(
+                      s -> contentItemRepository.findBySlug(siteId, CaseStudyServiceImpl.TYPE, s))
                   .filter(
                       c ->
                           preview
@@ -119,8 +117,14 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
             });
   }
 
-  private static ServicePageResponse.FeaturedCaseStudy featured(CaseStudy c) {
+  private static ServicePageResponse.FeaturedCaseStudy featured(ContentItem c) {
+    JsonNode d = c.getData();
     return new ServicePageResponse.FeaturedCaseStudy(
-        c.getSlug(), c.getTitle(), c.getSummary(), c.getImage(), c.getCategory(), c.getResults());
+        text(d, "slug"),
+        text(d, "title"),
+        text(d, "summary"),
+        text(d, "image"),
+        text(d, "category"),
+        d.get("results"));
   }
 }

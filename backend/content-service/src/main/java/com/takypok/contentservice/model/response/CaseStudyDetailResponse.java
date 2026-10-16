@@ -1,8 +1,7 @@
 package com.takypok.contentservice.model.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.takypok.contentservice.model.entity.CaseStudy;
-import com.takypok.contentservice.model.entity.Testimonial;
+import com.takypok.contentservice.model.content.types.TestimonialFields;
 import java.util.List;
 
 public record CaseStudyDetailResponse(
@@ -20,7 +19,7 @@ public record CaseStudyDetailResponse(
 
   public record TestimonialSummary(
       String name, String title, String company, String quote, String photo) {
-    public static TestimonialSummary from(Testimonial testimonial) {
+    public static TestimonialSummary from(TestimonialFields testimonial) {
       return new TestimonialSummary(
           testimonial.getName(),
           testimonial.getTitle(),
@@ -31,17 +30,19 @@ public record CaseStudyDetailResponse(
   }
 
   public static CaseStudyDetailResponse from(
-      CaseStudy caseStudy, TestimonialSummary testimonial, List<CaseStudySummaryResponse> related) {
+      CaseStudyResponse caseStudy,
+      TestimonialSummary testimonial,
+      List<CaseStudySummaryResponse> related) {
     return new CaseStudyDetailResponse(
-        caseStudy.getId(),
-        caseStudy.getSlug(),
-        caseStudy.getTitle(),
-        caseStudy.getSummary(),
-        caseStudy.getBody(),
-        caseStudy.getImage(),
-        caseStudy.getDate(),
-        caseStudy.getCategory(),
-        caseStudy.getResults(),
+        caseStudy.id(),
+        caseStudy.slug(),
+        caseStudy.title(),
+        caseStudy.summary(),
+        caseStudy.body(),
+        caseStudy.image(),
+        caseStudy.date(),
+        caseStudy.category(),
+        caseStudy.results(),
         testimonial,
         related);
   }

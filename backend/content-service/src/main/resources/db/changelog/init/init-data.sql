@@ -76,6 +76,20 @@ VALUES ('section_intro', 'Section intro',
         '{"tag": "string", "title": "string", "body": "textarea", "image": "image", "linkLabel": "string", "linkUrl": "string", "heading": "string", "metrics": "stat-list"}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
+-- Content that used to have a table each (service_card, office, testimonial, case_study) is stored
+-- as content_item rows of these types; see ServiceCardFields / OfficeFields / TestimonialFields /
+-- CaseStudyFields.
+INSERT INTO content_type (key, label, field_schema)
+VALUES ('service_card', 'Service card',
+        '{"name": "string", "description": "textarea", "image": "image"}'::jsonb),
+       ('office', 'Office',
+        '{"city": "string", "address": "string", "lat": "number", "lon": "number", "flagColor": "string", "big": "boolean", "image": "image"}'::jsonb),
+       ('testimonial', 'Testimonial',
+        '{"name": "string", "company": "string", "title": "string", "photo": "image", "quote": "textarea", "logo": "image", "backgroundImage": "image", "flankLogo": "image", "flankFrom": "string", "flankTo": "string"}'::jsonb),
+       ('case_study', 'Case study',
+        '{"title": "string", "slug": "string", "date": "string", "category": "string", "image": "image", "summary": "textarea", "body": "richtext", "results": "stat-list", "testimonialId": "number"}'::jsonb)
+ON CONFLICT (key) DO NOTHING;
+
 -- ── 'en' hero slides + assistant band (copy and imagery from the Figma "Homepage" frame) ───────
 INSERT INTO content_item (site_id, content_type, data, display_order, status)
 VALUES ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
@@ -215,8 +229,18 @@ VALUES
        ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Speed", "image": "/media-service/images/03a414f9-4a03-583a-b3f7-649961c1b52e.webp"}'::jsonb, 3, 'PUBLISHED');
 
 -- Case studies featured on the service pages (display order after the homepage ones)
-INSERT INTO case_study (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status)
-VALUES
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'case_study', jsonb_strip_nulls(jsonb_build_object(
+       'slug', slug,
+       'date', date,
+       'image', image,
+       'title', title,
+       'category', category,
+       'summary', summary,
+       'body', body,
+       'results', results,
+       'testimonialId', testimonial_id)), display_order, status
+FROM (VALUES
        ((SELECT id FROM site WHERE code = 'en'), 'partior-virtual-bank-simulator', 'May 12, 2026', '/media-service/images/43501e20-c924-50da-a581-791f4c35f0a3.webp', '95% Accuracy in Scenario Replication with Virtual Bank Simulator', 'Banking & Finance',
         'Transforming complex banking tests into seamless simulations',
         '<h2>The challenge</h2><p>Transforming complex banking tests into seamless simulations This sample case study outlines the approach.</p><h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
@@ -232,7 +256,8 @@ VALUES
        ((SELECT id FROM site WHERE code = 'en'), 'entrepreneurial-business-bank', 'March 22, 2026', '/media-service/images/34127678-0316-5b9c-b0ea-ed7c9952c0af.webp', 'An Entrepreneurial Business Bank', 'Banking & Finance',
         'A well-established bank offers a range of financial products and services include business and personal banking, equipment loans, working capital, acquisition financing, small business administration lending, cash management, and so on.',
         '<h2>The challenge</h2><p>A well-established bank offers a range of financial products and services include business and personal banking, equipment loans, working capital, acquisition financing, small business administration lending, cash management, and so on. This sample case study outlines the approach.</p><h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
-        '[{"value": "100%", "label": "customer satisfied"}]'::jsonb, NULL, 13, 'PUBLISHED');
+        '[{"value": "100%", "label": "customer satisfied"}]'::jsonb, NULL, 13, 'PUBLISHED')
+) AS v (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status);
 
 -- Services section
 INSERT INTO content_item (site_id, content_type, data, display_order, status)
@@ -285,18 +310,31 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), '32+', 'Years Of Experience', '
 
 -- Service cards (copy + imagery from the Figma "Architect" frame; the Digital & Cloud and Software
 -- images are the earlier seed photos, since the design file embeds none for those two).
-INSERT INTO service_card (site_id, name, description, image, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'AI & Digital Strategy Advisory', 'Align your vision with execution through strategic roadmaps that de-risk your digital transformation and accelerate time-to-market.', '/media-service/images/61a49aad-7b67-5d9b-b905-35ba55bf6995.webp', 0, 'PUBLISHED'),
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'service_card', jsonb_strip_nulls(jsonb_build_object(
+       'name', name,
+       'description', description,
+       'image', image)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'AI & Digital Strategy Advisory', 'Align your vision with execution through strategic roadmaps that de-risk your digital transformation and accelerate time-to-market.', '/media-service/images/61a49aad-7b67-5d9b-b905-35ba55bf6995.webp', 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Data & AI Solutions', 'Standardize complex data silos into actionable intelligence to automate operations and unlock new revenue streams.', '/media-service/images/13d2553a-7ea7-59aa-be16-35da6fe3d283.webp', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Digital & Cloud Solutions', 'Migrate and modernize your infrastructure with scalable, high-performance cloud environments built for ultimate business agility.', '/media-service/images/f51d0009-870c-5977-981a-c3363a34c43d.jpg', 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Enterprise Solutions', 'Streamline core business operations by seamlessly integrating tailored ERP and CRM platforms.', '/media-service/images/0680bca6-d0bd-5ef4-9270-7a68851b9d1a.webp', 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Infrastructure & App Managed Services', 'Ensure 24/7 operational resilience and peak performance. Simultaneously, lower overhead by optimizing costs and resource efficiency.', '/media-service/images/f767d391-9f18-57de-ac67-b5e11500c2ab.webp', 4, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Cybersecurity', 'Safeguard digital assets, ensure strict compliance, and build trust with a proactive, zero-trust security framework.', '/media-service/images/5fa84228-af83-51e8-b466-a44b65772133.webp', 5, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'Software Engineering', 'Deliver high-quality, custom applications at global speed with elite tech talent.', '/media-service/images/411d3736-e1cc-50df-86ec-b7c288743f1f.jpg', 6, 'PUBLISHED');
+       ((SELECT id FROM site WHERE code = 'en'), 'Software Engineering', 'Deliver high-quality, custom applications at global speed with elite tech talent.', '/media-service/images/411d3736-e1cc-50df-86ec-b7c288743f1f.jpg', 6, 'PUBLISHED')
+) AS v (site_id, name, description, image, display_order, status);
 
 -- Offices
-INSERT INTO office (site_id, lat, lon, flag_color, big, city, address, image, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 21.03, 105.78, '#da251d', true, 'Hanoi Office (Headquarter)', '7 - 10F, CMC Tower, 11 Duy Tan Street, Cau Giay
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'office', jsonb_strip_nulls(jsonb_build_object(
+       'lat', lat,
+       'lon', lon,
+       'flagColor', flag_color,
+       'big', big,
+       'city', city,
+       'address', address,
+       'image', image)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 21.03, 105.78, '#da251d', true, 'Hanoi Office (Headquarter)', '7 - 10F, CMC Tower, 11 Duy Tan Street, Cau Giay
 Ward, Hanoi 100000, Vietnam', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 10.78, 106.70, '#da251d', false, 'Ho Chi Minh City Office', 'Delivery centre · 1200+ engineers
 District 1, Ho Chi Minh City, Vietnam', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 1, 'PUBLISHED'),
@@ -311,7 +349,8 @@ Sydney CBD, NSW, Australia', '/media-service/images/249edde3-116e-551f-a8c5-c51e
        ((SELECT id FROM site WHERE code = 'en'), 37.34, -121.89, '#b22234', false, 'San Jose Office', 'Silicon Valley
 San Jose, California, USA', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 6, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 50.11, 8.68, '#1a1a1a', false, 'Frankfurt Office', 'DACH market
-Frankfurt am Main, Germany', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 7, 'PUBLISHED');
+Frankfurt am Main, Germany', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 7, 'PUBLISHED')
+) AS v (site_id, lat, lon, flag_color, big, city, address, image, display_order, status);
 
 -- Logo badges (awards / certifications / partners)
 INSERT INTO logo_badge (site_id, type, name, logo, display_order, status)
@@ -331,14 +370,26 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'AWARD', 'Award 1', '/media-ser
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'UiPath', '/media-service/images/fc905c4f-0f16-5f1f-94a0-5dda8d926e1f.png', 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'PARTNER', 'ISTQB', '/media-service/images/07747331-7981-5bca-933a-88482dbc0eb0.png', 4, 'PUBLISHED');
 
--- Testimonials — before case_study, which can reference one
-INSERT INTO testimonial (site_id, name, company, photo, logo, background_image, flank_logo, flank_from, flank_to, title, quote, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'Mr. Nick Benjamin', 'envato', '/media-service/images/63da191a-82c2-5927-8b35-fc70df49c616.webp', '/media-service/images/e126ca3b-4a8f-5b7c-acd6-d69b5d1c0645.svg', '/media-service/images/6b06cfc9-e9de-58f9-8b06-54215ee22391.webp', '/media-service/images/62e8fd32-66b7-5df6-9dcc-72e80d3ca63a.svg', '#87e64c', '#000000',
+-- Testimonials — before the case studies below, which can reference one
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'testimonial', jsonb_strip_nulls(jsonb_build_object(
+       'name', name,
+       'company', company,
+       'photo', photo,
+       'logo', logo,
+       'backgroundImage', background_image,
+       'flankLogo', flank_logo,
+       'flankFrom', flank_from,
+       'flankTo', flank_to,
+       'title', title,
+       'quote', quote)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'Mr. Nick Benjamin', 'envato', '/media-service/images/63da191a-82c2-5927-8b35-fc70df49c616.webp', '/media-service/images/e126ca3b-4a8f-5b7c-acd6-d69b5d1c0645.svg', '/media-service/images/6b06cfc9-e9de-58f9-8b06-54215ee22391.webp', '/media-service/images/62e8fd32-66b7-5df6-9dcc-72e80d3ca63a.svg', '#87e64c', '#000000',
         'CTO', 'CMC Global’s helped us in a number of different ways. One is that CMC Global’s actually delivered what they said they would do. And so for me, that’s foundational. It’s important that when CMC Global say they can deliver teams, expertise or capability that they’re able to. And the second thing that I value is that actually many of the team members are actually coming with their own ideas and actually bringing alternative viewpoints for us to consider.', 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Mr. Kim Teak Joong', 'RSUPPORT', '/media-service/images/6ff4916f-16d9-5431-b03b-1d416a701ac3.webp', '/media-service/images/c759c17b-3318-5bc1-b142-baf9f985974a.webp', '/media-service/images/1dcb33c5-df5d-5f6b-ac75-bb1d31629984.webp', '/media-service/images/c14a4559-239a-54ec-9cec-cbdb12aef99d.webp', '#ad0021', '#47000d',
         'CTO', 'CMC Global’s greatest strength lies in its proactive approach to understanding and addressing customer needs. When challenges arise, CMC Global views them from the customer’s perspective and proposes effective solutions. This problem-solving mindset fosters a strong sense of trust, making it clear that we are not just collaborating but growing together as true strategic partners.', 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'Mr. Le Minh', 'northstar', '/media-service/images/275a9039-92da-57d2-8678-fa64d11c4b7b.webp', '/media-service/images/367285f7-e062-5b36-bcdf-5ba64e6ecf1f.svg', '/media-service/images/b4aa8aaf-eaf1-5723-96ab-d70b2e7f0383.webp', '/media-service/images/728d1a6c-faf3-5411-8962-101a145430ca.svg', '#404040', '#000000',
-        'Chief Product Officer', 'Flexibility is definitely one of the character that we value most about CMC Global. Flexibility in terms of the number of headcounts that we hire, flexibility in terms of how you collaborate with us, flexibility in terms of the skills that we need to hire. Your technical knowledge is also something I definitely value a lot. And having your guidance in terms of what are the capabilities we should grow is definitely a key part of the future collaboration that I would love to see continuously with CMC Global.', 2, 'PUBLISHED');
+        'Chief Product Officer', 'Flexibility is definitely one of the character that we value most about CMC Global. Flexibility in terms of the number of headcounts that we hire, flexibility in terms of how you collaborate with us, flexibility in terms of the skills that we need to hire. Your technical knowledge is also something I definitely value a lot. And having your guidance in terms of what are the capabilities we should grow is definitely a key part of the future collaboration that I would love to see continuously with CMC Global.', 2, 'PUBLISHED')
+) AS v (site_id, name, company, photo, logo, background_image, flank_logo, flank_from, flank_to, title, quote, display_order, status);
 
 -- Footer navigation
 INSERT INTO footer_nav_category (site_id, label, links, display_order, status)
@@ -355,8 +406,18 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'Services',
 
 -- Case studies. Results reuse only the figures already stated in each seeded title; the last one
 -- is linked to the envato testimonial, the others stay unlinked (exercises the 'no quote' page path).
-INSERT INTO case_study (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection-software', 'June 25, 2026', '/media-service/images/8bb34389-3409-5daa-8fb3-f70433d5e357.webp', '36% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software', 'Agentic AI Software Delivery',
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT site_id, 'case_study', jsonb_strip_nulls(jsonb_build_object(
+       'slug', slug,
+       'date', date,
+       'image', image,
+       'title', title,
+       'category', category,
+       'summary', summary,
+       'body', body,
+       'results', results,
+       'testimonialId', testimonial_id)), display_order, status
+FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection-software', 'June 25, 2026', '/media-service/images/8bb34389-3409-5daa-8fb3-f70433d5e357.webp', '36% Higher Productivity & 40% Faster QA With Agentic AI For Intrusion Detection Software', 'Agentic AI Software Delivery',
         'How agentic AI across the delivery lifecycle lifted productivity and shortened QA for an intrusion detection software team.',
         ''
                '<h2>The challenge</h2><p>A security software team needed to ship faster without loosening quality gates. This sample case study outlines the approach.</p>'
@@ -383,7 +444,8 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'agentic-ai-intrusion-detection
                '<h2>The challenge</h2><p>Choosing an engineering partner is a trust decision as much as a technical one. This sample case study outlines what mattered.</p>'
                '<h2>The approach</h2><p>Early delivery, open communication and dependable connectivity between teams built confidence quickly.</p>'
                '<h2>The outcome</h2><p>Editors: replace this sample copy with the real case study for your region.</p>',
-        '[]'::jsonb, (SELECT id FROM testimonial WHERE site_id = (SELECT id FROM site WHERE code = 'en') AND company = 'envato' ORDER BY id LIMIT 1), 3, 'PUBLISHED');
+        '[]'::jsonb, (SELECT id FROM content_item WHERE site_id = (SELECT id FROM site WHERE code = 'en') AND content_type = 'testimonial' AND data ->> 'company' = 'envato' ORDER BY id LIMIT 1), 3, 'PUBLISHED')
+) AS v (site_id, slug, date, image, title, category, summary, body, results, testimonial_id, display_order, status);
 
 -- Posts
 INSERT INTO post (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status)

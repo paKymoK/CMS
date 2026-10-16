@@ -1,10 +1,10 @@
 package com.takypok.contentservice.controller;
 
 import com.takypok.contentservice.config.CmsAdminGuard;
-import com.takypok.contentservice.model.entity.CaseStudy;
 import com.takypok.contentservice.model.entity.Site;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
 import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
+import com.takypok.contentservice.model.response.CaseStudyResponse;
 import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.SiteService;
 import com.takypok.core.model.ResultMessage;
@@ -24,7 +24,7 @@ public class CaseStudyController {
   private final CmsAdminGuard cmsAdminGuard;
 
   @GetMapping("")
-  public Mono<ResultMessage<List<CaseStudy>>> get(
+  public Mono<ResultMessage<List<CaseStudyResponse>>> get(
       @RequestParam String site, Authentication authentication) {
     return authorizedSite(site, authentication)
         .flatMap(resolved -> caseStudyService.getAll(resolved.getId()))
@@ -32,7 +32,7 @@ public class CaseStudyController {
   }
 
   @GetMapping("/{id}")
-  public Mono<ResultMessage<CaseStudy>> getById(
+  public Mono<ResultMessage<CaseStudyResponse>> getById(
       @PathVariable Long id, @RequestParam String site, Authentication authentication) {
     return authorizedSite(site, authentication)
         .flatMap(resolved -> caseStudyService.getById(id, resolved.getId()))
@@ -40,7 +40,7 @@ public class CaseStudyController {
   }
 
   @PostMapping("")
-  public Mono<ResultMessage<CaseStudy>> create(
+  public Mono<ResultMessage<CaseStudyResponse>> create(
       @RequestParam String site,
       @Valid @RequestBody CaseStudyCreateRequest request,
       Authentication authentication) {
@@ -50,7 +50,7 @@ public class CaseStudyController {
   }
 
   @PutMapping("")
-  public Mono<ResultMessage<CaseStudy>> update(
+  public Mono<ResultMessage<CaseStudyResponse>> update(
       @RequestParam String site,
       @Valid @RequestBody CaseStudyUpdateRequest request,
       Authentication authentication) {
