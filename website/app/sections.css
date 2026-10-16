@@ -464,9 +464,13 @@
 .wfc-title {
   margin-top: 14px;
   max-width: 730px;
-  font-size: clamp(32px, 8vw, 46px);
-  font-weight: 600;
+  font-size: clamp(36px, 10vw, 56px);
+  font-weight: 700;
   line-height: 1.02;
+  background-image: linear-gradient(100deg, #b1f7ff 0%, #00aaff 43%, #d5edff 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .wfc-body {
   margin-top: 18px;
@@ -477,19 +481,26 @@
 .wfc-cta {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 7px;
   align-self: flex-start;
   margin-top: 28px;
-  height: 52px;
-  padding: 0 22px;
+  height: 57px;
+  white-space: nowrap;
+  padding: 0 15px 0 24px;
   border: 1px solid #fff;
   border-radius: 60px;
   font-size: 18px;
   font-weight: 600;
+  line-height: 1.6;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+}
+.wfc-cta-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
 }
 .wfc-cta:hover {
   background: #fff;
@@ -516,20 +527,20 @@
   .wfc-title {
     position: absolute;
     left: calc(237 * var(--u));
-    top: calc(832 * var(--u));
-    width: calc(730 * var(--u));
+    top: calc(863 * var(--u));
+    width: calc(700 * var(--u));
     max-width: none;
     margin: 0;
-    font-size: max(34px, calc(60 * var(--u)));
+    font-size: max(40px, calc(80 * var(--u)));
   }
   .wfc-body {
     position: absolute;
     left: calc(237 * var(--u));
-    top: calc(1042 * var(--u));
-    width: calc(773 * var(--u));
+    top: calc(1045 * var(--u));
+    width: calc(926 * var(--u));
     max-width: none;
     margin: 0;
-    font-size: max(15px, calc(21 * var(--u)));
+    font-size: max(15px, calc(25 * var(--u)));
   }
   .wfc-cta {
     position: absolute;
@@ -539,8 +550,13 @@
     height: calc(57 * var(--u));
     min-height: 44px;
     margin: 0;
-    padding: 0;
+    padding: 0 calc(15 * var(--u)) 0 calc(24 * var(--u));
+    gap: calc(7 * var(--u));
     font-size: max(14px, calc(18 * var(--u)));
+  }
+  .wfc-cta-icon {
+    width: calc(30 * var(--u));
+    height: calc(30 * var(--u));
   }
 }
 
@@ -604,7 +620,15 @@
   text-overflow: ellipsis;
   transition:
     right 0.4s ease,
-    border-radius 0.4s ease;
+    border-radius 0.4s ease,
+    box-shadow 0.4s ease;
+}
+/* Open state in the design: the tag turns near-black with a hairline white edge and tighter corners. */
+.cs-card:hover .cs-tag,
+.cs-card:focus-visible .cs-tag {
+  border-radius: 3px;
+  background: linear-gradient(90deg, #00242d, #020913);
+  box-shadow: inset 0 0 0 0.5px #fff;
 }
 .cs-info {
   position: absolute;
@@ -661,6 +685,11 @@
   .cs-info {
     opacity: 1;
     transform: none;
+  }
+  .cs-tag {
+    border-radius: 3px;
+    background: linear-gradient(90deg, #00242d, #020913);
+    box-shadow: inset 0 0 0 0.5px #fff;
   }
 }
 .cs-more {
@@ -820,24 +849,6 @@
   line-height: 1.05;
   color: #000;
 }
-.ins-read {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 45px;
-  padding: 0 22px;
-  border: 1px solid #007be0;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #e1f5ff, rgba(186, 209, 228, 0.15));
-  font-size: 16px;
-  font-weight: 600;
-  white-space: nowrap;
-  color: #00487d;
-  transition: background-color 0.2s ease;
-}
-.ins-read:hover {
-  background: #d4f0ff;
-}
 .ins-more {
   margin: 24px 24px 0;
   text-align: right;
@@ -897,18 +908,10 @@
     max-width: none;
     font-size: max(22px, calc(33 * var(--u)));
   }
-  .ins-read {
-    position: absolute;
-    right: 0;
-    top: calc(6 * var(--u));
-    height: calc(45 * var(--u));
-    min-height: 38px;
-    font-size: max(14px, calc(16 * var(--u)));
-  }
   .ins-more {
     position: absolute;
     right: calc(1920 * var(--u) - 1668 * var(--u));
-    top: calc(874 * var(--u));
+    top: calc(840 * var(--u));
     margin: 0;
   }
 }

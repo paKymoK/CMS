@@ -85,7 +85,7 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
 }'::jsonb, 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "insights", "eyebrow": "Insights", "title": "Building Tomorrow Together",
-  "linkLabel": "Explore all Insights", "linkUrl": "/insights", "buttonLabel": "Read this letter"
+  "linkLabel": "Explore all Insights", "linkUrl": "/insights"
 }'::jsonb, 4, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "recognition", "title": "Global Recognition for Innovative Engineering",
@@ -95,8 +95,7 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "contact", "title": "Maximize Your ROI in the Cloud\nLet''s Chat!"
 }'::jsonb, 6, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'feature_band', '{
-  "eyebrow": "Your Extended Tech Workforce",
-  "title": "Scale your tech capabilities with precision and agility",
+  "title": "Your Extended Tech Workforce",
   "body": "Expand your engineering bandwidth with flexible, cross-functional tech teams that seamlessly align with your workflows and scale as your goals evolve.",
   "ctaLabel": "Meet our experts", "ctaUrl": "#contact",
   "image": "/media-service/images/b5bf601b-153d-5766-9252-af68a3813c1b.webp"

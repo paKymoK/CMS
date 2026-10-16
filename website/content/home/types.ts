@@ -107,8 +107,6 @@ export type SectionIntro = {
   /** The section's "see all" link. */
   linkLabel?: string;
   linkUrl?: string;
-  /** Label of the section's primary button (e.g. "Read this letter"). */
-  buttonLabel?: string;
   /** Decorative artwork used by the section. */
   image?: string;
 };

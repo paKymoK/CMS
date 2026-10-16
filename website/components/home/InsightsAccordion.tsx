@@ -13,7 +13,6 @@ const FALLBACK_INTRO: SectionIntro = {
   title: "Building Tomorrow Together",
   linkLabel: "Explore all Insights",
   linkUrl: "/insights",
-  buttonLabel: "Read this letter",
 };
 
 // The accordion on the artboard: x and width of each panel by its rank from the open one (in artboard
@@ -39,7 +38,7 @@ const Chevron = ({ dir }: { dir: "left" | "right" }) => (
 /**
  * "Building Tomorrow Together" (Figma "Building"): a photo accordion. One panel is open at full
  * width with its date; the rest fan out as ever-narrower slivers. Clicking a sliver — or the arrows —
- * opens it. The open item's headline and a button to its page sit underneath.
+ * opens it. The open item's headline sits underneath.
  */
 export function InsightsAccordion({
   insights,
@@ -136,11 +135,6 @@ export function InsightsAccordion({
           <h3 className="ins-active-title" aria-live="polite">
             {current.title}
           </h3>
-          {current.slug && intro.buttonLabel && (
-            <Link href={`/insights/${current.slug}`} className="ins-read">
-              {intro.buttonLabel}
-            </Link>
-          )}
         </div>
 
         {intro.linkLabel && intro.linkUrl && (

@@ -32,9 +32,6 @@ public class SectionIntroFields implements ContentFields {
 
   private String linkUrl;
 
-  /** Label of the section's primary button (e.g. "Read this letter"). */
-  private String buttonLabel;
-
   /** Decorative artwork used by the section (e.g. the rings behind the leadership team). */
   private String image;
 }

@@ -2,8 +2,7 @@ import { CoverImage } from "@/components/ui/CoverImage";
 import type { FeatureBand } from "@/content/home/types";
 
 const FALLBACK: FeatureBand = {
-  eyebrow: "Your Extended Tech Workforce",
-  title: "Scale your tech capabilities with precision and agility",
+  title: "Your Extended Tech Workforce",
   body: "Expand your engineering bandwidth with flexible, cross-functional tech teams that seamlessly align with your workflows and scale as your goals evolve.",
   ctaLabel: "Meet our experts",
   ctaUrl: "#contact",
@@ -38,10 +37,11 @@ export function ExtendedWorkforce({ band = FALLBACK }: { band?: FeatureBand }) {
               {band.ctaLabel}
               <svg
                 viewBox="0 0 30 30"
-                className="h-[26px] w-[26px] fill-none stroke-current stroke-[1.6]"
+                className="wfc-cta-icon fill-none stroke-current stroke-[1.875]"
                 aria-hidden
               >
-                <path d="M7 15h15M16 9l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="15.1" cy="15" r="11.4" />
+                <path d="M8.7 15h13.8M16.5 9.1l6 5.9-6 5.9" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </a>
           )}

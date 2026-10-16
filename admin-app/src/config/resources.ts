@@ -280,7 +280,6 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "kicker", label: "Small label above the list", type: "text" }),
       field({ name: "linkLabel", label: "\"See all\" link label", type: "text" }),
       field({ name: "linkUrl", label: "\"See all\" link URL", type: "text" }),
-      field({ name: "buttonLabel", label: "Button label", type: "text" }),
       field({ name: "image", label: "Decorative artwork", type: "image" }),
     ],
   },
