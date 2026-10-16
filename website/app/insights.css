@@ -349,7 +349,7 @@
 .csl-box {
   position: relative;
   display: flex;
-  flex: 1 1 150px;
+  flex: 1 1 120px;
   align-items: center;
   height: 47px;
   padding: 0 40px 0 19px;
@@ -388,8 +388,11 @@
 .csl-box:focus-within {
   box-shadow: 0 0 0 2px #00a9ff;
 }
+.csl-box--cap {
+  flex: 2 1 190px;
+}
 .csl-box--search {
-  flex: 2 1 220px;
+  flex: 2 1 140px;
 }
 .csl-caret {
   position: absolute;
@@ -479,10 +482,6 @@
 }
 .csl-card-title {
   margin-top: 22px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   font-size: 22px;
   font-weight: 700;
   line-height: 1.1;
@@ -490,10 +489,6 @@
 }
 .csl-card-sum {
   margin-top: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   font-size: 16px;
   line-height: 1.3;
   letter-spacing: -0.02em;
@@ -690,7 +685,14 @@
     height: calc(231 * var(--u));
     aspect-ratio: auto;
   }
+  .csl-card-title,
+  .csl-card-sum {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   .csl-card-title {
+    -webkit-line-clamp: 3;
     position: absolute;
     left: calc(22 * var(--u));
     top: calc(270 * var(--u));
@@ -699,6 +701,7 @@
     font-size: max(16px, calc(24 * var(--u)));
   }
   .csl-card-sum {
+    -webkit-line-clamp: 5;
     position: absolute;
     left: calc(22 * var(--u));
     top: calc(364 * var(--u));
@@ -739,4 +742,13 @@
     height: calc(30 * var(--u));
     font-size: max(14px, calc(19 * var(--u)));
   }
+}
+
+/* Results dim (not blank) while a page or filter change loads; the short delay avoids a flash on fast loads. */
+.csl-fade {
+  transition: opacity 0.2s ease 0.12s;
+}
+.csl-fade[data-pending] {
+  opacity: 0.45;
+  pointer-events: none;
 }

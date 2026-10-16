@@ -1,4 +1,6 @@
 import { Link } from "@/i18n/navigation";
+import { caseStudiesHref } from "@/lib/cms/caseStudyNav";
+import { LinkPendingFlag } from "@/components/case-studies/ResultsPending";
 
 const MAX_NUMBERS = 7;
 
@@ -25,13 +27,7 @@ export function CaseStudyPager({
 }) {
   if (totalPages <= 1) return null;
 
-  const href = (p: number) => {
-    const query: Record<string, string> = {};
-    if (category) query.category = category;
-    if (q) query.q = q;
-    if (p > 1) query.page = String(p);
-    return { pathname: "/case-studies" as const, query };
-  };
+  const href = (p: number) => caseStudiesHref({ page: p, category, q });
 
   return (
     <nav className="csl-pager" aria-label="Case studies pages">
@@ -40,6 +36,7 @@ export function CaseStudyPager({
           <svg viewBox="0 0 7 14" aria-hidden>
             <path d="M6 1 1 7l5 6" fill="none" stroke="currentColor" strokeWidth="2" />
           </svg>
+          <LinkPendingFlag />
         </Link>
       ) : (
         <span className="csl-pager-arrow" aria-hidden />
@@ -53,6 +50,7 @@ export function CaseStudyPager({
           aria-label={`Page ${p}`}
         >
           {p}
+          <LinkPendingFlag />
         </Link>
       ))}
       {page < totalPages ? (
@@ -60,6 +58,7 @@ export function CaseStudyPager({
           <svg viewBox="0 0 7 14" aria-hidden>
             <path d="m1 1 5 6-5 6" fill="none" stroke="currentColor" strokeWidth="2" />
           </svg>
+          <LinkPendingFlag />
         </Link>
       ) : (
         <span className="csl-pager-arrow" aria-hidden />

@@ -3,14 +3,11 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCaseStudyPage } from "@/lib/cms/caseStudies";
-import { loadContent } from "@/lib/cms/loadContent";
-import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
-import { CaseStudiesHero } from "@/components/case-studies/CaseStudiesHero";
+import { RESULTS_ID } from "@/lib/cms/caseStudyNav";
 import { CaseStudyFilterBar } from "@/components/case-studies/CaseStudyFilterBar";
 import { CaseStudyListCard } from "@/components/case-studies/CaseStudyListCard";
 import { CaseStudyPager } from "@/components/case-studies/CaseStudyPager";
-import { ContactForm } from "@/components/home/ContactForm";
+import { PendingFade, ResultsPendingProvider } from "@/components/case-studies/ResultsPending";
 
 const TITLE = "Case Studies — CMC Global";
 const DESCRIPTION =
@@ -35,35 +32,40 @@ export default async function CaseStudiesPage(props: PageProps<"/[locale]/case-s
   const q = one(sp.q)?.trim() || undefined;
   const requested = Number.parseInt(one(sp.page) ?? "1", 10);
 
-  const [result, { content, isPreview }] = await Promise.all([
-    getCaseStudyPage({ page: Number.isFinite(requested) ? requested : 1, category, q }),
-    loadContent(),
-  ]);
+  const result = await getCaseStudyPage({
+    page: Number.isFinite(requested) ? requested : 1,
+    category,
+    q,
+  });
 
   return (
-    <>
-      {isPreview && <DraftBanner />}
-      <CaseStudiesHero />
-      <section aria-label="Case studies" className="design-canvas">
-        <div className="csl-body">
+    <section id={RESULTS_ID} aria-label="Case studies" className="design-canvas">
+      <div className="csl-body">
+        <ResultsPendingProvider>
           <CaseStudyFilterBar categories={result.categories} category={category} q={q} />
           <hr className="csl-rule" />
-          <p className="csl-count" aria-live="polite">
-            Showing {result.totalItems} {result.totalItems === 1 ? "result" : "results"}
-          </p>
-          {result.items.length === 0 ? (
-            <p className="csl-empty">No case studies match — try another filter.</p>
-          ) : (
-            <div className="csl-grid">
-              {result.items.map((study) => (
-                <CaseStudyListCard key={study.id} study={study} />
-              ))}
-            </div>
-          )}
-          <CaseStudyPager page={result.page} totalPages={result.totalPages} category={category} q={q} />
-        </div>
-      </section>
-      <ContactForm intro={sectionIntro(content, "contact")} />
-    </>
+          <PendingFade>
+            <p className="csl-count" aria-live="polite">
+              Showing {result.totalItems} {result.totalItems === 1 ? "result" : "results"}
+            </p>
+            {result.items.length === 0 ? (
+              <p className="csl-empty">No case studies match — try another filter.</p>
+            ) : (
+              <div className="csl-grid">
+                {result.items.map((study) => (
+                  <CaseStudyListCard key={study.id} study={study} />
+                ))}
+              </div>
+            )}
+            <CaseStudyPager
+              page={result.page}
+              totalPages={result.totalPages}
+              category={category}
+              q={q}
+            />
+          </PendingFade>
+        </ResultsPendingProvider>
+      </div>
+    </section>
   );
 }

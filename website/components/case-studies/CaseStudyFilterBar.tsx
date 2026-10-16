@@ -1,7 +1,9 @@
 "use client";
 
-import type { FormEvent } from "react";
+import { useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { caseStudiesHref } from "@/lib/cms/caseStudyNav";
+import { useReportPending } from "@/components/case-studies/ResultsPending";
 
 const Caret = () => (
   <svg viewBox="0 0 12 8" className="csl-caret" aria-hidden>
@@ -24,15 +26,14 @@ export function CaseStudyFilterBar({
   q?: string;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  useReportPending(isPending);
 
   const go = (form: HTMLFormElement) => {
     const data = new FormData(form);
-    const query: Record<string, string> = {};
-    const c = String(data.get("category") ?? "");
-    const text = String(data.get("q") ?? "").trim();
-    if (c) query.category = c;
-    if (text) query.q = text;
-    router.push({ pathname: "/case-studies", query });
+    const nextCategory = String(data.get("category") ?? "") || undefined;
+    const nextQuery = String(data.get("q") ?? "").trim() || undefined;
+    startTransition(() => router.push(caseStudiesHref({ category: nextCategory, q: nextQuery })));
   };
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
