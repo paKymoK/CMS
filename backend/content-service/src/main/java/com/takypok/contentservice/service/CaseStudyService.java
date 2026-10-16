@@ -3,6 +3,7 @@ package com.takypok.contentservice.service;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
 import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
 import com.takypok.contentservice.model.response.CaseStudyDetailResponse;
+import com.takypok.contentservice.model.response.CaseStudyPageResponse;
 import com.takypok.contentservice.model.response.CaseStudyResponse;
 import java.util.List;
 import reactor.core.publisher.Flux;
@@ -20,6 +21,13 @@ public interface CaseStudyService {
   Mono<Void> delete(Long id, Long siteId);
 
   Flux<CaseStudyResponse> getPublished(Long siteId);
+
+  /**
+   * One page of the published listing, optionally narrowed to a category and a text query (matched
+   * against title, summary and category). {@code page} is 1-based; out-of-range values are clamped.
+   */
+  Mono<CaseStudyPageResponse> searchPublished(
+      Long siteId, String category, String q, int page, int size);
 
   Mono<CaseStudyDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
 

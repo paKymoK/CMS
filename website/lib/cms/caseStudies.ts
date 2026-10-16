@@ -1,4 +1,4 @@
-import type { CaseStudyDetail } from "./types";
+import type { CaseStudyDetail, CaseStudyPage } from "./types";
 import { resolveMediaUrls } from "./media";
 import { cmsFetch } from "./cmsFetch";
 
@@ -47,5 +47,47 @@ export async function getPreviewCaseStudy(
   } catch (err) {
     console.error(`Failed to load preview case study "${slug}"`, err);
     return null;
+  }
+}
+
+export const CASE_STUDIES_PAGE_SIZE = 6;
+
+const EMPTY_PAGE: CaseStudyPage = {
+  items: [],
+  page: 1,
+  size: CASE_STUDIES_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+  categories: [],
+};
+
+/**
+ * One page of the published Case Studies listing (server-side paging and filtering). Like posts,
+ * there is no bundled fallback: a failure degrades to an empty page rather than stale content.
+ */
+export async function getCaseStudyPage(params: {
+  page?: number;
+  category?: string;
+  q?: string;
+}): Promise<CaseStudyPage> {
+  const search = new URLSearchParams();
+  search.set("page", String(params.page && params.page > 0 ? params.page : 1));
+  search.set("size", String(CASE_STUDIES_PAGE_SIZE));
+  if (params.category) search.set("category", params.category);
+  if (params.q) search.set("q", params.q);
+
+  try {
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/case-studies?${search}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error(`Failed to load case studies: ${res.status} ${res.statusText}`);
+      return EMPTY_PAGE;
+    }
+    const body = (await res.json()) as { data: CaseStudyPage };
+    return body.data ? resolveMediaUrls(body.data) : EMPTY_PAGE;
+  } catch (err) {
+    console.error("Failed to load case studies", err);
+    return EMPTY_PAGE;
   }
 }

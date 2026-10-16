@@ -57,3 +57,26 @@ export type CaseStudyDetail = {
   testimonial: CaseStudyTestimonial | null;
   related: RelatedCaseStudy[];
 };
+
+/** One card on the Case Studies listing. */
+export type CaseStudyCard = {
+  id: number;
+  slug: string;
+  title: string;
+  image?: string | null;
+  date: string;
+  category?: string | null;
+  summary?: string | null;
+};
+
+/** One server-side page of the Case Studies listing. */
+export type CaseStudyPage = {
+  items: CaseStudyCard[];
+  /** 1-based; the server clamps an out-of-range request. */
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+  /** Every category in use on the site — feeds the Capabilities filter. */
+  categories: string[];
+};

@@ -21,9 +21,7 @@ export type NavSection = {
 
 export const PRIMARY_NAV: PrimaryNavItem[] = [
   { label: "Services", hasDropdown: true },
-  // Temporary: points at the homepage's #cases anchor section until a real /case-studies
-  // listing page exists (only /case-studies/[slug] detail pages are built so far).
-  { label: "Case Studies", hasDropdown: true, href: "/#cases" },
+  { label: "Case Studies", hasDropdown: true, href: "/case-studies" },
   { label: "Insights", href: "/insights" },
   { label: "About Us", href: "/about" },
   { label: "Resources", hasDropdown: true },

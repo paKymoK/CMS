@@ -219,4 +219,97 @@ class CaseStudyServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
   }
+
+  private void publishedFor(long siteId, ContentItem... items) {
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                siteId, "case_study", "PUBLISHED", true))
+        .thenReturn(Flux.just(items));
+  }
+
+  private ContentItem listed(long id, String title, String category, String summary)
+      throws Exception {
+    return caseStudy(
+        id,
+        1L,
+        "{\"slug\":\"s-"
+            + id
+            + "\",\"title\":\""
+            + title
+            + "\",\"category\":\""
+            + category
+            + "\",\"summary\":\""
+            + summary
+            + "\"}");
+  }
+
+  @Test
+  void searchPublishedPagesTheListingAndReportsTotals() throws Exception {
+    publishedFor(
+        1L,
+        listed(1, "One", "Cloud", "a"),
+        listed(2, "Two", "AI", "b"),
+        listed(3, "Three", "Cloud", "c"),
+        listed(4, "Four", "Data", "d"),
+        listed(5, "Five", "Cloud", "e"));
+
+    StepVerifier.create(service.searchPublished(1L, null, null, 2, 2))
+        .assertNext(
+            page -> {
+              assertEquals(5, page.totalItems());
+              assertEquals(3, page.totalPages());
+              assertEquals(2, page.page());
+              assertEquals(
+                  java.util.List.of("Three", "Four"),
+                  page.items().stream().map(i -> i.title()).toList());
+              // every category on the site, not only this page's, sorted
+              assertEquals(java.util.List.of("AI", "Cloud", "Data"), page.categories());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void searchPublishedFiltersByCategoryAndTextAndClampsAnOutOfRangePage() throws Exception {
+    publishedFor(
+        1L,
+        listed(1, "Cloud migration", "Cloud", "moved a bank"),
+        listed(2, "Chatbot", "AI", "support bot"),
+        listed(3, "Cloud cost", "Cloud", "saved money"));
+
+    StepVerifier.create(service.searchPublished(1L, "cloud", null, 1, 6))
+        .assertNext(page -> assertEquals(2, page.totalItems()))
+        .verifyComplete();
+
+    publishedFor(1L, listed(1, "Cloud migration", "Cloud", "moved a bank"), listed(2, "Chatbot", "AI", "support bot"));
+    StepVerifier.create(service.searchPublished(1L, null, "SUPPORT", 1, 6))
+        .assertNext(
+            page -> {
+              assertEquals(1, page.totalItems());
+              assertEquals("Chatbot", page.items().get(0).title());
+            })
+        .verifyComplete();
+
+    publishedFor(1L, listed(1, "Only", "Cloud", "x"));
+    StepVerifier.create(service.searchPublished(1L, null, null, 99, 6))
+        .assertNext(
+            page -> {
+              assertEquals(1, page.page());
+              assertEquals(1, page.items().size());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void searchPublishedWithNoMatchesStillReturnsOneEmptyPage() throws Exception {
+    publishedFor(1L, listed(1, "One", "Cloud", "a"));
+
+    StepVerifier.create(service.searchPublished(1L, "Nope", null, 1, 6))
+        .assertNext(
+            page -> {
+              assertEquals(0, page.totalItems());
+              assertEquals(1, page.totalPages());
+              assertEquals(0, page.items().size());
+            })
+        .verifyComplete();
+  }
 }

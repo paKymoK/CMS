@@ -7,7 +7,9 @@ import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
 import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
+import com.takypok.contentservice.model.response.CaseStudyCardResponse;
 import com.takypok.contentservice.model.response.CaseStudyDetailResponse;
+import com.takypok.contentservice.model.response.CaseStudyPageResponse;
 import com.takypok.contentservice.model.response.CaseStudyResponse;
 import com.takypok.contentservice.model.response.CaseStudySummaryResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
@@ -97,6 +99,52 @@ public class CaseStudyServiceImpl implements CaseStudyService {
         .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
             siteId, TYPE, "PUBLISHED", true)
         .map(this::toResponse);
+  }
+
+  @Override
+  public Mono<CaseStudyPageResponse> searchPublished(
+      Long siteId, String category, String q, int page, int size) {
+    String wantedCategory = category != null && !category.isBlank() ? category.trim() : null;
+    String query = q != null && !q.isBlank() ? q.trim().toLowerCase() : null;
+    int pageSize = Math.max(1, size);
+    return getPublished(siteId)
+        .collectList()
+        .map(
+            all -> {
+              List<String> categories =
+                  all.stream()
+                      .map(CaseStudyResponse::category)
+                      .filter(c -> c != null && !c.isBlank())
+                      .distinct()
+                      .sorted(String.CASE_INSENSITIVE_ORDER)
+                      .toList();
+              List<CaseStudyResponse> matches =
+                  all.stream()
+                      .filter(
+                          c ->
+                              wantedCategory == null || wantedCategory.equalsIgnoreCase(c.category()))
+                      .filter(c -> query == null || searchableText(c).contains(query))
+                      .toList();
+              int totalPages = Math.max(1, (int) Math.ceil(matches.size() / (double) pageSize));
+              int current = Math.min(Math.max(1, page), totalPages);
+              List<CaseStudyCardResponse> items =
+                  matches.stream()
+                      .skip((long) (current - 1) * pageSize)
+                      .limit(pageSize)
+                      .map(CaseStudyCardResponse::from)
+                      .toList();
+              return new CaseStudyPageResponse(
+                  items, current, pageSize, matches.size(), totalPages, categories);
+            });
+  }
+
+  private static String searchableText(CaseStudyResponse c) {
+    return ((c.title() != null ? c.title() : "")
+            + " "
+            + (c.summary() != null ? c.summary() : "")
+            + " "
+            + (c.category() != null ? c.category() : ""))
+        .toLowerCase();
   }
 
   @Override

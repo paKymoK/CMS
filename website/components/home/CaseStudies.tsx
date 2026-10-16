@@ -10,7 +10,7 @@ const FALLBACK_INTRO: SectionIntro = {
   title: "Stories of Transformation",
   kicker: "Latest Case Study",
   linkLabel: "Explore all Case Studies",
-  linkUrl: "#cases",
+  linkUrl: "/case-studies",
 };
 
 /**
@@ -75,10 +75,10 @@ export function CaseStudies({
 
         {intro.linkLabel && intro.linkUrl && (
           <div className="cs-more">
-            <a href={intro.linkUrl} className="sec-link">
+            <Link href={intro.linkUrl} className="sec-link">
               {intro.linkLabel}
               <DiagonalArrow />
-            </a>
+            </Link>
           </div>
         )}
       </div>

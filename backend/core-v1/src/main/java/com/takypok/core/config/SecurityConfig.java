@@ -83,7 +83,7 @@ public class SecurityConfig {
                     // .authenticated() below.
                     .pathMatchers(HttpMethod.GET, "/v1/posts", "/v1/posts/**")
                     .permitAll()
-                    .pathMatchers(HttpMethod.GET, "/v1/case-studies/**")
+                    .pathMatchers(HttpMethod.GET, "/v1/case-studies", "/v1/case-studies/**")
                     .permitAll()
                     // Services menu tree + service pages (see PublicServiceController).
                     .pathMatchers(HttpMethod.GET, "/v1/services", "/v1/services/**")

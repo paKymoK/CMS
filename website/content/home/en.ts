@@ -35,7 +35,7 @@ export const homeContentEn: HomeContent = {
         title: "Stories of Transformation",
         kicker: "Latest Case Study",
         linkLabel: "Explore all Case Studies",
-        linkUrl: "#cases",
+        linkUrl: "/case-studies",
       },
       {
         section: "insights",

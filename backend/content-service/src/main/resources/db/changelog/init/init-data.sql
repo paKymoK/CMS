@@ -81,7 +81,7 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
 }'::jsonb, 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "cases", "eyebrow": "Case Studies", "title": "Stories of Transformation",
-  "kicker": "Latest Case Study", "linkLabel": "Explore all Case Studies", "linkUrl": "#cases"
+  "kicker": "Latest Case Study", "linkLabel": "Explore all Case Studies", "linkUrl": "/case-studies"
 }'::jsonb, 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "insights", "eyebrow": "Insights", "title": "Building Tomorrow Together",
