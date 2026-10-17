@@ -9,9 +9,9 @@ import lombok.Setter;
 /**
  * First real content type on the generic content_item path — a working example of the "strict
  * tier", not a stand-in for any of the 9 existing typed tables. Demonstrates the whole flow: this
- * one small class is all a new content_item-backed
- * section needs, and {@code question}/{@code answer} are enforced by ordinary Bean Validation, not
- * just "whatever JSON the admin form happened to send".
+ * one small class is all a new content_item-backed section needs, and {@code question}/{@code
+ * answer} are enforced by ordinary Bean Validation, not just "whatever JSON the admin form happened
+ * to send".
  */
 @Getter
 @Setter

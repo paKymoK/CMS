@@ -280,7 +280,10 @@ class CaseStudyServiceImplTest {
         .assertNext(page -> assertEquals(2, page.totalItems()))
         .verifyComplete();
 
-    publishedFor(1L, listed(1, "Cloud migration", "Cloud", "moved a bank"), listed(2, "Chatbot", "AI", "support bot"));
+    publishedFor(
+        1L,
+        listed(1, "Cloud migration", "Cloud", "moved a bank"),
+        listed(2, "Chatbot", "AI", "support bot"));
     StepVerifier.create(service.searchPublished(1L, null, "SUPPORT", 1, 6))
         .assertNext(
             page -> {

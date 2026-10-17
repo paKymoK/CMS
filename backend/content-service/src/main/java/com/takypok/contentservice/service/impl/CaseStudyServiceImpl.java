@@ -122,7 +122,8 @@ public class CaseStudyServiceImpl implements CaseStudyService {
                   all.stream()
                       .filter(
                           c ->
-                              wantedCategory == null || wantedCategory.equalsIgnoreCase(c.category()))
+                              wantedCategory == null
+                                  || wantedCategory.equalsIgnoreCase(c.category()))
                       .filter(c -> query == null || searchableText(c).contains(query))
                       .toList();
               int totalPages = Math.max(1, (int) Math.ceil(matches.size() / (double) pageSize));

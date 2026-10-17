@@ -14,9 +14,10 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * Public, unauthenticated, read-only — Case Studies listing + Case Study Detail. Site resolved from the visitor's own Host
- * header, same as PublicPostController/HomeController. /v1/admin/case-studies is a different path
- * prefix and untouched by this — still authenticated + site-access-checked.
+ * Public, unauthenticated, read-only — Case Studies listing + Case Study Detail. Site resolved from
+ * the visitor's own Host header, same as PublicPostController/HomeController.
+ * /v1/admin/case-studies is a different path prefix and untouched by this — still authenticated +
+ * site-access-checked.
  */
 @RestController
 @RequiredArgsConstructor
@@ -36,7 +37,8 @@ public class PublicCaseStudyController {
     int pageSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
     return siteService
         .resolveFromHost(exchange)
-        .flatMap(site -> caseStudyService.searchPublished(site.getId(), category, q, page, pageSize))
+        .flatMap(
+            site -> caseStudyService.searchPublished(site.getId(), category, q, page, pageSize))
         .map(ResultMessage::success);
   }
 

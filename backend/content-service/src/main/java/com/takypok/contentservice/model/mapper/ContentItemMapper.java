@@ -30,8 +30,8 @@ public class ContentItemMapper {
 
   /**
    * Rejects a content type with no registered {@code @ContentTypeKey} class, then validates {@code
-   * data} against that class. The Java classes are the only type registry (there is no
-   * content_type table), so a new type needs code and an unknown key can never be stored.
+   * data} against that class. The Java classes are the only type registry (there is no content_type
+   * table), so a new type needs code and an unknown key can never be stored.
    *
    * @return the canonical, validated JSON for this content type — re-serialized from the resolved
    *     ContentFields object, so a type's persisted data never carries fields it doesn't declare,
