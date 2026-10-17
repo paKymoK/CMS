@@ -938,3 +938,77 @@ body {
     transition: none;
   }
 }
+
+/* Tooltip (components/ui/Tooltip.tsx): navy bubble above (or below) its trigger. The trigger gets
+   `.cmc-tip-host` (position: relative); the bubble is hidden with opacity/visibility, not display,
+   so it can be measured before it shows. */
+.cmc-tip-host {
+  position: relative;
+}
+.cmc-tip {
+  position: absolute;
+  left: 50%;
+  z-index: 30;
+  width: max-content;
+  max-width: min(280px, 86vw);
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--cmc-navy-deep);
+  box-shadow: 0 8px 24px rgba(0, 20, 73, 0.28);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+  color: #fff;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(calc(-50% + var(--tip-shift, 0px)));
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s;
+}
+.cmc-tip[data-place="top"] {
+  bottom: calc(100% + 10px);
+}
+.cmc-tip[data-place="bottom"] {
+  top: calc(100% + 10px);
+}
+/* Bridges the gap so moving the pointer from the trigger onto the bubble doesn't close it. */
+.cmc-tip::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+.cmc-tip[data-place="top"]::before {
+  top: 100%;
+}
+.cmc-tip[data-place="bottom"]::before {
+  bottom: 100%;
+}
+/* Arrow, kept on the trigger's centre even when the bubble has been slid to stay on screen. */
+.cmc-tip::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - var(--tip-shift, 0px));
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.cmc-tip[data-place="top"]::after {
+  bottom: -4px;
+}
+.cmc-tip[data-place="bottom"]::after {
+  top: -4px;
+}
+.cmc-tip[data-open] {
+  opacity: 1;
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cmc-tip {
+    transition: none;
+  }
+}

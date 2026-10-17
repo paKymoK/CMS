@@ -712,6 +712,7 @@ a.svc-ind-card:hover {
   margin: 28px 24px 0;
 }
 .svc-news-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 200px;
@@ -725,7 +726,11 @@ a.svc-ind-card:hover {
   color: #000;
 }
 .svc-news-card h3 {
+  display: -webkit-box;
   margin-top: 22px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   font-size: 20px;
   font-weight: 600;
   line-height: 1.11;
@@ -737,6 +742,24 @@ a.svc-ind-card:hover {
   font-size: 15px;
   font-weight: 600;
   color: #009dff;
+}
+/* Stretch the link over the whole card so it is one big click target. */
+.svc-news-more::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.svc-news-card:has(.svc-news-more:hover) h3,
+.svc-news-more:focus-visible {
+  text-decoration: underline;
+}
+.svc-news-more:focus-visible {
+  outline: none;
+}
+.svc-news-card:has(.svc-news-more:focus-visible) {
+  outline: 2px solid #009dff;
+  outline-offset: 2px;
 }
 .svc-news-all {
   display: block;
