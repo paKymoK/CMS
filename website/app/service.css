@@ -149,7 +149,7 @@
   .svc-hero-title {
     margin: calc(197 * var(--u)) 0 0;
     max-width: calc(560 * var(--u));
-    font-size: max(28px, calc(52 * var(--u)));
+    font-size: max(28px, calc(53 * var(--u)));
   }
   /* With the figures card the headline is a little smaller (46px) and starts 6px lower. */
   .svc-hero--stats .svc-hero-title {
@@ -159,12 +159,15 @@
   }
   .svc-hero-sub {
     max-width: none;
-    margin-top: calc(24 * var(--u));
+    margin-top: calc(33 * var(--u));
     font-size: max(12px, calc(16 * var(--u)));
+  }
+  .svc-hero--stats .svc-hero-sub {
+    margin-top: calc(22 * var(--u));
   }
   .svc-hero-cta {
     height: calc(44 * var(--u));
-    margin-top: calc(40 * var(--u));
+    margin-top: calc(46 * var(--u));
     padding: 0 calc(46 * var(--u));
     font-size: max(14px, calc(16 * var(--u)));
   }
@@ -290,6 +293,13 @@
     max-width: calc(276 * var(--u));
     margin-top: calc(11 * var(--u));
     font-size: max(12px, calc(15 * var(--u)));
+  }
+  .svc-cap--wide .svc-cap-rule {
+    width: calc(1295 * var(--u));
+  }
+  .svc-cap--wide .svc-cap-rule::before {
+    width: calc(627 * var(--u));
+    background: #0040b8;
   }
   .svc-cap-cards--wide {
     left: calc(341 * var(--u));
@@ -612,46 +622,55 @@
   }
 }
 
-/* ---- Industries strip -------------------------------------------------------------------------- */
+/* ---- Industries grid --------------------------------------------------------------------------- */
 .svc-ind {
   padding-bottom: 48px;
   background: #fff;
 }
 .svc-ind-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 16px;
-  margin: 24px 0 0;
-  padding: 4px 24px 12px;
-  overflow-x: auto;
+  margin: 28px 24px 0;
 }
 .svc-ind-card {
   position: relative;
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 220px;
-  height: 140px;
+  display: block;
+  height: 180px;
+  overflow: hidden;
   border-radius: 13px;
-  background: #fff;
-  box-shadow: 0 4px 18px rgba(0, 20, 60, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: #16263a;
+}
+.svc-ind-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(50, 143, 210, 0) 0%, rgba(0, 14, 27, 0.79) 100%);
+}
+a.svc-ind-card {
+  transition: filter 0.2s;
 }
 a.svc-ind-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px rgba(0, 20, 60, 0.16);
+  filter: brightness(1.1);
 }
 .svc-ind-label {
-  padding: 0 16px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  z-index: 1;
+  font-size: 20px;
+  font-weight: 600;
   line-height: 1.2;
-  color: #333;
+  color: #fff;
+}
+@media (min-width: 640px) {
+  .svc-ind-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (min-width: 1280px) {
   .svc-ind {
-    height: calc(536 * var(--u));
+    height: calc(883 * var(--u));
     padding-bottom: 0;
     overflow: hidden;
   }
@@ -659,26 +678,25 @@ a.svc-ind-card:hover {
     padding-top: calc(37 * var(--u));
   }
   .svc-ind .svc-sec-head {
-    --head-top: calc(64 * var(--u));
+    --head-top: calc(96 * var(--u));
   }
   .svc-ind-cards {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(185 * var(--u));
-    justify-content: center;
-    gap: calc(55 * var(--u));
+    left: calc(244 * var(--u));
+    top: calc(227 * var(--u));
+    width: calc(1431 * var(--u));
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(35 * var(--u)) calc(30 * var(--u));
     margin: 0;
-    padding: 0;
-    overflow: visible;
   }
   .svc-ind-card {
-    width: calc(357 * var(--u));
-    height: calc(179 * var(--u));
+    height: calc(221 * var(--u));
     border-radius: calc(13 * var(--u));
   }
   .svc-ind-label {
-    font-size: max(15px, calc(26 * var(--u)));
+    left: calc(30 * var(--u));
+    bottom: calc(18 * var(--u));
+    font-size: max(16px, calc(26 * var(--u)));
   }
 }
 

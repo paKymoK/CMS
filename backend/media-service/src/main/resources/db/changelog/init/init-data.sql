@@ -113,7 +113,10 @@ VALUES
        ('f1dd153a-c112-5627-8327-08541dd4c3f8', 'svc-reason-main.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('1d81a3bf-189a-5793-9930-cacf5dde6aee', 'svc-reason-web-side.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('fa1c6c85-09d8-51bb-ad0c-a7af233c949c', 'svc-reason-mobile-side.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('a71f7659-c2d6-5b18-981a-c8af7ff5d40a', 'ind-logistics.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('3b7bfcac-5ed3-5b6c-aedf-bcb199042951', 'ind-manufacturing.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('e37521df-abd2-56d8-8172-8c05d9d4466c', 'ind-healthcare.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('4b1be331-a4c7-5921-a792-4877883ce054', 'ind-manufacturing.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('1cf6fb82-c0f4-52fb-92f1-12abecd1e633', 'ind-bfsi.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('10dd8b7a-b14d-56a3-9843-4164c3f3380c', 'ind-logistics.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('d28e20c1-8aba-58ca-a48b-81dda2b6280e', 'ind-automotive.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('df48a354-ba1e-5988-9cf4-b6c4a93c2642', 'ind-it-services.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('d6e10c89-93e8-56f4-907d-1cbb81b66315', 'ind-healthcare.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;

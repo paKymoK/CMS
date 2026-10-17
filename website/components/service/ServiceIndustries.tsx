@@ -2,11 +2,15 @@ import { CoverImage } from "@/components/ui/CoverImage";
 import { Link } from "@/i18n/navigation";
 import type { IndustryCard, SectionIntro } from "@/content/home/types";
 
-const FALLBACK_INTRO: SectionIntro = { section: "service-industries", eyebrow: "Industries", title: "Industries" };
+const FALLBACK_INTRO: SectionIntro = {
+  section: "service-industries",
+  eyebrow: "Industries",
+  title: "Industries",
+};
 
 /**
- * "Industries" (Figma "Industries"): a row of white cards, each an industry icon + name. A card
- * links to its industry page when it has one.
+ * "Industries" (Figma "Industries"): a grid of photo cards, each with the industry name over a dark
+ * gradient at the bottom-left. A card links to its industry page when it has one.
  */
 export function ServiceIndustries({
   cards,
@@ -17,7 +21,11 @@ export function ServiceIndustries({
 }) {
   if (cards.length === 0) return null;
   return (
-    <section id="industries" aria-labelledby="svc-ind-title" className="design-canvas">
+    <section
+      id="industries"
+      aria-labelledby="svc-ind-title"
+      className="design-canvas"
+    >
       <div className="svc-ind sec">
         <div className="sec-eyebrow-wrap">
           <div className="cmc-eyebrow">{intro.eyebrow ?? "Industries"}</div>
@@ -29,15 +37,23 @@ export function ServiceIndustries({
         </div>
         <ul className="svc-ind-cards">
           {cards.map((c) => {
-            const inner = c.image ? (
-              <CoverImage src={c.image} alt={c.label} sizes="(min-width: 1280px) 19vw, 50vw" className="object-contain" />
-            ) : (
-              <span className="svc-ind-label">{c.label}</span>
+            const inner = (
+              <>
+                {c.image && (
+                  <CoverImage
+                    src={c.image}
+                    alt=""
+                    sizes="(min-width: 1280px) 24vw, (min-width: 640px) 45vw, 90vw"
+                    className="object-cover"
+                  />
+                )}
+                <span className="svc-ind-label">{c.label}</span>
+              </>
             );
             return (
               <li key={c.label}>
                 {c.url ? (
-                  <Link href={c.url} className="svc-ind-card" aria-label={c.label}>
+                  <Link href={c.url} className="svc-ind-card">
                     {inner}
                   </Link>
                 ) : (
