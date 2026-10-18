@@ -8,6 +8,7 @@ import { useAuth } from "../auth/useAuth";
 import { useSiteAccess } from "../auth/useSiteAccess";
 import { useSite } from "../lib/useSite";
 import { openPreview } from "../lib/preview";
+import AdminSearchBox from "./AdminSearchBox";
 import { NAVIGATION, type NavItem } from "../config/navigation";
 import { SITES } from "../config/sites";
 
@@ -87,8 +88,9 @@ export default function AppShell() {
       .querySelector(".cms-sider .ant-menu-item-selected")
       ?.scrollIntoView({ block: "nearest" });
   }, [location.pathname]);
-  const crumbGroup = findGroupLabel(NAVIGATION, location.pathname) ?? "";
-  const pageTitle = findLeafLabel(NAVIGATION, location.pathname) ?? "";
+  const onSearchPage = location.pathname === "/search";
+  const crumbGroup = onSearchPage ? "Content" : (findGroupLabel(NAVIGATION, location.pathname) ?? "");
+  const pageTitle = onSearchPage ? "Search" : (findLeafLabel(NAVIGATION, location.pathname) ?? "");
 
   const displayName = (user?.name as string) || (user?.email as string) || "Signed in";
   const roleLine = isGlobalAdmin
@@ -286,6 +288,7 @@ export default function AppShell() {
               <span style={{ fontWeight: 600, color: "#002d68" }}>{pageTitle}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <AdminSearchBox />
               <Select
                 value={site ?? undefined}
                 className="cms-site-select"

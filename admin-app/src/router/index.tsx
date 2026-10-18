@@ -10,6 +10,7 @@ import MediaLibraryPage from "../pages/MediaLibraryPage";
 import AssistantPage from "../pages/AssistantPage";
 import PostEditorPage from "../pages/PostEditorPage";
 import CaseStudyEditorPage from "../pages/CaseStudyEditorPage";
+import SearchPage from "../pages/SearchPage";
 import { RESOURCES } from "../config/resources";
 
 export default function AppRouter() {
@@ -31,6 +32,7 @@ export default function AppRouter() {
               <Route path="/content/:resourceKey" element={<ContentPage />} />
               <Route path="/posts/:id" element={<PostEditorPage />} />
               <Route path="/case-studies/:id" element={<CaseStudyEditorPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />
               <Route path="/assistant" element={<AssistantPage />} />
             </Route>

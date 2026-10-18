@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -92,6 +92,32 @@ function Thumb({ src }: { src: string | null }) {
 function groupLabelFor(resourceKey: string): string {
   const path = `/content/${resourceKey}`;
   return NAVIGATION.find((g) => g.items?.some((i) => i.key === path))?.label ?? "";
+}
+
+/**
+ * Opens the edit drawer for the row named by ?edit=<id> (a search result links here), once the list
+ * has loaded, then drops the parameter so a refresh or "back" doesn't reopen it.
+ */
+function OpenEditFromQuery({ rows, open }: { rows?: Row[]; open: (row: Row) => void }) {
+  const [params, setParams] = useSearchParams();
+  const wanted = Number(params.get("edit")) || null;
+  const latestOpen = useRef(open);
+  useEffect(() => {
+    latestOpen.current = open;
+  });
+  useEffect(() => {
+    if (!wanted || !rows) return;
+    const row = rows.find((r) => r.id === wanted);
+    if (row) latestOpen.current(row);
+    setParams(
+      (current) => {
+        current.delete("edit");
+        return current;
+      },
+      { replace: true },
+    );
+  }, [wanted, rows, setParams]);
+  return null;
 }
 
 export default function ContentPage() {
@@ -342,6 +368,7 @@ export default function ContentPage() {
 
   return (
     <div>
+      <OpenEditFromQuery rows={listQuery.data} open={openEdit} />
       <div className="flex flex-wrap items-end justify-between gap-5 mb-6">
         <div className="min-w-0">
           <div className="cms-eyebrow mb-3">

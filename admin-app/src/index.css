@@ -334,6 +334,11 @@ body {
   display: none;
 }
 
+/* Top-bar content search (AdminSearchBox). */
+.cms-search {
+  width: 260px;
+}
+
 @media (max-width: 768px) {
   .cms-nav-toggle {
     display: inline-flex !important;
@@ -368,6 +373,10 @@ body {
 
   .cms-site-select {
     width: 120px !important;
+  }
+
+  .cms-search {
+    width: 150px !important;
   }
 
   .cms-preview-label {
