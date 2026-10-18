@@ -31,5 +31,14 @@ public interface PostService {
    */
   Mono<PostDetailResponse> getPreviewDetailBySlug(Long siteId, String slug);
 
-  Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q);
+  default Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q) {
+    return searchPublished(siteId, tag, q, false);
+  }
+
+  /**
+   * The published listing, narrowed to a tag and a text query. The query goes through {@link
+   * SearchService}: best match first, and a misspelt query is searched as corrected unless {@code
+   * exact} is set.
+   */
+  Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q, boolean exact);
 }

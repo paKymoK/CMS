@@ -1,3 +1,7 @@
+-- pg_trgm: trigram similarity, behind the typo-tolerant search and "did you mean" (see SearchService).
+-- Trusted since PostgreSQL 13, so the database owner can create it.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- site is the tenant registry: every content table below is scoped to one row here.
 -- Per cms-platform-plan.md's decision log, site == locale (one language per region),
 -- content is independently authored per site (no shared "translations" jsonb column
@@ -43,6 +47,18 @@ CREATE TABLE IF NOT EXISTS content_item
     active         boolean           NOT NULL DEFAULT true,
     status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
     version        integer           NOT NULL DEFAULT 0,
+    -- Search text, written by the application whenever `data` is (ContentItemSearchCallback; rows
+    -- inserted by SQL are filled in at startup by SearchIndexBackfill). Plain text with accents
+    -- folded, split by weight: the title/name, then category/tags/summary, then everything else.
+    -- search_vec is derived from them by Postgres itself, so it can never drift.
+    search_title   text,
+    search_meta    text,
+    search_body    text,
+    search_vec     tsvector GENERATED ALWAYS AS (
+                       setweight(to_tsvector('english', coalesce(search_title, '')), 'A') ||
+                       setweight(to_tsvector('english', coalesce(search_meta, '')), 'B') ||
+                       setweight(to_tsvector('english', coalesce(search_body, '')), 'C')
+                   ) STORED,
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
@@ -55,6 +71,26 @@ CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
 -- GIN index so a query into a specific field inside `data` (e.g. data->>'category') can still be
 -- indexed if one is ever needed — the option WordPress's flat postmeta rows never had.
 CREATE INDEX IF NOT EXISTS idx_content_item_data ON content_item USING GIN (data);
+-- Full-text search over search_vec, and trigram matching on the title for typos and half-typed words.
+CREATE INDEX IF NOT EXISTS idx_content_item_search ON content_item USING GIN (search_vec);
+CREATE INDEX IF NOT EXISTS idx_content_item_search_title_trgm
+    ON content_item USING GIN (search_title gin_trgm_ops);
+-- The words of every item's title/category/tags/summary, with how many items use each: the
+-- vocabulary the search corrects a misspelt word against and suggests completions from. A plain
+-- view, not a table — always current, nothing to maintain on write or delete — and cheap at this
+-- size; if the content ever grows into the hundreds of thousands of words, make it materialized
+-- (and index `word` with gin_trgm_ops). `visible` marks what the public site may see.
+CREATE OR REPLACE VIEW search_term AS
+SELECT ci.site_id,
+       w.word,
+       (ci.status = 'PUBLISHED' AND ci.active) AS visible,
+       count(DISTINCT ci.id)                   AS doc_count
+FROM content_item ci
+         CROSS JOIN LATERAL regexp_split_to_table(
+        lower(coalesce(ci.search_title, '') || ' ' || coalesce(ci.search_meta, '')), '[^a-z0-9]+') AS w(word)
+WHERE length(w.word) >= 3
+  AND w.word !~ '^[0-9]+$'
+GROUP BY ci.site_id, w.word, (ci.status = 'PUBLISHED' AND ci.active);
 -- A post's or case study's slug is the URL segment of its detail page: unique per site and type,
 -- never across sites. Partial on the types with a detail page, so the others keep their own (or
 -- no) slug rules.

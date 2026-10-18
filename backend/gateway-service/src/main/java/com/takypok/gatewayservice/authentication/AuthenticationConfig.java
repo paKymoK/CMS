@@ -63,6 +63,13 @@ public class AuthenticationConfig {
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, "/content-service/v1/case-studies/**")
                     .permitAll()
+                    // Typo-tolerant search + as-you-type suggestions (see
+                    // PublicSearchController) — GET only, published content, same Host-header site
+                    // resolution. Mirrors core-v1's SecurityConfig carve-out.
+                    // /content-service/v1/admin/search is a different prefix and stays
+                    // authenticated.
+                    .pathMatchers(HttpMethod.GET, "/content-service/v1/search/**")
+                    .permitAll()
                     // Services menu tree + service pages (see PublicServiceController).
                     .pathMatchers(
                         HttpMethod.GET,

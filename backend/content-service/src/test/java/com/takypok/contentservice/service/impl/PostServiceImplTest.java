@@ -17,6 +17,7 @@ import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.contentservice.service.SearchService;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,12 +42,14 @@ class PostServiceImplTest {
 
   @Mock private ContentItemRepository contentItemRepository;
   @Mock private ContentItemMapper contentItemMapper;
+  @Mock private SearchService searchService;
 
   private PostServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new PostServiceImpl(contentItemRepository, contentItemMapper, objectMapper);
+    service =
+        new PostServiceImpl(contentItemRepository, contentItemMapper, objectMapper, searchService);
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("post"), any(JsonNode.class)))

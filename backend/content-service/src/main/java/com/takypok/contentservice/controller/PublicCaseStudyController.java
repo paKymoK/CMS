@@ -33,12 +33,14 @@ public class PublicCaseStudyController {
       @RequestParam(required = false) String q,
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "6") int size,
+      @RequestParam(defaultValue = "false") boolean exact,
       ServerWebExchange exchange) {
     int pageSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
     return siteService
         .resolveFromHost(exchange)
         .flatMap(
-            site -> caseStudyService.searchPublished(site.getId(), category, q, page, pageSize))
+            site ->
+                caseStudyService.searchPublished(site.getId(), category, q, page, pageSize, exact))
         .map(ResultMessage::success);
   }
 

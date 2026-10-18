@@ -13,12 +13,17 @@ import com.takypok.contentservice.model.response.CaseStudyPageResponse;
 import com.takypok.contentservice.model.response.CaseStudyResponse;
 import com.takypok.contentservice.model.response.CaseStudySummaryResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.CaseStudyService;
+import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -36,10 +41,12 @@ public class CaseStudyServiceImpl implements CaseStudyService {
   static final String TYPE = "case_study";
   private static final String TESTIMONIAL_TYPE = "testimonial";
   private static final int MAX_RELATED = 3;
+  private static final int MAX_SEARCH_HITS = 200;
 
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
   private final ObjectMapper objectMapper;
+  private final SearchService searchService;
 
   @Override
   public Mono<List<CaseStudyResponse>> getAll(Long siteId) {
@@ -103,49 +110,64 @@ public class CaseStudyServiceImpl implements CaseStudyService {
 
   @Override
   public Mono<CaseStudyPageResponse> searchPublished(
-      Long siteId, String category, String q, int page, int size) {
+      Long siteId, String category, String q, int page, int size, boolean exact) {
     String wantedCategory = category != null && !category.isBlank() ? category.trim() : null;
-    String query = q != null && !q.isBlank() ? q.trim().toLowerCase() : null;
+    boolean hasQuery = q != null && !q.isBlank();
     int pageSize = Math.max(1, size);
-    return getPublished(siteId)
-        .collectList()
-        .map(
-            all -> {
-              List<String> categories =
-                  all.stream()
-                      .map(CaseStudyResponse::category)
-                      .filter(c -> c != null && !c.isBlank())
-                      .distinct()
-                      .sorted(String.CASE_INSENSITIVE_ORDER)
-                      .toList();
-              List<CaseStudyResponse> matches =
-                  all.stream()
-                      .filter(
-                          c ->
-                              wantedCategory == null
-                                  || wantedCategory.equalsIgnoreCase(c.category()))
-                      .filter(c -> query == null || searchableText(c).contains(query))
-                      .toList();
-              int totalPages = Math.max(1, (int) Math.ceil(matches.size() / (double) pageSize));
-              int current = Math.min(Math.max(1, page), totalPages);
-              List<CaseStudyCardResponse> items =
-                  matches.stream()
-                      .skip((long) (current - 1) * pageSize)
-                      .limit(pageSize)
-                      .map(CaseStudyCardResponse::from)
-                      .toList();
-              return new CaseStudyPageResponse(
-                  items, current, pageSize, matches.size(), totalPages, categories);
-            });
+    Mono<Map<Long, Integer>> ranking =
+        hasQuery
+            ? searchService
+                .resolve(siteId, List.of(TYPE), q, true, !exact, MAX_SEARCH_HITS)
+                .map(CaseStudyServiceImpl::rankById)
+            : Mono.just(Map.<Long, Integer>of());
+    return ranking.flatMap(
+        rank ->
+            getPublished(siteId)
+                .collectList()
+                .map(
+                    all -> {
+                      List<String> categories =
+                          all.stream()
+                              .map(CaseStudyResponse::category)
+                              .filter(c -> c != null && !c.isBlank())
+                              .distinct()
+                              .sorted(String.CASE_INSENSITIVE_ORDER)
+                              .toList();
+                      List<CaseStudyResponse> matches =
+                          all.stream()
+                              .filter(
+                                  c ->
+                                      wantedCategory == null
+                                          || wantedCategory.equalsIgnoreCase(c.category()))
+                              .filter(c -> !hasQuery || rank.containsKey(c.id()))
+                              // With a query the best match comes first; without one, the stored
+                              // order stands (the sort is stable).
+                              .sorted(
+                                  hasQuery
+                                      ? Comparator.comparingInt(c -> rank.get(c.id()))
+                                      : (a, b) -> 0)
+                              .toList();
+                      int totalPages =
+                          Math.max(1, (int) Math.ceil(matches.size() / (double) pageSize));
+                      int current = Math.min(Math.max(1, page), totalPages);
+                      List<CaseStudyCardResponse> items =
+                          matches.stream()
+                              .skip((long) (current - 1) * pageSize)
+                              .limit(pageSize)
+                              .map(CaseStudyCardResponse::from)
+                              .toList();
+                      return new CaseStudyPageResponse(
+                          items, current, pageSize, matches.size(), totalPages, categories);
+                    }));
   }
 
-  private static String searchableText(CaseStudyResponse c) {
-    return ((c.title() != null ? c.title() : "")
-            + " "
-            + (c.summary() != null ? c.summary() : "")
-            + " "
-            + (c.category() != null ? c.category() : ""))
-        .toLowerCase();
+  /** Position of each hit in the search's best-first order. */
+  private static Map<Long, Integer> rankById(SearchService.Resolution resolution) {
+    Map<Long, Integer> rank = new HashMap<>();
+    for (SearchRepository.Hit hit : resolution.hits()) {
+      rank.putIfAbsent(hit.id(), rank.size());
+    }
+    return rank;
   }
 
   @Override

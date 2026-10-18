@@ -11,15 +11,20 @@ import com.takypok.contentservice.model.response.PostDetailResponse;
 import com.takypok.contentservice.model.response.PostResponse;
 import com.takypok.contentservice.model.response.PostSummaryResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.PostService;
+import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -37,6 +42,7 @@ import reactor.core.publisher.Mono;
 public class PostServiceImpl implements PostService {
   static final String TYPE = "post";
   private static final int MAX_RELATED = 3;
+  private static final int MAX_SEARCH_HITS = 200;
   private static final Set<String> LAYOUTS = Set.of("default", "focused", "wide", "landing");
   private static final int EXCERPT_MAX = 200;
   private static final DateTimeFormatter DISPLAY_DATE =
@@ -45,6 +51,7 @@ public class PostServiceImpl implements PostService {
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
   private final ObjectMapper objectMapper;
+  private final SearchService searchService;
 
   @Override
   public Mono<List<PostResponse>> getAll(Long siteId) {
@@ -283,20 +290,33 @@ public class PostServiceImpl implements PostService {
   }
 
   @Override
-  public Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q) {
-    String normalizedQuery = q != null && !q.isBlank() ? q.trim().toLowerCase() : null;
-    return getPublished(siteId)
-        .filter(post -> tag == null || tag.isBlank() || tagsContain(post, tag))
-        .filter(
-            post ->
-                normalizedQuery == null
-                    || ((post.title() != null ? post.title() : "")
-                            + " "
-                            + (post.excerpt() != null ? post.excerpt() : ""))
-                        .toLowerCase()
-                        .contains(normalizedQuery))
-        .map(PostSummaryResponse::from)
-        .collectList();
+  public Mono<List<PostSummaryResponse>> searchPublished(
+      Long siteId, String tag, String q, boolean exact) {
+    boolean hasQuery = q != null && !q.isBlank();
+    Mono<Map<Long, Integer>> ranking =
+        hasQuery
+            ? searchService
+                .resolve(siteId, List.of(TYPE), q, true, !exact, MAX_SEARCH_HITS)
+                .map(PostServiceImpl::rankById)
+            : Mono.just(Map.<Long, Integer>of());
+    return ranking.flatMap(
+        rank ->
+            getPublished(siteId)
+                .filter(post -> tag == null || tag.isBlank() || tagsContain(post, tag))
+                .filter(post -> !hasQuery || rank.containsKey(post.id()))
+                // With a query the best match comes first; without one, the stored order stands.
+                .sort(hasQuery ? Comparator.comparingInt(post -> rank.get(post.id())) : (a, b) -> 0)
+                .map(PostSummaryResponse::from)
+                .collectList());
+  }
+
+  /** Position of each hit in the search's best-first order. */
+  private static Map<Long, Integer> rankById(SearchService.Resolution resolution) {
+    Map<Long, Integer> rank = new HashMap<>();
+    for (SearchRepository.Hit hit : resolution.hits()) {
+      rank.putIfAbsent(hit.id(), rank.size());
+    }
+    return rank;
   }
 
   private boolean tagsContain(PostResponse post, String tag) {

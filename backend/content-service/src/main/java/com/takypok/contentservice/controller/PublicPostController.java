@@ -36,10 +36,11 @@ public class PublicPostController {
   public Mono<ResultMessage<List<PostSummaryResponse>>> list(
       @RequestParam(required = false) String tag,
       @RequestParam(required = false) String q,
+      @RequestParam(defaultValue = "false") boolean exact,
       ServerWebExchange exchange) {
     return siteService
         .resolveFromHost(exchange)
-        .flatMap(site -> postService.searchPublished(site.getId(), tag, q))
+        .flatMap(site -> postService.searchPublished(site.getId(), tag, q, exact))
         .map(ResultMessage::success);
   }
 

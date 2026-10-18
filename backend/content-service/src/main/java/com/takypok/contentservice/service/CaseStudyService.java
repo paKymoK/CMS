@@ -22,12 +22,19 @@ public interface CaseStudyService {
 
   Flux<CaseStudyResponse> getPublished(Long siteId);
 
+  default Mono<CaseStudyPageResponse> searchPublished(
+      Long siteId, String category, String q, int page, int size) {
+    return searchPublished(siteId, category, q, page, size, false);
+  }
+
   /**
-   * One page of the published listing, optionally narrowed to a category and a text query (matched
-   * against title, summary and category). {@code page} is 1-based; out-of-range values are clamped.
+   * One page of the published listing, optionally narrowed to a category and a text query. The
+   * query goes through {@link SearchService}: best match first, and a misspelt query is searched as
+   * corrected unless {@code exact} is set. {@code page} is 1-based; out-of-range values are
+   * clamped.
    */
   Mono<CaseStudyPageResponse> searchPublished(
-      Long siteId, String category, String q, int page, int size);
+      Long siteId, String category, String q, int page, int size, boolean exact);
 
   Mono<CaseStudyDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
 

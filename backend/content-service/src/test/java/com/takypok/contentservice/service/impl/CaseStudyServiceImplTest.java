@@ -14,8 +14,11 @@ import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.contentservice.search.SearchRepository;
+import com.takypok.contentservice.service.SearchService;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,12 +37,15 @@ class CaseStudyServiceImplTest {
 
   @Mock private ContentItemRepository contentItemRepository;
   @Mock private ContentItemMapper contentItemMapper;
+  @Mock private SearchService searchService;
 
   private CaseStudyServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new CaseStudyServiceImpl(contentItemRepository, contentItemMapper, objectMapper);
+    service =
+        new CaseStudyServiceImpl(
+            contentItemRepository, contentItemMapper, objectMapper, searchService);
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("case_study"), any(JsonNode.class)))
@@ -284,6 +290,23 @@ class CaseStudyServiceImplTest {
         1L,
         listed(1, "Cloud migration", "Cloud", "moved a bank"),
         listed(2, "Chatbot", "AI", "support bot"));
+    // The text query goes through SearchService: only the items it returns, best first.
+    when(searchService.resolve(
+            eq(1L),
+            eq(List.of("case_study")),
+            eq("SUPPORT"),
+            eq(true),
+            eq(true),
+            any(Integer.class)))
+        .thenReturn(
+            Mono.just(
+                new SearchService.Resolution(
+                    "SUPPORT",
+                    null,
+                    null,
+                    List.of(
+                        new SearchRepository.Hit(
+                            2, "case_study", "PUBLISHED", "x", "Chatbot", 1f)))));
     StepVerifier.create(service.searchPublished(1L, null, "SUPPORT", 1, 6))
         .assertNext(
             page -> {

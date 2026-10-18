@@ -85,6 +85,10 @@ public class SecurityConfig {
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, "/v1/case-studies", "/v1/case-studies/**")
                     .permitAll()
+                    // Typo-tolerant search + as-you-type suggestions over the published content
+                    // (see PublicSearchController); same Host-header site resolution.
+                    .pathMatchers(HttpMethod.GET, "/v1/search/**")
+                    .permitAll()
                     // Services menu tree + service pages (see PublicServiceController).
                     .pathMatchers(HttpMethod.GET, "/v1/services", "/v1/services/**")
                     .permitAll()
