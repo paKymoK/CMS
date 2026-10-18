@@ -136,25 +136,6 @@ prometheus.scrape "exporters" {
   scrape_interval = "15s"
 }
 
-discovery.relabel "app" {
-  targets = [
-    {"__address__" = sys.env("APP_SCRAPE_TARGET")},
-  ]
-
-  rule {
-    source_labels = ["__address__"]
-    regex         = "^$"
-    action        = "drop"
-  }
-}
-
-prometheus.scrape "app" {
-  targets         = discovery.relabel.app.output
-  metrics_path    = "/actuator/prometheus"
-  forward_to      = [prometheus.remote_write.default.receiver]
-  scrape_interval = "15s"
-}
-
 prometheus.remote_write "default" {
   endpoint {
     url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")

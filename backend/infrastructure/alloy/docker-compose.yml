@@ -38,7 +38,6 @@ services:
       PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
       LOG_PATH_GLOB: ${LOG_PATH_GLOB:-/var/log/takypok/*/*.log}
       TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
-      APP_SCRAPE_TARGET: ${APP_SCRAPE_TARGET:-}
     networks:
       - takypok_default
     restart: unless-stopped

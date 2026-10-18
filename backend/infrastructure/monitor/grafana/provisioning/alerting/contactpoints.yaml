@@ -1,12 +1,14 @@
 apiVersion: 1
 
+deleteContactPoints:
+  - orgId: 1
+    uid: error-webhook-1
+
 contactPoints:
   - orgId: 1
-    name: error-webhook
+    name: discord-alerts
     receivers:
-      - uid: error-webhook-1
-        type: webhook
+      - uid: discord-alerts-1
+        type: discord
         settings:
-          # TODO: replace with the real endpoint once decided, then `docker restart grafana`
-          url: https://REPLACE_ME.example.com/webhook
-          httpMethod: POST
+          url: $DISCORD_WEBHOOK_URL

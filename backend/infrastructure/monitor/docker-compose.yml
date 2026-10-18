@@ -6,8 +6,6 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -41,8 +39,10 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/spring-boot.json
-      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000/}
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3100/}
       GF_SECURITY_CSRF_TRUSTED_ORIGINS: ${GF_SECURITY_CSRF_TRUSTED_ORIGINS:-}
+      # Set in .env (gitignored); Grafana's discord-alerts contact point reads it
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     depends_on:
       - prometheus
       - tempo
