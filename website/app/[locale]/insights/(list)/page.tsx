@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getPosts } from "@/lib/cms/posts";
+import { getSearchResolution } from "@/lib/cms/search";
 import {
   PERSPECTIVES_RESULTS_ID,
   perspectivesHref,
@@ -11,6 +12,7 @@ import { PerspectiveCard } from "@/components/insights/PerspectiveCard";
 import { PerspectivesFilterBar } from "@/components/insights/PerspectivesFilterBar";
 import { PerspectivesSort } from "@/components/insights/PerspectivesSort";
 import { ListPager } from "@/components/list/ListPager";
+import { SearchNotice } from "@/components/list/SearchNotice";
 import {
   PendingFade,
   ResultsPendingProvider,
@@ -47,12 +49,18 @@ export default async function PerspectivesPage(
   const category = one(sp.category)?.trim() || undefined;
   const tag = one(sp.tag)?.trim() || undefined;
   const q = one(sp.q)?.trim() || undefined;
+  // "Search instead for what I typed": no spelling correction (set by the notice's link).
+  const exact = q ? one(sp.exact) === "1" : false;
   const sort = one(sp.sort) === "oldest" ? ("oldest" as const) : undefined;
   const requested = Number.parseInt(one(sp.page) ?? "1", 10);
 
   // Tag and text search are filtered by content-service; the content type, order and paging are
   // applied here — the set is small and the facets (below) come from the unfiltered list anyway.
-  const [all, found] = await Promise.all([getPosts(), getPosts({ tag, q })]);
+  const [all, found, resolution] = await Promise.all([
+    getPosts(),
+    getPosts({ tag, q, exact }),
+    q && !exact ? getSearchResolution({ q, type: "post" }) : null,
+  ]);
   const categories = Array.from(
     new Set(all.map((p) => p.category).filter(Boolean)),
   ).sort();
@@ -69,7 +77,7 @@ export default async function PerspectivesPage(
     totalPages,
   );
   const items = matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const current = { category, tag, q, sort };
+  const current = { category, tag, q, exact, sort };
 
   return (
     <section
@@ -93,6 +101,15 @@ export default async function PerspectivesPage(
               </p>
               <PerspectivesSort current={current} />
             </div>
+            <SearchNotice
+              resolution={resolution}
+              exactHref={perspectivesHref({ ...current, exact: true })}
+              suggestedHref={perspectivesHref({
+                ...current,
+                q: resolution?.didYouMean ?? q,
+                exact: undefined,
+              })}
+            />
             {items.length === 0 ? (
               <p className="csl-empty">
                 No perspectives match — try another filter.

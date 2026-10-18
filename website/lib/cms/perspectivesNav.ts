@@ -8,6 +8,8 @@ export type PerspectivesQuery = {
   /** Topic (one of a post's tags). */
   tag?: string;
   q?: string;
+  /** Search exactly what was typed (no spelling correction). */
+  exact?: boolean;
   /** "oldest" reverses the default newest-first order. */
   sort?: "oldest";
 };
@@ -18,6 +20,7 @@ export function perspectivesHref(opts: PerspectivesQuery): string {
   if (opts.category) query.set("category", opts.category);
   if (opts.tag) query.set("tag", opts.tag);
   if (opts.q) query.set("q", opts.q);
+  if (opts.q && opts.exact) query.set("exact", "1");
   if (opts.sort) query.set("sort", opts.sort);
   if (opts.page && opts.page > 1) query.set("page", String(opts.page));
   const qs = query.toString();

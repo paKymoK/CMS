@@ -7,6 +7,7 @@ import {
   type PerspectivesQuery,
 } from "@/lib/cms/perspectivesNav";
 import { useReportPending } from "@/components/list/ResultsPending";
+import { useSearchSuggest } from "@/components/list/SearchSuggest";
 
 const SEARCH_DELAY_MS = 400;
 
@@ -37,7 +38,7 @@ export function PerspectivesFilterBar({
 }: {
   categories: string[];
   tags: string[];
-  current: Pick<PerspectivesQuery, "category" | "tag" | "q" | "sort">;
+  current: Pick<PerspectivesQuery, "category" | "tag" | "q" | "exact" | "sort">;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -54,11 +55,20 @@ export function PerspectivesFilterBar({
   const search = (value: string, delay: number) => {
     setText(value);
     clearTimeout(timer.current);
+    // A new search starts out forgiving again, whatever the last one asked for.
     timer.current = setTimeout(
-      () => go({ q: value.trim() || undefined }, true),
+      () => go({ q: value.trim() || undefined, exact: undefined }, true),
       delay,
     );
   };
+
+  const suggest = useSearchSuggest({
+    type: "post",
+    text,
+    itemLabel: "Perspective",
+    onPickTerm: (term) => search(term, 0),
+    titleHref: (s) => `/insights/${s.slug}`,
+  });
 
   return (
     <form
@@ -141,6 +151,7 @@ export function PerspectivesFilterBar({
           onChange={(e) => search(e.target.value, SEARCH_DELAY_MS)}
           placeholder="Search perspectives…"
           autoComplete="off"
+          {...suggest.inputProps}
         />
         {text && (
           <button
@@ -160,6 +171,7 @@ export function PerspectivesFilterBar({
             </svg>
           </button>
         )}
+        {suggest.popup}
       </label>
     </form>
   );

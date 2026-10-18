@@ -1021,3 +1021,108 @@
     height: calc(28 * var(--u));
   }
 }
+
+/* ---- Search suggestions + spelling notice (shared by the Perspectives and Case Studies lists) --- */
+
+/* The as-you-type dropdown under a search box (components/list/SearchSuggest). */
+.sgs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  min-width: 260px;
+  border: 1px solid #d9e3ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(3, 53, 96, 0.18);
+  list-style: none;
+  text-align: left;
+}
+.sgs-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 15px;
+  line-height: 1.3;
+  color: #1a202c;
+  cursor: pointer;
+}
+.sgs-item[data-active] {
+  background: #eaf4ff;
+}
+.sgs-icon {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  color: #6b7b8f;
+}
+.sgs-item[data-active] .sgs-icon {
+  color: #003f79;
+}
+.sgs-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sgs-text b {
+  font-weight: 700;
+  color: #003f79;
+}
+.sgs-tag {
+  flex: none;
+  padding: 2px 9px;
+  border: 1px solid #c3d2e3;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #4a5d73;
+}
+@media (min-width: 1280px) {
+  .sgs {
+    top: calc(100% + 8 * var(--u));
+    min-width: calc(420 * var(--u));
+    padding: calc(6 * var(--u));
+    border-radius: calc(14 * var(--u));
+  }
+  .sgs-item {
+    gap: calc(10 * var(--u));
+    padding: calc(9 * var(--u)) calc(12 * var(--u));
+    font-size: max(14px, calc(17 * var(--u)));
+  }
+  .sgs-tag {
+    font-size: max(11px, calc(12 * var(--u)));
+  }
+}
+
+/* "Showing results for …" / "Did you mean …?" under the result count. */
+.psl-notice {
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #494949;
+}
+.psl-notice strong {
+  font-weight: 700;
+  color: #003f79;
+}
+.psl-notice a {
+  color: #0077b2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.psl-notice a:hover {
+  color: #003f79;
+}
+@media (min-width: 1280px) {
+  .psl-notice {
+    margin-top: calc(14 * var(--u));
+    font-size: max(14px, calc(18 * var(--u)));
+  }
+}

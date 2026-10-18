@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCaseStudyPage } from "@/lib/cms/caseStudies";
+import { getSearchResolution } from "@/lib/cms/search";
 import { RESULTS_ID, caseStudiesHref } from "@/lib/cms/caseStudyNav";
 import { CaseStudyFilterBar } from "@/components/case-studies/CaseStudyFilterBar";
 import { CaseStudyListCard } from "@/components/case-studies/CaseStudyListCard";
 import { ListPager } from "@/components/list/ListPager";
+import { SearchNotice } from "@/components/list/SearchNotice";
 import {
   PendingFade,
   ResultsPendingProvider,
@@ -40,13 +42,19 @@ export default async function CaseStudiesPage(
   const sp = await props.searchParams;
   const category = one(sp.category)?.trim() || undefined;
   const q = one(sp.q)?.trim() || undefined;
+  // "Search instead for what I typed": no spelling correction (set by the notice's link).
+  const exact = q ? one(sp.exact) === "1" : false;
   const requested = Number.parseInt(one(sp.page) ?? "1", 10);
 
-  const result = await getCaseStudyPage({
-    page: Number.isFinite(requested) ? requested : 1,
-    category,
-    q,
-  });
+  const [result, resolution] = await Promise.all([
+    getCaseStudyPage({
+      page: Number.isFinite(requested) ? requested : 1,
+      category,
+      q,
+      exact,
+    }),
+    q && !exact ? getSearchResolution({ q, type: "case_study" }) : null,
+  ]);
 
   return (
     <section
@@ -60,6 +68,7 @@ export default async function CaseStudiesPage(
             categories={result.categories}
             category={category}
             q={q}
+            exact={exact}
           />
           <hr className="csl-rule" />
           <PendingFade>
@@ -67,6 +76,14 @@ export default async function CaseStudiesPage(
               Showing {result.totalItems}{" "}
               {result.totalItems === 1 ? "result" : "results"}
             </p>
+            <SearchNotice
+              resolution={resolution}
+              exactHref={caseStudiesHref({ category, q, exact: true })}
+              suggestedHref={caseStudiesHref({
+                category,
+                q: resolution?.didYouMean ?? q,
+              })}
+            />
             {result.items.length === 0 ? (
               <p className="csl-empty">
                 No case studies match — try another filter.

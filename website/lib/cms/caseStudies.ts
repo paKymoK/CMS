@@ -69,12 +69,15 @@ export async function getCaseStudyPage(params: {
   page?: number;
   category?: string;
   q?: string;
+  /** Search exactly what was typed: no spelling correction. */
+  exact?: boolean;
 }): Promise<CaseStudyPage> {
   const search = new URLSearchParams();
   search.set("page", String(params.page && params.page > 0 ? params.page : 1));
   search.set("size", String(CASE_STUDIES_PAGE_SIZE));
   if (params.category) search.set("category", params.category);
   if (params.q) search.set("q", params.q);
+  if (params.exact) search.set("exact", "true");
 
   try {
     const res = await cmsFetch(`${CMS_BASE}/content-service/v1/case-studies?${search}`, {

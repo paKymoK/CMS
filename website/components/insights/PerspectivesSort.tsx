@@ -12,7 +12,7 @@ import { useReportPending } from "@/components/list/ResultsPending";
 export function PerspectivesSort({
   current,
 }: {
-  current: Pick<PerspectivesQuery, "category" | "tag" | "q" | "sort">;
+  current: Pick<PerspectivesQuery, "category" | "tag" | "q" | "exact" | "sort">;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

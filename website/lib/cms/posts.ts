@@ -10,10 +10,16 @@ const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
  * static fallback for posts, so a failure here degrades to an empty list / notFound() rather
  * than stale content — this is a listing/detail page, not the always-must-render homepage.
  */
-export async function getPosts(params?: { tag?: string; q?: string }): Promise<PostSummary[]> {
+export async function getPosts(params?: {
+  tag?: string;
+  q?: string;
+  /** Search exactly what was typed: no spelling correction. */
+  exact?: boolean;
+}): Promise<PostSummary[]> {
   const search = new URLSearchParams();
   if (params?.tag) search.set("tag", params.tag);
   if (params?.q) search.set("q", params.q);
+  if (params?.exact) search.set("exact", "true");
   const qs = search.toString();
 
   try {
