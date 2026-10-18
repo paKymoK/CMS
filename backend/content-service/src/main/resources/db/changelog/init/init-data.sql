@@ -12,6 +12,11 @@
 -- identical in every environment. admin-app and the website resolve them against their own gateway.
 --
 -- Only 'en' is seeded; vi/ja/ko/de are registered as sites but start empty.
+--
+-- The audit trigger is off while this file loads: the seed is not anyone's edit, so it should not
+-- fill the audit trail with a "direct database change" per row. History starts at the first real
+-- edit. (If loading fails, the whole file rolls back, trigger state included.)
+ALTER TABLE content_item DISABLE TRIGGER content_item_audit;
 
 -- ── Sites ──────────────────────────────────────────────────────────────────────────────────────
 -- Rollout order per the decision log: en + vi first, ja/ko/de land later. All 5 are
@@ -436,3 +441,5 @@ FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital
         '<p>A look back at the event that brought engineers, students and partners together. This sample article outlines the themes; editors should replace it with the real write-up for your region.</p><h2>Why it matters</h2><p>Technology teams rarely build for a single market. Shared standards, talent exchange and delivery practices decide how quickly work moves between regions.</p><h2>What happens next</h2><p>Editors: replace this sample copy with the real article for your region.</p>',
         'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["Events"]'::jsonb, false, 4, 'PUBLISHED')
 ) AS v (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status);
+
+ALTER TABLE content_item ENABLE TRIGGER content_item_audit;

@@ -1,6 +1,7 @@
 package com.takypok.contentservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.content.types.CaseStudyFields;
 import com.takypok.contentservice.model.content.types.TestimonialFields;
 import com.takypok.contentservice.model.entity.ContentItem;
@@ -47,6 +48,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
   private final ContentItemMapper contentItemMapper;
   private final ObjectMapper objectMapper;
   private final SearchService searchService;
+  private final ContentItemWriter contentItemWriter;
 
   @Override
   public Mono<List<CaseStudyResponse>> getAll(Long siteId) {
@@ -97,7 +99,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
 
   @Override
   public Mono<Void> delete(Long id, Long siteId) {
-    return findItem(id, siteId).flatMap(contentItemRepository::delete);
+    return findItem(id, siteId).flatMap(contentItemWriter::delete);
   }
 
   @Override
@@ -243,7 +245,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
               else if (item.getActive() == null) item.setActive(true);
               if (status != null) item.setStatus(status);
               else if (item.getStatus() == null) item.setStatus("DRAFT");
-              return contentItemRepository.save(item);
+              return contentItemWriter.save(item);
             })
         .map(this::toResponse);
   }

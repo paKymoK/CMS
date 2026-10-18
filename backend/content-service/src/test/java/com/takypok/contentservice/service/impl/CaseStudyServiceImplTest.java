@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
@@ -38,6 +39,7 @@ class CaseStudyServiceImplTest {
   @Mock private ContentItemRepository contentItemRepository;
   @Mock private ContentItemMapper contentItemMapper;
   @Mock private SearchService searchService;
+  @Mock private ContentItemWriter contentItemWriter;
 
   private CaseStudyServiceImpl service;
 
@@ -45,7 +47,11 @@ class CaseStudyServiceImplTest {
   void setUp() {
     service =
         new CaseStudyServiceImpl(
-            contentItemRepository, contentItemMapper, objectMapper, searchService);
+            contentItemRepository,
+            contentItemMapper,
+            objectMapper,
+            searchService,
+            contentItemWriter);
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("case_study"), any(JsonNode.class)))
@@ -123,7 +129,7 @@ class CaseStudyServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
 
-    verify(contentItemRepository, never()).save(any(ContentItem.class));
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
 
   @Test
@@ -139,7 +145,7 @@ class CaseStudyServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
 
-    verify(contentItemRepository, never()).save(any(ContentItem.class));
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
 
   @Test
@@ -148,7 +154,7 @@ class CaseStudyServiceImplTest {
         .thenReturn(Mono.just(testimonial(5L, 1L)));
     when(contentItemRepository.findBySlug(1L, "case_study", "a-case-study"))
         .thenReturn(Mono.empty());
-    when(contentItemRepository.save(any(ContentItem.class)))
+    when(contentItemWriter.save(any(ContentItem.class)))
         .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
     CaseStudyCreateRequest request = new CaseStudyCreateRequest();
@@ -172,7 +178,7 @@ class CaseStudyServiceImplTest {
         .thenReturn(Mono.just(caseStudy(9L, 1L, "{\"slug\":\"a-case-study\",\"title\":\"x\"}")));
     when(contentItemRepository.findBySlug(1L, "case_study", "a-case-study-2"))
         .thenReturn(Mono.empty());
-    when(contentItemRepository.save(any(ContentItem.class)))
+    when(contentItemWriter.save(any(ContentItem.class)))
         .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
     CaseStudyCreateRequest request = new CaseStudyCreateRequest();

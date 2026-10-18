@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
@@ -43,13 +44,19 @@ class PostServiceImplTest {
   @Mock private ContentItemRepository contentItemRepository;
   @Mock private ContentItemMapper contentItemMapper;
   @Mock private SearchService searchService;
+  @Mock private ContentItemWriter contentItemWriter;
 
   private PostServiceImpl service;
 
   @BeforeEach
   void setUp() {
     service =
-        new PostServiceImpl(contentItemRepository, contentItemMapper, objectMapper, searchService);
+        new PostServiceImpl(
+            contentItemRepository,
+            contentItemMapper,
+            objectMapper,
+            searchService,
+            contentItemWriter);
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("post"), any(JsonNode.class)))
@@ -69,7 +76,7 @@ class PostServiceImplTest {
   }
 
   private void saveEchoesItem() {
-    when(contentItemRepository.save(any(ContentItem.class)))
+    when(contentItemWriter.save(any(ContentItem.class)))
         .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
   }
 
@@ -144,7 +151,7 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(2L, request)).expectNextCount(1).verifyComplete();
 
     ArgumentCaptor<ContentItem> captor = ArgumentCaptor.forClass(ContentItem.class);
-    verify(contentItemRepository, times(2)).save(captor.capture());
+    verify(contentItemWriter, times(2)).save(captor.capture());
     assertEquals("same-slug", captor.getAllValues().get(0).getData().get("slug").asText());
     assertEquals(1L, captor.getAllValues().get(0).getSiteId());
     assertEquals("same-slug", captor.getAllValues().get(1).getData().get("slug").asText());
@@ -163,7 +170,7 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(1L, request))
         .expectError(ApplicationException.class)
         .verify();
-    verify(contentItemRepository, never()).save(any(ContentItem.class));
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
 
   @Test
@@ -179,7 +186,7 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(1L, request)).expectNextCount(1).verifyComplete();
 
     ArgumentCaptor<ContentItem> captor = ArgumentCaptor.forClass(ContentItem.class);
-    verify(contentItemRepository).save(captor.capture());
+    verify(contentItemWriter).save(captor.capture());
     assertEquals("<p>ok</p>", captor.getValue().getData().get("body").asText());
 
     request.setBody("<p>ok</p><script>alert(1)</script>");
@@ -187,7 +194,7 @@ class PostServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
     // the rejected body was never saved
-    verify(contentItemRepository, times(1)).save(any(ContentItem.class));
+    verify(contentItemWriter, times(1)).save(any(ContentItem.class));
   }
 
   @Test

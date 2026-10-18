@@ -98,6 +98,177 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_slug
     ON content_item (site_id, content_type, (data ->> 'slug'))
     WHERE content_type IN ('post', 'case_study');
 
+-- Audit trail of content changes: one row per create, update, publish, unpublish, delete or
+-- restore of a content_item, written by the content_item_audit trigger below — so it records every
+-- write, from any service or from plain SQL, in the same statement as the change itself. Append-only
+-- by convention (nothing updates or deletes a row) and kept indefinitely.
+--
+-- item_id has no foreign key on purpose: the history of a deleted item must outlive it (and a
+-- DELETE row's `before_data` is what restores it). `title` is copied from the item's data so the
+-- activity feed stays readable after the item is gone. before_data/after_data are whole snapshots of
+-- the item ({contentType, data, status, active, displayOrder}), null on the side that doesn't exist
+-- (no before for a create, no after for a delete); `changed` lists the top-level fields that differ,
+-- so the feed can say what changed without loading the snapshots.
+CREATE TABLE IF NOT EXISTS content_audit
+(
+    id           bigserial PRIMARY KEY,
+    site_id      bigint                   NOT NULL REFERENCES site (id),
+    item_id      bigint                   NOT NULL,
+    content_type character varying        NOT NULL,
+    action       character varying        NOT NULL
+        CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'UNPUBLISH', 'DELETE', 'RESTORE')),
+    title        text,
+    actor        jsonb,                   -- the signed-in user, as stored in created_by/modified_by
+    actor_name   character varying,       -- the user's display name, for filtering
+    occurred_at  timestamp with time zone NOT NULL DEFAULT now(),
+    changed      jsonb                    NOT NULL DEFAULT '[]',
+    before_data  jsonb,
+    after_data   jsonb
+);
+-- The activity feed (newest first, per site) and one item's history.
+CREATE INDEX IF NOT EXISTS idx_content_audit_site_at ON content_audit (site_id, occurred_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_content_audit_item ON content_audit (item_id, occurred_at DESC, id DESC);
+
+-- ---- Recording the trail --------------------------------------------------------------------------
+-- The trigger works out WHO from the row itself: Spring Data auditing stamps modified_by/modified_at
+-- on every insert and update the application makes, so NEW.modified_by is the signed-in user. Two
+-- cases it cannot read that way, and what it does instead:
+--   * A write that did not come through the application (plain SQL: modified_by/modified_at did not
+--     change, or an insert with no modified_by) is recorded as "Direct database change" by the
+--     database login that made it.
+--   * A delete: OLD.modified_by is only the last editor. The application therefore re-saves the row
+--     as the current user just before deleting it, in the same transaction; the trigger knows that
+--     happened when the row version it is looking at was written by the current transaction (xmin).
+--     A delete without that step is recorded as a direct database change.
+-- The application can also name the action: setting cms.audit_action to RESTORE in the transaction
+-- (set_config(..., true)) records the write as a RESTORE instead of a CREATE/UPDATE.
+-- Saves that change nothing an editor can see (re-saving, the version counter, the search text) are
+-- not recorded. The seed script switches the trigger off while it loads (see init-data.sql).
+
+-- A value with nulls and empty objects removed, all the way down, so "field absent", "field null" and
+-- "empty object" compare equal: saving an old item through validation adds null fields, which is not
+-- an edit anyone made. Null when nothing is left.
+CREATE OR REPLACE FUNCTION audit_norm(v jsonb) RETURNS jsonb AS
+$$
+DECLARE
+    pruned jsonb;
+BEGIN
+    IF v IS NULL OR v = 'null'::jsonb THEN
+        RETURN NULL;
+    END IF;
+    IF jsonb_typeof(v) = 'object' THEN
+        SELECT jsonb_object_agg(e.key, e.val)
+        INTO pruned
+        FROM (SELECT key, audit_norm(value) AS val FROM jsonb_each(v)) e
+        WHERE e.val IS NOT NULL;
+        RETURN pruned; -- null when the object had nothing left
+    END IF;
+    RETURN v;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- What the trail records of an item: everything an editor can change, nothing derived or bookkeeping.
+CREATE OR REPLACE FUNCTION audit_snapshot(ci content_item) RETURNS jsonb AS
+$$
+SELECT jsonb_build_object('contentType', ci.content_type, 'data', ci.data, 'status', ci.status,
+                          'active', ci.active, 'displayOrder', ci.display_order)
+$$ LANGUAGE sql IMMUTABLE;
+
+-- The readable title of an item's data (rich text reduced to text), '' when it has none.
+CREATE OR REPLACE FUNCTION audit_title(item_data jsonb) RETURNS text AS
+$$
+SELECT coalesce((SELECT btrim(regexp_replace(regexp_replace(t.v, '<[^>]*>', ' ', 'g'), '\s+', ' ', 'g'))
+                 FROM unnest(ARRAY [item_data ->> 'title', item_data ->> 'name', item_data ->> 'navLabel',
+                     item_data ->> 'heroTitle', item_data ->> 'heading', item_data ->> 'label',
+                     item_data ->> 'question']) WITH ORDINALITY AS t(v, n)
+                 WHERE btrim(t.v) <> ''
+                 ORDER BY t.n
+                 LIMIT 1), '')
+$$ LANGUAGE sql IMMUTABLE;
+
+-- The top-level fields that differ between two snapshots: the item's own data fields, then any of
+-- contentType/status/active/displayOrder. Every field for a create or a delete (one side is null).
+CREATE OR REPLACE FUNCTION audit_changed(before_snap jsonb, after_snap jsonb) RETURNS jsonb AS
+$$
+SELECT coalesce(jsonb_agg(c.name ORDER BY c.grp, c.name), '[]'::jsonb)
+FROM (SELECT k.key AS name, 0 AS grp
+      FROM (SELECT jsonb_object_keys(coalesce(before_snap -> 'data', '{}'::jsonb)) AS key
+            UNION
+            SELECT jsonb_object_keys(coalesce(after_snap -> 'data', '{}'::jsonb))) k
+      WHERE before_snap IS NULL
+         OR after_snap IS NULL
+         OR audit_norm(before_snap #> ARRAY ['data', k.key]) IS DISTINCT FROM
+            audit_norm(after_snap #> ARRAY ['data', k.key])
+      UNION ALL
+      SELECT e.name, 1
+      FROM unnest(ARRAY ['contentType', 'status', 'active', 'displayOrder']) AS e(name)
+      WHERE before_snap IS NULL
+         OR after_snap IS NULL
+         OR before_snap -> e.name IS DISTINCT FROM after_snap -> e.name) c
+$$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION content_audit_record() RETURNS trigger AS
+$$
+DECLARE
+    item   content_item;
+    b      jsonb;
+    a      jsonb;
+    act    text;
+    who    jsonb;
+    direct boolean;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        item := NEW;
+        a := audit_snapshot(NEW);
+        act := 'CREATE';
+        direct := NEW.modified_by IS NULL;
+    ELSIF TG_OP = 'UPDATE' THEN
+        item := NEW;
+        b := audit_snapshot(OLD);
+        a := audit_snapshot(NEW);
+        IF audit_norm(b -> 'data') IS NOT DISTINCT FROM audit_norm(a -> 'data')
+            AND (b - 'data') = (a - 'data') THEN
+            RETURN NULL; -- nothing an editor can see changed
+        END IF;
+        act := CASE
+                   WHEN NEW.status = OLD.status THEN 'UPDATE'
+                   WHEN NEW.status = 'PUBLISHED' THEN 'PUBLISH'
+                   ELSE 'UNPUBLISH' END;
+        direct := NEW.modified_at IS NOT DISTINCT FROM OLD.modified_at
+            AND NEW.modified_by IS NOT DISTINCT FROM OLD.modified_by;
+    ELSE
+        item := OLD;
+        b := audit_snapshot(OLD);
+        act := 'DELETE';
+        -- OLD was written by this very transaction only if the application re-saved it just before.
+        direct := OLD.xmin::text <> (txid_current() % 4294967296)::text;
+    END IF;
+
+    IF TG_OP <> 'DELETE' AND nullif(current_setting('cms.audit_action', true), '') = 'RESTORE' THEN
+        act := 'RESTORE';
+    END IF;
+
+    who := CASE
+               WHEN direct THEN jsonb_build_object('sub', 'db:' || session_user,
+                                                   'name', 'Direct database change')
+               WHEN TG_OP = 'DELETE' THEN OLD.modified_by
+               ELSE NEW.modified_by END;
+
+    INSERT INTO content_audit (site_id, item_id, content_type, action, title, actor, actor_name,
+                               occurred_at, changed, before_data, after_data)
+    VALUES (item.site_id, item.id, item.content_type, act, audit_title(coalesce(a, b) -> 'data'), who,
+            coalesce(who ->> 'name', who ->> 'sub'), clock_timestamp(), audit_changed(b, a), b, a);
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS content_item_audit ON content_item;
+CREATE TRIGGER content_item_audit
+    AFTER INSERT OR UPDATE OR DELETE
+    ON content_item
+    FOR EACH ROW
+EXECUTE FUNCTION content_audit_record();
+
 -- Token-based draft preview (see docs/cms-platform-plan.md). A row here is a narrow, single-purpose
 -- credential: opaque (not a JWT — presenting it as an Authorization: Bearer anywhere under
 -- /v1/admin/** just fails JWT parsing, it isn't accepted as that credential type at all),

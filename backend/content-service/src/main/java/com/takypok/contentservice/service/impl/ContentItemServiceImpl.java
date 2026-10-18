@@ -1,6 +1,7 @@
 package com.takypok.contentservice.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.ContentItemCreateRequest;
@@ -28,6 +29,7 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
+  private final ContentItemWriter contentItemWriter;
 
   @Override
   public Mono<List<ContentItem>> getAll(Long siteId, String contentType) {
@@ -64,7 +66,7 @@ public class ContentItemServiceImpl implements ContentItemService {
                   request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
               item.setActive(request.getActive() != null ? request.getActive() : true);
               item.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
-              return contentItemRepository.save(item);
+              return contentItemWriter.save(item);
             });
   }
 
@@ -93,7 +95,7 @@ public class ContentItemServiceImpl implements ContentItemService {
                           }
                           if (request.getActive() != null) item.setActive(request.getActive());
                           if (request.getStatus() != null) item.setStatus(request.getStatus());
-                          return contentItemRepository.save(item);
+                          return contentItemWriter.save(item);
                         }));
   }
 
@@ -105,7 +107,7 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   @Override
   public Mono<Void> delete(Long id, Long siteId) {
-    return getById(id, siteId).flatMap(contentItemRepository::delete);
+    return getById(id, siteId).flatMap(contentItemWriter::delete);
   }
 
   @Override
