@@ -39,7 +39,7 @@ function VideoThumb({ src }: { src: string }) {
     video.src = src;
   }, [src]);
 
-  return <video ref={ref} muted controls className="w-full h-28 object-cover rounded" />;
+  return <video ref={ref} muted controls className="w-full h-28 object-cover" />;
 }
 
 export default function MediaPickerModal({
@@ -99,7 +99,7 @@ export default function MediaPickerModal({
         accept="image/*"
         className="mb-4 block"
       >
-        <Button icon={<UploadIcon />}>Upload image</Button>
+        <Button type="primary" icon={<UploadIcon />}>Upload image</Button>
       </Upload>
       {imagesQuery.isLoading ? (
         <Spin />
@@ -111,7 +111,7 @@ export default function MediaPickerModal({
             <button
               key={file.id}
               onClick={() => onSelect(imageUrl(file))}
-              className="border border-gray-200 rounded overflow-hidden hover:border-blue-400 cursor-pointer p-0"
+              className="cms-pick-tile"
               title={file.name}
             >
               <img
@@ -134,7 +134,7 @@ export default function MediaPickerModal({
         accept="video/*"
         className="mb-4 block"
       >
-        <Button icon={<UploadIcon />}>Upload video</Button>
+        <Button type="primary" icon={<UploadIcon />}>Upload video</Button>
       </Upload>
       {videosQuery.isLoading ? (
         <Spin />
@@ -143,7 +143,7 @@ export default function MediaPickerModal({
       ) : (
         <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
           {videosQuery.data.map((job: VideoJob) => (
-            <div key={job.jobId} className="border border-gray-200 rounded p-1">
+            <div key={job.jobId} className="cms-pick-tile" style={{ cursor: "default" }}>
               {job.status === "DONE" ? (
                 <button
                   onClick={() => onSelect(videoPlaybackUrl(job))}

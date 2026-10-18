@@ -44,7 +44,14 @@ export interface FieldConfig {
 }
 
 /** Which sidebar group a screen lives in. */
-export type ResourceGroup = "home" | "about" | "industry" | "services" | "site";
+export type ResourceGroup =
+  | "home"
+  | "perspectives"
+  | "company"
+  | "about"
+  | "industry"
+  | "services"
+  | "site";
 
 export interface ResourceConfig {
   key: string;
@@ -101,6 +108,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "offices",
+    group: "company",
     label: "Offices",
     apiPath: "/v1/admin/content-items",
     contentType: "office",
@@ -117,6 +125,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "case-studies",
+    group: "perspectives",
     label: "Case Studies",
     apiPath: "/v1/admin/case-studies",
     titleField: "title",
@@ -130,6 +139,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "posts",
+    group: "perspectives",
     label: "Posts",
     apiPath: "/v1/admin/posts",
     titleField: "title",
@@ -144,6 +154,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "awards",
+    group: "company",
     label: "Awards",
     apiPath: "/v1/admin/content-items",
     contentType: "award",
@@ -155,6 +166,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "certifications",
+    group: "company",
     label: "Certifications",
     apiPath: "/v1/admin/content-items",
     contentType: "certification",
@@ -166,6 +178,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "partners",
+    group: "company",
     label: "Partners",
     apiPath: "/v1/admin/content-items",
     contentType: "partner",
@@ -196,6 +209,7 @@ export const RESOURCES: ResourceConfig[] = [
   },
   {
     key: "footer-nav-categories",
+    group: "site",
     label: "Footer Nav Categories",
     apiPath: "/v1/admin/content-items",
     contentType: "footer_nav_category",

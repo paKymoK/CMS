@@ -58,21 +58,20 @@ function slugify(text: string): string {
 }
 
 const inputStyle: CSSProperties = {
-  border: "1px solid #dfe3e8",
+  border: "1px solid #dde4f0",
+  borderRadius: 10,
   padding: "10px 12px",
-  fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  fontFamily: "inherit",
   fontSize: 14,
-  color: "#10141c",
+  color: "#0b1b3a",
   outline: "none",
   width: "100%",
 };
 
 const cardLabelStyle: CSSProperties = {
-  fontFamily: "var(--font-mono)",
-  fontSize: 10,
-  letterSpacing: ".12em",
-  textTransform: "uppercase",
-  color: "#5a5d64",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#5b6b86",
 };
 
 /** Thin data-fetching shell — see PostEditorPage's identical split for why the form is a separate,
@@ -113,7 +112,7 @@ export default function CaseStudyEditorPage() {
   });
 
   if (!isNew && !detailQuery.data) {
-    return <div style={{ padding: 48, textAlign: "center", color: "#6a7c90" }}>Loading…</div>;
+    return <div style={{ padding: 48, textAlign: "center", color: "#7b8aa5" }}>Loading…</div>;
   }
 
   return <CaseStudyEditorForm onRestored={async () => { await queryClient.refetchQueries({ queryKey: ["case-study-editor", id, site] }); setRestoreCount((n) => n + 1); }} key={`${id}-${restoreCount}`} id={id!} isNew={isNew} initial={isNew ? (prefill ? prefillAsCaseStudy(prefill) : null) : (detailQuery.data ?? null)} />;
@@ -233,7 +232,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
   const selectedTestimonial = testimonialsQuery.data?.find((t) => t.id === testimonialId) ?? null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#edf5ff" }}>
+    <div style={{ minHeight: "100vh" }}>
       <div style={{ padding: "0 0 16px" }}>
         <div
           style={{
@@ -244,11 +243,10 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
             minHeight: 64,
             padding: "10px 12px 10px 18px",
             flexWrap: "wrap",
-            borderRadius: 18,
-            border: "1px solid rgba(0,169,255,.2)",
-            background: "rgba(255,255,255,.88)",
-            backdropFilter: "blur(24px)",
-            boxShadow: "0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05)",
+            borderRadius: 16,
+            border: "1px solid #e3e9f4",
+            background: "#ffffff",
+            boxShadow: "0 8px 24px rgba(10,30,70,.04), 0 1px 2px rgba(10,30,70,.04)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
@@ -260,13 +258,13 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                 width: 38,
                 height: 38,
                 flex: "none",
-                borderRadius: "50%",
-                border: "1px solid #cfd2d6",
+                borderRadius: 10,
+                border: "1px solid #dde4f0",
                 background: "transparent",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#3d4046",
+                color: "#26354f",
                 cursor: "pointer",
               }}
             >
@@ -274,13 +272,13 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
             </button>
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span style={{ ...cardLabelStyle, fontSize: 10 }}>
-                Home Page / Case Studies / {isNew ? "New" : `ID ${id}`} · {site ? site.toUpperCase() : ""}
+                Perspectives / Case Studies / {isNew ? "New" : `ID ${id}`} · {site ? site.toUpperCase() : ""}
               </span>
               <span
                 style={{
                   fontSize: 15,
                   fontWeight: 600,
-                  color: "#002d68",
+                  color: "#0b1b3a",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -295,18 +293,16 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                 flex: "none",
                 padding: "4px 10px",
                 borderRadius: 999,
-                fontFamily: "var(--font-mono)",
-                fontSize: 10,
-                letterSpacing: ".08em",
-                background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
-                color: pub ? "#0159be" : "#5a5d64",
+                fontFamily: "inherit", fontSize: 12, fontWeight: 600,
+                background: pub ? "#e3f7ee" : "#fff4e0",
+                color: pub ? "#0b7a55" : "#9a5b00",
               }}
             >
-              {status}
+              {pub ? "Published" : "Draft"}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12.5, color: "#6a7c90", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12.5, color: "#7b8aa5", display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbff" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
@@ -320,16 +316,14 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                   display: "flex",
                   alignItems: "center",
                   padding: "0 16px",
-                  border: "1px solid #cfd2d6",
+                  border: "1px solid #dde4f0", borderRadius: 10,
                   background: "#ffffff",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  letterSpacing: ".1em",
-                  color: "#3d4046",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                  color: "#26354f",
                   cursor: "pointer",
                 }}
               >
-                {previewMutation.isPending ? "OPENING…" : "PREVIEW ↗"}
+                {previewMutation.isPending ? "Opening…" : "Preview ↗"}
               </button>
             )}
             {!isNew && (
@@ -341,16 +335,14 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                   display: "flex",
                   alignItems: "center",
                   padding: "0 16px",
-                  border: "1px solid #cfd2d6",
+                  border: "1px solid #dde4f0", borderRadius: 10,
                   background: "#ffffff",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  letterSpacing: ".1em",
-                  color: "#3d4046",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                  color: "#26354f",
                   cursor: "pointer",
                 }}
               >
-                HISTORY
+                History
               </button>
             )}
             <button
@@ -360,16 +352,14 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
               style={{
                 minHeight: 40,
                 padding: "0 16px",
-                border: "1px solid rgba(0,169,255,.4)",
+                border: "1px solid #bcd9fb", borderRadius: 10,
                 background: "#ffffff",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                letterSpacing: ".1em",
-                color: "#00a9ff",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                color: "#0083ff",
                 cursor: "pointer",
               }}
             >
-              SAVE DRAFT
+              Save draft
             </button>
             <button
               type="button"
@@ -379,15 +369,14 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                 minHeight: 40,
                 padding: "0 20px",
                 border: "none",
-                background: "#00a9ff",
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                letterSpacing: ".1em",
+                borderRadius: 10,
+                background: "#0083ff",
+                fontFamily: "inherit", fontSize: 13, fontWeight: 600,
                 color: "#ffffff",
                 cursor: "pointer",
               }}
             >
-              {pub ? "UPDATE" : "PUBLISH"}
+              {pub ? "Update" : "Publish"}
             </button>
           </div>
         </div>
@@ -404,7 +393,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
           gap: 24,
         }}
       >
-        <main style={{ flex: "1 1 640px", minWidth: 0, background: "#ffffff", border: "1px solid #e0e4e9" }}>
+        <main style={{ flex: "1 1 640px", minWidth: 0, background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
           <div style={{ position: "relative" }}>
             {image ? (
               <img src={mediaSrc(image)} alt="" style={{ display: "block", width: "100%", aspectRatio: "21/8", objectFit: "cover" }} />
@@ -422,14 +411,12 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                   padding: "9px 14px",
                   border: "none",
                   background: "rgba(255,255,255,.94)",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 10,
-                  letterSpacing: ".1em",
-                  color: "#002d68",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                  color: "#0b1b3a",
                   cursor: "pointer",
                 }}
               >
-                CHANGE COVER
+                Change cover
               </button>
             </div>
           </div>
@@ -453,15 +440,15 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                 lineHeight: 1.2,
                 fontWeight: 700,
                 letterSpacing: "-.02em",
-                color: "#002d68",
+                color: "#0b1b3a",
                 outline: "none",
                 background: "transparent",
               }}
             />
 
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dfe3e8", background: "#edf5ff" }}>
-                <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#6a7c90", whiteSpace: "nowrap" }}>
+              <div style={{ flex: 1, minWidth: 260, display: "flex", alignItems: "center", border: "1px solid #dde4f0", background: "#f4f7fc" }}>
+                <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#7b8aa5", whiteSpace: "nowrap" }}>
                   {siteSub ?? "site"}/case-studies/
                 </span>
                 <input
@@ -470,7 +457,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                     setSlug(slugify(e.target.value));
                     setDirty(true);
                   }}
-                  style={{ flex: 1, minWidth: 80, border: "none", background: "transparent", padding: "10px 12px 10px 2px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#10141c", outline: "none" }}
+                  style={{ flex: 1, minWidth: 80, border: "none", background: "transparent", padding: "10px 12px 10px 2px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#0b1b3a", outline: "none" }}
                 />
               </div>
               <button
@@ -479,9 +466,9 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                   setSlug(slugify(title));
                   setDirty(true);
                 }}
-                style={{ padding: "10px 12px", border: "1px solid #cfd2d6", background: "#ffffff", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em", color: "#3d4046", cursor: "pointer" }}
+                style={{ padding: "10px 12px", border: "1px solid #dde4f0", borderRadius: 10, background: "#ffffff", fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: "#26354f", cursor: "pointer" }}
               >
-                FROM TITLE
+                From title
               </button>
             </div>
 
@@ -495,7 +482,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                   setDirty(true);
                 }}
                 placeholder="One or two sentences shown on cards and under the title"
-                style={{ border: "1px solid #dfe3e8", padding: "12px 14px", resize: "vertical", fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: 15, lineHeight: 1.55, color: "#10141c", outline: "none" }}
+                style={{ border: "1px solid #dde4f0", padding: "12px 14px", resize: "vertical", fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", fontSize: 15, lineHeight: 1.55, color: "#0b1b3a", outline: "none" }}
               />
             </label>
           </div>
@@ -517,12 +504,12 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
               justifyContent: "space-between",
               gap: 12,
               padding: "14px clamp(20px,5vw,56px)",
-              borderTop: "1px solid #e0e4e9",
-              background: "#edf5ff",
+              borderTop: "1px solid #e3e9f4",
+              background: "#f4f7fc",
               fontFamily: "var(--font-mono)",
               fontSize: 11,
               letterSpacing: ".06em",
-              color: "#6a7c90",
+              color: "#7b8aa5",
             }}
           >
             <span>
@@ -532,11 +519,11 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
           </div>
         </main>
 
-        <aside style={{ flex: "0 1 330px", minWidth: 280, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 104 }}>
-          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Publishing</div>
+        <aside style={{ flex: "0 1 330px", minWidth: 280, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 88 }}>
+          <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Publishing</div>
             <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dfe3e8", borderRadius: 999, background: "#edf5ff" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
                 {(["DRAFT", "PUBLISHED"] as const).map((s) => (
                   <button
                     key={s}
@@ -548,13 +535,14 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                     style={{
                       height: 32,
                       border: "none",
-                      borderRadius: 999,
+                      borderRadius: 9,
                       cursor: "pointer",
                       fontFamily: "inherit",
                       fontSize: 12.5,
                       fontWeight: 600,
-                      background: status === s ? "#001449" : "transparent",
-                      color: status === s ? "#ffffff" : "#3c4858",
+                      background: status === s ? "#ffffff" : "transparent",
+                      boxShadow: status === s ? "0 1px 3px rgba(10,30,70,.12)" : "none",
+                      color: status === s ? "#0b1b3a" : "#5b6b86",
                     }}
                   >
                     {s === "DRAFT" ? "Draft" : "Published"}
@@ -604,7 +592,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                       border: "none",
                       cursor: "pointer",
                       padding: 0,
-                      background: active ? "#00a9ff" : "#cfd2d6",
+                      background: active ? "#0083ff" : "#cfd2d6",
                       transition: "background .2s",
                     }}
                   >
@@ -638,19 +626,19 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
             </div>
           </div>
 
-          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <span style={cardLabelStyle}>— Results</span>
+          <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span style={cardLabelStyle}>Results</span>
               <button
                 type="button"
                 onClick={addResult}
-                style={{ border: "none", background: "transparent", color: "#00a9ff", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
+                style={{ border: "none", background: "transparent", color: "#0083ff", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}
               >
                 + ADD
               </button>
             </div>
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {results.length === 0 && <span style={{ fontSize: 13, color: "#9aa3ad" }}>No stat rows yet — e.g. "40%" / "Faster deployment".</span>}
+              {results.length === 0 && <span style={{ fontSize: 13, color: "#7b8aa5" }}>No stat rows yet — e.g. "40%" / "Faster deployment".</span>}
               {results.map((r, i) => (
                 <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
                   <input
@@ -678,8 +666,8 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
             </div>
           </div>
 
-          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", ...cardLabelStyle }}>— Testimonial</div>
+          <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Testimonial</div>
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
               <select
                 value={testimonialId ?? ""}
@@ -698,26 +686,26 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
                 ))}
               </select>
               {selectedTestimonial?.quote && (
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#55585f", fontStyle: "italic" }}>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "#5b6b86", fontStyle: "italic" }}>
                   "{selectedTestimonial.quote}"
                 </p>
               )}
             </div>
           </div>
 
-          <div style={{ background: "#ffffff", border: "1px solid #e0e4e9" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e0e4e9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <span style={cardLabelStyle}>— Outline</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#9aa3ad" }}>FROM H2 · BUILDS TOC</span>
+          <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span style={cardLabelStyle}>Outline</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#7b8aa5" }}>From H2 headings · builds the TOC</span>
             </div>
             <div style={{ padding: "10px 18px 16px", display: "flex", flexDirection: "column" }}>
               {outline.map((o) => (
-                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#002d68" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#00a9ff" }}>{o.n}</span>
+                <div key={o.n} style={{ display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #eef1f4", fontSize: 13, color: "#0b1b3a" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: "19px", color: "#0083ff" }}>{o.n}</span>
                   {o.text}
                 </div>
               ))}
-              {outline.length === 0 && <span style={{ fontSize: 13, color: "#9aa3ad", paddingTop: 6 }}>Add H2 headings to build the table of contents.</span>}
+              {outline.length === 0 && <span style={{ fontSize: 13, color: "#7b8aa5", paddingTop: 6 }}>Add H2 headings to build the table of contents.</span>}
             </div>
           </div>
         </aside>

@@ -4,7 +4,6 @@ import { Upload, Button, Spin, Empty, message, Popconfirm, Tabs } from "antd";
 import { InboxIcon, DeleteIcon } from "../components/icons";
 import Hls from "hls.js";
 import { useSite } from "../lib/useSite";
-import { siteLabel } from "../config/sites";
 import { mediaApi } from "../lib/api";
 import {
   listImages,
@@ -19,10 +18,10 @@ import {
 import { mediaSrc } from "../lib/media";
 
 const STATUS_STYLE: Record<VideoJob["status"], { bg: string; color: string; label: string }> = {
-  DONE: { bg: "#ffffff", color: "#0159be", label: "DONE" },
-  FAILED: { bg: "#ffe1e1", color: "#a8071a", label: "FAILED" },
-  QUEUED: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "QUEUED" },
-  PROCESSING: { bg: "rgba(255,255,255,.18)", color: "#ffffff", label: "PROCESSING" },
+  DONE: { bg: "#e3f7ee", color: "#0b7a55", label: "Done" },
+  FAILED: { bg: "#fdeceb", color: "#b3261e", label: "Failed" },
+  QUEUED: { bg: "rgba(255,255,255,.2)", color: "#ffffff", label: "Queued" },
+  PROCESSING: { bg: "rgba(255,255,255,.2)", color: "#ffffff", label: "Processing" },
 };
 
 function VideoThumb({ src }: { src: string }) {
@@ -63,36 +62,46 @@ function Dropzone({
       style={{
         marginBottom: 24,
         padding: 0,
-        border: "1.5px dashed #b9d3ea",
-        background: "linear-gradient(#f7fbff,#edf5ff)",
-        borderRadius: 14,
+        border: "1.5px dashed #b7cbe8",
+        background: "#f9fbff",
+        borderRadius: 16,
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4 px-2 py-1">
         <div className="flex items-center gap-3">
-          <InboxIcon style={{ fontSize: 22, color: "#00a9ff" }} />
+          <span
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: "#e6f2ff",
+              color: "#0083ff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <InboxIcon style={{ fontSize: 20 }} />
+          </span>
           <div className="text-left">
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#002d68" }}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#0b1b3a" }}>
               Drop {noun} here, or browse
             </div>
-            <div className="cms-eyebrow mt-1" style={{ fontSize: 10 }}>
-              {hint}
-            </div>
+            <div style={{ marginTop: 2, fontSize: 12, color: "#7b8aa5" }}>{hint}</div>
           </div>
         </div>
         <span
           style={{
-            padding: "12px 22px",
-            borderRadius: 999,
-            background: "linear-gradient(90deg, #00a9ff, #00bbff)",
-            boxShadow: "0 10px 24px rgba(0,169,255,.3)",
-            fontFamily: "var(--font-mono)",
-            fontSize: 12,
-            letterSpacing: ".1em",
+            padding: "11px 20px",
+            borderRadius: 12,
+            background: "#0083ff",
+            boxShadow: "0 6px 16px rgba(0,131,255,.28)",
+            fontSize: 14,
+            fontWeight: 600,
             color: "#ffffff",
           }}
         >
-          UPLOAD {noun.slice(0, -1).toUpperCase()}
+          Upload {noun.slice(0, -1)}
         </span>
       </div>
     </Upload.Dragger>
@@ -156,7 +165,7 @@ export default function MediaLibraryPage() {
     <div>
       <Dropzone
         noun="images"
-        hint="JPG · PNG · WEBP · SVG — FILE TYPE VERIFIED BY CONTENT"
+        hint="JPG, PNG, WebP or SVG. File type is verified by content."
         accept="image/*"
         onFile={handleUploadImage}
       />
@@ -169,17 +178,18 @@ export default function MediaLibraryPage() {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
           {imagesQuery.data.map((file: UploadFile) => (
-            <div key={file.id} className="cms-tile flex flex-col gap-2">
+            <div key={file.id} className="cms-tile cms-tile-card flex flex-col">
               <img
                 src={mediaSrc(imageUrl(file))}
                 alt={file.name}
-                style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }}
+                style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block", borderRadius: 0 }}
               />
               <span
                 style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  color: "#3d4046",
+                  padding: "10px 14px 12px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#0b1b3a",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
@@ -198,7 +208,7 @@ export default function MediaLibraryPage() {
     <div>
       <Dropzone
         noun="videos"
-        hint="MP4 · MOV — TRANSCODED TO HLS AFTER UPLOAD"
+        hint="MP4 or MOV. Transcoded to HLS after upload."
         accept="video/*"
         onFile={handleUploadVideo}
       />
@@ -231,9 +241,8 @@ export default function MediaLibraryPage() {
                         right: 10,
                         padding: "4px 10px",
                         borderRadius: 999,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: 10,
-                        letterSpacing: ".08em",
+                        fontSize: 12,
+                        fontWeight: 600,
                         background: badge.bg,
                         color: badge.color,
                       }}
@@ -243,7 +252,7 @@ export default function MediaLibraryPage() {
                   </div>
                 )}
                 <div className="flex items-center justify-between gap-4 px-3.5 py-3">
-                  <span style={{ fontSize: 13, color: "#55585f" }}>
+                  <span style={{ fontSize: 13, color: "#5b6b86" }}>
                     {new Date(job.createdAt).toLocaleDateString()}
                   </span>
                   <Popconfirm title="Delete this video?" onConfirm={() => deleteVideoMutation.mutate(job.videoId)}>
@@ -251,9 +260,9 @@ export default function MediaLibraryPage() {
                       size="small"
                       danger
                       icon={<DeleteIcon />}
-                      style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
+                      className="cms-mini-btn"
                     >
-                      DELETE
+                      Delete
                     </Button>
                   </Popconfirm>
                 </div>
@@ -267,10 +276,10 @@ export default function MediaLibraryPage() {
 
   return (
     <div>
-      <div className="cms-eyebrow mb-3">— Library · {site ? siteLabel(site) : ""}</div>
-      <h1 className="cms-page-title mb-5">
-        Media Library
-      </h1>
+      <h1 className="cms-page-title">Media Library</h1>
+      <p className="cms-page-sub" style={{ marginBottom: 20 }}>
+        {(imagesQuery.data?.length ?? 0) + (videosQuery.data?.length ?? 0)} files for this site.
+      </p>
       <Tabs
         activeKey={tab}
         onChange={setTab}
@@ -280,7 +289,7 @@ export default function MediaLibraryPage() {
             label: (
               <span className="flex items-center gap-2">
                 Images
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9aa3ad" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#7b8aa5" }}>
                   {imagesQuery.data?.length ?? 0}
                 </span>
               </span>
@@ -292,7 +301,7 @@ export default function MediaLibraryPage() {
             label: (
               <span className="flex items-center gap-2">
                 Videos
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#9aa3ad" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#7b8aa5" }}>
                   {videosQuery.data?.length ?? 0}
                 </span>
               </span>

@@ -19,14 +19,13 @@ import {
   Image,
   type FormInstance,
 } from "antd";
-import { PlusIcon, EditIcon, DeleteIcon, PictureIcon } from "../components/icons";
+import { PlusIcon, EditIcon, DeleteIcon, PictureIcon, ClockIcon } from "../components/icons";
 import dayjs from "dayjs";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { siteLabel, SITES } from "../config/sites";
 import { findResource, type FieldConfig } from "../config/resources";
 import type { NamePath } from "antd/es/form/interface";
-import { NAVIGATION } from "../config/navigation";
 import MediaPickerModal from "../components/MediaPickerModal";
 import { mediaSrc } from "../lib/media";
 
@@ -87,13 +86,6 @@ function Thumb({ src }: { src: string | null }) {
       onError={() => setBroken(true)}
     />
   );
-}
-
-// Which nav group this resource lives under (e.g. "Home Page") — derived from NAVIGATION rather
-// than hardcoded, so a future second page's resources get the right eyebrow automatically.
-function groupLabelFor(resourceKey: string): string {
-  const path = `/content/${resourceKey}`;
-  return NAVIGATION.find((g) => g.items?.some((i) => i.key === path))?.label ?? "";
 }
 
 /**
@@ -309,7 +301,7 @@ export default function ContentPage() {
       dataIndex: "id",
       width: 56,
       render: (v: number) => (
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#6a7c90" }}>{v}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#7b8aa5" }}>{v}</span>
       ),
     },
     {
@@ -318,7 +310,7 @@ export default function ContentPage() {
       render: (title: string, row: Row) => (
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {imgField ? <Thumb src={(row[imgField.name] as string) ?? null} /> : null}
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#10141c" }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#0b1b3a" }}>{title}</span>
         </div>
       ),
     },
@@ -328,7 +320,7 @@ export default function ContentPage() {
         title: <ColHeader>{f.label}</ColHeader>,
         dataIndex: f.name,
         render: (value: unknown) => (
-          <span style={{ fontSize: 14, color: "#55585f" }}>
+          <span style={{ fontSize: 14, color: "#5b6b86" }}>
             {f.type === "boolean" ? (value ? "Yes" : "No") : String(value ?? "—")}
           </span>
         ),
@@ -337,7 +329,9 @@ export default function ContentPage() {
       title: <ColHeader>Status</ColHeader>,
       dataIndex: "status",
       render: (status: string) => (
-        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : ""}`}>{status}</span>
+        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : ""}`}>
+          {status === "PUBLISHED" ? "Published" : "Draft"}
+        </span>
       ),
     },
     {
@@ -357,7 +351,7 @@ export default function ContentPage() {
       dataIndex: "displayOrder",
       width: 64,
       render: (v: number) => (
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#6a7c90" }}>{v}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#7b8aa5" }}>{v}</span>
       ),
     },
     {
@@ -371,7 +365,7 @@ export default function ContentPage() {
             className="cms-mini-btn"
             icon={<EditIcon />}
             onClick={() => openEdit(row)}
-            style={{ color: "#00a9ff", borderColor: "rgba(0,169,255,.4)" }}
+            style={{ color: "#0069cc", borderColor: "#bcd9fb" }}
           >
             Edit
           </Button>
@@ -407,36 +401,24 @@ export default function ContentPage() {
       />
       <div className="flex flex-wrap items-end justify-between gap-5 mb-6">
         <div className="min-w-0">
-          <div className="cms-eyebrow mb-3">
-            — {groupLabelFor(resource.key)} · {site ? siteLabel(site) : ""}
-          </div>
           <h1 className="cms-page-title">{resource.label}</h1>
           <p className="cms-page-sub">
-            {rows.length} items · <span style={{ color: "#00a9ff" }}>{publishedCount} published</span>
+            {rows.length} items · <span style={{ color: "#0b7a55", fontWeight: 600 }}>{publishedCount} published</span>
             {siteSub ? ` on ${siteSub}` : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {resource.supportsTypeFilter && (
-            <div className="flex gap-1.5 p-1 rounded-full" style={{ border: "1px solid #dfe3e8", background: "#ffffff" }}>
+            <div className="cms-segmented">
               {[{ label: "All", value: undefined }, ...(resource.typeFilterOptions ?? [])].map((o) => {
                 const on = typeFilter === o.value;
                 return (
                   <button
                     key={o.label}
                     type="button"
+                    className={on ? "is-on" : undefined}
+                    aria-pressed={on}
                     onClick={() => setTypeFilter(o.value)}
-                    style={{
-                      border: "none",
-                      borderRadius: 999,
-                      padding: "8px 14px",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      background: on ? "#001449" : "transparent",
-                      color: on ? "#ffffff" : "#3c4858",
-                    }}
                   >
                     {o.label}
                   </button>
@@ -445,7 +427,7 @@ export default function ContentPage() {
             </div>
           )}
           <Button className="cms-cta" icon={<PlusIcon />} onClick={openCreate}>
-            NEW {singular.toUpperCase()}
+            New {singular.toLowerCase()}
           </Button>
         </div>
       </div>
@@ -472,8 +454,8 @@ export default function ContentPage() {
         locale={{
           emptyText: (
             <div className="py-14 text-center">
-              <div className="cms-eyebrow">— Nothing here yet</div>
-              <p className="mt-2 mb-0" style={{ fontSize: 14, color: "#55585f" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0b1b3a" }}>Nothing here yet</div>
+              <p className="mt-2 mb-0" style={{ fontSize: 14, color: "#5b6b86" }}>
                 No items for {site ? siteLabel(site) : "this site"}. Create the first one.
               </p>
             </div>
@@ -484,23 +466,30 @@ export default function ContentPage() {
 
       <Drawer
         title={
-          <div>
-            <div className="cms-eyebrow mb-2">
-              — {editing ? `Edit · ID ${editing.id}` : `New · ${site ? siteLabel(site) : ""}`}
+          <div style={{ minWidth: 0 }}>
+            <div className="cms-sheet-kicker">
+              {resource.label} · {editing ? `Edit · ID ${editing.id}` : `New · ${site ? siteLabel(site) : ""}`}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.01em", color: "#002d68" }}>
+            <div className="cms-sheet-title">
               {editing ? (editing[resource.titleField] as string) : `New ${singular.toLowerCase()}`}
             </div>
           </div>
         }
+        extra={
+          editing && (
+            <Button icon={<ClockIcon />} onClick={() => setHistoryOpen(true)}>
+              History
+            </Button>
+          )
+        }
         open={drawerOpen}
+        closable={{ placement: "end" }}
         onClose={() => setDrawerOpen(false)}
-        width={resource.fields.some((f) => f.type === "object-list") ? 720 : 480}
+        width={resource.fields.some((f) => f.type === "object-list") ? 720 : 540}
         footer={
-          <div className="flex gap-2.5">
+          <div className="flex justify-end gap-2.5">
             <Button onClick={() => setDrawerOpen(false)}>Cancel</Button>
-            {editing && <Button onClick={() => setHistoryOpen(true)}>History</Button>}
-            <Button type="primary" block loading={saveMutation.isPending} onClick={handleSubmit}>
+            <Button type="primary" loading={saveMutation.isPending} onClick={handleSubmit}>
               Save changes
             </Button>
           </div>
@@ -614,7 +603,7 @@ function FieldInput({
               {entries.map((entry, index) => (
                 <div
                   key={entry.key}
-                  style={{ border: "1px solid #dfe3e8", borderRadius: 6, padding: 12, background: "#fafbfc" }}
+                  style={{ border: "1px solid #dde4f0", borderRadius: 6, padding: 12, background: "#fafbfc" }}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="cms-eyebrow">

@@ -73,14 +73,13 @@ export default function HistoryDrawer({
   return (
     <Drawer
       title={
-        <div>
-          <div className="cms-eyebrow mb-2">— History · ID {itemId}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.01em", color: "#002d68" }}>
-            {entries[0]?.title || "Item history"}
-          </div>
+        <div style={{ minWidth: 0 }}>
+          <div className="cms-sheet-kicker">History · ID {itemId}</div>
+          <div className="cms-sheet-title">{entries[0]?.title || "Item history"}</div>
         </div>
       }
       open={open}
+      closable={{ placement: "end" }}
       onClose={onClose}
       width={560}
       destroyOnClose
@@ -96,15 +95,17 @@ export default function HistoryDrawer({
           style={{ padding: "40px 0" }}
         />
       )}
-      <ol className="m-0 p-0" style={{ listStyle: "none" }}>
+      <ol className="cms-timeline">
         {entries.map((entry, index) => {
           const isOpen = expanded === entry.id;
           const shown = entry.changed.slice(0, SHOWN_FIELDS);
           return (
             <li
               key={entry.id}
-              style={{ padding: "14px 0", borderTop: index ? "1px solid #eef1f4" : undefined }}
+              className={`cms-timeline-item${index === 0 ? " is-latest" : ""}${isOpen ? " is-open" : ""}`}
             >
+              <span className="cms-timeline-dot" aria-hidden />
+              <div className="cms-timeline-body">
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <Tag color={ACTION_COLORS[entry.action]} style={{ marginInlineEnd: 0 }}>
                   {ACTION_LABELS[entry.action]}
@@ -114,8 +115,8 @@ export default function HistoryDrawer({
                     Latest
                   </Tag>
                 )}
-                <span style={{ fontWeight: 600, color: "#002d68" }}>{entry.actorName ?? "Unknown"}</span>
-                <span style={{ color: "#6a7c90", fontSize: 13 }} title={entry.occurredAt}>
+                <span style={{ fontWeight: 600, color: "#0b1b3a" }}>{entry.actorName ?? "Unknown"}</span>
+                <span style={{ color: "#7b8aa5", fontSize: 13 }} title={entry.occurredAt}>
                   {dayjs(entry.occurredAt).format("MMM D, YYYY · HH:mm")}
                 </span>
               </div>
@@ -134,7 +135,7 @@ export default function HistoryDrawer({
                 </div>
               )}
               <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                <Button size="small" onClick={() => setExpanded(isOpen ? null : entry.id)}>
+                <Button size="small" className="cms-mini-btn" onClick={() => setExpanded(isOpen ? null : entry.id)}>
                   {isOpen ? "Hide changes" : "View changes"}
                 </Button>
                 <Popconfirm
@@ -146,6 +147,7 @@ export default function HistoryDrawer({
                 >
                   <Button
                     size="small"
+                    className="cms-mini-btn"
                     disabled={index === 0}
                     loading={restore.isPending && restore.variables?.id === entry.id}
                   >
@@ -158,12 +160,13 @@ export default function HistoryDrawer({
                   <EntryChanges entry={entry} />
                 </div>
               )}
+              </div>
             </li>
           );
         })}
       </ol>
       {history.data && history.data.totalItems > entries.length && (
-        <p style={{ color: "#6a7c90", fontSize: 13, textAlign: "center" }}>
+        <p style={{ color: "#7b8aa5", fontSize: 13, textAlign: "center" }}>
           Showing the latest {entries.length} of {history.data.totalItems} changes.
         </p>
       )}

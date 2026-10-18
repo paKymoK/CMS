@@ -44,14 +44,15 @@ const toolStyle = (on: boolean, disabled = false): CSSProperties => ({
   border: "none",
   cursor: disabled ? "default" : "pointer",
   opacity: disabled ? 0.35 : 1,
-  background: on ? "#001449" : "transparent",
-  color: on ? "#ffffff" : "#3d4046",
-  fontFamily: "var(--font-mono)",
-  fontSize: 12,
-  borderRadius: 4,
+  background: on ? "#e6f2ff" : "transparent",
+  color: on ? "#0069cc" : "#26354f",
+  fontFamily: "inherit",
+  fontWeight: 600,
+  fontSize: 13,
+  borderRadius: 8,
 });
 
-const Sep = () => <span style={{ width: 1, height: 20, background: "#e0e4e9", margin: "0 4px" }} />;
+const Sep = () => <span style={{ width: 1, height: 20, background: "#e3e9f4", margin: "0 4px" }} />;
 
 function ToolBtn({ label, title, on = false, disabled = false, onRun }: { label: ReactNode; title: string; on?: boolean; disabled?: boolean; onRun: () => void }) {
   return (
@@ -241,14 +242,15 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
       <div
         style={{
           position: "sticky",
-          top: 96,
+          top: 76,
           zIndex: 5,
+          borderRadius: 12,
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
           gap: 2,
           padding: 6,
-          border: "1px solid #e0e4e9",
+          border: "1px solid #e3e9f4",
           background: "#ffffff",
           boxShadow: "0 6px 18px rgba(10,37,64,.06)",
         }}
@@ -299,10 +301,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
       </div>
 
       {(s.figure || s.table || s.columns || s.accordion) && !sourceMode && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "4px 6px", border: "1px solid #e0e4e9", borderTop: "none", background: "#edf5ff" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "4px 6px", border: "1px solid #e3e9f4", borderTop: "none", background: "#fafcff" }}>
           {s.figure && (
             <>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#6a7c90", padding: "0 8px" }}>IMAGE</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#7b8aa5", padding: "0 8px" }}>IMAGE</span>
               {(["full", "left", "right"] as const).map((a) => (
                 <ToolBtn key={a} label={a === "full" ? "Full width" : a === "left" ? "Float left" : "Float right"} title={`Align ${a}`} on={s.align === a} onRun={() => chain().updateAttributes("figure", { align: a }).run()} />
               ))}
@@ -311,19 +313,19 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           )}
           {s.columns && (
             <>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#6a7c90", padding: "0 8px" }}>COLUMNS</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#7b8aa5", padding: "0 8px" }}>COLUMNS</span>
               <ToolBtn label="Delete" title="Delete columns" onRun={() => chain().deleteNode("columns").run()} />
             </>
           )}
           {s.accordion && (
             <>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#6a7c90", padding: "0 8px" }}>ACCORDION</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#7b8aa5", padding: "0 8px" }}>ACCORDION</span>
               <ToolBtn label="Delete" title="Delete accordion" onRun={() => chain().deleteNode("accordion").run()} />
             </>
           )}
           {s.table && (
             <>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#6a7c90", padding: "0 8px" }}>TABLE</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#7b8aa5", padding: "0 8px" }}>TABLE</span>
               <ToolBtn label="+ Row" title="Add row below" onRun={() => chain().addRowAfter().run()} />
               <ToolBtn label="+ Col" title="Add column right" onRun={() => chain().addColumnAfter().run()} />
               <ToolBtn label="− Row" title="Delete row" onRun={() => chain().deleteRow().run()} />
@@ -341,7 +343,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
           value={sourceHtml}
           onChange={(e) => setSourceHtml(e.target.value)}
           spellCheck={false}
-          style={{ display: "block", width: "100%", minHeight: 420, padding: 20, border: "none", outline: "none", fontFamily: "var(--font-mono)", fontSize: 12.5, lineHeight: 1.6, color: "#10141c", background: "#edf5ff", resize: "vertical" }}
+          style={{ display: "block", width: "100%", minHeight: 420, padding: 20, border: "none", outline: "none", fontFamily: "var(--font-mono)", fontSize: 12.5, lineHeight: 1.6, color: "#0b1b3a", background: "#fafcff", resize: "vertical" }}
         />
       ) : (
         <EditorContent editor={editor} className="cms-rte-wrap" />
@@ -362,7 +364,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
 
       <Modal title="Embed video, audio or form" open={embedOpen} onOk={applyEmbed} onCancel={() => setEmbedOpen(false)} okText="Insert" destroyOnHidden>
         <Input autoFocus value={embedUrl} onChange={(e) => setEmbedUrl(e.target.value)} onPressEnter={applyEmbed} placeholder="Paste a YouTube, Vimeo, Loom, Spotify or form link" />
-        <p style={{ marginTop: 10, fontSize: 12, color: "#6a7c90" }}>
+        <p style={{ marginTop: 10, fontSize: 12, color: "#7b8aa5" }}>
           Allowed: YouTube, Vimeo, Loom, Spotify, Google Forms, Tally, Typeform, Jotform, Microsoft Forms.
         </p>
       </Modal>

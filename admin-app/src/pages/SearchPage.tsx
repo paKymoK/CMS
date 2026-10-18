@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Empty, Spin, Tag } from "antd";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { siteLabel } from "../config/sites";
 import { useSite } from "../lib/useSite";
 import {
   adminSearch,
@@ -40,14 +39,8 @@ export default function SearchPage() {
   return (
     <div>
       <div className="mb-6">
-        <div className="cms-eyebrow mb-3">— Search · {site ? siteLabel(site) : ""}</div>
-        <h1
-          className="m-0"
-          style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}
-        >
-          {q ? <>Results for “{q}”</> : "Search"}
-        </h1>
-        <p className="mt-2 mb-0" style={{ fontSize: 15, lineHeight: 1.6, color: "#55585f" }}>
+        <h1 className="cms-page-title">{q ? <>Results for “{q}”</> : "Search"}</h1>
+        <p className="cms-page-sub">
           {!q && "Type in the search box above to find content on any screen."}
           {q && query.isLoading && "Searching…"}
           {q && result && !result.correctedQuery && (
@@ -58,7 +51,7 @@ export default function SearchPage() {
           {q && result?.correctedQuery && (
             <>
               {hits.length} {hits.length === 1 ? "item" : "items"} for{" "}
-              <strong style={{ color: "#002d68" }}>{result.correctedQuery}</strong> ·{" "}
+              <strong style={{ color: "#0b1b3a" }}>{result.correctedQuery}</strong> ·{" "}
               <Link to={searchPageHref(result.query, true)}>Search instead for “{result.query}”</Link>
             </>
           )}
@@ -81,7 +74,7 @@ export default function SearchPage() {
       )}
 
       {hits.length > 0 && (
-        <ul className="m-0 p-0" style={{ listStyle: "none", background: "#fff", border: "1px solid #dfe3e8", borderRadius: 14 }}>
+        <ul className="m-0 p-0 cms-card" style={{ listStyle: "none", overflow: "hidden" }}>
           {hits.map((hit, i) => {
             const editable = editorPathFor(hit.type, hit.id) !== null;
             const published = hit.status === "PUBLISHED";
@@ -109,7 +102,7 @@ export default function SearchPage() {
                         display: "block",
                         fontSize: 16,
                         fontWeight: 600,
-                        color: "#002d68",
+                        color: "#0b1b3a",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -118,7 +111,7 @@ export default function SearchPage() {
                       {hit.title}
                     </span>
                     {hit.slug && (
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#6a7c90" }}>/{hit.slug}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#7b8aa5" }}>/{hit.slug}</span>
                     )}
                   </span>
                   <Tag style={{ marginInlineEnd: 0 }}>{typeLabel(hit.type)}</Tag>
@@ -126,14 +119,13 @@ export default function SearchPage() {
                     style={{
                       padding: "3px 10px",
                       borderRadius: 999,
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      letterSpacing: ".08em",
-                      background: published ? "rgba(0,169,255,.12)" : "#eef1f4",
-                      color: published ? "#0159be" : "#5a5d64",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background: published ? "#e3f7ee" : "#fff4e0",
+                      color: published ? "#0b7a55" : "#9a5b00",
                     }}
                   >
-                    {hit.status}
+                    {published ? "Published" : "Draft"}
                   </span>
                 </button>
               </li>

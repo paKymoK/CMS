@@ -5,7 +5,6 @@ import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import ContentDiff from "../components/ContentDiff";
-import { siteLabel } from "../config/sites";
 import { useSite } from "../lib/useSite";
 import { editorPathFor, newItemPathFor, typeLabel } from "../lib/adminSearch";
 import {
@@ -77,11 +76,13 @@ function EntryModal({ entry, onClose }: { entry: AuditEntry | null; onClose: () 
       title={
         entry && (
           <div>
-            <div className="cms-eyebrow mb-2">
-              — {ACTION_LABELS[entry.action]} · {dayjs(entry.occurredAt).format("MMM D, YYYY · HH:mm")} ·{" "}
+            <div className="cms-sheet-kicker">
+              {ACTION_LABELS[entry.action]} · {dayjs(entry.occurredAt).format("MMM D, YYYY · HH:mm")} ·{" "}
               {entry.actorName ?? "Unknown"}
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "#002d68" }}>{entry.title || "Untitled"}</div>
+            <div className="cms-sheet-title" style={{ whiteSpace: "normal" }}>
+              {entry.title || "Untitled"}
+            </div>
           </div>
         )
       }
@@ -180,7 +181,7 @@ export default function ActivityPage() {
       dataIndex: "title",
       render: (title: string | null, entry) => (
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 600, color: "#002d68" }}>{title || "Untitled"}</div>
+          <div style={{ fontWeight: 600, color: "#0b1b3a" }}>{title || "Untitled"}</div>
           <Tag bordered={false} style={{ marginTop: 4 }}>
             {typeLabel(entry.contentType)}
           </Tag>
@@ -212,14 +213,8 @@ export default function ActivityPage() {
   return (
     <div>
       <div className="mb-6">
-        <div className="cms-eyebrow mb-3">— Library · {site ? siteLabel(site) : ""}</div>
-        <h1
-          className="m-0"
-          style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}
-        >
-          Activity
-        </h1>
-        <p className="mt-2 mb-0" style={{ fontSize: 15, lineHeight: 1.6, color: "#55585f" }}>
+        <h1 className="cms-page-title">Activity</h1>
+        <p className="cms-page-sub">
           Every change to this site’s content: who made it, when, and exactly what changed.
         </p>
       </div>
@@ -256,11 +251,11 @@ export default function ActivityPage() {
       </div>
 
       <Table
+        className="cms-table"
         rowKey="id"
         columns={columns}
         dataSource={query.data?.items ?? []}
         loading={query.isLoading || query.isFetching}
-        bordered
         onRow={(entry) => ({ onClick: () => setSelected(entry), style: { cursor: "pointer" } })}
         pagination={{
           current: query.data?.page ?? page,

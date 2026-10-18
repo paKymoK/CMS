@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Layout, Menu, Select, Button, Empty } from "antd";
-import type { MenuProps } from "antd";
-import { LogoutIcon, EyeIcon, MenuIcon } from "./icons";
+import { useCallback, useEffect, useState } from "react";
+import { Select, Button, Empty } from "antd";
+import { LogoutIcon, EyeIcon, MenuIcon, CloseIcon, ChevronRightIcon, ChevronsLeftIcon } from "./icons";
 import { useMutation } from "@tanstack/react-query";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { useSiteAccess } from "../auth/useSiteAccess";
 import { useSite } from "../lib/useSite";
@@ -12,47 +11,28 @@ import AdminSearchBox from "./AdminSearchBox";
 import { NAVIGATION, type NavItem } from "../config/navigation";
 import { SITES } from "../config/sites";
 
-const { Header, Sider, Content } = Layout;
-
 // Under an "About Page" group, "About · Hero" repeats its own heading — drop the redundant prefix
 // in the sidebar (the page title in the topbar keeps the full label).
 const stripGroupPrefix = (label: string) => label.replace(/^About · /, "");
 
-// One flat button per leaf, numbered 01/02/... within its own group — mirrors the design's static
-// (non-collapsible) two-level nav, via antd Menu's `type: "group"` rather than a submenu.
-function toMenuItems(items: NavItem[]): MenuProps["items"] {
-  return items.map((item) =>
-    item.items
-      ? {
-          key: item.key,
-          type: "group",
-          label: item.label,
-          children: item.items.map((child, i) => ({
-            key: child.key,
-            title: child.label,
-            label: (
-              <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span className="cms-nav-num">{String(i + 1).padStart(2, "0")}</span>
-                <span className="cms-nav-label">{stripGroupPrefix(child.label)}</span>
-              </span>
-            ),
-          })),
-        }
-      : { key: item.key, label: item.label },
-  );
+// The post / case-study editors live outside /content/*, but belong to a sidebar entry.
+function navKeyFor(pathname: string): string {
+  if (pathname.startsWith("/posts/")) return "/content/posts";
+  if (pathname.startsWith("/case-studies/")) return "/content/case-studies";
+  return pathname;
 }
 
-function findGroupLabel(items: NavItem[], pathname: string): string | undefined {
+function findGroupLabel(items: NavItem[], key: string): string | undefined {
   for (const item of items) {
-    if (item.items?.some((child) => child.key === pathname)) return item.label;
+    if (item.items?.some((child) => child.key === key)) return item.label;
   }
   return undefined;
 }
 
-function findLeafLabel(items: NavItem[], pathname: string): string | undefined {
+function findLeafLabel(items: NavItem[], key: string): string | undefined {
   for (const item of items) {
-    if (item.key === pathname) return item.label;
-    const child = item.items?.find((c) => c.key === pathname);
+    if (item.key === key) return item.label;
+    const child = item.items?.find((c) => c.key === key);
     if (child) return child.label;
   }
   return undefined;
@@ -64,13 +44,88 @@ function initialsOf(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+// Sidebar preferences survive reloads: whether it is collapsed to the icon rail, and which groups
+// the user opened or closed by hand. A group nobody touched follows the current page (see below).
+const NAV_PREFS_KEY = "cms.nav.v1";
+interface NavPrefs {
+  rail: boolean;
+  open: Record<string, boolean>;
+}
+
+function loadNavPrefs(): NavPrefs {
+  try {
+    const raw = localStorage.getItem(NAV_PREFS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<NavPrefs>;
+      return {
+        rail: parsed.rail === true,
+        open: parsed.open && typeof parsed.open === "object" ? parsed.open : {},
+      };
+    }
+  } catch {
+    // Private mode / blocked storage / corrupt JSON — fall through to the defaults.
+  }
+  return { rail: false, open: {} };
+}
+
+function saveNavPrefs(prefs: NavPrefs) {
+  try {
+    localStorage.setItem(NAV_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Storage unavailable: the sidebar just forgets its state on reload.
+  }
+}
+
+const MOBILE_QUERY = "(max-width: 768px)";
+
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = () => setMobile(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return mobile;
+}
+
+function NavGlyph({ d }: { d?: string }) {
+  return (
+    <svg
+      className="cms-nav-glyph"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d={d ?? "M5 12h14"} />
+    </svg>
+  );
+}
+
 export default function AppShell() {
   const { logout, user } = useAuth();
   const { isGlobalAdmin } = useSiteAccess();
   const { site, setSite, accessibleSites } = useSite();
   const location = useLocation();
-  const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const [prefs, setPrefs] = useState<NavPrefs>(loadNavPrefs);
+  const isMobile = useIsMobile();
+  // The icon rail only exists on desktop; the phone drawer always shows the full nav.
+  const rail = prefs.rail && !isMobile;
+
+  const updatePrefs = useCallback((next: (p: NavPrefs) => NavPrefs) => {
+    setPrefs((prev) => {
+      const value = next(prev);
+      saveNavPrefs(value);
+      return value;
+    });
+  }, []);
 
   // Whole-homepage preview, next to the site switcher. Per-item previews (one post / case study
   // on its real detail page) live in each editor page instead — see usePreviewItem.
@@ -80,17 +135,26 @@ export default function AppShell() {
     },
   });
 
-  const menuItems = useMemo(() => toMenuItems(NAVIGATION), []);
+  const activeKey = navKeyFor(location.pathname);
 
-  // The menu scrolls on its own, so bring the screen you're on into view (e.g. after a deep link).
+  // The drawer is a modal on phones: Escape closes it (picking a link closes it too, see onClick).
   useEffect(() => {
-    document
-      .querySelector(".cms-sider .ant-menu-item-selected")
-      ?.scrollIntoView({ block: "nearest" });
-  }, [location.pathname]);
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
+
+  // The nav scrolls on its own, so bring the screen you're on into view (e.g. after a deep link).
+  useEffect(() => {
+    document.querySelector(".cms-sider .cms-nav-link.is-active")?.scrollIntoView({ block: "nearest" });
+  }, [activeKey, rail]);
+
   const onSearchPage = location.pathname === "/search";
-  const crumbGroup = onSearchPage ? "Content" : (findGroupLabel(NAVIGATION, location.pathname) ?? "");
-  const pageTitle = onSearchPage ? "Search" : (findLeafLabel(NAVIGATION, location.pathname) ?? "");
+  const crumbGroup = onSearchPage ? "Content" : (findGroupLabel(NAVIGATION, activeKey) ?? "");
+  const pageTitle = onSearchPage ? "Search" : (findLeafLabel(NAVIGATION, activeKey) ?? "");
 
   const displayName = (user?.name as string) || (user?.email as string) || "Signed in";
   const roleLine = isGlobalAdmin
@@ -105,119 +169,93 @@ export default function AppShell() {
     );
   }
 
+  const onGroupClick = (key: string, isOpen: boolean) => {
+    // In the rail there is no room for the items, so a group icon expands the sidebar and opens it.
+    if (rail) updatePrefs((p) => ({ rail: false, open: { ...p.open, [key]: true } }));
+    else updatePrefs((p) => ({ ...p, open: { ...p.open, [key]: !isOpen } }));
+  };
+
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider
-        width={248}
-        className={`cms-sider${navOpen ? " cms-sider-open" : ""}`}
-        style={{
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          background: "linear-gradient(180deg, #001449, #00205a 60%, #002d68)",
-        }}
+    <div className="cms-shell">
+      <aside
+        className={`cms-sider${navOpen ? " cms-sider-open" : ""}${rail ? " is-rail" : ""}`}
+        aria-label="Main navigation"
       >
-        {/* antd's Sider wraps children in its own .ant-layout-sider-children (display:block), so
-            this wrapper is what actually needs to be the flex column — flex props on Sider itself
-            never reach the real children. */}
-        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "26px 22px 22px",
-            flexShrink: 0,
-          }}
-        >
-          <img src="/logo.svg" alt="CMC Global" style={{ height: 24, filter: "brightness(0) invert(1)" }} />
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              letterSpacing: ".12em",
-              padding: "3px 8px",
-              borderRadius: 999,
-              border: "1px solid rgba(255,255,255,.28)",
-              color: "#c9d9ee",
-            }}
-          >
-            CMS
+        <div className="cms-sider-head">
+          <img className="cms-brand-full" src="/logo.svg" alt="CMC Global" />
+          <span className="cms-brand-pill">CMS</span>
+          <span className="cms-brand-mark" aria-hidden>
+            C
           </span>
+          <button type="button" className="cms-nav-close" aria-label="Close navigation" onClick={() => setNavOpen(false)}>
+            <CloseIcon />
+          </button>
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: "auto",
-            background: "transparent",
-            border: "none",
-            padding: "4px 12px",
-          }}
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => {
-            navigate(key);
-            setNavOpen(false);
-          }}
-        />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            margin: 12,
-            padding: 12,
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,.18)",
-            background: "rgba(255,255,255,.05)",
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              flex: "none",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#ffffff",
-              background:
-                "radial-gradient(circle at 34% 30%, #00bbff 0%, #0083ff 60%, #002d68 100%)",
-            }}
-          >
-            {initialsOf(displayName)}
-          </div>
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#ffffff",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {displayName}
-            </span>
-            <span
-              style={{
-                fontSize: 11.5,
-                color: "#c9d9ee",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {roleLine}
-            </span>
+
+        <nav className="cms-nav" aria-label="Sections">
+          {NAVIGATION.map((group) => {
+            if (!group.items) {
+              const active = group.key === activeKey;
+              return (
+                <Link
+                  key={group.key}
+                  to={group.key}
+                  title={group.label}
+                  className={`cms-nav-head cms-nav-link${active ? " is-active" : ""}`}
+                  aria-current={active ? "page" : undefined}
+                  onClick={() => setNavOpen(false)}
+                >
+                  <NavGlyph d={group.icon} />
+                  <span className="cms-nav-text">{group.label}</span>
+                </Link>
+              );
+            }
+            const hasActive = group.items.some((c) => c.key === activeKey);
+            const isOpen = prefs.open[group.key] ?? hasActive;
+            return (
+              <div key={group.key} className="cms-nav-group">
+                <button
+                  type="button"
+                  className={`cms-nav-head${hasActive ? " has-active" : ""}`}
+                  aria-expanded={rail ? undefined : isOpen}
+                  aria-controls={`nav-${group.key}`}
+                  aria-label={rail ? group.label : undefined}
+                  title={group.label}
+                  onClick={() => onGroupClick(group.key, isOpen)}
+                >
+                  <NavGlyph d={group.icon} />
+                  <span className="cms-nav-text">{group.label}</span>
+                  <span className="cms-nav-count">{group.items.length}</span>
+                  <ChevronRightIcon className={`cms-nav-chev${isOpen ? " is-open" : ""}`} />
+                </button>
+                {isOpen && !rail && (
+                  <div className="cms-nav-sub" id={`nav-${group.key}`}>
+                    {group.items.map((child) => {
+                      const active = child.key === activeKey;
+                      return (
+                        <Link
+                          key={child.key}
+                          to={child.key}
+                          className={`cms-nav-link${active ? " is-active" : ""}`}
+                          aria-current={active ? "page" : undefined}
+                          onClick={() => setNavOpen(false)}
+                        >
+                          {stripGroupPrefix(child.label)}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <div className="cms-user">
+          <div className="cms-user-avatar">{initialsOf(displayName)}</div>
+          <div className="cms-user-text">
+            <span className="cms-user-name">{displayName}</span>
+            <span className="cms-user-role">{roleLine}</span>
           </div>
           <Button
             type="text"
@@ -225,112 +263,70 @@ export default function AppShell() {
             icon={<LogoutIcon />}
             onClick={logout}
             title="Log out"
-            style={{ color: "#00bbff", flex: "none" }}
+            aria-label="Log out"
+            className="cms-user-logout"
           />
         </div>
-        </div>
-      </Sider>
-      <div
-        className={`cms-nav-backdrop${navOpen ? " open" : ""}`}
-        onClick={() => setNavOpen(false)}
-      />
-      <Layout>
-        <div style={{ position: "sticky", top: 0, zIndex: 20, padding: "16px clamp(16px,3vw,32px) 0" }}>
-          <Header
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              height: 64,
-              padding: "0 12px 0 22px",
-              borderRadius: 18,
-              border: "1px solid rgba(0,169,255,.2)",
-              background: "rgba(255,255,255,.85)",
-              backdropFilter: "blur(24px)",
-              boxShadow: "0 10px 34px rgba(10,37,64,.1), 0 2px 6px rgba(10,37,64,.05)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                minWidth: 0,
-                fontSize: 15,
-                fontWeight: 500,
-                color: "#3c4858",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-              }}
-            >
-              <button
-                className="cms-nav-toggle"
-                aria-label="Open navigation"
-                onClick={() => setNavOpen(true)}
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 32,
-                  height: 32,
-                  flex: "none",
-                  border: "1px solid #dceaf5",
-                  borderRadius: 8,
-                  background: "#ffffff",
-                  color: "#00a9ff",
-                  cursor: "pointer",
-                }}
-              >
-                <MenuIcon />
-              </button>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{crumbGroup}</span>
-              <span style={{ color: "#cfd2d6" }}>/</span>
-              <span style={{ fontWeight: 600, color: "#002d68" }}>{pageTitle}</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <AdminSearchBox />
-              <Select
-                value={site ?? undefined}
-                className="cms-site-select"
-                style={{ width: 170 }}
-                onChange={setSite}
-                options={accessibleSites.map((code) => ({
-                  value: code,
-                  label: SITES.find((s) => s.code === code)?.label ?? code,
-                }))}
-              />
-              <Button
-                icon={<EyeIcon />}
-                disabled={!site}
-                loading={previewMutation.isPending}
-                onClick={() => previewMutation.mutate()}
-                style={{
-                  background: "linear-gradient(90deg, #00a9ff, #00bbff)",
-                  border: "none",
-                  color: "#ffffff",
-                  fontWeight: 700,
-                  boxShadow: "0 10px 24px rgba(0,169,255,.36)",
-                }}
-              >
-                <span className="cms-preview-label">Preview site ↗</span>
-              </Button>
-            </div>
-          </Header>
-        </div>
-        <Content
-          className="cms-content"
-          style={{
-            flex: 1,
-            width: "100%",
-            margin: "0 auto",
-            padding: "36px clamp(16px,3vw,32px) 64px",
-          }}
+
+        <button
+          type="button"
+          className="cms-rail-toggle"
+          onClick={() => updatePrefs((p) => ({ ...p, rail: !p.rail }))}
+          aria-label={rail ? "Expand sidebar" : "Collapse sidebar"}
+          title={rail ? "Expand sidebar" : "Collapse sidebar"}
         >
+          <ChevronsLeftIcon className={rail ? "is-flipped" : ""} />
+          <span className="cms-nav-text">Collapse sidebar</span>
+        </button>
+      </aside>
+
+      <div className={`cms-nav-backdrop${navOpen ? " open" : ""}`} onClick={() => setNavOpen(false)} aria-hidden />
+
+      <div className="cms-main">
+        <header className="cms-topbar">
+          <div className="cms-crumbs">
+            <button
+              type="button"
+              className="cms-nav-toggle"
+              aria-label="Open navigation"
+              aria-expanded={navOpen}
+              onClick={() => setNavOpen(true)}
+            >
+              <MenuIcon />
+            </button>
+            <span className="cms-crumb-group">{crumbGroup}</span>
+            {crumbGroup && <span className="cms-crumb-sep">/</span>}
+            <span className="cms-crumb-page">{pageTitle}</span>
+          </div>
+          <div className="cms-topbar-actions">
+            <AdminSearchBox />
+            <Select
+              value={site ?? undefined}
+              className="cms-site-select"
+              style={{ width: 170 }}
+              onChange={setSite}
+              options={accessibleSites.map((code) => ({
+                value: code,
+                label: SITES.find((s) => s.code === code)?.label ?? code,
+              }))}
+            />
+            <Button
+              type="primary"
+              icon={<EyeIcon />}
+              disabled={!site}
+              loading={previewMutation.isPending}
+              onClick={() => previewMutation.mutate()}
+            >
+              <span className="cms-preview-label">Preview site ↗</span>
+            </Button>
+          </div>
+        </header>
+        <main className="cms-content" style={{ flex: 1, width: "100%", margin: "0 auto" }}>
           <div key={location.pathname} className="cms-page-enter">
             <Outlet />
           </div>
-        </Content>
-      </Layout>
-    </Layout>
+        </main>
+      </div>
+    </div>
   );
 }

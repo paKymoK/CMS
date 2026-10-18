@@ -2,7 +2,7 @@
 
 /* Same brand tokens as website/app/globals.css (incl. the 2026 Figma --cmc-* set). */
 :root {
-  --brand-primary: #00a9ff;
+  --brand-primary: #0083ff;
   --brand-primary-dark: #001449;
   --brand-accent: #00bbff;
   --brand-surface: #edf5ff;
@@ -10,7 +10,7 @@
   --cmc-navy-deep: #001449;
   --cmc-blue: #0083ff;
   --cmc-sky: #00bbff;
-  --cmc-sky-active: #00a9ff;
+  --cmc-sky-active: #0083ff;
   --cmc-tint: #edf5ff;
   --brand-border: #e0e4e9;
   --font-mono: "JetBrains Mono", monospace;
@@ -28,25 +28,16 @@ html {
 
 body {
   margin: 0;
-  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #f4f7fc;
+  color: #0b1b3a;
+  font-family: "Plus Jakarta Sans", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Layout background: the landing page's light tint with a soft sky glow top-right, so the work
-   area has some depth next to the navy sidebar instead of a flat fill. */
-.ant-layout {
-  background:
-    radial-gradient(900px 420px at 100% 0%, rgba(0, 187, 255, 0.1), transparent 70%),
-    #edf5ff !important;
-}
-.ant-layout-sider {
-  background: transparent;
-}
-
 /* One visible, on-brand focus ring for keyboard users everywhere. */
 :focus-visible {
-  outline: 2px solid #00a9ff;
+  outline: 2px solid #0083ff;
   outline-offset: 2px;
 }
 
@@ -84,7 +75,7 @@ body {
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #5a5d64;
+  color: #5b6b86;
 }
 
 /* Post/case-study editor body — mirrors the public post/case-study page's own typography (see
@@ -186,7 +177,7 @@ body {
 .cms-rte hr {
   margin: 36px 0;
   border: none;
-  border-top: 1px solid #dfe3e8;
+  border-top: 1px solid #dde4f0;
 }
 .cms-rte [data-callout] {
   margin: 24px 0;
@@ -219,7 +210,7 @@ body {
 .cms-rte td {
   min-width: 1em;
   padding: 8px 12px;
-  border: 1px solid #dfe3e8;
+  border: 1px solid #dde4f0;
   vertical-align: top;
   text-align: left;
 }
@@ -294,7 +285,7 @@ body {
 }
 .cms-rte details {
   margin: 20px 0;
-  border: 1px solid #dfe3e8;
+  border: 1px solid #dde4f0;
 }
 .cms-rte summary {
   padding: 12px 16px;
@@ -317,97 +308,10 @@ body {
 /* Field labels everywhere (drawer forms, filters) read as small mono uppercase tags, matching the
    landing page's wave-band eyebrow style, instead of antd's default sans-serif label. */
 .ant-form-item-label > label {
-  font-family: var(--font-mono) !important;
-  font-size: 10px !important;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #5a5d64 !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  color: #26354f !important;
   height: auto !important;
-}
-
-/* Editing on a phone: the 248px sidebar would otherwise eat most of the screen. Below 768px it
-   becomes an off-canvas overlay (AppShell toggles .cms-sider-open + .cms-nav-backdrop), and the
-   nav-toggle button (hidden on desktop) appears in the topbar to drive it. The !important rules
-   are load-bearing: AppShell also sets `position` inline for the desktop sticky layout, and only an
-   !important media-query rule can override an inline style at this breakpoint. */
-.cms-nav-toggle {
-  display: none;
-}
-
-/* Top-bar content search (AdminSearchBox). */
-.cms-search {
-  width: 260px;
-}
-
-@media (max-width: 768px) {
-  .cms-nav-toggle {
-    display: inline-flex !important;
-  }
-
-  .cms-sider {
-    position: fixed !important;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    height: 100% !important;
-    z-index: 50;
-    transform: translateX(-100%);
-    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .cms-sider-open {
-    transform: translateX(0);
-  }
-
-  .cms-nav-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 45;
-    background: rgba(3, 9, 26, 0.45);
-  }
-
-  .cms-nav-backdrop.open {
-    display: block;
-  }
-
-  .cms-site-select {
-    width: 120px !important;
-  }
-
-  .cms-search {
-    width: 150px !important;
-  }
-
-  .cms-preview-label {
-    display: none;
-  }
-
-  .ant-drawer-content-wrapper {
-    width: 100% !important;
-  }
-}
-
-
-/* The sidebar menu scrolls on its own; keep a thin visible scrollbar so the screens below the fold
-   (About, Site-wide) are discoverable. */
-.cms-sider .ant-menu {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(201, 217, 238, 0.45) transparent;
-}
-.cms-sider .ant-menu::-webkit-scrollbar {
-  width: 6px;
-}
-.cms-sider .ant-menu::-webkit-scrollbar-thumb {
-  background: rgba(201, 217, 238, 0.4);
-  border-radius: 3px;
-}
-
-/* Denser menu rows so more screens fit above the fold. */
-.cms-sider .ant-menu-item {
-  height: 34px;
-  line-height: 34px;
-  margin-block: 2px;
 }
 
 /* Wide screens: the shell and editors used a fixed 1180–1240px column, which looks small on
@@ -438,63 +342,6 @@ body {
 }
 
 
-/* ---------------------------------------------------------------------------------------------
-   Sidebar
-   ------------------------------------------------------------------------------------------- */
-
-/* Group titles read as the landing page's mono eyebrow labels. */
-.cms-sider .ant-menu-item-group-title {
-  padding: 18px 12px 6px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.cms-sider .ant-menu-item {
-  position: relative;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.cms-sider .ant-menu-item:not(.ant-menu-item-selected):hover {
-  transform: translateX(2px);
-}
-/* Active item gets a sky accent bar, like the landing page's active nav underline. */
-.cms-sider .ant-menu-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 3px;
-  height: 0;
-  border-radius: 0 3px 3px 0;
-  background: #00bbff;
-  transform: translateY(-50%);
-  transition: height 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.cms-sider .ant-menu-item-selected::before {
-  height: 18px;
-}
-.cms-sider .ant-menu-item-selected .cms-nav-num {
-  color: #00bbff;
-}
-.cms-nav-num {
-  flex: none;
-  width: 18px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  opacity: 0.8;
-  transition: color 0.2s ease;
-}
-.cms-nav-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* ---------------------------------------------------------------------------------------------
    Page header + content cards
@@ -505,34 +352,43 @@ body {
   font-size: clamp(26px, 3vw, 34px);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #002d68;
+  color: #0b1b3a;
 }
 .cms-page-sub {
   margin: 8px 0 0;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
-  color: #55585f;
+  color: #5b6b86;
 }
 
 /* List tables: one rounded white card (no boxed grid), hairline row dividers, quiet actions. */
 .cms-table.ant-table-wrapper .ant-table {
   overflow: hidden;
-  border: 1px solid #e3ebf3;
-  border-radius: 14px;
+  border: 1px solid #e3e9f4;
+  border-radius: 16px;
   background: #ffffff;
   box-shadow:
-    0 10px 30px rgba(10, 37, 64, 0.06),
-    0 1px 3px rgba(10, 37, 64, 0.04);
+    0 8px 24px rgba(10, 30, 70, 0.04),
+    0 1px 2px rgba(10, 30, 70, 0.04);
 }
 .cms-table .ant-table-thead > tr > th {
-  border-bottom: 1px solid #e3ebf3;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #edf1f8;
   padding-block: 12px;
+}
+.cms-table .ant-table-thead .cms-eyebrow {
+  letter-spacing: 0.08em;
+  color: #7b8aa5;
 }
 .cms-table .ant-table-thead > tr > th::before {
   display: none !important;
 }
 .cms-table .ant-table-tbody > tr > td {
-  border-bottom: 1px solid #eef3f8;
+  border-bottom: 1px solid #f0f3f9;
   transition: background-color 0.18s ease;
 }
 .cms-table .ant-table-tbody > tr:last-child > td {
@@ -559,61 +415,58 @@ body {
 .cms-mini-btn.ant-btn {
   height: 28px;
   padding: 0 12px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
 }
 
-/* Status pill. */
+/* Status pill: green = published, amber = anything still draft. */
 .cms-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 7px;
+  height: 26px;
+  padding: 0 10px;
   border-radius: 999px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  background: #eef1f4;
-  color: #5a5d64;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff4e0;
+  color: #9a5b00;
 }
 .cms-status::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: currentColor;
-  opacity: 0.7;
+  background: #f59f00;
 }
 .cms-status.is-published {
-  background: rgba(0, 169, 255, 0.12);
-  color: #0159be;
+  background: #e3f7ee;
+  color: #0b7a55;
 }
 .cms-status.is-published::before {
-  background: #00a9ff;
-  opacity: 1;
+  background: #12b886;
 }
 
-/* Primary page CTA ("New …") — the landing page's glowing sky pill. */
+/* Primary page CTA ("New …"): one solid brand-blue button per screen. */
 .cms-cta.ant-btn {
   min-height: 44px;
-  padding: 0 22px;
+  padding: 0 20px;
   border: none;
-  background: linear-gradient(90deg, #00a9ff, #00bbff);
+  background: #0083ff;
   color: #ffffff;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  box-shadow: 0 10px 24px rgba(0, 169, 255, 0.3);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(0, 131, 255, 0.28);
   transition:
     transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 .cms-cta.ant-btn:hover {
+  background: #0069cc !important;
   color: #ffffff !important;
   transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(0, 169, 255, 0.4);
+  box-shadow: 0 10px 22px rgba(0, 131, 255, 0.36);
 }
 .cms-cta.ant-btn:active {
   transform: translateY(0);
@@ -631,8 +484,8 @@ body {
 }
 .cms-skel {
   overflow: hidden;
-  border: 1px solid #e3ebf3;
-  border-radius: 14px;
+  border: 1px solid #e3e9f4;
+  border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 10px 30px rgba(10, 37, 64, 0.06);
 }
@@ -670,8 +523,8 @@ body {
 }
 .cms-tile-card {
   overflow: hidden;
-  border: 1px solid #e3ebf3;
-  border-radius: 14px;
+  border: 1px solid #e3e9f4;
+  border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 6px 20px rgba(10, 37, 64, 0.05);
 }
@@ -679,32 +532,175 @@ body {
   box-shadow: 0 14px 30px rgba(10, 37, 64, 0.12);
 }
 
-/* Drawers / modals: rounded to match the cards, softer backdrop. */
+/* Drawers / modals: rounded, quiet header and footer, soft navy backdrop. */
 .ant-drawer .ant-drawer-content {
-  border-radius: 18px 0 0 18px;
+  border-radius: 20px 0 0 20px;
+  box-shadow: -16px 0 48px rgba(0, 20, 73, 0.25);
 }
 .ant-drawer .ant-drawer-header {
-  border-bottom: 1px solid #eef3f8;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e3e9f4;
+}
+.ant-drawer .ant-drawer-title {
+  min-width: 0;
+}
+.ant-drawer .ant-drawer-close {
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  border-radius: 10px;
+  background: #eef3fb;
+  color: #44546f;
+}
+.ant-drawer .ant-drawer-close:hover {
+  background: #e1e9f6;
+}
+.ant-drawer .ant-drawer-body {
+  padding: 24px;
 }
 .ant-drawer .ant-drawer-footer {
-  border-top: 1px solid #eef3f8;
+  padding: 16px 24px;
+  border-top: 1px solid #e3e9f4;
+  background: #fafcff;
 }
 .ant-drawer-mask,
 .ant-modal-mask {
-  background: rgba(3, 9, 26, 0.42) !important;
+  background: rgba(0, 20, 73, 0.45) !important;
   backdrop-filter: blur(2px);
+}
+.ant-modal .ant-modal-content {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 20px;
+}
+.ant-modal .ant-modal-header {
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e3e9f4;
+}
+.ant-modal .ant-modal-body {
+  padding: 24px;
+}
+.ant-modal .ant-modal-footer {
+  margin: 0;
+  padding: 16px 24px;
+  border-top: 1px solid #e3e9f4;
+  background: #fafcff;
+}
+
+/* Drawer / modal heading: a small muted context line above the title. */
+.cms-sheet-kicker {
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7a96;
+}
+.cms-sheet-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0b1b3a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tags (change types, fields, content types) read as pills everywhere. */
+.ant-tag {
+  border-radius: 999px;
+  font-weight: 600;
+}
+.ant-tag.ant-tag-borderless {
+  background: #eef3fb;
+  color: #44546f;
+}
+
+/* History timeline (HistoryDrawer). */
+.cms-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cms-timeline-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  border-top: 1px solid #f0f3f9;
+}
+.cms-timeline-item:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.cms-timeline-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #b7c2d6;
+}
+.cms-timeline-item.is-latest .cms-timeline-dot {
+  background: #12b886;
+  box-shadow: 0 0 0 4px #e3f7ee;
+}
+.cms-timeline-item.is-open .cms-timeline-dot {
+  background: #0083ff;
+  box-shadow: 0 0 0 4px #e6f2ff;
+}
+.cms-timeline-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Diff blocks. */
+.cms-diff-field {
+  margin-bottom: 16px;
+}
+.cms-diff-label {
+  margin-bottom: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7b8aa5;
+}
+
+/* Media picker tiles. */
+.cms-pick-tile {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e3e9f4;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.cms-pick-tile:hover,
+.cms-pick-tile:focus-visible {
+  border-color: #0083ff;
+  box-shadow: 0 8px 20px rgba(10, 30, 70, 0.12);
+  transform: translateY(-2px);
 }
 
 /* Inputs get a sky focus glow instead of antd's default. */
 .ant-input:focus,
 .ant-input-affix-wrapper-focused,
 .ant-select-focused .ant-select-selector {
-  box-shadow: 0 0 0 3px rgba(0, 169, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px rgba(0, 131, 255, 0.16) !important;
 }
 
 @media (max-width: 768px) {
   .ant-drawer .ant-drawer-content {
     border-radius: 0;
+  }
+  .ant-drawer .ant-drawer-header,
+  .ant-drawer .ant-drawer-body,
+  .ant-drawer .ant-drawer-footer {
+    padding-inline: 16px;
   }
 }
 
@@ -716,10 +712,769 @@ body {
   .cms-skel-bar {
     animation: none !important;
   }
-  .cms-sider .ant-menu-item,
+  .cms-nav-head,
+  .cms-nav-link,
+  .cms-sider,
   .cms-tile,
   .cms-cta.ant-btn {
     transition: none !important;
     transform: none !important;
   }
+}
+
+
+/* ---------------------------------------------------------------------------------------------
+   App shell: sidebar (full / icon rail / phone drawer) + topbar
+   ------------------------------------------------------------------------------------------- */
+
+.cms-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f7fc;
+}
+.cms-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cms-content {
+  padding: 32px clamp(16px, 3vw, 32px) 64px;
+  box-sizing: border-box;
+}
+
+.cms-sider {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  flex: 0 0 256px;
+  width: 256px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #001449, #00205a 60%, #002d68);
+  color: rgba(255, 255, 255, 0.72);
+  transition:
+    width 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    flex-basis 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cms-sider.is-rail {
+  flex-basis: 72px;
+  width: 72px;
+}
+
+.cms-sider-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 22px 20px 14px 22px;
+  box-sizing: border-box;
+}
+.cms-brand-full {
+  height: 24px;
+  filter: brightness(0) invert(1);
+}
+.cms-brand-pill {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #c9d9ee;
+}
+.cms-brand-mark {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00bbff, #0083ff);
+}
+.cms-nav-close {
+  display: none;
+  margin-left: auto;
+}
+
+.cms-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 217, 238, 0.4) transparent;
+}
+.cms-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.cms-nav::-webkit-scrollbar-thumb {
+  background: rgba(201, 217, 238, 0.4);
+  border-radius: 3px;
+}
+
+.cms-nav-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font: 600 14px "Plus Jakarta Sans", sans-serif;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.cms-nav-head:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+.cms-nav-head.has-active {
+  color: #ffffff;
+}
+.cms-nav-glyph {
+  flex: none;
+}
+.cms-nav-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cms-nav-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+}
+.cms-nav-chev {
+  font-size: 14px;
+  transition: transform 160ms ease;
+}
+.cms-nav-chev.is-open {
+  transform: rotate(90deg);
+}
+
+.cms-nav-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 8px 19px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.cms-nav-sub .cms-nav-link {
+  display: block;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.68);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.cms-nav-sub .cms-nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+.cms-nav-link.is-active,
+.cms-nav-sub .cms-nav-link.is-active {
+  background: rgba(0, 131, 255, 0.28);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cms-user {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+.cms-user-avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: radial-gradient(circle at 34% 30%, #00bbff 0%, #0083ff 60%, #002d68 100%);
+}
+.cms-user-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cms-user-name,
+.cms-user-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cms-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+.cms-user-role {
+  font-size: 11.5px;
+  color: #c9d9ee;
+}
+.cms-user-logout.ant-btn {
+  flex: none;
+  color: #7fd6ff;
+}
+
+.cms-rail-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  margin: 0 12px 14px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font: 500 13px "Plus Jakarta Sans", sans-serif;
+  cursor: pointer;
+}
+.cms-rail-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.cms-rail-toggle .anticon {
+  font-size: 18px;
+  transition: transform 160ms ease;
+}
+.cms-rail-toggle .is-flipped {
+  transform: rotate(180deg);
+}
+
+/* Icon rail: only the glyphs remain, centred. */
+.cms-sider.is-rail .cms-sider-head {
+  justify-content: center;
+  padding-inline: 0;
+}
+.cms-sider.is-rail .cms-brand-full,
+.cms-sider.is-rail .cms-brand-pill {
+  display: none;
+}
+.cms-sider.is-rail .cms-brand-mark {
+  display: flex;
+}
+.cms-sider.is-rail .cms-nav {
+  padding-inline: 14px;
+  overflow-x: hidden;
+}
+.cms-sider.is-rail .cms-nav-head,
+.cms-sider.is-rail .cms-rail-toggle {
+  justify-content: center;
+  padding-inline: 0;
+}
+.cms-sider.is-rail .cms-nav-head {
+  height: 44px;
+}
+/* !important: icons set `display: inline-flex` inline (components/icons.tsx). */
+.cms-sider.is-rail .cms-nav-text,
+.cms-sider.is-rail .cms-nav-count,
+.cms-sider.is-rail .cms-nav-chev,
+.cms-sider.is-rail .cms-user-text,
+.cms-sider.is-rail .cms-user-logout {
+  display: none !important;
+}
+.cms-sider.is-rail .cms-nav-head.has-active {
+  background: rgba(0, 131, 255, 0.28);
+}
+.cms-sider.is-rail .cms-user {
+  justify-content: center;
+  margin-inline: 10px;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+}
+.cms-sider.is-rail .cms-rail-toggle {
+  margin-inline: 14px;
+}
+
+/* Topbar */
+.cms-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px clamp(16px, 3vw, 32px);
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid #e3e9f4;
+}
+.cms-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  color: #6b7a96;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.cms-crumb-group {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cms-crumb-sep {
+  color: #b7c2d6;
+}
+.cms-crumb-page {
+  font-weight: 700;
+  color: #0b1b3a;
+}
+.cms-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cms-search {
+  width: 260px;
+}
+.cms-nav-toggle,
+.cms-nav-close {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 18px;
+}
+.cms-nav-toggle {
+  display: none;
+  border: 1px solid #dceaf5;
+  background: #ffffff;
+  color: #0083ff;
+}
+.cms-nav-close {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.cms-nav-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.cms-nav-backdrop {
+  display: none;
+}
+
+/* Phones: the sidebar becomes an off-canvas drawer with its own close button. */
+@media (max-width: 768px) {
+  .cms-sider {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 86vw;
+    flex-basis: auto;
+    height: 100%;
+    z-index: 50;
+    transform: translateX(-105%);
+    transition:
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 260ms ease;
+  }
+  .cms-sider-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 20, 73, 0.4);
+  }
+  .cms-sider-head {
+    padding-right: 14px;
+  }
+  .cms-nav-close,
+  .cms-nav-toggle {
+    display: inline-flex;
+  }
+  .cms-rail-toggle {
+    display: none;
+  }
+  /* Touch targets: at least 44px tall. */
+  .cms-nav-head {
+    min-height: 44px;
+  }
+  .cms-nav-sub .cms-nav-link {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+  }
+  .cms-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(0, 20, 73, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+  }
+  .cms-nav-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* The topbar must fit a 360–390px screen next to the hamburger: shrink the controls and let the
+     page itself (its H1) carry the title instead of the breadcrumb. */
+  .cms-topbar,
+  .cms-topbar-actions {
+    gap: 8px;
+  }
+  .cms-crumbs {
+    flex: none;
+  }
+  .cms-topbar-actions {
+    min-width: 0;
+  }
+  .cms-site-select {
+    width: 96px !important;
+  }
+  .cms-search {
+    width: 110px !important;
+  }
+  .cms-preview-label,
+  .cms-crumb-group,
+  .cms-crumb-sep,
+  .cms-crumb-page {
+    display: none;
+  }
+  .ant-drawer-content-wrapper {
+    width: 100% !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Login
+   ------------------------------------------------------------------------------------------- */
+
+.cms-login {
+  min-height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
+  background: #f4f7fc;
+  color: #0b1b3a;
+}
+.cms-login-brand {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 520px;
+  min-width: 0;
+  min-height: 420px;
+  box-sizing: border-box;
+  padding: 48px clamp(28px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  background: #001449;
+  color: #ffffff;
+}
+.cms-login-glow {
+  position: absolute;
+  right: -180px;
+  top: -140px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, rgba(0, 187, 255, 0.55), rgba(0, 131, 255, 0) 68%);
+}
+.cms-login-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cms-login-ring-lg {
+  left: -120px;
+  bottom: -200px;
+  width: 480px;
+  height: 480px;
+}
+.cms-login-ring-sm {
+  left: -60px;
+  bottom: -140px;
+  width: 360px;
+  height: 360px;
+}
+.cms-login-brandtop,
+.cms-login-pitch,
+.cms-login-foot {
+  position: relative;
+}
+.cms-login-brandtop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.cms-login-pitch {
+  max-width: 460px;
+}
+.cms-login-eyebrow {
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7fd6ff;
+}
+.cms-login-pitch h1 {
+  margin: 0;
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.cms-login-pitch p {
+  margin: 20px 0 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+.cms-login-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.cms-login-panel {
+  flex: 1 1 440px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 48px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.cms-login-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.cms-login-card h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.cms-login-card h2 + p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: #5b6b86;
+}
+.cms-login-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cms-login-perk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #e3e9f4;
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 14px;
+}
+.cms-login-check {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6f2ff;
+  color: #0069cc;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cms-login-sso {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: #0083ff;
+  color: #ffffff;
+  font: 600 15px "Plus Jakarta Sans", sans-serif;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 131, 255, 0.28);
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cms-login-sso:hover {
+  background: #0069cc;
+  transform: translateY(-1px);
+}
+.cms-login-busy {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #dde4f0;
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #5b6b86;
+}
+.cms-login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid #f5c2bd;
+  border-radius: 12px;
+  background: #fdeceb;
+  color: #8a1f17;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.cms-login-error button {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(138, 31, 23, 0.1);
+  color: inherit;
+  cursor: pointer;
+}
+.cms-login-fine {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7b8aa5;
+}
+.cms-login-site {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7a96;
+  text-decoration: none;
+}
+
+
+/* ---------------------------------------------------------------------------------------------
+   Shared page pieces (2026 redesign)
+   ------------------------------------------------------------------------------------------- */
+
+.cms-crumbline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #6b7a96;
+}
+.cms-crumbline b {
+  color: #0b1b3a;
+  font-weight: 600;
+}
+.cms-crumbline-sep {
+  color: #b7c2d6;
+}
+.cms-crumbline-site {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e6f2ff;
+  color: #0069cc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Segmented control (type filters, media filters): pill track, white active thumb. */
+.cms-segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #e8eef8;
+}
+.cms-segmented button {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5b6b86;
+  font: 600 13px "Plus Jakarta Sans", sans-serif;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+.cms-segmented button:hover {
+  color: #0b1b3a;
+}
+.cms-segmented button.is-on {
+  background: #ffffff;
+  color: #0b1b3a;
+  box-shadow: 0 1px 3px rgba(10, 30, 70, 0.12);
+}
+
+/* Cards used by the editors and utility pages. */
+.cms-card {
+  background: #ffffff;
+  border: 1px solid #e3e9f4;
+  border-radius: 16px;
+  box-shadow:
+    0 8px 24px rgba(10, 30, 70, 0.04),
+    0 1px 2px rgba(10, 30, 70, 0.04);
 }

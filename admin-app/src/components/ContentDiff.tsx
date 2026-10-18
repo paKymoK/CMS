@@ -2,12 +2,12 @@ import type { CSSProperties, ReactNode } from "react";
 import { fieldLabel, type Snapshot } from "../lib/audit";
 import { diffWords, htmlToText } from "../lib/textDiff";
 
-const removed: CSSProperties = { background: "#ffe3e0", color: "#8a1c10", textDecoration: "line-through" };
-const added: CSSProperties = { background: "#d8f5e1", color: "#0b5a26" };
+const removed: CSSProperties = { background: "#fde4e2", color: "#8a1f17", textDecoration: "line-through" };
+const added: CSSProperties = { background: "#d9f5e6", color: "#0b6b45" };
 const blockStyle: CSSProperties = {
   margin: 0,
   padding: "10px 12px",
-  borderRadius: 8,
+  borderRadius: 10,
   fontFamily: "inherit",
   fontSize: 13.5,
   lineHeight: 1.55,
@@ -38,7 +38,7 @@ function ValueDiff({ before, after }: { before: unknown; after: unknown }) {
   if (isTextual(before) && isTextual(after) && before != null && after != null) {
     const parts = diffWords(asText(before), asText(after));
     return (
-      <p style={{ ...blockStyle, background: "#f7f9fb", border: "1px solid #e6ebf0" }}>
+      <p style={{ ...blockStyle, background: "#fafcff", border: "1px solid #e3e9f4" }}>
         {parts.map((part, i) =>
           part.kind === "same" ? (
             <span key={i}>{part.text}</span>
@@ -71,10 +71,8 @@ function ValueDiff({ before, after }: { before: unknown; after: unknown }) {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div className="cms-eyebrow" style={{ marginBottom: 6 }}>
-        {label}
-      </div>
+    <div className="cms-diff-field">
+      <div className="cms-diff-label">{label}</div>
       {children}
     </div>
   );
@@ -105,7 +103,7 @@ export default function ContentDiff({
   );
 
   if (changedKeys.length === 0 && changedEnvelope.length === 0) {
-    return <p style={{ color: "#6a7c90", margin: 0 }}>Nothing the editor can see changed.</p>;
+    return <p style={{ color: "#7b8aa5", margin: 0 }}>Nothing the editor can see changed.</p>;
   }
 
   return (

@@ -30,17 +30,19 @@ export default function AssistantPage() {
 
   return (
     <div>
-      <div className="cms-eyebrow mb-3">— Library · {label}</div>
-      <h1 className="cms-page-title mb-5">
-        Assistant
-      </h1>
+      <h1 className="cms-page-title">Assistant</h1>
+      <p className="cms-page-sub" style={{ marginBottom: 20 }}>
+        Keep the public chatbot's knowledge in sync with this site's documents.
+      </p>
 
       <div
         style={{
           position: "relative",
           overflow: "hidden",
           padding: "clamp(24px,4vw,44px)",
-          background: "linear-gradient(180deg, #00152d, #001449, #001c51)",
+          borderRadius: 16,
+          background: "#001449",
+          boxShadow: "0 8px 24px rgba(10,30,70,.12)",
         }}
       >
         <div
@@ -65,15 +67,22 @@ export default function AssistantPage() {
         <div style={{ position: "relative", maxWidth: 460 }}>
           <div
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
+              width: 48,
+              height: 48,
+              borderRadius: 14,
               marginBottom: 18,
-              background:
-                "radial-gradient(circle at 34% 30%, #d4f0ff 0%, #00bbff 42%, #0083ff 78%, #002d68 100%)",
-              boxShadow: "0 0 22px rgba(0,187,255,.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              background: "linear-gradient(135deg, #00bbff, #0083ff)",
+              boxShadow: "0 10px 24px rgba(0,131,255,.4)",
             }}
-          />
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" />
+            </svg>
+          </div>
           <h2 style={{ margin: 0, fontSize: "clamp(20px,2.4vw,26px)", fontWeight: 700, color: "#ffffff" }}>
             Knowledge base for <span style={{ color: "#00bbff" }}>{label}</span>
           </h2>
@@ -88,36 +97,14 @@ export default function AssistantPage() {
             onConfirm={() => ingestMutation.mutate()}
           >
             <Button
+              type="primary"
+              size="large"
               loading={ingestMutation.isPending}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 12,
-                border: "none",
-                borderRadius: 999,
-                background: "#ffffff",
-                padding: "6px 6px 6px 24px",
-                height: "auto",
-                fontSize: 14,
-                fontWeight: 600,
-                color: "#001c51",
-              }}
+              icon={<ArrowRightIcon />}
+              iconPlacement="end"
+              style={{ boxShadow: "0 6px 16px rgba(0,131,255,.35)" }}
             >
               Re-ingest knowledge base
-              <span
-                style={{
-                  display: "flex",
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: "#0159be",
-                  color: "#ffffff",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ArrowRightIcon style={{ fontSize: 14 }} />
-              </span>
             </Button>
           </Popconfirm>
         </div>
