@@ -66,6 +66,14 @@ export function editorPathFor(type: string, id: number): string | null {
   return resource ? `/content/${resource.key}?edit=${id}` : null;
 }
 
+/** Where a new item of this type is created, or null for a type the admin has no screen for. */
+export function newItemPathFor(type: string): string | null {
+  if (type === "post") return "/posts/new";
+  if (type === "case_study") return "/case-studies/new";
+  const resource = RESOURCES.find((r) => r.contentType === type);
+  return resource ? `/content/${resource.key}` : null;
+}
+
 /** "service_page" → the resource's label ("Service Pages"), "post" → "Post". */
 export function typeLabel(type: string): string {
   if (SPECIAL[type]) return SPECIAL[type].label;

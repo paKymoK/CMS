@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Input, Modal, message } from "antd";
 import { contentApi } from "../lib/api";
@@ -11,6 +11,8 @@ import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
+import HistoryDrawer from "../components/HistoryDrawer";
+import type { ItemPrefill } from "../lib/audit";
 import type { PostTemplate } from "../lib/postTemplates";
 
 const API_PATH = "/v1/admin/posts";
@@ -81,13 +83,34 @@ function initials(name: string): string {
  * is lazily initialized straight from server data on mount rather than copied in via an effect
  * (React's set-state-in-effect lint rule flags the latter as cascading-render-prone — and keying
  * by id also gives us a clean remount for free when navigating from one post's editor to another's). */
+/**
+ * A deleted post's content as the start of a new one (Activity → "Create a new item from this
+ * version"): same content, but no id, no slug (the server picks a free one), a draft.
+ */
+function prefillAsPost(prefill: ItemPrefill): PostRecord {
+  return {
+    ...(prefill.data as unknown as PostRecord),
+    id: 0,
+    slug: null,
+    displayOrder: prefill.displayOrder,
+    active: prefill.active,
+    status: "DRAFT",
+  };
+}
+
 export default function PostEditorPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = id === "new";
   const { site } = useSite();
+  const location = useLocation();
+  // Set when a new item starts from a deleted item's content (see ItemPrefill).
+  const prefill = isNew ? ((location.state as { prefill?: ItemPrefill } | null)?.prefill ?? null) : null;
   // A new post starts from a template (Blank is one of them); existing posts open directly.
   const [seed, setSeed] = useState<PostTemplate | null>(null);
 
+  const queryClient = useQueryClient();
+  // A restore changes the item behind the form: refetch it, then remount the form on the new copy.
+  const [restoreCount, setRestoreCount] = useState(0);
   const detailQuery = useQuery({
     queryKey: ["post-editor", id, site],
     queryFn: async () => {
@@ -101,15 +124,16 @@ export default function PostEditorPage() {
     return <div style={{ padding: 48, textAlign: "center", color: "#6a7c90" }}>Loading…</div>;
   }
 
-  if (isNew && !seed) return <PostTemplatePicker onPick={setSeed} />;
+  if (isNew && !seed && !prefill) return <PostTemplatePicker onPick={setSeed} />;
 
-  return <PostEditorForm key={id} id={id!} isNew={isNew} initial={detailQuery.data ?? null} seed={seed} />;
+  return <PostEditorForm onRestored={async () => { await queryClient.refetchQueries({ queryKey: ["post-editor", id, site] }); setRestoreCount((n) => n + 1); }} key={`${id}-${restoreCount}`} id={id!} isNew={isNew} initial={isNew ? (prefill ? prefillAsPost(prefill) : null) : (detailQuery.data ?? null)} seed={seed} />;
 }
 
-function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boolean; initial: PostRecord | null; seed: PostTemplate | null }) {
+function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; isNew: boolean; initial: PostRecord | null; seed: PostTemplate | null; onRestored?: () => void }) {
   const navigate = useNavigate();
   const { site } = useSite();
   const queryClient = useQueryClient();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -185,7 +209,7 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
     section: "insights",
     isNew,
     dirty,
-    serverStatus: initial?.status,
+    serverStatus: isNew ? undefined : initial?.status,
     slug,
     saveAsDraft: async () => {
       const res = await saveMutation.mutateAsync("DRAFT");
@@ -323,6 +347,27 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
                 }}
               >
                 {previewMutation.isPending ? "OPENING…" : "PREVIEW ↗"}
+              </button>
+            )}
+            {!isNew && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                style={{
+                  minHeight: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 16px",
+                  border: "1px solid #cfd2d6",
+                  background: "#ffffff",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  letterSpacing: ".1em",
+                  color: "#3d4046",
+                  cursor: "pointer",
+                }}
+              >
+                HISTORY
               </button>
             )}
             <button
@@ -793,6 +838,14 @@ function PostEditorForm({ id, isNew, initial, seed }: { id: string; isNew: boole
         </p>
       </Modal>
 
+      {!isNew && (
+        <HistoryDrawer
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          itemId={Number(id)}
+          onRestored={onRestored}
+        />
+      )}
       <MediaPickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

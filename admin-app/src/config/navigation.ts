@@ -34,6 +34,7 @@ export const NAVIGATION: NavItem[] = [
     label: "Library",
     items: [
       { key: "/media", label: "Media Library" },
+      { key: "/activity", label: "Activity" },
       { key: "/assistant", label: "Assistant" },
     ],
   },

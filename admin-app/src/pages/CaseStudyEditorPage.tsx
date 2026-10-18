@@ -1,5 +1,5 @@
 import { useRef, useState, type CSSProperties } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
 import { contentApi } from "../lib/api";
@@ -8,6 +8,8 @@ import { SITES } from "../config/sites";
 import { usePreviewItem } from "../lib/usePreviewItem";
 import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
+import HistoryDrawer from "../components/HistoryDrawer";
+import type { ItemPrefill } from "../lib/audit";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
 
@@ -75,11 +77,32 @@ const cardLabelStyle: CSSProperties = {
 
 /** Thin data-fetching shell — see PostEditorPage's identical split for why the form is a separate,
  * id-keyed component rather than syncing server data into local state via an effect. */
+/**
+ * A deleted case study's content as the start of a new one (Activity → "Create a new item from this
+ * version"): same content, but no id, no slug (the server picks a free one), a draft, and no link to a testimonial.
+ */
+function prefillAsCaseStudy(prefill: ItemPrefill): CaseStudyRecord {
+  return {
+    ...(prefill.data as unknown as CaseStudyRecord),
+    id: 0,
+    slug: null,
+    testimonialId: null, displayOrder: prefill.displayOrder,
+    active: prefill.active,
+    status: "DRAFT",
+  };
+}
+
 export default function CaseStudyEditorPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = id === "new";
   const { site } = useSite();
+  const location = useLocation();
+  // Set when a new item starts from a deleted item's content (see ItemPrefill).
+  const prefill = isNew ? ((location.state as { prefill?: ItemPrefill } | null)?.prefill ?? null) : null;
 
+  const queryClient = useQueryClient();
+  // A restore changes the item behind the form: refetch it, then remount the form on the new copy.
+  const [restoreCount, setRestoreCount] = useState(0);
   const detailQuery = useQuery({
     queryKey: ["case-study-editor", id, site],
     queryFn: async () => {
@@ -93,13 +116,14 @@ export default function CaseStudyEditorPage() {
     return <div style={{ padding: 48, textAlign: "center", color: "#6a7c90" }}>Loading…</div>;
   }
 
-  return <CaseStudyEditorForm key={id} id={id!} isNew={isNew} initial={detailQuery.data ?? null} />;
+  return <CaseStudyEditorForm onRestored={async () => { await queryClient.refetchQueries({ queryKey: ["case-study-editor", id, site] }); setRestoreCount((n) => n + 1); }} key={`${id}-${restoreCount}`} id={id!} isNew={isNew} initial={isNew ? (prefill ? prefillAsCaseStudy(prefill) : null) : (detailQuery.data ?? null)} />;
 }
 
-function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolean; initial: CaseStudyRecord | null }) {
+function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; isNew: boolean; initial: CaseStudyRecord | null; onRestored?: () => void }) {
   const navigate = useNavigate();
   const { site } = useSite();
   const queryClient = useQueryClient();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -183,7 +207,7 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
     section: "case-studies",
     isNew,
     dirty,
-    serverStatus: initial?.status,
+    serverStatus: isNew ? undefined : initial?.status,
     slug,
     saveAsDraft: async () => {
       const res = await saveMutation.mutateAsync("DRAFT");
@@ -306,6 +330,27 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
                 }}
               >
                 {previewMutation.isPending ? "OPENING…" : "PREVIEW ↗"}
+              </button>
+            )}
+            {!isNew && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                style={{
+                  minHeight: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 16px",
+                  border: "1px solid #cfd2d6",
+                  background: "#ffffff",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 11,
+                  letterSpacing: ".1em",
+                  color: "#3d4046",
+                  cursor: "pointer",
+                }}
+              >
+                HISTORY
               </button>
             )}
             <button
@@ -678,6 +723,14 @@ function CaseStudyEditorForm({ id, isNew, initial }: { id: string; isNew: boolea
         </aside>
       </div>
 
+      {!isNew && (
+        <HistoryDrawer
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          itemId={Number(id)}
+          onRestored={onRestored}
+        />
+      )}
       <MediaPickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

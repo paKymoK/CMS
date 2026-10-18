@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import HistoryDrawer from "../components/HistoryDrawer";
+import type { ItemPrefill } from "../lib/audit";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -120,6 +122,27 @@ function OpenEditFromQuery({ rows, open }: { rows?: Row[]; open: (row: Row) => v
   return null;
 }
 
+/**
+ * Opens the "new item" drawer filled with a deleted item's content when the screen was reached with
+ * a prefill in router state (Activity → "Create a new item from this version"), then drops the state
+ * so a refresh or "back" doesn't reopen it. It is a new item: nothing of the old one but its content.
+ */
+function OpenNewFromState({ open }: { open: (prefill: ItemPrefill) => void }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefill = (location.state as { prefill?: ItemPrefill } | null)?.prefill;
+  const latestOpen = useRef(open);
+  useEffect(() => {
+    latestOpen.current = open;
+  });
+  useEffect(() => {
+    if (!prefill) return;
+    latestOpen.current(prefill);
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [prefill, location.pathname, location.search, navigate]);
+  return null;
+}
+
 export default function ContentPage() {
   const { resourceKey } = useParams<{ resourceKey: string }>();
   const resource = resourceKey ? findResource(resourceKey) : undefined;
@@ -128,6 +151,7 @@ export default function ContentPage() {
   const queryClient = useQueryClient();
   const [form] = Form.useForm();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
   const [pickerField, setPickerField] = useState<NamePath | null>(null);
@@ -369,6 +393,18 @@ export default function ContentPage() {
   return (
     <div>
       <OpenEditFromQuery rows={listQuery.data} open={openEdit} />
+      <OpenNewFromState
+        open={(prefill) =>
+          // openDuplicate drops the id and sets the status itself; those two are placeholders.
+          openDuplicate({
+            ...prefill.data,
+            id: 0,
+            status: "DRAFT",
+            displayOrder: prefill.displayOrder,
+            active: prefill.active,
+          })
+        }
+      />
       <div className="flex flex-wrap items-end justify-between gap-5 mb-6">
         <div className="min-w-0">
           <div className="cms-eyebrow mb-3">
@@ -463,6 +499,7 @@ export default function ContentPage() {
         footer={
           <div className="flex gap-2.5">
             <Button onClick={() => setDrawerOpen(false)}>Cancel</Button>
+            {editing && <Button onClick={() => setHistoryOpen(true)}>History</Button>}
             <Button type="primary" block loading={saveMutation.isPending} onClick={handleSubmit}>
               Save changes
             </Button>
@@ -490,6 +527,15 @@ export default function ContentPage() {
         </Form>
       </Drawer>
 
+      <HistoryDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        itemId={editing?.id ?? null}
+        onRestored={() => {
+          invalidate();
+          setDrawerOpen(false);
+        }}
+      />
       <MediaPickerModal
         open={!!pickerField}
         onClose={() => setPickerField(null)}
