@@ -3,11 +3,14 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCaseStudyPage } from "@/lib/cms/caseStudies";
-import { RESULTS_ID } from "@/lib/cms/caseStudyNav";
+import { RESULTS_ID, caseStudiesHref } from "@/lib/cms/caseStudyNav";
 import { CaseStudyFilterBar } from "@/components/case-studies/CaseStudyFilterBar";
 import { CaseStudyListCard } from "@/components/case-studies/CaseStudyListCard";
-import { CaseStudyPager } from "@/components/case-studies/CaseStudyPager";
-import { PendingFade, ResultsPendingProvider } from "@/components/case-studies/ResultsPending";
+import { ListPager } from "@/components/list/ListPager";
+import {
+  PendingFade,
+  ResultsPendingProvider,
+} from "@/components/list/ResultsPending";
 
 const TITLE = "Case Studies — CMC Global";
 const DESCRIPTION =
@@ -17,12 +20,19 @@ export async function generateMetadata(
   props: PageProps<"/[locale]/case-studies">,
 ): Promise<Metadata> {
   const { locale } = await props.params;
-  return buildPageMetadata({ locale, path: "case-studies", title: TITLE, description: DESCRIPTION });
+  return buildPageMetadata({
+    locale,
+    path: "case-studies",
+    title: TITLE,
+    description: DESCRIPTION,
+  });
 }
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-export default async function CaseStudiesPage(props: PageProps<"/[locale]/case-studies">) {
+export default async function CaseStudiesPage(
+  props: PageProps<"/[locale]/case-studies">,
+) {
   const { locale } = await props.params;
   if (locale !== "en") notFound();
   setRequestLocale(locale);
@@ -39,17 +49,28 @@ export default async function CaseStudiesPage(props: PageProps<"/[locale]/case-s
   });
 
   return (
-    <section id={RESULTS_ID} aria-label="Case studies" className="design-canvas">
+    <section
+      id={RESULTS_ID}
+      aria-label="Case studies"
+      className="design-canvas"
+    >
       <div className="csl-body">
         <ResultsPendingProvider>
-          <CaseStudyFilterBar categories={result.categories} category={category} q={q} />
+          <CaseStudyFilterBar
+            categories={result.categories}
+            category={category}
+            q={q}
+          />
           <hr className="csl-rule" />
           <PendingFade>
             <p className="csl-count" aria-live="polite">
-              Showing {result.totalItems} {result.totalItems === 1 ? "result" : "results"}
+              Showing {result.totalItems}{" "}
+              {result.totalItems === 1 ? "result" : "results"}
             </p>
             {result.items.length === 0 ? (
-              <p className="csl-empty">No case studies match — try another filter.</p>
+              <p className="csl-empty">
+                No case studies match — try another filter.
+              </p>
             ) : (
               <div className="csl-grid">
                 {result.items.map((study) => (
@@ -57,11 +78,11 @@ export default async function CaseStudiesPage(props: PageProps<"/[locale]/case-s
                 ))}
               </div>
             )}
-            <CaseStudyPager
+            <ListPager
               page={result.page}
               totalPages={result.totalPages}
-              category={category}
-              q={q}
+              label="Case studies pages"
+              href={(p) => caseStudiesHref({ page: p, category, q })}
             />
           </PendingFade>
         </ResultsPendingProvider>

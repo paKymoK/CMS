@@ -752,3 +752,363 @@
   opacity: 0.45;
   pointer-events: none;
 }
+
+/* ======================================================================================
+ * Perspectives listing (/insights): the Case Studies list's look (hero, filter band, grey results
+ * band, white bordered cards, navy pager) with a pill search that has its magnifier on the left.
+ * ====================================================================================== */
+
+/* Hero intro line under the title */
+.csl-hero-sub {
+  max-width: 560px;
+  margin-top: 16px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.86);
+}
+@media (min-width: 1280px) {
+  .csl-hero-sub {
+    position: absolute;
+    left: calc(263 * var(--u));
+    top: calc(312 * var(--u));
+    width: calc(560 * var(--u));
+    max-width: none;
+    margin: 0;
+    font-size: max(14px, calc(20 * var(--u)));
+  }
+}
+
+/* Filter bar */
+.psp-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 2px solid #fff;
+  border-radius: 16px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(100, 160, 182, 0.26) 34%,
+    rgba(149, 182, 191, 0.16) 72%,
+    rgba(186, 240, 255, 0.48) 100%
+  );
+}
+.psp-box {
+  flex: 1 1 150px;
+}
+.psp-divider {
+  display: none;
+}
+.psp-search {
+  position: relative;
+  display: flex;
+  flex: 2 1 240px;
+  align-items: center;
+  height: 47px;
+  padding: 0 14px 0 46px;
+  border-radius: 999px;
+  background: #fff;
+  color: #656565;
+  font-size: 17px;
+}
+.psp-search:focus-within {
+  box-shadow: 0 0 0 2px #00a9ff;
+}
+.psp-search input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: #1a202c;
+  outline: none;
+}
+.psp-search input::placeholder {
+  color: #656565;
+  opacity: 1;
+}
+.psp-search input::-webkit-search-cancel-button {
+  display: none;
+}
+.psp-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  pointer-events: none;
+}
+.psp-search-clear {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef2f6;
+  color: #4a5568;
+  cursor: pointer;
+}
+.psp-search-clear:hover {
+  background: #dbe4ee;
+}
+.psp-search-clear svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Count + sort row */
+.psp-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: 24px;
+}
+.psp-bar .csl-count {
+  margin-top: 0;
+}
+.psp-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: #494949;
+}
+.psp-sort-box {
+  position: relative;
+  display: inline-flex;
+}
+.psp-sort select {
+  height: 40px;
+  min-width: 140px;
+  padding: 0 36px 0 14px;
+  border: 1.5px solid #cfd8e3;
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  color: #1a202c;
+  cursor: pointer;
+  appearance: none;
+}
+.psp-sort select:focus-visible {
+  outline: 2px solid #00a9ff;
+  outline-offset: 1px;
+}
+.psp-sort-caret {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 11px;
+  height: 7px;
+  margin-top: -3.5px;
+  pointer-events: none;
+}
+
+/* Grid + card */
+.psp-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  margin-top: 28px;
+}
+.psp-cell {
+  display: flex;
+}
+.psp-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px 24px 24px;
+  border: 2px solid #e0e0e0;
+  background: #fff;
+  color: #1a202c;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+.psp-card:hover,
+.psp-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(3, 53, 96, 0.14);
+}
+.psp-card-img {
+  position: relative;
+  aspect-ratio: 403 / 231;
+  overflow: hidden;
+}
+.psp-pill {
+  align-self: flex-start;
+  margin-top: 20px;
+  padding: 3px 14px;
+  border: 1px solid #b8c4d2;
+  border-radius: 999px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #44546a;
+}
+.psp-card-title {
+  display: -webkit-box;
+  margin-top: 14px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.psp-card-sum {
+  display: -webkit-box;
+  margin-top: 12px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: #4a5568;
+}
+.psp-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 20px;
+}
+.psp-card-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: #797979;
+}
+.psp-card-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #003e79;
+}
+.psp-card-date svg,
+.psp-card-more svg {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+@media (min-width: 640px) {
+  .psp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .psp-filter .csl-filter-label {
+    width: auto;
+    margin-right: 6px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .psp-filter {
+    flex-wrap: nowrap;
+    width: calc(1387 * var(--u));
+    min-height: calc(99 * var(--u));
+    margin-left: calc(18 * var(--u));
+    padding: 0 calc(18 * var(--u)) 0 calc(16 * var(--u));
+    gap: calc(14 * var(--u));
+    border-radius: calc(16 * var(--u));
+  }
+  .psp-filter .csl-filter-label {
+    flex: none;
+    margin: 0 calc(8 * var(--u)) 0 0;
+    font-size: max(14px, calc(22 * var(--u)));
+  }
+  .psp-box {
+    flex: 0 0 calc(250 * var(--u));
+    height: calc(47 * var(--u));
+    padding: 0 calc(36 * var(--u)) 0 calc(19 * var(--u));
+    border-radius: calc(11 * var(--u));
+    font-size: max(13px, calc(20 * var(--u)));
+  }
+  .psp-divider {
+    display: block;
+    flex: none;
+    width: 1px;
+    height: calc(47 * var(--u));
+    margin: 0 calc(6 * var(--u));
+    background: rgba(0, 44, 87, 0.28);
+  }
+  .psp-search {
+    flex: 1 1 0;
+    height: calc(47 * var(--u));
+    padding-left: calc(48 * var(--u));
+    font-size: max(13px, calc(20 * var(--u)));
+  }
+  .psp-search-icon {
+    left: calc(18 * var(--u));
+    width: max(16px, calc(21 * var(--u)));
+    height: max(16px, calc(21 * var(--u)));
+    margin-top: calc(-10.5 * var(--u));
+  }
+  .psp-bar {
+    width: calc(1387 * var(--u));
+    margin-top: calc(48 * var(--u));
+  }
+  .psp-sort {
+    font-size: max(13px, calc(18 * var(--u)));
+  }
+  .psp-sort select {
+    height: calc(46 * var(--u));
+    min-width: calc(180 * var(--u));
+    font-size: max(13px, calc(18 * var(--u)));
+  }
+  .psp-grid {
+    grid-template-columns: repeat(3, calc(451 * var(--u)));
+    gap: calc(50 * var(--u)) calc(35 * var(--u));
+    margin-top: calc(40 * var(--u));
+  }
+  .psp-card {
+    min-height: calc(563 * var(--u));
+    padding: calc(16 * var(--u)) calc(22 * var(--u)) calc(30 * var(--u));
+  }
+  .psp-card-img {
+    aspect-ratio: auto;
+    height: calc(231 * var(--u));
+  }
+  .psp-pill {
+    margin-top: calc(24 * var(--u));
+    padding: calc(3 * var(--u)) calc(14 * var(--u));
+    font-size: max(12px, calc(15 * var(--u)));
+  }
+  .psp-card-title {
+    margin-top: calc(16 * var(--u));
+    font-size: max(16px, calc(24 * var(--u)));
+  }
+  .psp-card-sum {
+    margin-top: calc(14 * var(--u));
+    font-size: max(13px, calc(16 * var(--u)));
+  }
+  .psp-card-foot {
+    padding-top: calc(24 * var(--u));
+  }
+  .psp-card-date {
+    gap: calc(6 * var(--u));
+    font-size: max(12px, calc(16 * var(--u)));
+  }
+  .psp-card-more {
+    gap: calc(8 * var(--u));
+    font-size: max(14px, calc(18 * var(--u)));
+  }
+  .psp-card-date svg,
+  .psp-card-more svg {
+    width: calc(28 * var(--u));
+    height: calc(28 * var(--u));
+  }
+}

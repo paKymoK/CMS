@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { loadContent } from "@/lib/cms/loadContent";
 import { sectionIntro } from "@/lib/sectionIntro";
 import { DraftBanner } from "@/components/preview/DraftBanner";
-import { CaseStudiesHero } from "@/components/case-studies/CaseStudiesHero";
+import { ListHero } from "@/components/list/ListHero";
 import { ContactForm } from "@/components/home/ContactForm";
 
 /**
@@ -12,12 +12,22 @@ import { ContactForm } from "@/components/home/ContactForm";
  * element is the results section, so Next scrolls there instead of back to the top of the page.
  * (The route group keeps this off the case study detail pages beside it.)
  */
-export default async function CaseStudiesListLayout({ children }: { children: ReactNode }) {
+export default async function CaseStudiesListLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const { content, isPreview } = await loadContent();
   return (
     <>
       {isPreview && <DraftBanner />}
-      <CaseStudiesHero />
+      <ListHero
+        crumbs={[
+          { label: "Insights", href: "/insights" },
+          { label: "Case Studies" },
+        ]}
+        title={"Case\nStudies"}
+      />
       {children}
       <ContactForm intro={sectionIntro(content, "contact")} />
     </>

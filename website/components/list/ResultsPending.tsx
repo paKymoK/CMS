@@ -1,12 +1,21 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { useLinkStatus } from "next/link";
 
 const PendingContext = createContext<(pending: boolean) => void>(() => {});
 
 type Registry = { pending: boolean; set: (pending: boolean) => void };
-const RegistryContext = createContext<Registry>({ pending: false, set: () => {} });
+const RegistryContext = createContext<Registry>({
+  pending: false,
+  set: () => {},
+});
 
 /**
  * Lets the filter bar, the pager and the results talk about one navigation: while a page or filter
@@ -25,7 +34,11 @@ export function ResultsPendingProvider({ children }: { children: ReactNode }) {
 export function PendingFade({ children }: { children: ReactNode }) {
   const { pending } = useContext(RegistryContext);
   return (
-    <div className="csl-fade" data-pending={pending || undefined} aria-busy={pending}>
+    <div
+      className="csl-fade"
+      data-pending={pending || undefined}
+      aria-busy={pending}
+    >
       {children}
     </div>
   );

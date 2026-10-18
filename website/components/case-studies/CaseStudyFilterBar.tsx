@@ -3,7 +3,7 @@
 import { useTransition, type FormEvent } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { caseStudiesHref } from "@/lib/cms/caseStudyNav";
-import { useReportPending } from "@/components/case-studies/ResultsPending";
+import { useReportPending } from "@/components/list/ResultsPending";
 
 const Caret = () => (
   <svg viewBox="0 0 12 8" className="csl-caret" aria-hidden>
