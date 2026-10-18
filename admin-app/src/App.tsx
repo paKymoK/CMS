@@ -17,7 +17,14 @@ export default function App() {
           colorBorderSecondary: "#eef1f4",
           colorText: "#0f172a",
           fontFamily: "'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif",
-          borderRadius: 2,
+          // Same shape language as the landing page: soft 10px controls, 14px cards, pill CTAs.
+          borderRadius: 10,
+          borderRadiusLG: 14,
+          borderRadiusSM: 8,
+          controlHeight: 40,
+          motionDurationMid: "0.22s",
+          motionEaseOut: "cubic-bezier(0.22, 1, 0.36, 1)",
+          boxShadowSecondary: "0 18px 44px rgba(10,37,64,.16), 0 2px 8px rgba(10,37,64,.06)",
         },
         components: {
           Menu: {
@@ -27,13 +34,17 @@ export default function App() {
             darkItemSelectedColor: "#ffffff",
             darkItemSelectedBg: "rgba(255,255,255,.1)",
             darkGroupTitleColor: "rgba(201,217,238,.7)",
-            itemBorderRadius: 8,
+            itemBorderRadius: 10,
+            itemHeight: 38,
+            darkItemHoverBg: "rgba(255,255,255,.06)",
           },
           Table: {
-            headerBg: "#edf5ff",
+            headerBg: "#f6f9fc",
             headerColor: "#5a5d64",
-            borderColor: "#e0e4e9",
-            rowHoverBg: "#f9fbfd",
+            headerSplitColor: "transparent",
+            borderColor: "#e8edf3",
+            rowHoverBg: "#f3f9ff",
+            cellPaddingBlock: 14,
           },
           Button: {
             fontWeight: 600,
@@ -52,6 +63,10 @@ export default function App() {
           Drawer: {
             paddingLG: 24,
           },
+          Modal: { borderRadiusLG: 18 },
+          Popover: { borderRadiusLG: 14 },
+          Select: { optionSelectedBg: "#edf5ff" },
+          Switch: { colorPrimary: "#00a9ff" },
         },
       }}
     >

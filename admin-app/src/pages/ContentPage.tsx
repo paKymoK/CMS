@@ -286,25 +286,9 @@ export default function ContentPage() {
     {
       title: <ColHeader>Status</ColHeader>,
       dataIndex: "status",
-      render: (status: string) => {
-        const pub = status === "PUBLISHED";
-        return (
-          <span
-            style={{
-              display: "inline-block",
-              padding: "4px 10px",
-              borderRadius: 999,
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              letterSpacing: ".08em",
-              background: pub ? "rgba(0,169,255,.12)" : "#eef1f4",
-              color: pub ? "#0159be" : "#5a5d64",
-            }}
-          >
-            {status}
-          </span>
-        );
-      },
+      render: (status: string) => (
+        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : ""}`}>{status}</span>
+      ),
     },
     {
       title: <ColHeader>Active</ColHeader>,
@@ -331,38 +315,24 @@ export default function ContentPage() {
       key: "actions",
       width: resource.duplicable ? 260 : 150,
       render: (_: unknown, row: Row) => (
-        <div className="flex justify-end gap-2">
+        <div className="cms-row-actions">
           <Button
             size="small"
+            className="cms-mini-btn"
             icon={<EditIcon />}
             onClick={() => openEdit(row)}
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 10,
-              letterSpacing: ".08em",
-              color: "#00a9ff",
-              borderColor: "rgba(0,169,255,.4)",
-            }}
+            style={{ color: "#00a9ff", borderColor: "rgba(0,169,255,.4)" }}
           >
-            EDIT
+            Edit
           </Button>
           {resource.duplicable && (
-            <Button
-              size="small"
-              onClick={() => openDuplicate(row)}
-              style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
-            >
-              DUPLICATE
+            <Button size="small" className="cms-mini-btn" onClick={() => openDuplicate(row)}>
+              Duplicate
             </Button>
           )}
           <Popconfirm title="Delete this item?" onConfirm={() => deleteMutation.mutate(row.id)}>
-            <Button
-              size="small"
-              danger
-              icon={<DeleteIcon />}
-              style={{ fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: ".08em" }}
-            >
-              DELETE
+            <Button size="small" className="cms-mini-btn" danger icon={<DeleteIcon />}>
+              Delete
             </Button>
           </Popconfirm>
         </div>
@@ -377,10 +347,8 @@ export default function ContentPage() {
           <div className="cms-eyebrow mb-3">
             — {groupLabelFor(resource.key)} · {site ? siteLabel(site) : ""}
           </div>
-          <h1 className="m-0" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}>
-            {resource.label}
-          </h1>
-          <p className="mt-2 mb-0" style={{ fontSize: 15, lineHeight: 1.6, color: "#55585f" }}>
+          <h1 className="cms-page-title">{resource.label}</h1>
+          <p className="cms-page-sub">
             {rows.length} items · <span style={{ color: "#00a9ff" }}>{publishedCount} published</span>
             {siteSub ? ` on ${siteSub}` : ""}
           </p>
@@ -413,32 +381,30 @@ export default function ContentPage() {
               })}
             </div>
           )}
-          <Button
-            icon={<PlusIcon />}
-            onClick={openCreate}
-            style={{
-              minHeight: 44,
-              padding: "0 22px",
-              border: "none",
-              background: "#00a9ff",
-              fontFamily: "var(--font-mono)",
-              fontSize: 12,
-              letterSpacing: ".1em",
-              color: "#ffffff",
-            }}
-          >
+          <Button className="cms-cta" icon={<PlusIcon />} onClick={openCreate}>
             NEW {singular.toUpperCase()}
           </Button>
         </div>
       </div>
 
+      {listQuery.isLoading ? (
+        <div className="cms-skel" aria-busy="true" aria-label="Loading">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="cms-skel-row">
+              <div className="cms-skel-bar" style={{ width: 28 }} />
+              <div className="cms-skel-bar" style={{ width: `${28 - i * 2}%` }} />
+              <div className="cms-skel-bar" style={{ width: "18%", marginLeft: "auto" }} />
+              <div className="cms-skel-bar" style={{ width: 64 }} />
+            </div>
+          ))}
+        </div>
+      ) : (
       <Table
+        className="cms-table"
         rowKey="id"
         columns={columns}
         dataSource={rows}
-        loading={listQuery.isLoading}
         pagination={false}
-        bordered
         scroll={{ x: "max-content" }}
         locale={{
           emptyText: (
@@ -451,6 +417,7 @@ export default function ContentPage() {
           ),
         }}
       />
+      )}
 
       <Drawer
         title={

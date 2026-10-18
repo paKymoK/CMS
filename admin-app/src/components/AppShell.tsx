@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Layout, Menu, Select, Button, Empty } from "antd";
 import type { MenuProps } from "antd";
 import { LogoutIcon, EyeIcon, MenuIcon } from "./icons";
@@ -13,13 +13,9 @@ import { SITES } from "../config/sites";
 
 const { Header, Sider, Content } = Layout;
 
-const numberStyle: CSSProperties = {
-  fontFamily: "var(--font-mono)",
-  fontSize: 10,
-  letterSpacing: ".06em",
-  width: 18,
-  display: "inline-block",
-};
+// Under an "About Page" group, "About · Hero" repeats its own heading — drop the redundant prefix
+// in the sidebar (the page title in the topbar keeps the full label).
+const stripGroupPrefix = (label: string) => label.replace(/^About · /, "");
 
 // One flat button per leaf, numbered 01/02/... within its own group — mirrors the design's static
 // (non-collapsible) two-level nav, via antd Menu's `type: "group"` rather than a submenu.
@@ -32,10 +28,11 @@ function toMenuItems(items: NavItem[]): MenuProps["items"] {
           label: item.label,
           children: item.items.map((child, i) => ({
             key: child.key,
+            title: child.label,
             label: (
               <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={numberStyle}>{String(i + 1).padStart(2, "0")}</span>
-                <span>{child.label}</span>
+                <span className="cms-nav-num">{String(i + 1).padStart(2, "0")}</span>
+                <span className="cms-nav-label">{stripGroupPrefix(child.label)}</span>
               </span>
             ),
           })),

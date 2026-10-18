@@ -63,9 +63,9 @@ function Dropzone({
       style={{
         marginBottom: 24,
         padding: 0,
-        border: "1px dashed #b9c6d3",
-        background: "linear-gradient(#f2f7fd,#e7f0fa)",
-        borderRadius: 0,
+        border: "1.5px dashed #b9d3ea",
+        background: "linear-gradient(#f7fbff,#edf5ff)",
+        borderRadius: 14,
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4 px-2 py-1">
@@ -82,8 +82,10 @@ function Dropzone({
         </div>
         <span
           style={{
-            padding: "12px 20px",
-            background: "#00a9ff",
+            padding: "12px 22px",
+            borderRadius: 999,
+            background: "linear-gradient(90deg, #00a9ff, #00bbff)",
+            boxShadow: "0 10px 24px rgba(0,169,255,.3)",
             fontFamily: "var(--font-mono)",
             fontSize: 12,
             letterSpacing: ".1em",
@@ -159,13 +161,15 @@ export default function MediaLibraryPage() {
         onFile={handleUploadImage}
       />
       {imagesQuery.isLoading ? (
-        <Spin />
+        <div className="py-16 text-center">
+          <Spin />
+        </div>
       ) : !imagesQuery.data?.length ? (
         <Empty description="No images yet for this site" />
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
           {imagesQuery.data.map((file: UploadFile) => (
-            <div key={file.id} className="flex flex-col gap-2">
+            <div key={file.id} className="cms-tile flex flex-col gap-2">
               <img
                 src={mediaSrc(imageUrl(file))}
                 alt={file.name}
@@ -199,7 +203,9 @@ export default function MediaLibraryPage() {
         onFile={handleUploadVideo}
       />
       {videosQuery.isLoading ? (
-        <Spin />
+        <div className="py-16 text-center">
+          <Spin />
+        </div>
       ) : !videosQuery.data?.length ? (
         <Empty description="No videos yet for this site" />
       ) : (
@@ -207,7 +213,7 @@ export default function MediaLibraryPage() {
           {videosQuery.data.map((job: VideoJob) => {
             const badge = STATUS_STYLE[job.status];
             return (
-              <div key={job.jobId} style={{ border: "1px solid #e0e4e9", background: "#ffffff" }}>
+              <div key={job.jobId} className="cms-tile cms-tile-card">
                 {job.status === "DONE" ? (
                   <VideoThumb src={videoPlaybackUrl(job)} />
                 ) : (
@@ -262,7 +268,7 @@ export default function MediaLibraryPage() {
   return (
     <div>
       <div className="cms-eyebrow mb-3">— Library · {site ? siteLabel(site) : ""}</div>
-      <h1 className="mt-0 mb-5" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}>
+      <h1 className="cms-page-title mb-5">
         Media Library
       </h1>
       <Tabs

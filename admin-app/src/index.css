@@ -22,10 +22,36 @@ body,
   height: 100%;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout background: the landing page's light tint with a soft sky glow top-right, so the work
+   area has some depth next to the navy sidebar instead of a flat fill. */
+.ant-layout {
+  background:
+    radial-gradient(900px 420px at 100% 0%, rgba(0, 187, 255, 0.1), transparent 70%),
+    #edf5ff !important;
+}
+.ant-layout-sider {
+  background: transparent;
+}
+
+/* One visible, on-brand focus ring for keyboard users everywhere. */
+:focus-visible {
+  outline: 2px solid #00a9ff;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(0, 169, 255, 0.22);
 }
 
 @keyframes cms-rise {
@@ -400,4 +426,291 @@ body {
   html { zoom: 1.25; }
   .cms-content { max-width: 1760px; }
   .cms-editor-body { max-width: 1840px; }
+}
+
+
+/* ---------------------------------------------------------------------------------------------
+   Sidebar
+   ------------------------------------------------------------------------------------------- */
+
+/* Group titles read as the landing page's mono eyebrow labels. */
+.cms-sider .ant-menu-item-group-title {
+  padding: 18px 12px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cms-sider .ant-menu-item {
+  position: relative;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cms-sider .ant-menu-item:not(.ant-menu-item-selected):hover {
+  transform: translateX(2px);
+}
+/* Active item gets a sky accent bar, like the landing page's active nav underline. */
+.cms-sider .ant-menu-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 0 3px 3px 0;
+  background: #00bbff;
+  transform: translateY(-50%);
+  transition: height 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cms-sider .ant-menu-item-selected::before {
+  height: 18px;
+}
+.cms-sider .ant-menu-item-selected .cms-nav-num {
+  color: #00bbff;
+}
+.cms-nav-num {
+  flex: none;
+  width: 18px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+  transition: color 0.2s ease;
+}
+.cms-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Page header + content cards
+   ------------------------------------------------------------------------------------------- */
+
+.cms-page-title {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #002d68;
+}
+.cms-page-sub {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #55585f;
+}
+
+/* List tables: one rounded white card (no boxed grid), hairline row dividers, quiet actions. */
+.cms-table.ant-table-wrapper .ant-table {
+  overflow: hidden;
+  border: 1px solid #e3ebf3;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow:
+    0 10px 30px rgba(10, 37, 64, 0.06),
+    0 1px 3px rgba(10, 37, 64, 0.04);
+}
+.cms-table .ant-table-thead > tr > th {
+  border-bottom: 1px solid #e3ebf3;
+  padding-block: 12px;
+}
+.cms-table .ant-table-thead > tr > th::before {
+  display: none !important;
+}
+.cms-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #eef3f8;
+  transition: background-color 0.18s ease;
+}
+.cms-table .ant-table-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+.cms-table .cms-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+.cms-table .ant-table-tbody > tr:hover .cms-row-actions,
+.cms-table .cms-row-actions:focus-within {
+  opacity: 1;
+}
+@media (hover: none) {
+  .cms-table .cms-row-actions {
+    opacity: 1;
+  }
+}
+
+/* Mono pill used for row actions, so they share the landing page's label voice. */
+.cms-mini-btn.ant-btn {
+  height: 28px;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Status pill. */
+.cms-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  background: #eef1f4;
+  color: #5a5d64;
+}
+.cms-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+.cms-status.is-published {
+  background: rgba(0, 169, 255, 0.12);
+  color: #0159be;
+}
+.cms-status.is-published::before {
+  background: #00a9ff;
+  opacity: 1;
+}
+
+/* Primary page CTA ("New …") — the landing page's glowing sky pill. */
+.cms-cta.ant-btn {
+  min-height: 44px;
+  padding: 0 22px;
+  border: none;
+  background: linear-gradient(90deg, #00a9ff, #00bbff);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  box-shadow: 0 10px 24px rgba(0, 169, 255, 0.3);
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+.cms-cta.ant-btn:hover {
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(0, 169, 255, 0.4);
+}
+.cms-cta.ant-btn:active {
+  transform: translateY(0);
+}
+
+/* Loading placeholder for lists: shimmering rows in a card, same shimmer as the landing page's
+   assistant skeleton, instead of antd's spinner overlay jumping the layout. */
+@keyframes cms-shimmer {
+  from {
+    background-position: -240px 0;
+  }
+  to {
+    background-position: 480px 0;
+  }
+}
+.cms-skel {
+  overflow: hidden;
+  border: 1px solid #e3ebf3;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(10, 37, 64, 0.06);
+}
+.cms-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #eef3f8;
+}
+.cms-skel-row:last-child {
+  border-bottom: none;
+}
+.cms-skel-bar {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef3f8 0, #f8fbfe 120px, #eef3f8 240px) 0 0 / 480px 100%;
+  animation: cms-shimmer 1.4s linear infinite;
+}
+
+/* Media tiles: images and video cards round off and lift slightly on hover. */
+.cms-tile {
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s ease;
+}
+.cms-tile > img {
+  border-radius: 12px;
+}
+.cms-tile:hover {
+  transform: translateY(-3px);
+}
+.cms-tile > img:hover {
+  box-shadow: 0 14px 30px rgba(10, 37, 64, 0.16);
+}
+.cms-tile-card {
+  overflow: hidden;
+  border: 1px solid #e3ebf3;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(10, 37, 64, 0.05);
+}
+.cms-tile-card:hover {
+  box-shadow: 0 14px 30px rgba(10, 37, 64, 0.12);
+}
+
+/* Drawers / modals: rounded to match the cards, softer backdrop. */
+.ant-drawer .ant-drawer-content {
+  border-radius: 18px 0 0 18px;
+}
+.ant-drawer .ant-drawer-header {
+  border-bottom: 1px solid #eef3f8;
+}
+.ant-drawer .ant-drawer-footer {
+  border-top: 1px solid #eef3f8;
+}
+.ant-drawer-mask,
+.ant-modal-mask {
+  background: rgba(3, 9, 26, 0.42) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Inputs get a sky focus glow instead of antd's default. */
+.ant-input:focus,
+.ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 3px rgba(0, 169, 255, 0.16) !important;
+}
+
+@media (max-width: 768px) {
+  .ant-drawer .ant-drawer-content {
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .cms-page-enter,
+  .cms-skel-bar {
+    animation: none !important;
+  }
+  .cms-sider .ant-menu-item,
+  .cms-tile,
+  .cms-cta.ant-btn {
+    transition: none !important;
+    transform: none !important;
+  }
 }

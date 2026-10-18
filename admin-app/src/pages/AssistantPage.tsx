@@ -31,7 +31,7 @@ export default function AssistantPage() {
   return (
     <div>
       <div className="cms-eyebrow mb-3">— Library · {label}</div>
-      <h1 className="mt-0 mb-5" style={{ fontSize: "clamp(24px,3vw,32px)", fontWeight: 700, letterSpacing: "-.02em", color: "#002d68" }}>
+      <h1 className="cms-page-title mb-5">
         Assistant
       </h1>
 
