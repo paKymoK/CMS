@@ -7,22 +7,22 @@
         <Property name="FILE_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} ${spring:spring.application.name} %-5.5p [XRequestId:%X{X-Request-Id}][UserId:%X{User-Id}][TraceId:%X{traceId}][SpanId:%X{spanId}] [%15.15t] %-40.40c{1.}: %m%n%wEx</Property>
         <!-- Defaults to ./logs under the JVM working directory (backend/logs when run from the
              backend root). Containers set LOG_DIR=/logs and bind-mount it to the host. -->
-        <Property name="LOG_DIR">${env:LOG_DIR:-./logs}</Property>
+        <Property name="LOG_BASE_DIR">${env:LOG_DIR:-./logs}</Property>
     </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT" follow="true">
             <PatternLayout disableAnsi="false" pattern="${LOG_PATTERN}"/>
         </Console>
         <RollingFile name="File"
-                     fileName="${LOG_DIR}/${spring:spring.application.name}/app.log"
-                     filePattern="${LOG_DIR}/${spring:spring.application.name}/app-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_BASE_DIR}/${spring:spring.application.name}/app.log"
+                     filePattern="${LOG_BASE_DIR}/${spring:spring.application.name}/app-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout pattern="${FILE_PATTERN}"/>
             <Policies>
                 <TimeBasedTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy size="100 MB"/>
             </Policies>
             <DefaultRolloverStrategy max="20">
-                <Delete basePath="${LOG_DIR}/${spring:spring.application.name}" maxDepth="1">
+                <Delete basePath="${LOG_BASE_DIR}/${spring:spring.application.name}" maxDepth="1">
                     <IfFileName glob="app-*.log.gz"/>
                     <IfLastModified age="7d"/>
                 </Delete>
