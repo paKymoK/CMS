@@ -768,6 +768,7 @@ a.svc-ind-card:hover {
   font-size: 16px;
   font-weight: 600;
   color: #888;
+  text-decoration: underline;
 }
 @media (min-width: 640px) {
   .svc-news-cards {
