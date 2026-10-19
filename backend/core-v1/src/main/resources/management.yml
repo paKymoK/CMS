@@ -5,15 +5,15 @@ management:
   otlp:
     tracing:
       export:
-        # One switch for both exporters: set OTLP_EXPORT_ENABLED=false locally when Alloy isn't running.
+        # One switch for both exporters: off by default; set OTLP_EXPORT_ENABLED=true when Alloy is running.
         # Spans are still created (trace ids stay in the logs) and /actuator/prometheus still works.
-        enabled: ${OTLP_EXPORT_ENABLED:true}
+        enabled: ${OTLP_EXPORT_ENABLED:false}
       endpoint: http://localhost:4318/v1/traces   # Alloy's OTLP receiver
     # Metrics are PUSHED to Alloy's OTLP receiver, which remote_writes them to Prometheus
     # (nothing scrapes services). Override with MANAGEMENT_OTLP_METRICS_EXPORT_URL in containers.
     metrics:
       export:
-        enabled: ${OTLP_EXPORT_ENABLED:true}
+        enabled: ${OTLP_EXPORT_ENABLED:false}
         url: http://localhost:4318/v1/metrics
         step: 15s
         # Prometheus requires cumulative; seconds keeps existing *_seconds_* metric names
