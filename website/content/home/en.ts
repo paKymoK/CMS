@@ -232,8 +232,7 @@ export const homeContentEn: HomeContent = {
     ],
     feature_band: [
       {
-        eyebrow: "Your Extended Tech Workforce",
-        title: "Scale your tech capabilities with precision and agility",
+        title: "Your Extended Tech Workforce",
         body: "Expand your engineering bandwidth with flexible, cross-functional tech teams that seamlessly align with your workflows and scale as your goals evolve.",
         ctaLabel: "Meet our experts",
         ctaUrl: "#contact",
