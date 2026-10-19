@@ -37,7 +37,7 @@ export async function generateMetadata(
 export default async function HomePage(props: PageProps<"/[locale]">) {
   const { locale } = await props.params;
 
-  // Phase 0 only builds the English home page — see plan's i18n scope notes.
+  // Only the English home page is built so far.
   if (locale !== "en") {
     notFound();
   }

@@ -16,10 +16,9 @@ import reactor.core.publisher.Mono;
 
 /**
  * Resolves content_item.data against the ContentFields class registered for its content_type and
- * validates it with the standard Bean Validator — the same explicit "convert, then
- * validator.validate() by hand" pattern Workflow's TicketMapper uses for Ticket.detail, since
- * {@code @Valid} can't cascade into a raw JsonNode. Nothing reaches ContentItemRepository without
- * passing through here first.
+ * validates it with the standard Bean Validator, called by hand because {@code @Valid} can't
+ * cascade into a raw JsonNode. Nothing reaches ContentItemRepository without passing through here
+ * first.
  */
 @Component
 @RequiredArgsConstructor

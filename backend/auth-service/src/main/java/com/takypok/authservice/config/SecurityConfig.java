@@ -180,8 +180,7 @@ public class SecurityConfig {
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "OPTIONS", "DELETE", "PATCH"));
     configuration.setAllowedHeaders(Collections.singletonList("*"));
-    // A real allowlist, not "*" — this platform has no gateway in front of it to enforce that
-    // instead (unlike Workflow's original setup, see the comment this replaced).
+    // A real allowlist, not "*" — there is no gateway in front of this service to enforce it.
     configuration.setAllowedOrigins(Arrays.asList(corsAllowedOrigins));
     configuration.setAllowCredentials(true);
     source.registerCorsConfiguration("/oauth2/**", configuration);

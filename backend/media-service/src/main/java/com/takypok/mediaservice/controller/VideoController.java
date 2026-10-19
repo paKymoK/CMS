@@ -36,7 +36,7 @@ public class VideoController {
         .then(filePart.flatMap(part -> transcodeJobService.submitUpload(part, site)));
   }
 
-  /** Media library listing for the admin picker (Phase 4) — every video for one site. */
+  /** Media library listing for the admin picker — every video for one site. */
   @GetMapping
   public Mono<List<VideoJob>> list(@RequestParam String site, Authentication authentication) {
     return cmsAdminGuard

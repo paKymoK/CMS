@@ -63,8 +63,7 @@ export function Globe({
   }, [hoveredIndex]);
 
   // Resize: derive canvas/projection sizing from the container's actual
-  // rendered box (fixed pixel constants broke below 340px in the original
-  // prototype, per the handoff's own "known issues" note).
+  // rendered box (fixed pixel constants break below 340px).
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -131,7 +130,7 @@ export function Globe({
 
     // Markers: absolutely-positioned DOM nodes updated imperatively via
     // translate3d every frame — left/top positioning visibly zigzags while
-    // rotating (a documented bug in the original prototype); translate3d
+    // rotating; translate3d
     // keeps the transform on the GPU/subpixel path instead. They live in
     // the OUTER container's coordinate space, so the sphere-relative
     // projection is offset back out by SPHERE_INSET.

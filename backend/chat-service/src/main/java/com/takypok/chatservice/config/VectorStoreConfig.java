@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Replaces Spring AI's single-collection QdrantVectorStoreAutoConfiguration (excluded in
- * application.yaml) with one QdrantVectorStore PER SITE — per the decision log, a separate
+ * application.yaml) with one QdrantVectorStore PER SITE — a separate
  * collection per site, not one collection filtered by a site/application field. That's what makes
  * cross-site leakage structurally impossible rather than dependent on every query remembering to
  * filter correctly.

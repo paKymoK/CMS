@@ -3,7 +3,7 @@
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- site is the tenant registry: every content table below is scoped to one row here.
--- Per cms-platform-plan.md's decision log, site == locale (one language per region),
+-- site == locale (one language per region),
 -- content is independently authored per site (no shared "translations" jsonb column
 -- anywhere in this schema), and routing resolves site_id from the request's subdomain.
 CREATE TABLE IF NOT EXISTS site
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS site
     modified_by jsonb
 );
 
--- The one content table, per cms-platform-plan.md's "generic content model" decision log entry.
+-- The one content table.
 -- Every piece of site content (a post, a case study, a stat, an office, a hero slide, a service
 -- page, ...) is a row here, identified by `content_type`. They all share one envelope — site_id,
 -- display_order, active, status, version, timestamps — kept as real, typed, indexed columns
@@ -28,8 +28,7 @@ CREATE TABLE IF NOT EXISTS site
 --
 -- Envelope semantics: `status` (DRAFT/PUBLISHED — the public API only ever returns PUBLISHED+active
 -- rows; admin sees everything) and `version` (Spring Data R2DBC's @Version optimistic-locking
--- column — a concurrent-edit guard, not a history table; "simple versioning" per the plan, not
--- full audit trails). The two composite indexes below match the two query shapes every repository
+-- column — a concurrent-edit guard, not a history table, not full audit trails). The two composite indexes below match the two query shapes every repository
 -- issues: "everything of this type for this site" (admin) and "published of this type" (public /
 -- preview). Composite since every query filters by site_id first.
 --
@@ -269,7 +268,7 @@ CREATE TRIGGER content_item_audit
     FOR EACH ROW
 EXECUTE FUNCTION content_audit_record();
 
--- Token-based draft preview (see docs/cms-platform-plan.md). A row here is a narrow, single-purpose
+-- Token-based draft preview. A row here is a narrow, single-purpose
 -- credential: opaque (not a JWT — presenting it as an Authorization: Bearer anywhere under
 -- /v1/admin/** just fails JWT parsing, it isn't accepted as that credential type at all),
 -- site-scoped, short-lived. It authorizes nothing beyond the unauthenticated-at-the-Spring-Security-

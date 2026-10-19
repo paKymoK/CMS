@@ -8,12 +8,9 @@ import java.lang.annotation.Target;
 /**
  * Marks a ContentFields implementation with the content_item.content_type value it serializes for.
  *
- * <p>Deliberately different from Workflow's TicketDetail persistence, which embeds the Java class's
- * fully-qualified name directly in the stored jsonb (io.r2dbc.postgresql, via
- * TicketDetailReader/Writer's CLAZZ_NAME) — that couples every stored row to a specific Java
- * package path, so renaming or moving the class breaks deserializing old rows. Here the registry
- * (see ContentFieldsRegistry) is keyed by this stable string instead, matching content_item's own
- * content_type column, so refactoring the Java class is safe.
+ * <p>The registry (see ContentFieldsRegistryConfig) is keyed by this stable string rather than the
+ * Java class name, matching content_item's own content_type column, so renaming or moving the class
+ * never breaks reading old rows.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

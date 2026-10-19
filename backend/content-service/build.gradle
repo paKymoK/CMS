@@ -37,8 +37,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-r2dbc"
     implementation "org.liquibase:liquibase-core"
     implementation "org.postgresql:r2dbc-postgresql"
-    // Classpath scan for ContentFields implementations at startup (ContentFieldsRegistryConfig) —
-    // same library/version Workflow's TicketConfig already uses for the equivalent scan.
+    // Classpath scan for ContentFields implementations at startup (ContentFieldsRegistryConfig)
     implementation 'org.reflections:reflections:0.10.2'
     // Allowlist HTML sanitizer for rich-text bodies (posts, case studies) — see RichTextSanitizer.
     implementation 'org.jsoup:jsoup:1.18.3'

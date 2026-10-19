@@ -12,10 +12,8 @@ public class TranscodeSchedulerConfig {
   private final TranscodeProperties properties;
 
   /**
-   * A bounded pool caps how many FFmpeg processes can run at once — previously transcode work ran
-   * on the shared, effectively-unbounded Schedulers.boundedElastic(), so a burst of concurrent
-   * video uploads (much more likely from chat than from ticket attachments) could saturate host CPU
-   * with no backpressure. Once maxConcurrentJobs + queueCapacity is exceeded, new submissions fail
+   * A bounded pool caps how many FFmpeg processes can run at once, so a burst of concurrent
+   * video uploads can't saturate host CPU. Once maxConcurrentJobs + queueCapacity is exceeded, new submissions fail
    * fast instead of piling up indefinitely.
    */
   @Bean

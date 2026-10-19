@@ -28,9 +28,8 @@ public class AiConfig {
   }
 
   // disableThinking() matters a lot here: Qwen3 models (the default OLLAMA_CHAT_MODEL) emit a
-  // long chain-of-thought block before their real answer unless told not to — the same reason
-  // the old CRM assistant's Ollama client both set this option AND started its system prompt
-  // with "/no_think". On modest local hardware that reasoning pass alone can blow well past a
+  // long chain-of-thought block before their real answer unless told not to. On modest local
+  // hardware that reasoning pass alone can blow well past a
   // 10-minute read timeout for a single RAG answer.
   @Bean
   @ConditionalOnProperty(name = "ai.chat.provider", havingValue = "ollama")

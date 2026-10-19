@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * auth-service's authoritative record for identity-adjacent general data (Phase 7). Only
+ * auth-service's authoritative record for identity-adjacent general data. Only
  * name/email/departmentId/unitId have real read/write logic — LDAP-derived or self-entered at first
  * login for name/email, admin-managed catalogs for department/unit. Everything else here (title,
  * workLocation, managerSub, joinedDate, shift, shiftHours, status, avatarUrl) is an inert

@@ -57,7 +57,7 @@ export type Office = {
   city: string;
   lat: number;
   lon: number;
-  /** Flag swatch color (placeholder, per handoff — real flag assets pending). */
+  /** Flag swatch color (placeholder until real flag assets exist). */
   flag: string;
   /** Renders larger with a white border (Hanoi HQ, Osaka). */
   big?: boolean;

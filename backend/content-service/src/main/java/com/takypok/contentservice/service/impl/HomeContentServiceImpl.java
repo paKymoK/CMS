@@ -141,7 +141,7 @@ public class HomeContentServiceImpl implements HomeContentService {
 
   /**
    * Only "insight"-category posts render on the homepage today — other categories exist for future
-   * post types (per the decision log) but aren't part of HomeContent yet. This also keeps a draft
+   * post types but aren't part of HomeContent yet. This also keeps a draft
    * "press-release" post out of the homepage preview, for the same reason it wouldn't render once
    * published.
    */

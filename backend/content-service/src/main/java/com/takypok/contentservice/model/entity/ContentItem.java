@@ -10,18 +10,14 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Generic content row per cms-platform-plan.md's "generic content model" decision.
+ * Generic content row: one table for every content type, with type-specific fields in {@code data}.
  *
- * <p>{@code data} is stored as a plain JsonNode (reusing the existing JsonNodeReader/Writer R2DBC
- * converters — no new converter needed) rather than resolved to a concrete {@code ContentFields}
- * class at the persistence layer, unlike Workflow's TicketDetailReader/Writer. That approach embeds
- * a discriminator inside the jsonb blob itself specifically because a column-level {@code
- * Converter<Json, T>} can't see this row's own {@code contentType} column. Here, {@code
- * contentType} and {@code data} are resolved together in {@code ContentItemMapper}, which always
- * has both in hand at once (from the request, or from this same entity) — so there's no need to
- * embed anything inside the JSON to recover which type a row is; the real, already- indexed {@code
- * content_type} column is the only source of truth for that, as it should be. ContentFields
- * resolution + Bean Validation happen there before a row is ever written.
+ * <p>{@code data} is stored as a plain JsonNode (via the existing JsonNodeReader/Writer R2DBC
+ * converters) rather than resolved to a concrete {@code ContentFields} class at the persistence
+ * layer, because a column-level {@code Converter<Json, T>} can't see this row's {@code contentType}
+ * column. Instead, {@code contentType} and {@code data} are resolved together in {@code
+ * ContentItemMapper}, so the indexed {@code content_type} column stays the only source of truth for
+ * a row's type. ContentFields resolution + Bean Validation happen there before a row is written.
  */
 @Getter
 @Setter

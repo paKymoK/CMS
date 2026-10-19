@@ -33,7 +33,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 // Eyebrow/label/hint font for the redesigned homepage body sections (wave
-// band, section nav, service cards, etc), per the Claude Design handoff.
+// band, section nav, service cards, etc).
 // Scoped to its own token (font-mono-wave) — kept separate from font-mono
 // (IBM Plex Mono) which the header/footer keep using.
 const jetbrainsMono = JetBrains_Mono({

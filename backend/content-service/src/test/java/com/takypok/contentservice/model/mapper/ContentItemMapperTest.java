@@ -18,7 +18,7 @@ import reactor.test.StepVerifier;
 
 /**
  * No Spring context needed — ContentFieldsRegistryConfig's classpath scan and
- * jakarta.validation.Validator both work standalone, and the mapper no longer touches the DB.
+ * jakarta.validation.Validator both work standalone, and the mapper doesn't touch the DB.
  */
 class ContentItemMapperTest {
   private final ObjectMapper objectMapper = ConfigObjectMapper.objectMapper();

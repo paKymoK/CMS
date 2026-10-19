@@ -19,9 +19,8 @@ import reactor.core.publisher.Sinks;
 
 /**
  * Push-only WebSocket channel: clients authenticate by sending {@code Bearer <jwt>} as the first
- * text frame (mirrors workflow-service's SlaEventWebSocket handshake), then only receive server
- * events. Sending a message is always done via the REST API so persistence stays the source of
- * truth; the WS connection is purely for real-time fan-out.
+ * text frame, then only receive server events. Sending a message is always done via the REST API so
+ * persistence stays the source of truth; the WS connection is purely for real-time fan-out.
  */
 @Component
 @RequiredArgsConstructor

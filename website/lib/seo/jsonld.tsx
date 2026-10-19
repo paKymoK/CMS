@@ -2,7 +2,7 @@ import { SITE_NAME, SITE_URL } from "./constants";
 
 /**
  * The live site (via Yoast) already emits WebPage/BreadcrumbList/WebSite JSON-LD —
- * Organization schema is the one genuine gap this Phase 0 page fills.
+ * Organization schema is the one genuine gap this fills.
  *
  * `sameAs` only includes the Facebook URL — that one is real, extracted from the
  * live site's `article:publisher` meta tag. YouTube/LinkedIn were mentioned in the

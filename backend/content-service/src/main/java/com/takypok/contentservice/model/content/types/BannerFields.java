@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Not used by the current homepage build — added ready for other pages, per the plan. */
+/** Not used by the current homepage build — available for other pages. */
 @Getter
 @Setter
 @ContentTypeKey("banner")

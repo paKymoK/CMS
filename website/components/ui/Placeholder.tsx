@@ -9,9 +9,8 @@ const STRIPES: Record<string, string> = {
 };
 
 /**
- * Every image/video in the redesigned homepage is a placeholder — real
- * assets are pending from the client. This renders the same repeating-stripe
- * + mono label treatment the design handoff specified, reused across
+ * Placeholder for images/videos without real assets yet. Renders a
+ * repeating-stripe + mono label treatment, reused across
  * Services, CaseStudies, Insights, WorkforceBand, Certifications and the
  * testimonial video pane instead of duplicating the gradient CSS in each.
  */

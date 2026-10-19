@@ -107,7 +107,7 @@ spring:
               filters:
                 - RewritePath=/chat-service/(?<segment>.*), /${segment}
 
-# The 5 site subdomains + admin-app's own origin — user-maintained per the decision log, never a
+# The 5 site subdomains + admin-app's own origin — user-maintained, never a
 # wildcard. Same property/convention as the 4 backend services' own core-v1 SecurityConfig.
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}

@@ -11,8 +11,8 @@ import java.util.Map;
  *
  * <p>Mirrors the landing page's content/home/types.ts HomeContent field-for-field. Only PUBLISHED +
  * active rows ever land here — draft/inactive content never reaches the public API. Banner is
- * deliberately excluded: it's not part of HomeContent yet (unused by the current homepage build,
- * per the plan's decision log), even though it's fully manageable via its own admin endpoint.
+ * deliberately excluded: it's not part of HomeContent yet (unused by the current homepage build),
+ * even though it's fully manageable via its own admin endpoint.
  */
 public record HomeContentResponse(
     List<Stat> stats,

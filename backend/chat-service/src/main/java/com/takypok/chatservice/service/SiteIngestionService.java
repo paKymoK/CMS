@@ -28,11 +28,8 @@ import reactor.core.scheduler.Schedulers;
 
 /**
  * Re-ingests one site's curated knowledge — classpath:documents/<site>/*.md|*.txt only — into that
- * site's own Qdrant collection, wipe-and-reload. content-service's /v1/home was tried as a second
- * source (structured homepage sections auto-turned into short one-liner Documents) but dropped:
- * that auto-generated chunking wasn't good RAG material, so curated per-site files are the only
- * source for now. Replaces the old CRM version's classpath documents/ folder (a single flat tree,
- * no per-site split) as the knowledge source.
+ * site's own Qdrant collection, wipe-and-reload. Curated per-site files are the only source:
+ * content-service's structured homepage sections don't chunk into good RAG material.
  */
 @Slf4j
 @Service
@@ -73,7 +70,7 @@ public class SiteIngestionService {
 
   /**
    * Curated per-site markdown/text files under src/main/resources/documents/<site>/ — packaged into
-   * the jar, so updating these requires a redeploy, same trade-off the old CRM knowledge base had.
+   * the jar, so updating these requires a redeploy.
    * Loaded via the classpath*: resolver (not ClassPathResource#getFile) because this directory
    * lives inside the packaged jar in every deployed environment, where getFile() has no real
    * filesystem path to return. A site with no documents/<site>/ folder yet just ingests nothing.

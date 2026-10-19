@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 /**
- * IP-based rate limiting for the public assistant endpoint, ANONYMOUS requests only — per the
- * decision log, authenticated/internal callers (testing, internal tools) are never throttled. Keyed
- * off the server-observed remote address, never a client-supplied header, same rule Phase 1 applied
- * to auth-service's login lockout.
+ * IP-based rate limiting for the public assistant endpoint, ANONYMOUS requests only —
+ * authenticated/internal callers (testing, internal tools) are never throttled. Keyed off the
+ * server-observed remote address, never a client-supplied header, same as auth-service's login
+ * lockout.
  */
 @Component
 @RequiredArgsConstructor

@@ -1,6 +1,6 @@
 /**
  * Shared 40px circular prev/next arrow buttons for the drag carousels
- * (Services, Insights) — matches the handoff's spec exactly: 1px border,
+ * (Services, Insights) — 1px border,
  * dims to opacity .3 when disabled (no shake/rubber-band at the ends).
  */
 export function CarouselArrows({

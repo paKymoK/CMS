@@ -21,8 +21,7 @@ export function Reveal({
   className?: string;
   delayMs?: number;
   /** Fire once and stop observing, instead of replaying on every re-entry
-   * (the redesigned homepage body sections want fire-once per the new
-   * motion spec; existing callers keep the old repeat-both-ways default). */
+   * (default is to replay both ways). */
   once?: boolean;
   /** translateY distance the element travels in from, in px. */
   travelPx?: number;

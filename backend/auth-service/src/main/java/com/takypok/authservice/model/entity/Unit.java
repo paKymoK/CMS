@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** auth-service's authoritative record for unit data (Phase 7). */
+/** auth-service's authoritative record for unit data. */
 @Entity
 @Data
 @NoArgsConstructor

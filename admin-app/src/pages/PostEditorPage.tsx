@@ -241,7 +241,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      {/* Not sticky, unlike the standalone mockup — AppShell's own header already owns the
+      {/* Not sticky — AppShell's own header already owns the
           viewport's top:0 sticky slot, and stacking a second one here would fight it. */}
       <div style={{ padding: "0 0 16px" }}>
         <div

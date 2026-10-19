@@ -1,6 +1,5 @@
 // Primary nav and in-page section nav never change per-region, so unlike the rest of
-// content/home/*, this is hardcoded here rather than fetched from the CMS — it used to come
-// from content-service's primary-nav-item/nav-section tables, which were removed.
+// content/home/*, this is hardcoded here rather than fetched from the CMS.
 
 export type PrimaryNavItem = {
   label: string;

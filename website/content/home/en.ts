@@ -1,15 +1,9 @@
 import type { HomeContent } from "./types";
 
 /**
- * Redesigned 2026-09-16 to match the Claude Design homepage handoff.
- * footerNav is untouched (the header/footer shell keeps its existing content
- * per this pass's scope). Everything else below is transcribed verbatim from
- * the handoff's prototype — per the handoff's own note, this text content
- * (service names, office records, case-study titles/dates, insight captions,
- * testimonial copy) is real, client-approved copy, not placeholder (only
- * imagery is placeholder pending real assets from the client).
- * primaryNav/navSections used to live here too — now hardcoded in
- * content/nav.ts since they never change per-region.
+ * English homepage content. Text (service names, office records, case-study titles/dates, insight
+ * captions, testimonial copy) is real, client-approved copy; only imagery is placeholder.
+ * Primary nav and section nav live in content/nav.ts.
  */
 export const homeContentEn: HomeContent = {
   // Text-only stand-ins for the CMS-managed hero/assistant content, used only when the CMS is
@@ -315,7 +309,6 @@ export const homeContentEn: HomeContent = {
     { value: "35+", label: "Business Partners", note: "AWS, Google Cloud, UiPath, Salesforce." },
     { value: "3000+", label: "Employees", note: "Across delivery centres worldwide." },
   ],
-  // lat/lon/flag/address extracted verbatim from the prototype's initGlobe().
   offices: [
     {
       city: "Hanoi Office (Headquarter)",

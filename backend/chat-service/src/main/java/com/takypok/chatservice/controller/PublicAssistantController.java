@@ -51,7 +51,7 @@ public class PublicAssistantController {
     }
 
     // Anonymous, unauthenticated requests are rate-limited by IP; an authenticated caller (an
-    // internal test account, per the decision log) is exempt — never throttle internal testing.
+    // internal test account) is exempt — never throttle internal testing.
     // core-v1's SecurityConfig doesn't disable anonymous auth, so an unauthenticated request on
     // this permitAll endpoint still arrives with a non-null AnonymousAuthenticationToken, not a
     // null Authentication — check the concrete type, not just non-null.

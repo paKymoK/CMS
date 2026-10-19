@@ -21,7 +21,7 @@ export const DEFAULT_OG_IMAGE = "/images/og-default.jpg";
 export const LOCALES = routing.locales;
 
 /**
- * Locales that actually have built content. Phase 0 only ships /en — keep this
+ * Locales that actually have built content. Only /en ships so far — keep this
  * list in sync with which content/home/{locale}.ts files exist so hreflang
  * alternates don't advertise pages that 404.
  */

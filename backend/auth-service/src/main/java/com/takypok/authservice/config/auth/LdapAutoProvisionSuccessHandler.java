@@ -30,7 +30,7 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
  * <p>First-time-seen is also the moment this sub becomes "real" for an internal/LDAP user — nobody
  * provisions their login through auth-service, LDAP already did. This is also the moment
  * auth-service captures {@code displayName}/{@code mail} from the directory into its own {@link
- * Userinfo} record (Phase 7) — LDAP already has this data, so there's no reason to ask for it
+ * Userinfo} record — LDAP already has this data, so there's no reason to ask for it
  * twice.
  *
  * <p>This is also the single success handler for every {@code /login}, both domains — so it's the

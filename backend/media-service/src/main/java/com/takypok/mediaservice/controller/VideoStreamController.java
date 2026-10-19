@@ -32,7 +32,7 @@ public class VideoStreamController {
 
   // These are VOD playlists/segments (-hls_playlist_type vod) written once by the transcode
   // job and never modified again, so a long, immutable cache is safe — repeat views (very
-  // common when scrolling back through chat history) previously re-read from disk every time.
+  // common when scrolling back through chat history) don't re-read from disk.
   private static final CacheControl HLS_CACHE_CONTROL =
       CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable();
 

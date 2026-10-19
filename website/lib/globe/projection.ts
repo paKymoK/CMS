@@ -12,8 +12,7 @@ const RASTER_HEIGHT = 360;
  * Rasterises the world landmass to an offscreen equirectangular canvas once,
  * then samples it on a latitude grid (longitude step divided by cos(lat) so
  * dot density stays even toward the poles), keeping points that land on
- * land (alpha > threshold). Mirrors the design handoff's documented
- * technique — never hand-draw coastlines. Browser-only (uses <canvas>).
+ * land (alpha > threshold). Never hand-draw coastlines. Browser-only (uses <canvas>).
  */
 export function buildGlobeDots(
   topology: Topology,
