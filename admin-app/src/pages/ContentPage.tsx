@@ -527,6 +527,12 @@ export default function ContentPage() {
       />
       <MediaPickerModal
         open={!!pickerField}
+        mode={
+          typeof pickerField === "string" &&
+          resource.fields.find((f) => f.name === pickerField)?.type === "video"
+            ? "video"
+            : "image"
+        }
         onClose={() => setPickerField(null)}
         onSelect={(url) => {
           if (pickerField) form.setFieldValue(pickerField, url);
@@ -548,6 +554,9 @@ function FieldInput({
 }) {
   const rules = f.required ? [{ required: true, message: `${f.label} is required` }] : [];
   const currentValue = Form.useWatch(f.name, form) as string | undefined;
+  const gate = Form.useWatch(f.showWhen?.field ?? f.name, form) as string | undefined;
+
+  if (f.showWhen && gate !== f.showWhen.equals) return null;
 
   if (f.type === "boolean") {
     return (
@@ -698,6 +707,23 @@ function FieldInput({
           <Button icon={<PictureIcon />} onClick={onOpenPicker}>
             Choose
           </Button>
+        </div>
+      </Form.Item>
+    );
+  }
+  if (f.type === "video") {
+    return (
+      <Form.Item label={f.label}>
+        <div className="flex items-center gap-3">
+          <Form.Item name={f.name} rules={rules} noStyle>
+            <Input placeholder="No video selected" readOnly style={{ flex: 1 }} />
+          </Form.Item>
+          <Button icon={<PictureIcon />} onClick={() => onOpenPicker()}>
+            Choose
+          </Button>
+          {currentValue ? (
+            <Button onClick={() => form.setFieldValue(f.name, undefined)}>Clear</Button>
+          ) : null}
         </div>
       </Form.Item>
     );

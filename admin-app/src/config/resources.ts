@@ -9,6 +9,7 @@ export type FieldType =
   | "boolean"
   | "select"
   | "image"
+  | "video"
   | "datetime"
   | "string-list"
   | "stat-list"
@@ -34,6 +35,8 @@ export interface FieldConfig {
   addLabel?: string;
   /** content-ref: pick one item of another content type; the stored value is its `valueField`. */
   ref?: { contentType: string; valueField: string; labelField: string };
+  /** Only render this field while another field of the same form has the given value. */
+  showWhen?: { field: string; equals: string };
   /** Shown as a column in the list table. Defaults to true for scalar field types. */
   showInTable?: boolean;
 }
@@ -304,7 +307,23 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "body", label: "Paragraph", type: "textarea" }),
       field({ name: "ctaLabel", label: "Button label", type: "text" }),
       field({ name: "ctaUrl", label: "Button link", type: "text" }),
-      field({ name: "image", label: "Background photo (wide, ~16:10)", type: "image" }),
+      field({
+        name: "mediaType",
+        label: "Backdrop",
+        type: "select",
+        options: [
+          { label: "Photo", value: "image" },
+          { label: "Video", value: "video" },
+        ],
+      }),
+      field({ name: "image", label: "Background photo (wide, ~16:10) — also the video poster", type: "image" }),
+      field({
+        name: "video",
+        label: "Background video (uploaded MP4/MOV/WebM, plays muted on loop)",
+        type: "video",
+        showWhen: { field: "mediaType", equals: "video" },
+        showInTable: false,
+      }),
     ],
   },
   {

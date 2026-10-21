@@ -11,6 +11,7 @@ import {
   uploadVideo,
   imageUrl,
   videoPlaybackUrl,
+  videoStoredUrl,
   type UploadFile,
   type VideoJob,
 } from "../lib/mediaClient";
@@ -20,9 +21,15 @@ interface MediaPickerModalProps {
   open: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
-  /** "image" (default) only offers the image library/upload; "both" also offers videos. */
-  mode?: "image" | "both";
+  /** "image" (default) only offers the image library/upload; "both" also offers videos; "video"
+   * offers only videos and hands back the origin-less stored path (see videoStoredUrl). */
+  mode?: "image" | "both" | "video";
 }
+
+// Containers ffmpeg transcodes reliably to the HLS ladder; anything else is rejected up front
+// rather than failing minutes later in the transcode queue.
+const VIDEO_EXTENSIONS = [".mp4", ".mov", ".m4v", ".webm"];
+const VIDEO_ACCEPT = VIDEO_EXTENSIONS.join(",");
 
 function VideoThumb({ src }: { src: string }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -55,13 +62,13 @@ export default function MediaPickerModal({
   const imagesQuery = useQuery({
     queryKey: ["media-images", site],
     queryFn: () => listImages(site!),
-    enabled: open && !!site,
+    enabled: open && !!site && mode !== "video",
   });
 
   const videosQuery = useQuery({
     queryKey: ["media-videos", site],
     queryFn: () => listVideos(site!),
-    enabled: open && !!site && mode === "both",
+    enabled: open && !!site && mode !== "image",
   });
 
   const handleUploadImage = async (file: File) => {
@@ -78,6 +85,10 @@ export default function MediaPickerModal({
 
   const handleUploadVideo = async (file: File) => {
     if (!site) return false;
+    if (!VIDEO_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext))) {
+      message.error(`Unsupported video type — use ${VIDEO_EXTENSIONS.join(", ")}`);
+      return false;
+    }
     try {
       await uploadVideo(site, file);
       message.success("Video queued for transcoding — it will appear once processing finishes");
@@ -131,7 +142,7 @@ export default function MediaPickerModal({
       <Upload
         beforeUpload={handleUploadVideo}
         showUploadList={false}
-        accept="video/*"
+        accept={VIDEO_ACCEPT}
         className="mb-4 block"
       >
         <Button type="primary" icon={<UploadIcon />}>Upload video</Button>
@@ -146,7 +157,7 @@ export default function MediaPickerModal({
             <div key={job.jobId} className="cms-pick-tile" style={{ cursor: "default" }}>
               {job.status === "DONE" ? (
                 <button
-                  onClick={() => onSelect(videoPlaybackUrl(job))}
+                  onClick={() => onSelect(mode === "video" ? videoStoredUrl(job) : videoPlaybackUrl(job))}
                   className="block w-full p-0 border-none bg-transparent cursor-pointer"
                 >
                   <VideoThumb src={videoPlaybackUrl(job)} />
@@ -165,7 +176,9 @@ export default function MediaPickerModal({
 
   return (
     <Modal open={open} onCancel={onClose} footer={null} title="Media Library" width={720}>
-      {mode === "both" ? (
+      {mode === "video" ? (
+        videosPanel
+      ) : mode === "both" ? (
         <Tabs
           activeKey={tab}
           onChange={setTab}

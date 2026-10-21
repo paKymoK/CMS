@@ -1,3 +1,4 @@
+import { BackdropVideo } from "@/components/ui/BackdropVideo";
 import { CoverImage } from "@/components/ui/CoverImage";
 import type { FeatureBand } from "@/content/home/types";
 
@@ -10,8 +11,8 @@ const FALLBACK: FeatureBand = {
 
 /**
  * "Your Extended Tech Workforce" (Figma "About Us"): a full-width photo with a grey wash and the
- * copy low on the left, an outlined pill on the right. Everything — copy, button, photo — comes
- * from the CMS ("feature_band").
+ * copy low on the left, an outlined pill on the right. Everything — copy, button, photo or
+ * looping video (the photo is its poster) — comes from the CMS ("feature_band").
  */
 export function ExtendedWorkforce({ band = FALLBACK }: { band?: FeatureBand }) {
   return (
@@ -25,6 +26,7 @@ export function ExtendedWorkforce({ band = FALLBACK }: { band?: FeatureBand }) {
             className="object-cover"
           />
         )}
+        {band.mediaType === "video" && band.video && <BackdropVideo src={band.video} />}
         <div className="wfc-shade" aria-hidden />
         <div className="wfc-copy">
           {band.eyebrow && <p className="wfc-eyebrow">{band.eyebrow}</p>}

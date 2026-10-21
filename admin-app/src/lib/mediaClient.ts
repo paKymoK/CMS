@@ -24,6 +24,11 @@ export function imageUrl(file: UploadFile): string {
   return `/media-service/images/${file.id}${file.extension}`;
 }
 
+/** The stored form of a video reference: origin-less, like imageUrl(). Resolve with mediaSrc(). */
+export function videoStoredUrl(job: VideoJob): string {
+  return `/media-service/v1/videos/${job.videoId}/master.m3u8`;
+}
+
 export function videoPlaybackUrl(job: VideoJob): string {
   return `${MEDIA_BASE}/v1/videos/${job.videoId}/master.m3u8`;
 }

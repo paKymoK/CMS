@@ -119,6 +119,9 @@ export type FeatureBand = {
   ctaLabel?: string;
   ctaUrl?: string;
   image?: string;
+  /** "image" (default) | "video" — `video` is an HLS playlist URL; `image` is then its poster. */
+  mediaType?: "image" | "video";
+  video?: string;
 };
 
 /** content_item type "site_footer" — see content-service's SiteFooterFields. */
