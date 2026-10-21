@@ -30,36 +30,42 @@ VALUES ('en', 'en.cmcglobal.com'),
        ('de', 'de.cmcglobal.com')
 ON CONFLICT (code) DO NOTHING;
 
--- ── 'en' hero slides + assistant band (copy and imagery from the Figma "Homepage" frame) ───────
+-- ── 'en' hero slides: finished artwork (text baked in) at desktop 1920×699, tablet 1536×864 and phone
+-- 750×1000; the only copy is the alt text. Plus the assistant band ────────────────────────────
 INSERT INTO content_item (site_id, content_type, data, display_order, status)
 VALUES ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
-  "title": "Riding The Next Wave of AI Transformation",
-  "subtitle": "Reinvent Your Base - Scale Without Limits - Engineer Your Tomorrow",
-  "ctaLabel": "Contact Us", "ctaUrl": "#contact", "layout": "center", "ctaStyle": "white",
-  "backgroundColor": "#000812", "backgroundColorEnd": "#00152d",
-  "overlayImage": "/media-service/images/6fad6d33-2060-592e-8d65-2a4509f37041.webp"
+  "alt": "Riding The Next Wave of AI Transformation. Reinvent Your Base - Scale Without Limits - Engineer Your Tomorrow",
+  "linkUrl": "#contact",
+  "image": "/media-service/images/dbc875b5-2d93-5e9a-88ef-bad1604477b1.webp",
+  "tabletImage": "/media-service/images/0fe31ee1-f27c-5d04-972e-97a4d1d7082f.webp",
+  "mobileImage": "/media-service/images/35839a5d-c796-5c93-9144-7d26fffaa056.webp"
 }'::jsonb, 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
-  "title": "Powering Innovation with\nSecured AI – Shielded by\n7 Layers of Unbreakable\nCybersecurity",
-  "ctaLabel": "Learn More", "ctaUrl": "#whatwedo", "layout": "left", "ctaStyle": "blue",
-  "backgroundImage": "/media-service/images/9db704ef-6cc6-58ca-a2b3-cf6334572868.webp"
+  "alt": "Powering Innovation with Secured AI – Shielded by 7 Layers of Unbreakable Cybersecurity",
+  "linkUrl": "#whatwedo",
+  "image": "/media-service/images/3635f67a-f065-5df7-b4da-d12a870dbb3f.webp",
+  "tabletImage": "/media-service/images/78b86533-dfc3-588b-a98e-bb906f6ba42c.webp",
+  "mobileImage": "/media-service/images/e12885c0-c845-5acc-9187-87d064337e75.webp"
 }'::jsonb, 1, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
-  "title": "AI Survival Guide To Thrive In The Next Tech Revolution",
-  "subtitle": "A guide for the AI era, providing actionable frameworks to build readiness today for tomorrow’s challenges.",
-  "ctaLabel": "Download Ebook", "ctaUrl": "#contact", "layout": "right", "ctaStyle": "blue",
-  "backgroundImage": "/media-service/images/84dbc07a-e485-58da-bb26-35531e4354f5.webp"
+  "alt": "AI Survival Guide To Thrive In The Next Tech Revolution. A guide for the AI era, providing actionable frameworks to build readiness today for tomorrow’s challenges.",
+  "linkUrl": "#contact",
+  "image": "/media-service/images/0609699e-6215-59e5-bb98-c757c637cf8a.webp",
+  "tabletImage": "/media-service/images/c4701814-bbfe-5f44-88b7-b349ebc6bf27.webp",
+  "mobileImage": "/media-service/images/b43d0ea5-6bc4-5a36-a497-1c283f1b50de.webp"
 }'::jsonb, 2, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
-  "title": "Your Trusted\nAI Transformation Partner",
-  "subtitle": "Committed to Your Success, Every Step of the Way",
-  "ctaLabel": "Meet Our Experts", "ctaUrl": "#about", "layout": "left-wide", "ctaStyle": "light",
-  "backgroundImage": "/media-service/images/3151c00c-c83b-5420-8cbc-9d2e8dc94d3f.webp"
+  "alt": "Your Trusted AI Transformation Partner. Committed to Your Success, Every Step of the Way",
+  "linkUrl": "#about",
+  "image": "/media-service/images/285b9cd2-0b48-5d94-aea5-ca3cee14e597.webp",
+  "tabletImage": "/media-service/images/bb41f65d-d973-560f-aa73-f3ae82882c26.webp",
+  "mobileImage": "/media-service/images/39aac2b1-d6dd-55e5-99e9-2153f91913e6.webp"
 }'::jsonb, 3, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'hero_slide', '{
-  "title": "CMC Global Officially Recognized As\nGreat Place to Work",
-  "layout": "bottom-left",
-  "backgroundImage": "/media-service/images/cbe9a60d-ded8-57d5-8768-d0a097bf260e.webp"
+  "alt": "CMC Global Officially Recognized As Great Place to Work",
+  "image": "/media-service/images/2d883ccc-ab89-5f89-92b1-0f3b6c57aa09.webp",
+  "tabletImage": "/media-service/images/2d1f47dd-d6f3-55da-8d2f-fb24f0756488.webp",
+  "mobileImage": "/media-service/images/e00154df-f285-5e21-87cb-05a5748fbac0.webp"
 }'::jsonb, 4, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'assistant_band', '{
   "title": "The Intelligent Way To Know More About CMC",

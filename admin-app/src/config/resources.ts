@@ -10,6 +10,7 @@ export type FieldType =
   | "select"
   | "image"
   | "video"
+  | "color"
   | "datetime"
   | "string-list"
   | "stat-list"
@@ -35,6 +36,10 @@ export interface FieldConfig {
   addLabel?: string;
   /** content-ref: pick one item of another content type; the stored value is its `valueField`. */
   ref?: { contentType: string; valueField: string; labelField: string };
+  /** image: the exact proportions the website expects. The picker rejects an image whose aspect
+   * ratio is off by more than 1% or whose width is below `width` (larger, same-ratio files such as
+   * 2× versions are fine). */
+  imageSpec?: { width: number; height: number };
   /** Only render this field while another field of the same form has the given value. */
   showWhen?: { field: string; equals: string };
   /** Shown as a column in the list table. Defaults to true for scalar field types. */
@@ -222,39 +227,36 @@ export const RESOURCES: ResourceConfig[] = [
     label: "Hero Slides",
     apiPath: "/v1/admin/content-items",
     contentType: "hero_slide",
-    titleField: "title",
+    titleField: "alt",
     fields: [
-      field({ name: "title", label: "Title (line breaks are kept)", type: "textarea", required: true }),
-      field({ name: "subtitle", label: "Subtitle / body", type: "textarea" }),
-      field({ name: "ctaLabel", label: "Button label", type: "text" }),
-      field({ name: "ctaUrl", label: "Button link (e.g. #contact or https://…)", type: "text" }),
       field({
-        name: "layout",
-        label: "Text layout",
-        type: "select",
+        name: "alt",
+        label: "What the artwork says (alt text for search engines and screen readers)",
+        type: "textarea",
         required: true,
-        options: [
-          { label: "Centered (white)", value: "center" },
-          { label: "Left (white, light weight)", value: "left" },
-          { label: "Right (navy, with body text)", value: "right" },
-          { label: "Left, large (gradient)", value: "left-wide" },
-          { label: "Bottom left (photo slide)", value: "bottom-left" },
-        ],
+      }),
+      field({ name: "linkUrl", label: "Slide link, optional (e.g. #contact or https://…)", type: "text" }),
+      field({
+        name: "image",
+        label: "Desktop image — 1920×699 (≥1280px screens)",
+        type: "image",
+        required: true,
+        imageSpec: { width: 1920, height: 699 },
       }),
       field({
-        name: "ctaStyle",
-        label: "Button style",
-        type: "select",
-        options: [
-          { label: "White", value: "white" },
-          { label: "Blue gradient", value: "blue" },
-          { label: "Light gradient", value: "light" },
-        ],
+        name: "tabletImage",
+        label: "Tablet image — 1536×864 (768–1279px screens)",
+        type: "image",
+        required: true,
+        imageSpec: { width: 1536, height: 864 },
       }),
-      field({ name: "backgroundImage", label: "Background image", type: "image" }),
-      field({ name: "overlayImage", label: "Overlay artwork (transparent PNG/WebP)", type: "image" }),
-      field({ name: "backgroundColor", label: "Background colour (#RRGGBB)", type: "text" }),
-      field({ name: "backgroundColorEnd", label: "Gradient end colour (#RRGGBB)", type: "text" }),
+      field({
+        name: "mobileImage",
+        label: "Phone image — 750×1000 (screens under 768px)",
+        type: "image",
+        required: true,
+        imageSpec: { width: 750, height: 1000 },
+      }),
     ],
   },
   {
@@ -317,6 +319,9 @@ export const RESOURCES: ResourceConfig[] = [
         ],
       }),
       field({ name: "image", label: "Background photo (wide, ~16:10) — also the video poster", type: "image" }),
+      field({ name: "titleColor", label: "Heading colour (empty = design default)", type: "color", showInTable: false }),
+      field({ name: "titleColorEnd", label: "Heading gradient end colour (set for a gradient)", type: "color", showInTable: false }),
+      field({ name: "titleGradientAngle", label: "Heading gradient angle (0–360°, default 135)", type: "number", showInTable: false }),
       field({
         name: "video",
         label: "Background video (uploaded MP4/MOV/WebM, plays muted on loop)",

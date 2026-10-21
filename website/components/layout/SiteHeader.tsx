@@ -19,8 +19,8 @@ const Chevron = ({ open = false }: { open?: boolean }) => (
 
 /**
  * Flat white 58px header from the Figma "Header" component: logo left, six links centred, then
- * search, language and the sky-blue "Contact Us" pill. Lies over the top of the hero exactly as on the
- * artboard (the hero's top 58px is drawn underneath it) and scrolls away with the page.
+ * search, language and the sky-blue "Contact Us" pill. Absolutely positioned over the top of the page (pages
+ * that start with a hero leave 58px for it) and scrolls away with the page.
  */
 export function SiteHeader({ serviceNav }: { serviceNav?: ServiceNav }) {
   const t = useTranslations("cta");

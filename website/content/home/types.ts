@@ -69,20 +69,17 @@ export type Office = {
   link?: { label: string; href: string };
 };
 
-/** content_item type "hero_slide" — see content-service's HeroSlideFields. */
+/** content_item type "hero_slide" — see content-service's HeroSlideFields. Finished artwork: the
+ * copy is baked into the images, `alt` is what it says. */
 export type HeroSlide = {
-  title: string;
-  subtitle?: string;
-  ctaLabel?: string;
-  ctaUrl?: string;
-  /** Text-placement preset from the design. */
-  layout?: "center" | "left" | "right" | "left-wide" | "bottom-left";
-  ctaStyle?: "white" | "blue" | "light";
-  backgroundImage?: string;
-  /** Transparent artwork drawn over the background colour/image. */
-  overlayImage?: string;
-  backgroundColor?: string;
-  backgroundColorEnd?: string;
+  alt: string;
+  linkUrl?: string;
+  /** 1920×699, ≥1280px screens. */
+  image: string;
+  /** 1536×864, 768–1279px screens. */
+  tabletImage: string;
+  /** 750×1000, screens under 768px. */
+  mobileImage: string;
 };
 
 /** content_item type "assistant_band" — see content-service's AssistantBandFields. */
@@ -122,6 +119,10 @@ export type FeatureBand = {
   /** "image" (default) | "video" — `video` is an HLS playlist URL; `image` is then its poster. */
   mediaType?: "image" | "video";
   video?: string;
+  /** Heading colour, or with titleColorEnd a gradient between the two; absent = the design's. */
+  titleColor?: string;
+  titleColorEnd?: string;
+  titleGradientAngle?: number;
 };
 
 /** content_item type "site_footer" — see content-service's SiteFooterFields. */

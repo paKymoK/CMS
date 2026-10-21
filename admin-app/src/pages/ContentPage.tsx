@@ -12,6 +12,7 @@ import {
   InputNumber,
   Switch,
   Select,
+  ColorPicker,
   DatePicker,
   Popconfirm,
   message,
@@ -27,7 +28,7 @@ import { siteLabel, SITES } from "../config/sites";
 import { findResource, type FieldConfig } from "../config/resources";
 import type { NamePath } from "antd/es/form/interface";
 import MediaPickerModal from "../components/MediaPickerModal";
-import { mediaSrc } from "../lib/media";
+import { checkImageSpec, mediaSrc } from "../lib/media";
 
 type Row = Record<string, unknown> & { id: number; active: boolean; status: string };
 
@@ -534,12 +535,45 @@ export default function ContentPage() {
             : "image"
         }
         onClose={() => setPickerField(null)}
-        onSelect={(url) => {
-          if (pickerField) form.setFieldValue(pickerField, url);
+        onSelect={async (url) => {
+          const target = pickerField;
+          const spec =
+            typeof target === "string"
+              ? resource.fields.find((f) => f.name === target)?.imageSpec
+              : undefined;
+          if (spec) {
+            const problem = await checkImageSpec(url, spec);
+            if (problem) {
+              message.error(problem);
+              return; // keep the picker open so another image can be chosen
+            }
+          }
+          if (target) form.setFieldValue(target, url);
           setPickerField(null);
         }}
       />
     </div>
+  );
+}
+
+/** Hex colour picker bound to a Form.Item (stores "#rrggbb", or nothing when cleared). */
+function HexColorInput({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange?: (v: string | undefined) => void;
+}) {
+  return (
+    <ColorPicker
+      value={value || undefined}
+      format="hex"
+      disabledAlpha
+      allowClear
+      showText={(c) => (value ? c.toHexString().toUpperCase() : "Default")}
+      onChange={(c) => onChange?.(c.toHexString())}
+      onClear={() => onChange?.(undefined)}
+    />
   );
 }
 
@@ -704,10 +738,17 @@ function FieldInput({
           <Form.Item name={f.name} rules={rules} noStyle>
             <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />
           </Form.Item>
-          <Button icon={<PictureIcon />} onClick={onOpenPicker}>
+          <Button icon={<PictureIcon />} onClick={() => onOpenPicker()}>
             Choose
           </Button>
         </div>
+      </Form.Item>
+    );
+  }
+  if (f.type === "color") {
+    return (
+      <Form.Item name={f.name} label={f.label} rules={rules}>
+        <HexColorInput />
       </Form.Item>
     );
   }

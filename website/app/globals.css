@@ -454,101 +454,7 @@ body {
   background: var(--cmc-navy);
 }
 
-/* ---- Hero carousel (components/home/HeroCarousel.tsx) ------------------------------------------
-   Below 1280px the copy is an ordinary stacked block; from 1280px up it is placed on the 1920px
-   artboard through the per-slide custom properties the component sets (--l/--r/--t/--w, --ts/--ss/
-   --bs sizes, --ta alignment). */
-.hero-copy {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: var(--ai, center);
-  padding: 112px 24px 96px;
-  text-align: var(--ta, center);
-  color: var(--fg, #fff);
-}
-.hero-title {
-  font-size: clamp(30px, 8vw, 44px);
-  font-weight: var(--tw, 600);
-  line-height: var(--tl, 1.15);
-  white-space: pre-line;
-  text-wrap: balance;
-}
-.hero-title--gradient,
-.hero-sub--gradient {
-  background-image: linear-gradient(135deg, #ffffff 30%, #0054c7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.hero-sub {
-  margin-top: 12px;
-  font-size: clamp(16px, 4.4vw, 20px);
-  font-weight: var(--sw, 600);
-  line-height: var(--sl, 1.32);
-  max-width: 640px;
-}
-.hero-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 44px;
-  margin-top: var(--cm, 28px);
-  padding: 0 var(--cp, 24px);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.5;
-  white-space: nowrap;
-  border-radius: 999px;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
-}
-.hero-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(0, 40, 110, 0.28);
-  filter: brightness(1.04);
-}
-.hero-cta--white {
-  background: #fff;
-  color: #001449;
-}
-.hero-cta--blue {
-  background: linear-gradient(110deg, #00b5f7, #00519c);
-  color: #fff;
-}
-.hero-cta--light {
-  background: linear-gradient(120deg, #ffffff 35%, #8ab8ee 100%);
-  color: #002255;
-}
-@media (min-width: 1280px) {
-  .hero-copy {
-    position: absolute;
-    left: var(--l, auto);
-    right: var(--r, auto);
-    top: var(--t);
-    width: var(--w);
-    padding: 0;
-    transform: var(--tf, none);
-  }
-  .hero-title {
-    font-size: max(24px, var(--ts));
-    max-width: var(--tmw, none);
-  }
-  .hero-sub {
-    margin-top: var(--sm, 12px);
-    font-size: max(14px, var(--ss));
-    max-width: none;
-  }
-  .hero-cta {
-    height: max(36px, calc(44 * var(--u)));
-    margin-top: var(--cm);
-    padding: 0 var(--cp);
-    font-size: max(13px, calc(16 * var(--u)));
-  }
-}
+/* ---- Hero carousel (components/home/HeroCarousel.tsx): progress segments ------------------------- */
 .hero-seg {
   width: calc(64 * var(--u));
   min-width: 28px;
@@ -734,26 +640,6 @@ body {
   }
   .asst-band--open .asst-nav {
     margin-top: calc(40 * var(--u));
-  }
-}
-
-/* Stacked (< 1280px) hero: the artboard keeps copy clear of the artwork, a narrow layout can't, so a
-   soft scrim sits behind the copy. Hidden on the artboard layout. */
-.hero-scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-.hero-scrim--dark {
-  background: linear-gradient(to bottom, rgba(0, 8, 30, 0.66), rgba(0, 8, 30, 0.3) 62%, rgba(0, 8, 30, 0));
-}
-.hero-scrim--light {
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72) 58%, rgba(255, 255, 255, 0));
-}
-@media (min-width: 1280px) {
-  .hero-scrim {
-    display: none;
   }
 }
 

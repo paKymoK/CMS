@@ -2,6 +2,8 @@ package com.takypok.contentservice.model.content.types;
 
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
@@ -30,4 +32,19 @@ public class FeatureBandFields implements ContentFields {
   /** Origin-less media-service HLS playlist path of an uploaded video. */
   @Pattern(regexp = "^/media-service/v1/videos/[0-9a-zA-Z-]+/master\\.m3u8$")
   private String video;
+
+  /**
+   * Heading colour; with titleColorEnd set, a gradient from one to the other. Absent = the
+   * design's.
+   */
+  @Pattern(regexp = "^#[0-9a-fA-F]{6}$")
+  private String titleColor;
+
+  @Pattern(regexp = "^#[0-9a-fA-F]{6}$")
+  private String titleColorEnd;
+
+  /** Direction of the heading gradient, in degrees. */
+  @Min(0)
+  @Max(360)
+  private Integer titleGradientAngle;
 }

@@ -244,18 +244,6 @@ export const homeContentEn: HomeContent = {
         termsUrl: "#",
       },
     ],
-    hero_slide: [
-      {
-        title: "Riding The Next Wave of AI Transformation",
-        subtitle: "Reinvent Your Base - Scale Without Limits - Engineer Your Tomorrow",
-        ctaLabel: "Contact Us",
-        ctaUrl: "#contact",
-        layout: "center",
-        ctaStyle: "white",
-        backgroundColor: "#000812",
-        backgroundColorEnd: "#00152d",
-      },
-    ],
     assistant_band: [
       {
         title: "The Intelligent Way To Know More About CMC",

@@ -1,4 +1,5 @@
 import { BackdropVideo } from "@/components/ui/BackdropVideo";
+import { textPaint } from "@/lib/textPaint";
 import { CoverImage } from "@/components/ui/CoverImage";
 import type { FeatureBand } from "@/content/home/types";
 
@@ -30,7 +31,11 @@ export function ExtendedWorkforce({ band = FALLBACK }: { band?: FeatureBand }) {
         <div className="wfc-shade" aria-hidden />
         <div className="wfc-copy">
           {band.eyebrow && <p className="wfc-eyebrow">{band.eyebrow}</p>}
-          <h2 id="about-title" className="wfc-title">
+          <h2
+            id="about-title"
+            className="wfc-title"
+            style={textPaint(band.titleColor, band.titleColorEnd, band.titleGradientAngle)}
+          >
             {band.title}
           </h2>
           {band.body && <p className="wfc-body">{band.body}</p>}

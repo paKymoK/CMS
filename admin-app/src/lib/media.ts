@@ -27,3 +27,29 @@ export function resolveMediaHtml(html: string): string {
 export function relativizeMediaHtml(html: string): string {
   return html.replace(ABSOLUTE_SRC, "$1$2");
 }
+
+/**
+ * Checks a library image against the proportions a field needs. Returns a message describing the
+ * mismatch, or null when it fits. The ratio may be off by 1% at most; the width must reach the spec
+ * (so a 2x export of the same proportions passes).
+ */
+export function checkImageSpec(
+  url: string,
+  spec: { width: number; height: number },
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const ratioOff = Math.abs(img.naturalWidth / img.naturalHeight / (spec.width / spec.height) - 1);
+      if (ratioOff > 0.01 || img.naturalWidth < spec.width) {
+        resolve(
+          `This image is ${img.naturalWidth}×${img.naturalHeight}; it must be ${spec.width}×${spec.height} (or a larger file with the same proportions).`,
+        );
+      } else {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve("The image could not be loaded to check its size.");
+    img.src = mediaSrc(url)!;
+  });
+}

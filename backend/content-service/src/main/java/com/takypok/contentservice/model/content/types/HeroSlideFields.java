@@ -1,45 +1,34 @@
 package com.takypok.contentservice.model.content.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * One slide of the homepage hero carousel. {@code layout} picks a text-placement preset from the
- * design (type size, weight and colour come with it, so an editor can't break the design by
- * accident); the rest is plain copy and media. Images are origin-less media-service paths.
+ * One slide of the homepage hero carousel: finished artwork with its copy baked in, one image per
+ * screen class (the site swaps them with media queries), so editors never lay text out. {@code alt}
+ * carries the slide's wording for search engines and screen readers. Images are origin-less
+ * media-service paths. The admin checks each image's proportions on selection: desktop 1920×699
+ * (≥1280px), tablet 1536×864 (768–1279px), phone 750×1000 (&lt;768px).
+ *
+ * <p>Slides saved before this shape (title, subtitle, layout…) still load — the unknown properties
+ * are ignored — but have no image, so the site skips them until they are re-saved.
  */
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
 @ContentTypeKey("hero_slide")
 public class HeroSlideFields implements ContentFields {
-  private static final String HEX = "^#[0-9a-fA-F]{6}$";
+  /** What the artwork says — also rendered as the slide's visually hidden heading. */
+  @NotBlank private String alt;
 
-  @NotBlank private String title;
-  private String subtitle;
-  private String ctaLabel;
-  private String ctaUrl;
+  /** Optional: the whole slide becomes a link to this URL or anchor (e.g. #contact). */
+  private String linkUrl;
 
-  /** center | left | right | left-wide | bottom-left */
-  @Pattern(regexp = "^(center|left|right|left-wide|bottom-left)$")
-  private String layout = "center";
-
-  /** white | blue | light — the CTA pill's look. */
-  @Pattern(regexp = "^(white|blue|light)$")
-  private String ctaStyle = "white";
-
-  private String backgroundImage;
-
-  /** Transparent artwork drawn over backgroundColor/backgroundImage (e.g. the swirl on slide 1). */
-  private String overlayImage;
-
-  @Pattern(regexp = HEX)
-  private String backgroundColor;
-
-  /** When set, the background is a diagonal gradient from backgroundColor to this. */
-  @Pattern(regexp = HEX)
-  private String backgroundColorEnd;
+  @NotBlank private String image;
+  @NotBlank private String tabletImage;
+  @NotBlank private String mobileImage;
 }

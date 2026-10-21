@@ -1,128 +1,21 @@
 "use client";
 
-import Image from "next/image";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { getImageProps } from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { HeroSlide } from "@/content/home/types";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
 const AUTOPLAY_MS = 6000;
 
-type Layout = NonNullable<HeroSlide["layout"]>;
-
 /** Artboard (1920px) pixels → a length that scales with the hero's width. */
 const u = (n: number) => `calc(${n} * var(--u))`;
 
-type Preset = {
-  /** Custom properties consumed by .hero-copy and friends (see globals.css). */
-  vars: CSSProperties;
-  gradientTitle?: boolean;
-  /** Dark gradient along the bottom edge (the "Great Place to Work" photo slide). */
-  bottomShade?: boolean;
-  /** object-position of the background photo (the design crops this one low, not centred). */
-  imagePosition?: string;
-};
-
-// Every number below is read straight off the Figma "Homepage Carousel" variants (1920×699).
-const PRESETS: Record<Layout, Preset> = {
-  // Variant "Default": centred title, tagline and a white pill.
-  center: {
-    vars: {
-      "--l": "50%",
-      "--tf": "translateX(-50%)",
-      "--t": u(110),
-      "--w": u(780),
-      "--tmw": u(640),
-      "--ta": "center",
-      "--ai": "center",
-      "--ts": u(56),
-      "--tw": 600,
-      "--tl": 1.212,
-      "--ss": u(20),
-      "--sw": 600,
-      "--sl": 1.32,
-      "--sm": u(12),
-      "--cm": u(37),
-      "--cp": u(21),
-    } as CSSProperties,
-  },
-  // Variant2: light-weight headline on the left, blue gradient pill.
-  left: {
-    vars: {
-      "--l": u(149),
-      "--t": u(163),
-      "--w": u(613),
-      "--ta": "left",
-      "--ai": "flex-start",
-      "--ts": u(50),
-      "--tw": 300,
-      "--tl": 1.14,
-      "--cm": u(43),
-      "--cp": u(25),
-    } as CSSProperties,
-  },
-  // Variant5: navy right-aligned headline + body copy, pill pushed well below.
-  right: {
-    vars: {
-      "--r": u(249),
-      "--t": u(134),
-      "--w": u(506),
-      "--ta": "right",
-      "--ai": "flex-end",
-      "--fg": "#011a50",
-      "--ts": u(50),
-      "--tw": 300,
-      "--tl": 1.02,
-      "--ss": u(18),
-      "--sw": 400,
-      "--sl": 1.212,
-      "--sm": u(19),
-      "--cm": u(124),
-      "--cp": u(25),
-    } as CSSProperties,
-  },
-  // Variant3: big regular-weight headline with white→blue gradient fill.
-  "left-wide": {
-    gradientTitle: true,
-    vars: {
-      "--l": u(316),
-      "--t": u(134),
-      "--w": u(723),
-      "--ta": "left",
-      "--ai": "flex-start",
-      "--ts": u(69),
-      "--tw": 400,
-      "--tl": 0.98,
-      "--ss": u(22),
-      "--sw": 600,
-      "--sl": 1.212,
-      "--sm": u(21),
-      "--cm": u(52),
-      "--cp": u(38),
-    } as CSSProperties,
-  },
-  // Variant4: photo slide, headline low on the left, no button.
-  "bottom-left": {
-    bottomShade: true,
-    imagePosition: "50% 64%",
-    vars: {
-      "--l": u(290),
-      "--t": u(335),
-      "--w": u(591),
-      "--ta": "left",
-      "--ai": "flex-start",
-      "--ts": u(56),
-      "--tw": 400,
-      "--tl": 1,
-    } as CSSProperties,
-  },
-};
-
-function background(slide: HeroSlide): CSSProperties {
-  const { backgroundColor: from, backgroundColorEnd: to } = slide;
-  if (from && to) return { background: `linear-gradient(120deg, ${from}, ${to})` };
-  if (from) return { background: from };
-  return { background: "#00152d" };
-}
+// One finished image per screen class, swapped by media query. The sizes are what the admin
+// requires of an upload, so each box matches its image exactly and nothing is cropped (the copy is
+// part of the picture).
+const DESKTOP = { width: 1920, height: 699 }; // ≥1280px
+const TABLET = { width: 1536, height: 864 }; //  768–1279px
+const PHONE = { width: 750, height: 1000 }; //   <768px
 
 function Slide({
   slide,
@@ -133,86 +26,55 @@ function Slide({
   active: boolean;
   priority: boolean;
 }) {
-  const preset = PRESETS[slide.layout ?? "center"] ?? PRESETS.center;
+  const common = { alt: "", sizes: "100vw", priority, quality: 80 };
+  const { props: phone } = getImageProps({ ...common, src: slide.mobileImage, ...PHONE });
+  const { props: tablet } = getImageProps({ ...common, src: slide.tabletImage, ...TABLET });
+  const { props: desktop } = getImageProps({ ...common, src: slide.image, ...DESKTOP });
+
+  const picture = (
+    <picture>
+      <source media="(min-width: 1280px)" srcSet={desktop.srcSet} />
+      <source media="(min-width: 768px)" srcSet={tablet.srcSet} />
+      {/* eslint-disable-next-line jsx-a11y/alt-text -- decorative: the slide's heading carries the text */}
+      <img {...phone} className="block h-full w-full" />
+    </picture>
+  );
+
+  // The artwork already says it; the alt text is exposed once, as the slide's (visually hidden)
+  // heading, which is also the accessible name of the link when the slide has one.
+  const heading = <h2 className="sr-only">{slide.alt}</h2>;
+
   return (
     <div
       aria-hidden={!active}
       className="absolute inset-0 transition-opacity duration-700 ease-out"
-      style={{
-        opacity: active ? 1 : 0,
-        pointerEvents: active ? "auto" : "none",
-        ...background(slide),
-      }}
+      style={{ opacity: active ? 1 : 0, pointerEvents: active ? "auto" : "none" }}
     >
-      {slide.backgroundImage && (
-        <Image
-          src={slide.backgroundImage}
-          alt=""
-          fill
-          priority={priority}
-          sizes="100vw"
-          className="object-cover"
-          style={preset.imagePosition ? { objectPosition: preset.imagePosition } : undefined}
-        />
+      {picture}
+      {slide.linkUrl ? (
+        <a
+          href={slide.linkUrl}
+          tabIndex={active ? 0 : -1}
+          className="absolute inset-0 z-[2] focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+        >
+          {heading}
+        </a>
+      ) : (
+        heading
       )}
-      {slide.overlayImage && (
-        <Image
-          src={slide.overlayImage}
-          alt=""
-          fill
-          priority={priority}
-          sizes="100vw"
-          className="object-cover object-[50%_5%]"
-        />
-      )}
-      {preset.bottomShade && (
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-[55%]"
-          style={{
-            background: "linear-gradient(to bottom, rgba(217,217,217,0), #313131)",
-            mixBlendMode: "multiply",
-          }}
-        />
-      )}
-
-      {slide.backgroundImage && (
-        <div
-          aria-hidden
-          className={`hero-scrim ${slide.layout === "right" ? "hero-scrim--light" : "hero-scrim--dark"}`}
-        />
-      )}
-
-      <div className="hero-copy" style={preset.vars}>
-        <h2 className={`hero-title${preset.gradientTitle ? " hero-title--gradient" : ""}`}>
-          {slide.title}
-        </h2>
-        {slide.subtitle && (
-          <p className={`hero-sub${preset.gradientTitle ? " hero-sub--gradient" : ""}`}>
-            {slide.subtitle}
-          </p>
-        )}
-        {slide.ctaLabel && slide.ctaUrl && (
-          <a
-            href={slide.ctaUrl}
-            tabIndex={active ? 0 : -1}
-            className={`hero-cta hero-cta--${slide.ctaStyle ?? "white"}`}
-          >
-            {slide.ctaLabel}
-          </a>
-        )}
-      </div>
     </div>
   );
 }
 
 /**
- * Full-width hero carousel from the Figma "Homepage Carousel": cross-fading slides, copy placed by
- * layout preset, and the 5-segment progress bar centred near the bottom. Slides come from the CMS
- * (content_item type "hero_slide"). Autoplays unless the visitor prefers reduced motion; pauses
- * while hovered or focused.
+ * Full-width hero carousel: cross-fading slides of finished artwork and the 5-segment progress bar
+ * near the bottom. Slides come from the CMS (content_item type "hero_slide"); a slide without all
+ * three images (one saved before slides became artwork) is skipped. Autoplays unless the visitor
+ * prefers reduced motion; pauses while hovered or focused. Starts below the 58px site header
+ * (which is absolutely positioned) so the artwork is not hidden under it.
  */
-export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
+export function HeroCarousel({ slides: all }: { slides: HeroSlide[] }) {
+  const slides = all.filter((s) => s.image && s.tabletImage && s.mobileImage);
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
   const pausedRef = useRef(false);
@@ -235,7 +97,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       id="overview"
       aria-roledescription="carousel"
       aria-label="Highlights"
-      className="design-canvas relative min-h-[560px] overflow-hidden bg-[#00152d] min-[1280px]:aspect-[1920/699] min-[1280px]:min-h-0"
+      className="design-canvas relative mt-[58px] aspect-[750/1000] overflow-hidden bg-[#00152d] min-[768px]:aspect-[1536/864] min-[1280px]:aspect-[1920/699]"
       onMouseEnter={() => (pausedRef.current = true)}
       onMouseLeave={() => (pausedRef.current = false)}
       onFocus={() => (pausedRef.current = true)}
@@ -254,7 +116,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             <button
               key={i}
               type="button"
-              aria-label={`Go to slide ${i + 1}: ${slide.title.replace(/\s+/g, " ")}`}
+              aria-label={`Go to slide ${i + 1}: ${slide.alt.replace(/\s+/g, " ")}`}
               aria-current={i === index}
               onClick={() => go(i)}
               className="hero-seg cursor-pointer p-0"
