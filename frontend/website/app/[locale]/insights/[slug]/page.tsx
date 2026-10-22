@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
-import { PostArticle } from "@cms/post-renderer";
+import { PostArticle } from "@cms/content-renderer";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SITE_URL } from "@/lib/seo/constants";
 import { getPost } from "@/lib/cms/posts";
-import { siteSlots } from "@/components/insights/postSlots";
+import { siteSlots } from "@/components/content/siteSlots";
 
 export async function generateMetadata(props: PageProps<"/[locale]/insights/[slug]">): Promise<Metadata> {
   const { locale, slug } = await props.params;

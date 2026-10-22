@@ -1,4 +1,11 @@
-import type { PostArticleData, PostCardData } from "@cms/post-renderer";
+import type {
+  CaseStudyArticleData,
+  CaseStudyCardData,
+  CaseStudyResultData,
+  CaseStudyTestimonialData,
+  PostArticleData,
+  PostCardData,
+} from "@cms/content-renderer";
 import { resolveMediaHtml, mediaSrc } from "./media";
 
 /** What the editor form holds, as far as the post page is concerned. */
@@ -64,6 +71,62 @@ export function buildPreviewPost(draft: PostDraft, related: PostCardData[]): Pos
     readMinutes: readMinutes(draft.body),
     body: resolveMediaHtml(draft.body),
     layout: draft.layout,
+    related,
+  };
+}
+
+/** What the case study editor form holds, as far as the detail page is concerned. */
+export interface CaseStudyDraft {
+  id?: number;
+  title: string;
+  summary: string;
+  category: string;
+  date: string;
+  image: string | null;
+  body: string;
+  results: CaseStudyResultData[];
+  testimonial: CaseStudyTestimonialData | null;
+}
+
+/** A case study as the admin list returns it. */
+export interface CaseStudyListItem {
+  id: number;
+  slug: string | null;
+  title: string;
+  image: string | null;
+  category: string | null;
+  status: string;
+  active: boolean;
+  displayOrder: number;
+}
+
+/** Same pick content-service makes (CaseStudyServiceImpl.relatedTo). */
+export function relatedCaseStudiesFor(
+  draft: Pick<CaseStudyDraft, "id" | "category">,
+  all: CaseStudyListItem[],
+): CaseStudyCardData[] {
+  const published = all
+    .filter((c) => c.status === "PUBLISHED" && c.active && c.slug && c.id !== draft.id)
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const same = published.filter((c) => c.category && c.category === draft.category);
+  const others = published.filter((c) => !(c.category && c.category === draft.category));
+  return [...same, ...others]
+    .slice(0, MAX_RELATED)
+    .map((c) => ({ id: c.id, slug: c.slug!, title: c.title, image: mediaSrc(c.image) ?? null, category: c.category }));
+}
+
+export function buildPreviewCaseStudy(draft: CaseStudyDraft, related: CaseStudyCardData[]): CaseStudyArticleData {
+  return {
+    title: draft.title || "Untitled case study",
+    summary: draft.summary,
+    category: draft.category,
+    date: draft.date,
+    image: mediaSrc(draft.image) ?? null,
+    body: resolveMediaHtml(draft.body),
+    results: draft.results.filter((r) => r.value.trim() || r.label.trim()),
+    testimonial: draft.testimonial
+      ? { ...draft.testimonial, photo: mediaSrc(draft.testimonial.photo) ?? null }
+      : null,
     related,
   };
 }

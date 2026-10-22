@@ -9,7 +9,7 @@ import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
-import PostPreviewPanel from "../components/PostPreviewPanel";
+import PostPreview from "../components/PostPreview";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
 import HistoryDrawer from "../components/HistoryDrawer";
 import type { ItemPrefill } from "../lib/audit";
@@ -825,7 +825,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         />
       )}
       {previewOpen && site && (
-        <PostPreviewPanel
+        <PostPreview
           site={site}
           slug={slug}
           draft={{ id: isNew ? undefined : Number(id), title, image, date, category, body, authorName, authorRole, layout }}

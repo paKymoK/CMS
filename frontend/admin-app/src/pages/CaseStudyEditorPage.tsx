@@ -7,6 +7,7 @@ import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
 import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
+import CaseStudyPreview from "../components/CaseStudyPreview";
 import HistoryDrawer from "../components/HistoryDrawer";
 import type { ItemPrefill } from "../lib/audit";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
@@ -122,6 +123,7 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
   const { site } = useSite();
   const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -292,6 +294,25 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbff" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
+            {site && (
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(true)}
+                style={{
+                  minHeight: 40,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: "0 16px",
+                  border: "1px solid #dde4f0", borderRadius: 10,
+                  background: "#ffffff",
+                  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                  color: "#26354f",
+                  cursor: "pointer",
+                }}
+              >
+                Preview
+              </button>
+            )}
             {!isNew && (
               <button
                 type="button"
@@ -677,6 +698,23 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
         </aside>
       </div>
 
+      {previewOpen && site && (
+        <CaseStudyPreview
+          site={site}
+          draft={{
+            id: isNew ? undefined : Number(id),
+            title,
+            summary,
+            category,
+            date,
+            image,
+            body,
+            results,
+            testimonial: testimonialsQuery.data?.find((t) => t.id === testimonialId) ?? null,
+          }}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
       {!isNew && (
         <HistoryDrawer
           open={historyOpen}

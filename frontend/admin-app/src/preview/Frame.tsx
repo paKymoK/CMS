@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { PostArticle } from "@cms/post-renderer";
-import { MSG_POST, MSG_READY, PREVIEW_LABELS, type PreviewMessage } from "../lib/previewProtocol";
+import { CaseStudyArticle, PostArticle } from "@cms/content-renderer";
+import { CASE_STUDY_LABELS, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 /**
- * The document the admin's post preview shows in an iframe. It holds no data of its own: the admin
- * sends the current editor state with postMessage and this draws it with the same PostArticle the
+ * The document the admin's preview shows in an iframe. It holds no data of its own: the admin
+ * sends the current editor state with postMessage and this draws it with the same components the
  * website uses. Being its own document, the breakpoints follow the frame's width (desktop / tablet /
  * mobile) and the website's styles never touch the admin UI.
  */
 export default function Frame() {
-  const [msg, setMsg] = useState<PreviewMessage | null>(null);
+  const [page, setPage] = useState<PreviewPage | null>(null);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
-      if ((e.data as PreviewMessage | undefined)?.type === MSG_POST) setMsg(e.data as PreviewMessage);
+      if ((e.data as PreviewMessage | undefined)?.type === MSG_RENDER) setPage((e.data as PreviewMessage).page);
     };
     // Links in the preview must not navigate this frame away (a related-article link would load the admin SPA in it).
     const onClick = (e: MouseEvent) => {
@@ -30,6 +30,7 @@ export default function Frame() {
     };
   }, []);
 
-  if (!msg) return null;
-  return <PostArticle post={msg.post} pageUrl={msg.pageUrl} labels={PREVIEW_LABELS} />;
+  if (!page) return null;
+  if (page.kind === "case-study") return <CaseStudyArticle caseStudy={page.caseStudy} labels={CASE_STUDY_LABELS} />;
+  return <PostArticle post={page.post} pageUrl={page.pageUrl} labels={POST_LABELS} />;
 }

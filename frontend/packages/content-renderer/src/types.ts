@@ -41,3 +41,48 @@ export interface PostArticleSlots {
   /** Fills its (relative) parent. */
   Image: ComponentType<{ src: string; sizes: string; priority?: boolean; className?: string }>;
 }
+
+export interface CaseStudyResultData {
+  value: string;
+  label: string;
+}
+
+export interface CaseStudyTestimonialData {
+  name: string;
+  title?: string | null;
+  company?: string | null;
+  quote?: string | null;
+  photo?: string | null;
+}
+
+export interface CaseStudyCardData {
+  id: number;
+  slug: string;
+  title: string;
+  image?: string | null;
+  category?: string | null;
+}
+
+/** Everything the case study detail page draws. */
+export interface CaseStudyArticleData {
+  title: string;
+  summary: string;
+  category?: string | null;
+  date?: string | null;
+  image?: string | null;
+  /** Sanitized rich-text HTML, with media URLs already resolved. */
+  body: string;
+  results: CaseStudyResultData[];
+  testimonial: CaseStudyTestimonialData | null;
+  related: CaseStudyCardData[];
+}
+
+export interface CaseStudyArticleLabels {
+  home: string;
+  eyebrow: string;
+  discussProject: string;
+  eventPhotography: string;
+  results: string;
+  moreWork: string;
+  relatedCaseStudies: string;
+}

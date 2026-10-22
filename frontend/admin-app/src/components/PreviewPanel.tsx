@@ -1,9 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { contentApi } from "../lib/api";
-import { SITES } from "../config/sites";
-import { buildPreviewPost, relatedFor, type PostDraft, type PostListItem } from "../lib/postPreview";
-import { MSG_POST, MSG_READY, PREVIEW_FRAME_URL, type PreviewMessage } from "../lib/previewProtocol";
+import { useEffect, useRef, useState } from "react";
+import { MSG_READY, MSG_RENDER, PREVIEW_FRAME_URL, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 const DEVICES = [
   { key: "desktop", label: "Desktop", width: "100%" },
@@ -14,44 +10,15 @@ const DEVICES = [
 type DeviceKey = (typeof DEVICES)[number]["key"];
 
 /**
- * Full-screen preview of the post being edited. The page is the shared PostArticle drawn inside an
+ * Full-screen preview of the item being edited. The page is drawn by @cms/content-renderer inside an
  * iframe (preview-frame.html) from the editor's current, unsaved state — nothing is saved and no
  * token or website is involved. The device buttons only change the iframe's width, so the page's
  * own breakpoints do the rest.
  */
-export default function PostPreviewPanel({
-  site,
-  slug,
-  draft,
-  onClose,
-}: {
-  site: string;
-  slug: string;
-  draft: PostDraft;
-  onClose: () => void;
-}) {
+export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onClose: () => void }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameReady, setFrameReady] = useState(false);
   const [device, setDevice] = useState<DeviceKey>("desktop");
-
-  // The related-articles strip shows published posts, as on the live page.
-  const postsQuery = useQuery({
-    queryKey: ["preview-related", site],
-    queryFn: async () => {
-      const { data } = await contentApi.get("/v1/admin/posts", { params: { site } });
-      return data.data as PostListItem[];
-    },
-    staleTime: 60_000,
-  });
-
-  const message = useMemo<PreviewMessage>(() => {
-    const subdomain = SITES.find((s) => s.code === site)?.subdomain ?? "example.com";
-    return {
-      type: MSG_POST,
-      post: buildPreviewPost(draft, relatedFor(draft, postsQuery.data ?? [])),
-      pageUrl: `https://${subdomain}/en/insights/${slug || "your-post"}`,
-    };
-  }, [draft, slug, site, postsQuery.data]);
 
   useEffect(() => {
     const onReady = (e: MessageEvent) => {
@@ -69,15 +36,17 @@ export default function PostPreviewPanel({
   }, [onClose]);
 
   useEffect(() => {
-    if (frameReady) frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-  }, [frameReady, message]);
+    if (!frameReady) return;
+    const message: PreviewMessage = { type: MSG_RENDER, page };
+    frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
+  }, [frameReady, page]);
 
   const width = DEVICES.find((d) => d.key === device)!.width;
 
   return (
     <div
       role="dialog"
-      aria-label="Post preview"
+      aria-label="Preview"
       style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", background: "#e8eef8" }}
     >
       <div
@@ -143,7 +112,7 @@ export default function PostPreviewPanel({
         <iframe
           ref={frameRef}
           src={PREVIEW_FRAME_URL}
-          title="Post preview"
+          title="Preview"
           style={{
             width,
             maxWidth: "100%",

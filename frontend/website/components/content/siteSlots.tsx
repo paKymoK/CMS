@@ -1,4 +1,4 @@
-import type { PostArticleSlots } from "@cms/post-renderer";
+import type { PostArticleSlots } from "@cms/content-renderer";
 import { CoverImage } from "@/components/ui/CoverImage";
 import { Link } from "@/i18n/navigation";
 

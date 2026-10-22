@@ -1,5 +1,5 @@
 {
-  "name": "@cms/post-renderer",
+  "name": "@cms/content-renderer",
   "version": "0.0.0",
   "private": true,
   "type": "module",

@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { defaultSlots } from "./defaults";
+import { Placeholder } from "./Placeholder";
 import { prepareBody } from "./prepareBody";
 import { ReadingProgress } from "./ReadingProgress";
 import type { PostArticleData, PostArticleLabels, PostArticleSlots, PostCardData } from "./types";
-
-const STRIPES = "repeating-linear-gradient(135deg, #0c2447 0 6px, #143c6e 6px 12px)";
 
 function InsightCard({ post, slots }: { post: PostCardData; slots: PostArticleSlots }) {
   const { Link, Image } = slots;
@@ -18,14 +17,7 @@ function InsightCard({ post, slots }: { post: PostCardData; slots: PostArticleSl
             className="object-cover"
           />
         ) : (
-          <div className="absolute inset-0 overflow-hidden" style={{ background: STRIPES }}>
-            <span
-              aria-hidden
-              className="font-mono-wave absolute bottom-2.5 left-2.5 text-[9px] tracking-[0.06em] text-white/70 uppercase"
-            >
-              Photo
-            </span>
-          </div>
+          <Placeholder tone="navy" label="Photo" fill />
         )}
       </div>
       <div className="ins-card-body">

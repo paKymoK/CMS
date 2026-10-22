@@ -6,7 +6,7 @@ pnpm workspace for every web app and shared package. The Java services live in `
 |---|---|
 | `admin-app/` | CMS admin (Vite + React + antd) |
 | `website/` | Public marketing site (Next.js) |
-| `packages/post-renderer/` | The post detail page, drawn by both the website and the admin preview |
+| `packages/content-renderer/` | The post and case-study pages, drawn by both the website and the admin preview |
 
 ## Setup
 
@@ -30,6 +30,6 @@ Do not run `npm install`, `yarn` or `bun` anywhere under `frontend/`. Each packa
 
 ## Shared packages
 
-`packages/post-renderer` (`@cms/post-renderer`) holds the post detail page (`PostArticle`), its styles (`theme.css`, `post.css`) and the brand tokens. The website renders it for the live page; the admin renders the same component inside an iframe (`admin-app/preview-frame.html`) for the editor's Preview button, from the unsaved form state. Change the post page's look in the package and both follow.
+`packages/content-renderer` (`@cms/content-renderer`) holds the post and case-study detail pages (`PostArticle`, `CaseStudyArticle`), their styles (`theme.css`, `post.css`) and the brand tokens. The website renders it for the live page; the admin renders the same component inside an iframe (`admin-app/preview-frame.html`) for the editors' Preview buttons, from the unsaved form state. Change a page's look in the package and both follow.
 
-A new package needs its own `.npmrc` (`engine-strict=true`), the `engines` entry and the `preinstall` guard, as in `packages/post-renderer/package.json`. Packages ship TypeScript source; the website lists them in `transpilePackages` in `next.config.ts`.
+A new package needs its own `.npmrc` (`engine-strict=true`), the `engines` entry and the `preinstall` guard, as in `packages/content-renderer/package.json`. Packages ship TypeScript source; the website lists them in `transpilePackages` in `next.config.ts`.
