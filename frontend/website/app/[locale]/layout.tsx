@@ -10,7 +10,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import "../globals.css";
 import "../sections.css";
-import "../about.css";
+import "../../../packages/content-renderer/src/about.css";
 import "../insights.css";
 import "../../../packages/content-renderer/src/industry.css";
 import "../../../packages/content-renderer/src/service.css";

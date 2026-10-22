@@ -143,44 +143,6 @@ export type SiteFooterContent = {
 /** A headline figure shown verbatim. */
 export type StatFigure = { value: string; label: string };
 
-/** content_item type "about_hero" — see content-service's AboutHeroFields. */
-export type AboutHero = {
-  breadcrumb?: string;
-  title: string;
-  subtitle?: string;
-  ctaLabel?: string;
-  ctaUrl?: string;
-  image?: string;
-  stats?: StatFigure[];
-};
-
-/** content_item type "about_intro" — see content-service's AboutIntroFields. */
-export type AboutIntro = {
-  eyebrow?: string;
-  title: string;
-  /** Paragraphs separated by blank lines. */
-  body?: string;
-  image?: string;
-  decorImage?: string;
-  /** Heading above the growth figures, which come from the Stats CMS screen. */
-  statsTitle?: string;
-};
-
-/** content_item type "about_statement" — the Vision (dark) and Mission (light) bands. */
-export type AboutStatement = {
-  variant: "vision" | "mission";
-  eyebrow?: string;
-  title?: string;
-  body?: string;
-  image?: string;
-};
-
-/** content_item type "about_value" — one "Our Values 4C" photo card. */
-export type AboutValue = { title: string; image?: string };
-
-/** content_item type "leader" — one member of the leadership team. */
-export type Leader = { name: string; title?: string; photo?: string };
-
 /** content_item type "industry_card" — one card of the Industries strip on service pages. */
 export type IndustryCard = { label: string; image?: string; url?: string };
 
@@ -191,11 +153,6 @@ export type HomeSections = {
   section_intro?: SectionIntro[];
   feature_band?: FeatureBand[];
   site_footer?: SiteFooterContent[];
-  about_hero?: AboutHero[];
-  about_intro?: AboutIntro[];
-  about_statement?: AboutStatement[];
-  leader?: Leader[];
-  about_value?: AboutValue[];
   industry_card?: IndustryCard[];
 };
 

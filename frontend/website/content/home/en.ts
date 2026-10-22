@@ -44,61 +44,6 @@ export const homeContentEn: HomeContent = {
         body: "Our technical expertise and proven business impact earn us industry-leading awards and elite credentials.",
       },
       { section: "contact", title: "Maximize Your ROI in the Cloud\nLet's Chat!" },
-      { section: "leaders", eyebrow: "Our People", title: "Leadership Team" },
-      {
-        section: "values",
-        eyebrow: "Our Values 4C",
-        title: "The DNA of Our Growth",
-        body: "We empower our global team to do their best work in a culture of dedication, creativity, and global collaboration.",
-      },
-    ],
-    about_hero: [
-      {
-        breadcrumb: "About Us",
-        title: "Transforming Ideas into Global Impact, Together",
-        subtitle:
-          "We unite passionate experts with advanced technology to scale your most ambitious digital vision",
-        ctaLabel: "Meet the people behind our promise",
-        ctaUrl: "#leaders",
-        stats: [
-          { value: "33+", label: "Years of Engineering Excellence" },
-          { value: "3000+", label: "Engineering Experts" },
-          { value: "10+", label: "Global Offices" },
-        ],
-      },
-    ],
-    about_intro: [
-      {
-        eyebrow: "Meet CMC Global",
-        title: "Meet CMC Global",
-        body: "At CMC Global, we believe true digital transformation is not about chasing the next big trend. It’s about mastering it to redefine what’s possible, and making technology work seamlessly for the business. Built on the deep technical foundation of CMC Corporation, we exist to turn complex technology into your clearest competitive advantage.\n\nAs global business enters the AI-first landscape, we architect intelligent, future-ready organizations from the ground up. By bridging technical mastery with global scale, we stand as the reliable partner behind your boldest ambitions, helping over 300 global leaders modernize with certainty and unlock steady growth.",
-        statsTitle: "Our Growth in Numbers",
-      },
-    ],
-    about_statement: [
-      {
-        variant: "vision",
-        eyebrow: "Our Vision",
-        title: "Establishing a global presence\n& providing world-class services",
-      },
-      {
-        variant: "mission",
-        eyebrow: "Our Mission",
-        body: "Our mission is simple: to make complex technology work for people and businesses, everywhere.\n\nWe empower organizations to grow with confidence through practical innovation, while building a culture where talent thrives, learns, and creates meaningful impact every day.",
-      },
-    ],
-    about_value: [
-      { title: "Commitment" },
-      { title: "Creativity" },
-      { title: "Customer\nCentricity" },
-      { title: "Speed" },
-    ],
-    leader: [
-      { name: "Mr. Ho Thanh Tung", title: "President of CMC Global" },
-      { name: "Mr. Dang Ngoc Bao", title: "Chief Executive Officer of CMC Global" },
-      { name: "Mr. Nguyen Viet Bach", title: "Deputy CEO / Chief Delivery Officer of CMC Global" },
-      { name: "Ms. Hoang Thi Thanh Hoa", title: "Chief Finance Officer of CMC Global" },
-      { name: "Mr. Nguyen Cao Cuong", title: "Chief Sales Officer of CMC Global" },
     ],
     feature_band: [
       {

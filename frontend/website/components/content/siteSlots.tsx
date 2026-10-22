@@ -9,7 +9,7 @@ export const siteSlots: PostArticleSlots = {
       {children}
     </Link>
   ),
-  Image: ({ src, sizes, priority, className }) => (
-    <CoverImage src={src} alt="" sizes={sizes} priority={priority} className={className} />
+  Image: ({ src, sizes, priority, className, alt }) => (
+    <CoverImage src={src} alt={alt ?? ""} sizes={sizes} priority={priority} className={className} />
   ),
 };

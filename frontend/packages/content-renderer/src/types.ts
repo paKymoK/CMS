@@ -39,7 +39,7 @@ export interface PostArticleLabels {
 export interface PostArticleSlots {
   Link: ComponentType<{ href: string; className?: string; children: ReactNode }>;
   /** Fills its (relative) parent. */
-  Image: ComponentType<{ src: string; sizes: string; priority?: boolean; className?: string }>;
+  Image: ComponentType<{ src: string; sizes: string; priority?: boolean; className?: string; alt?: string }>;
 }
 
 export interface CaseStudyResultData {
@@ -209,6 +209,52 @@ export interface IndustryPageData {
   insightsBody?: string;
   insightsLinkLabel?: string;
   insightsLinkUrl?: string;
+  hiddenSections?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+export interface AboutLeaderData {
+  name: string;
+  title?: string;
+  photo?: string;
+}
+
+export interface AboutValueData {
+  title: string;
+  image?: string;
+}
+
+/** The content of the About page (content_item "about_page"); the website and the admin preview both fill it. */
+export interface AboutPageData {
+  heroBreadcrumb?: string;
+  heroTitle: string;
+  heroSubtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  heroImage?: string;
+  heroStats?: ServiceStatData[];
+  introEyebrow?: string;
+  introTitle?: string;
+  introBody?: string;
+  introImage?: string;
+  introDecorImage?: string;
+  growthTitle?: string;
+  growthStats?: ServiceStatData[];
+  visionEyebrow?: string;
+  visionTitle?: string;
+  visionImage?: string;
+  missionEyebrow?: string;
+  missionBody?: string;
+  missionImage?: string;
+  leadersEyebrow?: string;
+  leadersTitle?: string;
+  leadersRingImage?: string;
+  leaders?: AboutLeaderData[];
+  valuesEyebrow?: string;
+  valuesTitle?: string;
+  valuesBody?: string;
+  values?: AboutValueData[];
   hiddenSections?: string[];
   seoTitle?: string;
   seoDescription?: string;

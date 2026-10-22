@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
+import { AboutPage as AboutPageView } from "@cms/content-renderer";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { getHomeContent } from "@/lib/cms/homeContent";
-import { sectionIntro } from "@/lib/sectionIntro";
-import { AboutHero } from "@/components/about/AboutHero";
-import { MeetCmc } from "@/components/about/MeetCmc";
-import { StatementBand } from "@/components/about/StatementBand";
-import { Leadership } from "@/components/about/Leadership";
-import { Values } from "@/components/about/Values";
-
-const TITLE = "About Us | CMC Global";
-const DESCRIPTION =
-  "CMC Global unites passionate experts with advanced technology to scale your most ambitious digital vision — 33+ years of engineering excellence, 3000+ experts and offices across the world.";
+import { getAboutPage } from "@/lib/cms/about";
+import { siteSlots } from "@/components/content/siteSlots";
 
 export async function generateMetadata(props: PageProps<"/[locale]/about">): Promise<Metadata> {
   const { locale } = await props.params;
-  return buildPageMetadata({ locale, path: "about", title: TITLE, description: DESCRIPTION });
+  const page = await getAboutPage();
+  if (!page) {
+    return buildPageMetadata({ locale, path: "about", title: "About Us | CMC Global", description: "", noIndex: true });
+  }
+  return buildPageMetadata({
+    locale,
+    path: "about",
+    title: page.seoTitle || "About Us | CMC Global",
+    description: page.seoDescription || page.heroSubtitle || "",
+    ogImage: page.heroImage,
+  });
 }
 
 export default async function AboutPage(props: PageProps<"/[locale]/about">) {
@@ -24,25 +26,8 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
   if (locale !== "en") notFound();
   setRequestLocale(locale);
 
-  const content = await getHomeContent();
-  const s = content.sections;
-  const hero = s?.about_hero?.[0];
-  const intro = s?.about_intro?.[0];
-  const vision = s?.about_statement?.find((x) => x.variant === "vision");
-  const mission = s?.about_statement?.find((x) => x.variant === "mission");
+  const page = await getAboutPage();
+  if (!page) notFound();
 
-  return (
-    <>
-      {hero && <AboutHero hero={hero} />}
-      {intro && <MeetCmc intro={intro} stats={content.stats} />}
-      {vision && <StatementBand statement={vision} />}
-      {mission && <StatementBand statement={mission} />}
-      <Leadership
-        leaders={s?.leader ?? []}
-        intro={sectionIntro(content, "leaders")}
-        ringImage={sectionIntro(content, "leaders")?.image}
-      />
-      <Values values={s?.about_value ?? []} intro={sectionIntro(content, "values")} />
-    </>
-  );
+  return <AboutPageView page={page} slots={siteSlots} />;
 }

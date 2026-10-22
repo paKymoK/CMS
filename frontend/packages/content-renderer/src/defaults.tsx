@@ -7,7 +7,7 @@ export const defaultSlots: PostArticleSlots = {
       {children}
     </a>
   ),
-  Image: ({ src, className }) => (
-    <img src={src} alt="" className={`absolute inset-0 h-full w-full ${className ?? ""}`} />
+  Image: ({ src, className, alt }) => (
+    <img src={src} alt={alt ?? ""} className={`absolute inset-0 h-full w-full ${className ?? ""}`} />
   ),
 };
