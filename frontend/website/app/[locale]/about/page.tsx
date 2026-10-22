@@ -17,7 +17,8 @@ export async function generateMetadata(props: PageProps<"/[locale]/about">): Pro
     path: "about",
     title: page.seoTitle || "About Us | CMC Global",
     description: page.seoDescription || page.heroSubtitle || "",
-    ogImage: page.heroImage,
+    ogImage: page.seoImage || page.heroImage,
+    noIndex: page.seoNoindex,
   });
 }
 

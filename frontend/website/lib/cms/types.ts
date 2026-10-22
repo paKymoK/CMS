@@ -19,6 +19,11 @@ export type PostDetail = Omit<PostSummary, "featured"> & {
   authorRole?: string;
   authorBio?: string;
   authorAvatar?: string;
+  /** Search-engine fields: each falls back to the title / excerpt / cover image when blank. */
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoImage?: string | null;
+  seoNoindex?: boolean;
   related: PostSummary[];
 };
 
@@ -54,6 +59,11 @@ export type CaseStudyDetail = {
   date: string;
   category: string;
   results: CaseStudyResult[];
+  /** Search-engine fields: each falls back to the title / summary / cover image when blank. */
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoImage?: string | null;
+  seoNoindex?: boolean;
   testimonial: CaseStudyTestimonial | null;
   related: RelatedCaseStudy[];
 };

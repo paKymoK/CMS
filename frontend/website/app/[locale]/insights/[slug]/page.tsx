@@ -23,9 +23,10 @@ export async function generateMetadata(props: PageProps<"/[locale]/insights/[slu
   return buildPageMetadata({
     locale,
     path: `insights/${slug}`,
-    title: `${post.title} — CMC Global Insights`,
-    description: post.excerpt ?? "",
-    ogImage: post.image ?? undefined,
+    title: post.seoTitle || `${post.title} — CMC Global Insights`,
+    description: post.seoDescription || post.excerpt || "",
+    ogImage: post.seoImage || post.image || undefined,
+    noIndex: post.seoNoindex,
   });
 }
 

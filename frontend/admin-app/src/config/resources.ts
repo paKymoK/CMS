@@ -102,6 +102,17 @@ export interface ResourceConfig {
    * generic drawer form; ContentPage navigates here on row-click/"New" rather than opening the
    * drawer. `id` is the row id, or "new" for create. */
   editorRoute?: (id: number | "new") => string;
+  /**
+   * Full-page editor only: what the SEO checklist needs to know, i.e. what the website falls back to
+   * when a search-engine field is empty, and the page's address for a slug (omit `url` for a page at a
+   * fixed address).
+   */
+  seo?: {
+    fallbackTitle: (values: Record<string, unknown>) => string;
+    fallbackDescription?: (values: Record<string, unknown>) => string | undefined;
+    fallbackImage?: (values: Record<string, unknown>) => string | undefined;
+    url?: (slug: string, values: Record<string, unknown>) => string;
+  };
   /** Full-page editor only: sections for fields that set `group`. Ungrouped fields come first, then the sections in this order. */
   groups?: FieldGroup[];
   /** Present => the editorRoute page is the generic full-page form (ResourceEditorPage) driven by `fields`. */
@@ -128,6 +139,9 @@ export function findFieldByPath(fields: FieldConfig[], path: string | number | (
   }
   return found;
 }
+
+/** A form value as plain text, or undefined when it is empty or not text. */
+const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
 
 const scalarDefault = (type: FieldType) =>
   !["textarea", "richtext", "json", "string-list", "stat-list", "object-list", "multi-select"].includes(type);
@@ -186,7 +200,18 @@ export const RESOURCES: ResourceConfig[] = [
     titleField: "title",
     editorRoute: (id) => `/case-studies/${id}`,
     editor: { slugPrefix: "case-studies", singular: "case study", backPath: "/content/case-studies" },
+    groups: [{ key: "seo", label: "SEO" }],
+    seo: {
+      fallbackTitle: (v) => `${str(v.title) || "Untitled case study"} — CMC Global`,
+      fallbackDescription: (v) => str(v.summary),
+      fallbackImage: (v) => str(v.image),
+      url: (slug) => `/case-studies/${slug}`,
+    },
     fields: [
+      field({ name: "seoTitle", label: "Meta title (the whole page title in search results)", type: "text", showInTable: false, group: "seo" }),
+      field({ name: "seoDescription", label: "Meta description (falls back to the summary)", type: "textarea", showInTable: false, group: "seo" }),
+      field({ name: "seoImage", label: "Share image (falls back to the cover image)", type: "image", showInTable: false, group: "seo" }),
+      field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
       field({ name: "title", label: "Title", type: "text", required: true }),
       field({ name: "summary", label: "Summary (shown on cards and under the title)", type: "textarea", showInTable: false }),
       field({ name: "image", label: "Cover image", type: "image" }),
@@ -228,6 +253,10 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "date", label: "Date", type: "text" }),
       field({ name: "image", label: "Image", type: "image" }),
       field({ name: "excerpt", label: "Excerpt", type: "textarea" }),
+      field({ name: "seoTitle", label: "Meta title", type: "text", showInTable: false }),
+      field({ name: "seoDescription", label: "Meta description", type: "textarea", showInTable: false }),
+      field({ name: "seoImage", label: "Share image", type: "image", showInTable: false }),
+      field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false }),
     ],
   },
   {
@@ -436,6 +465,11 @@ export const RESOURCES: ResourceConfig[] = [
     titleField: "heroTitle",
     editorRoute: (id) => `/about-page/${id}`,
     editor: { slugPrefix: "about", singular: "About page", backPath: "/about-page", singleton: true, noSlug: true },
+    seo: {
+      fallbackTitle: () => "About Us | CMC Global",
+      fallbackDescription: (v) => str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.heroImage),
+    },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "intro", label: "Meet CMC Global", toggleable: true },
@@ -504,6 +538,8 @@ export const RESOURCES: ResourceConfig[] = [
       }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
+      field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
+      field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
     ],
   },
   {
@@ -516,6 +552,12 @@ export const RESOURCES: ResourceConfig[] = [
     duplicable: true,
     editorRoute: (id) => `/industry-pages/${id}`,
     editor: { slugPrefix: "industries", singular: "industry page", backPath: "/content/industry-pages" },
+    seo: {
+      fallbackTitle: (v) => `${str(v.navLabel) || "Untitled industry"} | CMC Global`,
+      fallbackDescription: (v) => str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.heroImage),
+      url: (slug) => `/industries/${slug}`,
+    },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "solutions", label: "Solutions", toggleable: true },
@@ -602,6 +644,8 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "insightsLinkUrl", label: "Link", type: "text", showInTable: false, group: "insights" }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
+      field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
+      field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
     ],
   },
   {
@@ -614,6 +658,12 @@ export const RESOURCES: ResourceConfig[] = [
     duplicable: true,
     editorRoute: (id) => `/service-pages/${id}`,
     editor: { slugPrefix: "services/[category]", singular: "service page", backPath: "/content/service-pages" },
+    seo: {
+      fallbackTitle: (v) => `${str(v.navLabel) || "Untitled service"} | CMC Global`,
+      fallbackDescription: (v) => str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.heroImage),
+      url: (slug, v) => `/services/${str(v.category) || "…"}/${slug}`,
+    },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "capabilities", label: "Capabilities", toggleable: true },
@@ -703,6 +753,8 @@ export const RESOURCES: ResourceConfig[] = [
       }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
+      field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
+      field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
     ],
   },
   {

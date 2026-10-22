@@ -24,9 +24,10 @@ export async function generateMetadata(
   return buildPageMetadata({
     locale,
     path: `case-studies/${slug}`,
-    title: `${caseStudy.title} — CMC Global`,
-    description: caseStudy.summary,
-    ogImage: caseStudy.image,
+    title: caseStudy.seoTitle || `${caseStudy.title} — CMC Global`,
+    description: caseStudy.seoDescription || caseStudy.summary,
+    ogImage: caseStudy.seoImage || caseStudy.image,
+    noIndex: caseStudy.seoNoindex,
   });
 }
 

@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Collapse, Empty, Form, Switch, message } from "antd";
+import { Collapse, Empty, Form, Switch, message, type FormInstance } from "antd";
 import type { NamePath } from "antd/es/form/interface";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
@@ -14,6 +14,8 @@ import { FieldInput } from "../components/FieldInput";
 import MediaPickerModal from "../components/MediaPickerModal";
 import HistoryDrawer from "../components/HistoryDrawer";
 import { RESOURCE_PREVIEWS } from "../components/resourcePreviews";
+import { SeoChecklist } from "../components/SeoChecklist";
+import { publishUnlessSeoMissing, seoChecks, type SeoCheck } from "../lib/seo";
 
 type Values = Record<string, unknown>;
 type Status = "DRAFT" | "PUBLISHED";
@@ -28,6 +30,29 @@ function slugify(text: string): string {
     .split("-")
     .slice(0, 7)
     .join("-");
+}
+
+/** The SEO checklist for the values in the form, or none when the resource has no SEO section. */
+function seoChecksFor(resource: ResourceConfig, values: Values, slug: string): SeoCheck[] {
+  const seo = resource.seo;
+  if (!seo) return [];
+  const text = (v: unknown) => (typeof v === "string" ? v : "");
+  return seoChecks({
+    slug: seo.url && !resource.editor?.noSlug ? { value: slug, url: seo.url(slug || "…", values) } : undefined,
+    seoTitle: text(values.seoTitle),
+    seoDescription: text(values.seoDescription),
+    seoImage: text(values.seoImage),
+    fallbackTitle: seo.fallbackTitle(values),
+    fallbackDescription: seo.fallbackDescription?.(values) ?? "",
+    fallbackImage: seo.fallbackImage?.(values) ?? "",
+    noindex: values.seoNoindex === true,
+  });
+}
+
+/** The checklist under the SEO fields: reads the form as it is being edited. */
+function SeoPanel({ resource, form, slug }: { resource: ResourceConfig; form: FormInstance<Values>; slug: string }) {
+  const values = (Form.useWatch([], form) as Values | undefined) ?? {};
+  return <SeoChecklist checks={seoChecksFor(resource, values, slug)} />;
 }
 
 const labelStyle: CSSProperties = { fontSize: 12, fontWeight: 600, color: "#5b6b86" };
@@ -284,7 +309,11 @@ function ResourceEditorForm({
             </button>
             <button
               type="button"
-              onClick={() => saveMutation.mutate("PUBLISHED")}
+              onClick={() =>
+                pub || !resource.seo
+                  ? saveMutation.mutate("PUBLISHED")
+                  : publishUnlessSeoMissing(seoChecksFor(resource, form.getFieldsValue(true), slug), () => saveMutation.mutate("PUBLISHED"))
+              }
               disabled={saveMutation.isPending}
               style={{ ...outlineButton, padding: "0 20px", border: "none", background: "#0083ff", color: "#ffffff" }}
             >
@@ -332,6 +361,7 @@ function ResourceEditorForm({
                           <div style={{ opacity: off ? 0.55 : 1 }}>
                             {g.description && <p style={{ margin: 0, color: "#5b6b86", fontSize: 13 }}>{g.description}</p>}
                             {mainFields.filter((f) => f.group === g.key).map(renderField)}
+                            {g.key === "seo" && resource.seo && <SeoPanel resource={resource} form={form} slug={slug} />}
                           </div>
                         ),
                       },

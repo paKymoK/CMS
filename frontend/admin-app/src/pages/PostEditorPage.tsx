@@ -12,6 +12,8 @@ import { wordsAndOutline } from "../lib/richText";
 import PostPreview from "../components/PostPreview";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
 import HistoryDrawer from "../components/HistoryDrawer";
+import { SeoChecklist } from "../components/SeoChecklist";
+import { publishUnlessSeoMissing, seoChecks } from "../lib/seo";
 import type { ItemPrefill } from "../lib/audit";
 import type { PostTemplate } from "../lib/postTemplates";
 
@@ -34,6 +36,10 @@ interface PostRecord {
   tags: string[] | null;
   featured: boolean | null;
   layout: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  seoImage: string | null;
+  seoNoindex: boolean | null;
 }
 
 const LAYOUTS = [
@@ -150,12 +156,16 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [tagDraft, setTagDraft] = useState("");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
   const [layout, setLayout] = useState(initial?.layout ?? seed?.layout ?? "default");
+  const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
+  const [seoDescription, setSeoDescription] = useState(initial?.seoDescription ?? "");
+  const [seoImage, setSeoImage] = useState(initial?.seoImage ?? "");
+  const [seoNoindex, setSeoNoindex] = useState(initial?.seoNoindex ?? false);
   const initialScan = wordsAndOutline(initial?.body ?? seed?.body ?? "");
   const [words, setWords] = useState(initialScan.words);
   const [outline, setOutline] = useState<{ n: string; text: string }[]>(initialScan.outline);
   const [dirty, setDirty] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerTarget, setPickerTarget] = useState<"cover" | "body">("cover");
+  const [pickerTarget, setPickerTarget] = useState<"cover" | "body" | "social">("cover");
   const rteRef = useRef<RichTextEditorHandle>(null);
 
   const onBodyChange = (html: string) => {
@@ -165,6 +175,18 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     setWords(scanned.words);
     setOutline(scanned.outline);
   };
+
+  const seoCheckList = seoChecks({
+    slug: { value: slug, url: `/insights/${slug || "…"}` },
+    seoTitle,
+    seoDescription,
+    seoImage,
+    fallbackTitle: `${title || "Untitled post"} — CMC Global Insights`,
+    // Left blank, the excerpt is taken from the start of the post, as the server does.
+    fallbackDescription: excerpt.trim() || body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(),
+    fallbackImage: image ?? "",
+    noindex: seoNoindex,
+  });
 
   const saveMutation = useMutation({
     mutationFn: async (nextStatus: "DRAFT" | "PUBLISHED") => {
@@ -185,6 +207,10 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         tags,
         featured,
         layout,
+        seoTitle,
+        seoDescription,
+        seoImage,
+        seoNoindex,
       };
       if (isNew) return contentApi.post(API_PATH, payload, { params: { site } });
       return contentApi.put(API_PATH, payload, { params: { site } });
@@ -375,7 +401,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
             </button>
             <button
               type="button"
-              onClick={() => saveMutation.mutate("PUBLISHED")}
+              onClick={() =>
+                status === "PUBLISHED"
+                  ? saveMutation.mutate("PUBLISHED")
+                  : publishUnlessSeoMissing(seoCheckList, () => saveMutation.mutate("PUBLISHED"))
+              }
               disabled={saveMutation.isPending}
               style={{
                 minHeight: 40,
@@ -694,6 +724,84 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
           </div>
 
           <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>SEO (optional)</div>
+            <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ display: "flex", justifyContent: "space-between", ...cardLabelStyle }}>
+                  <span>Meta title</span>
+                  <span style={{ color: seoTitle.length > 60 ? "#d4380d" : "#7b8aa5" }}>{seoTitle.length} / 60</span>
+                </span>
+                <input
+                  value={seoTitle}
+                  onChange={(e) => {
+                    setSeoTitle(e.target.value);
+                    setDirty(true);
+                  }}
+                  placeholder="The whole page title in search results"
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ display: "flex", justifyContent: "space-between", ...cardLabelStyle }}>
+                  <span>Meta description</span>
+                  <span style={{ color: seoDescription.length > 160 ? "#d4380d" : "#7b8aa5" }}>{seoDescription.length} / 160</span>
+                </span>
+                <textarea
+                  rows={3}
+                  value={seoDescription}
+                  onChange={(e) => {
+                    setSeoDescription(e.target.value);
+                    setDirty(true);
+                  }}
+                  placeholder="Left blank, the excerpt is used"
+                  style={{ border: "1px solid #dde4f0", padding: "10px 12px", resize: "vertical", fontFamily: "inherit", fontSize: 14, lineHeight: 1.5, color: "#0b1b3a", outline: "none" }}
+                />
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={cardLabelStyle}>Share image</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {seoImage ? <img src={mediaSrc(seoImage)} alt="" style={{ width: 64, height: 34, objectFit: "cover", borderRadius: 4 }} /> : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickerTarget("social");
+                      setPickerOpen(true);
+                    }}
+                    style={{ padding: "7px 12px", border: "1px solid #dde4f0", borderRadius: 8, background: "#ffffff", fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, color: "#26354f", cursor: "pointer" }}
+                  >
+                    {seoImage ? "Change" : "Choose"}
+                  </button>
+                  {seoImage ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSeoImage("");
+                        setDirty(true);
+                      }}
+                      style={{ padding: "7px 12px", border: "none", background: "transparent", fontFamily: "inherit", fontSize: 12.5, color: "#7b8aa5", cursor: "pointer" }}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                <span style={{ fontSize: 12, color: "#7b8aa5" }}>Left empty, the cover image is used. Around 1200 × 630 works best.</span>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={seoNoindex}
+                  onChange={(e) => {
+                    setSeoNoindex(e.target.checked);
+                    setDirty(true);
+                  }}
+                />
+                <span style={cardLabelStyle}>Hide from search engines</span>
+              </label>
+              <SeoChecklist checks={seoCheckList} />
+            </div>
+          </div>
+
+          <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Author (optional)</div>
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -838,6 +946,8 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         onSelect={(url) => {
           if (pickerTarget === "cover") {
             setImage(url);
+          } else if (pickerTarget === "social") {
+            setSeoImage(url);
           } else {
             rteRef.current?.insertHtml(
               `<figure><img src="${url}" alt=""><figcaption>Add a caption</figcaption></figure><p><br></p>`,

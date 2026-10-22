@@ -137,6 +137,9 @@ export interface ServicePageData {
   hiddenSections?: string[];
   seoTitle?: string;
   seoDescription?: string;
+  /** Social-share image; falls back to the page's main image. */
+  seoImage?: string;
+  seoNoindex?: boolean;
 }
 
 /** One card of the success-stories stack; the first card carries the left-column heading and figures. */
@@ -212,6 +215,9 @@ export interface IndustryPageData {
   hiddenSections?: string[];
   seoTitle?: string;
   seoDescription?: string;
+  /** Social-share image; falls back to the page's main image. */
+  seoImage?: string;
+  seoNoindex?: boolean;
 }
 
 export interface AboutLeaderData {
@@ -258,4 +264,7 @@ export interface AboutPageData {
   hiddenSections?: string[];
   seoTitle?: string;
   seoDescription?: string;
+  /** Social-share image; falls back to the page's main image. */
+  seoImage?: string;
+  seoNoindex?: boolean;
 }
