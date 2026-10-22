@@ -469,6 +469,7 @@ export const RESOURCES: ResourceConfig[] = [
       fallbackTitle: () => "About Us | CMC Global",
       fallbackDescription: (v) => str(v.heroSubtitle),
       fallbackImage: (v) => str(v.heroImage),
+      url: () => "/about",
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },

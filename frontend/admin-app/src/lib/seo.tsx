@@ -10,17 +10,79 @@ export interface SeoCheck {
   detail: string;
 }
 
-export interface SeoCheckInput {
-  /** The page's own URL: omit for a page that lives at a fixed address (About). */
-  slug?: { value: string; url: string };
+/** The search-engine fields as they are in the form, and what the website falls back to when one is empty. */
+export interface SeoValues {
   seoTitle: string;
   seoDescription: string;
   seoImage: string;
-  /** What the website uses when the field above is empty. */
   fallbackTitle: string;
   fallbackDescription: string;
   fallbackImage: string;
   noindex: boolean;
+}
+
+export interface SeoCheckInput extends SeoValues {
+  /** The page's own URL: omit for a page that lives at a fixed address (About). */
+  slug?: { value: string; url: string };
+}
+
+export interface SnippetInput extends SeoValues {
+  /** The site's address, e.g. en.cmcglobal.com. */
+  host: string;
+  /** The page's path on it, e.g. /insights/my-post. */
+  path: string;
+}
+
+export type SnippetDevice = "desktop" | "mobile";
+
+/** What one search result shows for a page on one kind of device. */
+export interface Snippet {
+  host: string;
+  crumbs: string[];
+  title: string;
+  description: string;
+  /** The share image (or the page's main image) to show as the result's thumbnail; empty when there is none. */
+  image: string;
+  titleCut: boolean;
+  descriptionCut: boolean;
+  /** The page asks not to be indexed, so it would not appear in results at all. */
+  hidden: boolean;
+}
+
+/**
+ * Where a result is cut off. Search engines cut by pixel width, not characters, so these are the
+ * usual rule-of-thumb limits and the preview is approximate. A phone shows a longer title (two lines).
+ */
+const SNIPPET_LIMITS: Record<SnippetDevice, { title: number; description: number }> = {
+  desktop: { title: 60, description: 160 },
+  mobile: { title: 70, description: 130 },
+};
+
+/** Cuts `text` to `max` characters at a word boundary and marks the cut, or returns it as is. */
+function cutAt(text: string, max: number): { text: string; cut: boolean } {
+  if (text.length <= max) return { text, cut: false };
+  const space = text.lastIndexOf(" ", max);
+  return { text: `${text.slice(0, space > max / 2 ? space : max).trimEnd()}…`, cut: true };
+}
+
+/** The search result for a page: the title and description that would be shown, as cut for the device. */
+export function seoSnippet(input: SnippetInput, device: SnippetDevice): Snippet {
+  const limits = SNIPPET_LIMITS[device];
+  const title = cutAt((input.seoTitle.trim() || input.fallbackTitle).replace(/\s+/g, " ").trim(), limits.title);
+  const description = cutAt(
+    (input.seoDescription.trim() || input.fallbackDescription).replace(/\s+/g, " ").trim(),
+    limits.description,
+  );
+  return {
+    host: input.host,
+    crumbs: input.path.split("/").filter(Boolean),
+    title: title.text,
+    description: description.text,
+    image: input.seoImage.trim() || input.fallbackImage.trim(),
+    titleCut: title.cut,
+    descriptionCut: description.cut,
+    hidden: input.noindex,
+  };
 }
 
 /** Search engines show about this many characters before cutting a title or description off. */

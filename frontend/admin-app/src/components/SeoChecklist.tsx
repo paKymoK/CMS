@@ -7,10 +7,21 @@ const ICON: Record<SeoLevel, { glyph: string; color: string }> = {
 };
 
 /** The checklist panel, shown at the bottom of an SEO section. Informational: nothing here blocks saving. */
-export function SeoChecklist({ checks }: { checks: SeoCheck[] }) {
+export function SeoChecklist({ checks, onPreview }: { checks: SeoCheck[]; onPreview?: () => void }) {
   return (
     <div style={{ marginTop: 14, border: "1px solid #e3e9f4", borderRadius: 10, padding: "10px 12px", background: "#fafbfc" }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#5b6b86", marginBottom: 8 }}>SEO checklist</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#5b6b86" }}>SEO checklist</span>
+        {onPreview && (
+          <button
+            type="button"
+            onClick={onPreview}
+            style={{ padding: "5px 10px", border: "1px solid #bcd9fb", borderRadius: 8, background: "#ffffff", fontFamily: "inherit", fontSize: 12, fontWeight: 600, color: "#0083ff", cursor: "pointer" }}
+          >
+            Search result preview
+          </button>
+        )}
+      </div>
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
         {checks.map((c) => (
           <li key={c.key} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13, lineHeight: 1.35 }}>

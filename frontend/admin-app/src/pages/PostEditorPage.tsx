@@ -13,6 +13,7 @@ import PostPreview from "../components/PostPreview";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
 import HistoryDrawer from "../components/HistoryDrawer";
 import { SeoChecklist } from "../components/SeoChecklist";
+import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks } from "../lib/seo";
 import type { ItemPrefill } from "../lib/audit";
 import type { PostTemplate } from "../lib/postTemplates";
@@ -176,8 +177,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     setOutline(scanned.outline);
   };
 
-  const seoCheckList = seoChecks({
-    slug: { value: slug, url: `/insights/${slug || "…"}` },
+  const seoValues = {
     seoTitle,
     seoDescription,
     seoImage,
@@ -186,7 +186,9 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     fallbackDescription: excerpt.trim() || body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(),
     fallbackImage: image ?? "",
     noindex: seoNoindex,
-  });
+  };
+  const seoCheckList = seoChecks({ ...seoValues, slug: { value: slug, url: `/insights/${slug || "…"}` } });
+  const [snippetOpen, setSnippetOpen] = useState(false);
 
   const saveMutation = useMutation({
     mutationFn: async (nextStatus: "DRAFT" | "PUBLISHED") => {
@@ -797,7 +799,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 />
                 <span style={cardLabelStyle}>Hide from search engines</span>
               </label>
-              <SeoChecklist checks={seoCheckList} />
+              <SeoChecklist checks={seoCheckList} onPreview={() => setSnippetOpen(true)} />
             </div>
           </div>
 
@@ -932,6 +934,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
           onRestored={onRestored}
         />
       )}
+      <SearchSnippetModal
+        open={snippetOpen}
+        onClose={() => setSnippetOpen(false)}
+        input={{ ...seoValues, host: siteSub ?? "site", path: `/insights/${slug || "…"}` }}
+      />
       {previewOpen && site && (
         <PostPreview
           site={site}

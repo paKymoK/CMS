@@ -15,7 +15,8 @@ import MediaPickerModal from "../components/MediaPickerModal";
 import HistoryDrawer from "../components/HistoryDrawer";
 import { RESOURCE_PREVIEWS } from "../components/resourcePreviews";
 import { SeoChecklist } from "../components/SeoChecklist";
-import { publishUnlessSeoMissing, seoChecks, type SeoCheck } from "../lib/seo";
+import SearchSnippetModal from "../components/SearchSnippetModal";
+import { publishUnlessSeoMissing, seoChecks, type SeoCheck, type SeoValues } from "../lib/seo";
 
 type Values = Record<string, unknown>;
 type Status = "DRAFT" | "PUBLISHED";
@@ -32,27 +33,44 @@ function slugify(text: string): string {
     .join("-");
 }
 
+/** The search-engine values of the form, and what the website falls back to for each, for a resource with an SEO section. */
+function seoValuesFor(resource: ResourceConfig, values: Values): SeoValues {
+  const text = (v: unknown) => (typeof v === "string" ? v : "");
+  return {
+    seoTitle: text(values.seoTitle),
+    seoDescription: text(values.seoDescription),
+    seoImage: text(values.seoImage),
+    fallbackTitle: resource.seo?.fallbackTitle(values) ?? "",
+    fallbackDescription: resource.seo?.fallbackDescription?.(values) ?? "",
+    fallbackImage: resource.seo?.fallbackImage?.(values) ?? "",
+    noindex: values.seoNoindex === true,
+  };
+}
+
 /** The SEO checklist for the values in the form, or none when the resource has no SEO section. */
 function seoChecksFor(resource: ResourceConfig, values: Values, slug: string): SeoCheck[] {
   const seo = resource.seo;
   if (!seo) return [];
-  const text = (v: unknown) => (typeof v === "string" ? v : "");
   return seoChecks({
+    ...seoValuesFor(resource, values),
     slug: seo.url && !resource.editor?.noSlug ? { value: slug, url: seo.url(slug || "…", values) } : undefined,
-    seoTitle: text(values.seoTitle),
-    seoDescription: text(values.seoDescription),
-    seoImage: text(values.seoImage),
-    fallbackTitle: seo.fallbackTitle(values),
-    fallbackDescription: seo.fallbackDescription?.(values) ?? "",
-    fallbackImage: seo.fallbackImage?.(values) ?? "",
-    noindex: values.seoNoindex === true,
   });
 }
 
-/** The checklist under the SEO fields: reads the form as it is being edited. */
-function SeoPanel({ resource, form, slug }: { resource: ResourceConfig; form: FormInstance<Values>; slug: string }) {
+/** The checklist under the SEO fields, and the search-result preview it opens: reads the form as it is being edited. */
+function SeoPanel({ resource, form, slug, host }: { resource: ResourceConfig; form: FormInstance<Values>; slug: string; host: string }) {
   const values = (Form.useWatch([], form) as Values | undefined) ?? {};
-  return <SeoChecklist checks={seoChecksFor(resource, values, slug)} />;
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <SeoChecklist checks={seoChecksFor(resource, values, slug)} onPreview={() => setOpen(true)} />
+      <SearchSnippetModal
+        open={open}
+        onClose={() => setOpen(false)}
+        input={{ ...seoValuesFor(resource, values), host, path: resource.seo?.url?.(slug || "…", values) ?? "" }}
+      />
+    </>
+  );
 }
 
 const labelStyle: CSSProperties = { fontSize: 12, fontWeight: 600, color: "#5b6b86" };
@@ -361,7 +379,7 @@ function ResourceEditorForm({
                           <div style={{ opacity: off ? 0.55 : 1 }}>
                             {g.description && <p style={{ margin: 0, color: "#5b6b86", fontSize: 13 }}>{g.description}</p>}
                             {mainFields.filter((f) => f.group === g.key).map(renderField)}
-                            {g.key === "seo" && resource.seo && <SeoPanel resource={resource} form={form} slug={slug} />}
+                            {g.key === "seo" && resource.seo && <SeoPanel resource={resource} form={form} slug={slug} host={siteSub ?? "site"} />}
                           </div>
                         ),
                       },
