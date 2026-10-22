@@ -89,4 +89,29 @@ class ContentItemServiceImplTest {
 
     verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
+
+  @Test
+  void twoIndustryPagesCannotShareASlug() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("slug", "bfsi");
+    ContentItem existing = new ContentItem();
+    existing.setId(5L);
+    existing.setData(data);
+    when(contentItemMapper.resolveAndValidate("industry_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "industry_page"))
+        .thenReturn(reactor.core.publisher.Flux.just(existing));
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("industry_page");
+    request.setData(data);
+
+    StepVerifier.create(service.create(1L, request))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("another industry"))
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
 }

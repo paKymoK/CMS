@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.model.content.ContentFields;
 import com.takypok.contentservice.model.content.types.FaqFields;
+import com.takypok.contentservice.model.content.types.IndustryPageFields;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import jakarta.validation.Validation;
@@ -79,6 +80,62 @@ class ContentItemMapperTest {
             e ->
                 e instanceof ApplicationException
                     && e.getMessage().contains("Unknown content type"))
+        .verify();
+  }
+
+  @Test
+  void industryPageKeepsNestedGroupsAndSlidesAndDropsUnknownFields() throws Exception {
+    ContentItemMapper mapper =
+        mapperWithRegistry(Map.of("industry_page", IndustryPageFields.class));
+    JsonNode input =
+        objectMapper.readTree(
+            """
+            {"slug": "bfsi", "navLabel": "Banking", "heroTitle": "Hero", "bogus": 1,
+            "solutionGroups": [{"name": "Core Banking", "slides": [
+              {"tabLabel": "Temenos", "title": "T", "extra": true}]}]}
+            """);
+
+    StepVerifier.create(mapper.resolveAndValidate("industry_page", input))
+        .assertNext(
+            result -> {
+              assertEquals("Core Banking", result.at("/solutionGroups/0/name").asText());
+              assertEquals("Temenos", result.at("/solutionGroups/0/slides/0/tabLabel").asText());
+              assertTrue(result.at("/solutionGroups/0/slides/0/extra").isMissingNode());
+              assertTrue(result.path("bogus").isMissingNode());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void industryPageRejectsASlideWithoutATabLabelNamingItsPath() throws Exception {
+    ContentItemMapper mapper =
+        mapperWithRegistry(Map.of("industry_page", IndustryPageFields.class));
+    JsonNode input =
+        objectMapper.readTree(
+            """
+            {"slug": "bfsi", "navLabel": "Banking", "heroTitle": "Hero",
+            "solutionGroups": [{"name": "A", "slides": [{"tabLabel": "ok"}, {"title": "no tab"}]}]}
+            """);
+
+    StepVerifier.create(mapper.resolveAndValidate("industry_page", input))
+        .expectErrorMatches(
+            e ->
+                e instanceof ApplicationException
+                    && e.getMessage().contains("solutionGroups[0].slides[1].tabLabel"))
+        .verify();
+  }
+
+  @Test
+  void industryPageRejectsAMalformedSlug() throws Exception {
+    ContentItemMapper mapper =
+        mapperWithRegistry(Map.of("industry_page", IndustryPageFields.class));
+    JsonNode input =
+        objectMapper.readTree(
+            "{\"slug\": \"Not A Slug\", \"navLabel\": \"X\", \"heroTitle\": \"H\"}");
+
+    StepVerifier.create(mapper.resolveAndValidate("industry_page", input))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("slug"))
         .verify();
   }
 

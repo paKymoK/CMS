@@ -76,6 +76,9 @@ public class AuthenticationConfig {
                         "/content-service/v1/services",
                         "/content-service/v1/services/**")
                     .permitAll()
+                    // Industry pages (see PublicIndustryController).
+                    .pathMatchers(HttpMethod.GET, "/content-service/v1/industries/**")
+                    .permitAll()
                     // media-service's content-addressed static serving — public once a site's
                     // published page embeds the URL.
                     .pathMatchers("/media-service/images/**", "/media-service/files/**")

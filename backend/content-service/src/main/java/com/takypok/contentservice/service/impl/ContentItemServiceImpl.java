@@ -126,21 +126,24 @@ public class ContentItemServiceImpl implements ContentItemService {
   }
 
   /**
-   * Service categories are keyed by slug and service pages by category + slug (they form the page
-   * URL), so a second item with the same key is rejected here rather than silently shadowed.
+   * Service categories and industry pages are keyed by slug and service pages by category + slug
+   * (they form the page URL), so a second item with the same key is rejected here rather than
+   * silently shadowed.
    */
   private Mono<Void> ensureUnique(Long siteId, String contentType, JsonNode data, Long selfId) {
     boolean category = "service_category".equals(contentType);
-    if (!category && !"service_page".equals(contentType)) return Mono.empty();
+    boolean industry = "industry_page".equals(contentType);
+    boolean slugOnly = category || industry;
+    if (!slugOnly && !"service_page".equals(contentType)) return Mono.empty();
     String slug = data.path("slug").asText();
-    String parent = category ? "" : data.path("category").asText();
+    String parent = slugOnly ? "" : data.path("category").asText();
     return contentItemRepository
         .findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(siteId, contentType)
         .filter(other -> !other.getId().equals(selfId))
         .filter(
             other ->
                 slug.equals(other.getData().path("slug").asText())
-                    && (category || parent.equals(other.getData().path("category").asText())))
+                    && (slugOnly || parent.equals(other.getData().path("category").asText())))
         .hasElements()
         .flatMap(
             taken ->
@@ -149,7 +152,9 @@ public class ContentItemServiceImpl implements ContentItemService {
                         new ApplicationException(
                             Message.Application.ERROR,
                             "slug: another "
-                                + (category ? "category" : "service in this category")
+                                + (category
+                                    ? "category"
+                                    : industry ? "industry" : "service in this category")
                                 + " already uses \""
                                 + slug
                                 + "\""))
