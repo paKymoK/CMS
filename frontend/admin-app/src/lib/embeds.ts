@@ -1,4 +1,4 @@
-import hosts from "../../../backend/content-service/src/main/resources/rich-text-embed-hosts.json";
+import hosts from "../../../../backend/content-service/src/main/resources/rich-text-embed-hosts.json";
 
 /** Embeds authors may place in a post/case-study body. Only the providers in
  * rich-text-embed-hosts.json are allowed. That file belongs to content-service, which enforces it

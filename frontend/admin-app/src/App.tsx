@@ -1,7 +1,7 @@
 import { ConfigProvider } from "antd";
 import AppRouter from "./router";
 
-// Brand tokens mirrored from website/app/globals.css (--brand-primary/-dark/-accent/-surface) —
+// Brand tokens mirrored from frontend/website/app/globals.css (--brand-primary/-dark/-accent/-surface) —
 // same source of truth, kept in sync by hand since this is a separate Vite app, not a shared
 // design-token package.
 export default function App() {

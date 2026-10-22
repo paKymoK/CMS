@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
-// Stroke icons drawn the way the website draws its own (see website/components/ui/DiagonalArrow.tsx):
+// Stroke icons drawn the way the website draws its own (see frontend/website/components/ui/DiagonalArrow.tsx):
 // 20px viewBox, 1.5 stroke, round caps/joins, currentColor. Replaces @ant-design/icons so the admin's
 // iconography matches the landing page. Sized by font-size like antd's icons (1em square).
 type IconProps = { style?: CSSProperties; className?: string };

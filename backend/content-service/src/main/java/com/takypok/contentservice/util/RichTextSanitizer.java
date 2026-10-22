@@ -21,7 +21,7 @@ import org.jsoup.safety.Safelist;
 /**
  * Allowlist sanitizer for rich-text bodies (posts, case studies), applied on write so stored HTML
  * is already clean no matter who called the API. Mirrors what the admin editor's schema can produce
- * (admin-app/src/components/rte/extensions.ts) — keep the two in sync. Iframes are only kept for
+ * (frontend/admin-app/src/components/rte/extensions.ts) — keep the two in sync. Iframes are only kept for
  * the embed providers listed in rich-text-embed-hosts.json, which the admin app imports too, so
  * that list has a single source.
  */

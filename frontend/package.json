@@ -1,0 +1,14 @@
+{
+  "name": "cms-frontend",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:admin": "pnpm --filter cms-admin-app dev",
+    "dev:website": "pnpm --filter landing-page dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
+  }
+}
