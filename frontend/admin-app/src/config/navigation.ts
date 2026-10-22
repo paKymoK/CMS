@@ -53,7 +53,7 @@ export const NAVIGATION: NavItem[] = [
   },
   {
     key: "industry-page",
-    label: "Industry Page",
+    label: "Industry Pages",
     icon: "M3 21h18M5 21V8l7-4 7 4v13M9 21v-6h6v6",
     items: inGroup("industry"),
   },

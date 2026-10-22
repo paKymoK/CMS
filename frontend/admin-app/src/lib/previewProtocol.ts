@@ -1,6 +1,7 @@
 import type {
   CaseStudyArticleData,
   CaseStudyArticleLabels,
+  IndustryPageData,
   IndustryStoryData,
   PostArticleData,
   PostArticleLabels,
@@ -21,6 +22,7 @@ export const MSG_HEIGHT = "cms-preview:height";
 export type PreviewPage =
   | { kind: "post"; post: PostArticleData; pageUrl: string }
   | { kind: "case-study"; caseStudy: CaseStudyArticleData }
+  | { kind: "industry"; page: IndustryPageData }
   | { kind: "service"; page: ServicePageData; categoryName: string; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData };
 
 export interface PreviewMessage {
