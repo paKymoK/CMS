@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CaseStudyArticle, PostArticle } from "@cms/content-renderer";
-import { CASE_STUDY_LABELS, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
+import { CASE_STUDY_LABELS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 /**
  * The document the admin's preview shows in an iframe. It holds no data of its own: the admin
@@ -23,8 +23,19 @@ export default function Frame() {
     };
     window.addEventListener("message", onMessage);
     document.addEventListener("click", onClick);
+    // The frame never scrolls itself: it reports its content height and the admin sizes the iframe to it.
+    let lastHeight = 0;
+    const reportHeight = () => {
+      const height = document.documentElement.scrollHeight;
+      if (height === lastHeight) return;
+      lastHeight = height;
+      window.parent.postMessage({ type: MSG_HEIGHT, height }, window.location.origin);
+    };
+    const observer = new ResizeObserver(reportHeight);
+    observer.observe(document.body);
     window.parent.postMessage({ type: MSG_READY }, window.location.origin);
     return () => {
+      observer.disconnect();
       window.removeEventListener("message", onMessage);
       document.removeEventListener("click", onClick);
     };

@@ -10,6 +10,10 @@
   --font-jetbrains-mono: "JetBrains Mono", monospace;
 }
 
+html {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   background: var(--background);

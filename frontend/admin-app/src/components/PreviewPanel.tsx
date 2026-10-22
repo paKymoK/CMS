@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { MSG_READY, MSG_RENDER, PREVIEW_FRAME_URL, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
+import {
+  MSG_HEIGHT,
+  MSG_READY,
+  MSG_RENDER,
+  PREVIEW_FRAME_URL,
+  type PreviewMessage,
+  type PreviewPage,
+} from "../lib/previewProtocol";
 
 const DEVICES = [
   { key: "desktop", label: "Desktop", width: "100%" },
@@ -15,16 +22,28 @@ type DeviceKey = (typeof DEVICES)[number]["key"];
  * token or website is involved. The device buttons only change the iframe's width, so the page's
  * own breakpoints do the rest.
  */
-export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onClose: () => void }) {
+export default function PreviewPanel({
+  page,
+  onClose,
+}: {
+  page: PreviewPage;
+  onClose: () => void;
+}) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameReady, setFrameReady] = useState(false);
+  const [frameHeight, setFrameHeight] = useState<number | null>(null);
   const [device, setDevice] = useState<DeviceKey>("desktop");
 
   useEffect(() => {
     const onReady = (e: MessageEvent) => {
-      if (e.origin === window.location.origin && e.source === frameRef.current?.contentWindow && e.data?.type === MSG_READY) {
-        setFrameReady(true);
-      }
+      if (
+        e.origin !== window.location.origin ||
+        e.source !== frameRef.current?.contentWindow
+      )
+        return;
+      if (e.data?.type === MSG_READY) setFrameReady(true);
+      else if (e.data?.type === MSG_HEIGHT && typeof e.data.height === "number")
+        setFrameHeight(e.data.height);
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("message", onReady);
@@ -38,7 +57,10 @@ export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onC
   useEffect(() => {
     if (!frameReady) return;
     const message: PreviewMessage = { type: MSG_RENDER, page };
-    frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
+    frameRef.current?.contentWindow?.postMessage(
+      message,
+      window.location.origin,
+    );
   }, [frameReady, page]);
 
   const width = DEVICES.find((d) => d.key === device)!.width;
@@ -47,7 +69,14 @@ export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onC
     <div
       role="dialog"
       aria-label="Preview"
-      style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", flexDirection: "column", background: "#e8eef8" }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        flexDirection: "column",
+        background: "#e8eef8",
+      }}
     >
       <div
         style={{
@@ -61,11 +90,29 @@ export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onC
           borderBottom: "1px solid #e3e9f4",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            minWidth: 0,
+          }}
+        >
           <strong style={{ fontSize: 14, color: "#0b1b3a" }}>Preview</strong>
-          <span style={{ fontSize: 12.5, color: "#7b8aa5" }}>Shows your current edits, saved or not.</span>
+          <span style={{ fontSize: 12.5, color: "#7b8aa5" }}>
+            Shows your current edits, saved or not.
+          </span>
         </div>
-        <div style={{ display: "flex", gap: 4, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 4,
+            padding: 4,
+            border: "1px solid #dde4f0",
+            borderRadius: 12,
+            background: "#e8eef8",
+          }}
+        >
           {DEVICES.map((d) => (
             <button
               key={d.key}
@@ -81,7 +128,8 @@ export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onC
                 fontSize: 12.5,
                 fontWeight: 600,
                 background: device === d.key ? "#ffffff" : "transparent",
-                boxShadow: device === d.key ? "0 1px 3px rgba(10,30,70,.12)" : "none",
+                boxShadow:
+                  device === d.key ? "0 1px 3px rgba(10,30,70,.12)" : "none",
                 color: device === d.key ? "#0b1b3a" : "#5b6b86",
               }}
             >
@@ -108,21 +156,31 @@ export default function PreviewPanel({ page, onClose }: { page: PreviewPage; onC
           Close
         </button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", padding: device === "desktop" ? 0 : 20 }}>
-        <iframe
-          ref={frameRef}
-          src={PREVIEW_FRAME_URL}
-          title="Preview"
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+        <div
           style={{
-            width,
-            maxWidth: "100%",
-            height: "100%",
-            border: "none",
-            background: "#ffffff",
-            boxShadow: device === "desktop" ? "none" : "0 8px 30px rgba(10,30,70,.18)",
-            transition: "width .2s",
+            display: "flex",
+            justifyContent: "center",
+            padding: device === "desktop" ? 0 : 20,
           }}
-        />
+        >
+          <iframe
+            ref={frameRef}
+            src={PREVIEW_FRAME_URL}
+            title="Preview"
+            style={{
+              width,
+              maxWidth: "100%",
+              height: frameHeight ?? "100%",
+              display: "block",
+              border: "none",
+              background: "#ffffff",
+              boxShadow:
+                device === "desktop" ? "none" : "0 8px 30px rgba(10,30,70,.18)",
+              transition: "width .2s",
+            }}
+          />
+        </div>
       </div>
     </div>
   );

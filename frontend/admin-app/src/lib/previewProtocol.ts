@@ -11,6 +11,8 @@ import type {
 export const PREVIEW_FRAME_URL = "/preview-frame.html";
 export const MSG_READY = "cms-preview:ready";
 export const MSG_RENDER = "cms-preview:render";
+/** Frame → admin: the height of the rendered page, so the iframe can grow to fit and only the admin scrolls. */
+export const MSG_HEIGHT = "cms-preview:height";
 
 /** What the frame should draw. */
 export type PreviewPage =
