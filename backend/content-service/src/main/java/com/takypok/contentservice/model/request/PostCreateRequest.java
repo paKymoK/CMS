@@ -25,4 +25,8 @@ public class PostCreateRequest {
   private JsonNode tags;
   private Boolean featured;
   private String layout;
+  private String seoTitle;
+  private String seoDescription;
+  private String seoImage;
+  private Boolean seoNoindex;
 }

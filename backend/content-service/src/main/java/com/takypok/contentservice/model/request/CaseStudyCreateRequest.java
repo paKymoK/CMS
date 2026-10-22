@@ -20,4 +20,8 @@ public class CaseStudyCreateRequest {
   private String summary;
   private JsonNode results;
   private Long testimonialId;
+  private String seoTitle;
+  private String seoDescription;
+  private String seoImage;
+  private Boolean seoNoindex;
 }

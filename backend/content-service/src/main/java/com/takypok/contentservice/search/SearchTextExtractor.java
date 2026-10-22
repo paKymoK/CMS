@@ -40,7 +40,7 @@ public final class SearchTextExtractor {
   /** Fields that are technical rather than readable: never indexed. */
   private static final Pattern SKIPPED_KEY =
       Pattern.compile(
-          "(?i:slug|url|href|image|photo|logo|icon|avatar|background|colou?r|layout|date)$"
+          "(?i:slug|url|href|image|photo|logo|icon|avatar|background|colou?r|layout|date|seoTitle|seoDescription)$"
               + "|^(?:id|key|from|to)$|(?:Id|Key|From|To)$");
 
   private static final Pattern COMBINING_MARKS = Pattern.compile("\\p{M}+");

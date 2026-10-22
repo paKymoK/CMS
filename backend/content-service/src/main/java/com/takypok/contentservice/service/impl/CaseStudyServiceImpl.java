@@ -17,6 +17,7 @@ import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.SearchService;
+import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.contentservice.util.StaleEdit;
 import com.takypok.core.exception.ApplicationException;
@@ -93,7 +94,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
                             item,
                             request.getTitle(),
                             request.getSlug(),
-                            toFields(request),
+                            withStoredSeo(toFields(request), item, request),
                             request.getDisplayOrder(),
                             request.getActive(),
                             request.getStatus())));
@@ -263,6 +264,10 @@ public class CaseStudyServiceImpl implements CaseStudyService {
     f.setBody(r.getBody());
     f.setResults(r.getResults());
     f.setTestimonialId(r.getTestimonialId());
+    f.setSeoTitle(FieldRules.keepOrClear(r.getSeoTitle(), null));
+    f.setSeoDescription(FieldRules.keepOrClear(r.getSeoDescription(), null));
+    f.setSeoImage(FieldRules.keepOrClear(r.getSeoImage(), null));
+    f.setSeoNoindex(Boolean.TRUE.equals(r.getSeoNoindex()));
     return f;
   }
 
@@ -277,6 +282,30 @@ public class CaseStudyServiceImpl implements CaseStudyService {
     f.setResults(r.getResults());
     f.setTestimonialId(r.getTestimonialId());
     return f;
+  }
+
+  /**
+   * The search-engine fields of an update: left out of the request keeps the stored value, blank
+   * clears it, so a client that does not know these fields never wipes them.
+   */
+  private CaseStudyFields withStoredSeo(
+      CaseStudyFields fields, ContentItem item, CaseStudyUpdateRequest r) {
+    CaseStudyFields stored = fieldsOf(item);
+    fields.setSeoTitle(FieldRules.keepOrClear(r.getSeoTitle(), stored.getSeoTitle()));
+    fields.setSeoDescription(
+        FieldRules.keepOrClear(r.getSeoDescription(), stored.getSeoDescription()));
+    fields.setSeoImage(FieldRules.keepOrClear(r.getSeoImage(), stored.getSeoImage()));
+    fields.setSeoNoindex(
+        r.getSeoNoindex() != null
+            ? r.getSeoNoindex()
+            : Boolean.TRUE.equals(stored.getSeoNoindex()));
+    return fields;
+  }
+
+  private CaseStudyFields fieldsOf(ContentItem item) {
+    return objectMapper.convertValue(
+        item.getData() != null ? item.getData() : objectMapper.createObjectNode(),
+        CaseStudyFields.class);
   }
 
   /**

@@ -69,8 +69,16 @@ public class IndustryPageFields implements ContentFields {
   /** solutions | reasons | stories | insights */
   private List<String> hiddenSections;
 
+  /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
+
   private String seoDescription;
+
+  /** Social-share image (media URL): when blank the page's main image is used. */
+  private String seoImage;
+
+  /** Asks search engines not to index the page. */
+  private Boolean seoNoindex;
 
   @Getter
   @Setter

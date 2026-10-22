@@ -1,6 +1,9 @@
 package com.takypok.contentservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -334,5 +337,80 @@ class CaseStudyServiceImplTest {
         .verify();
 
     verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  private static final String SEO_CASE_STUDY =
+      "{\"slug\":\"cs\",\"title\":\"Case\",\"category\":\"cloud\","
+          + "\"seoTitle\":\"Stored SEO title\",\"seoDescription\":\"Stored description\","
+          + "\"seoImage\":\"/media-service/images/seo.webp\",\"seoNoindex\":true}";
+
+  private com.takypok.contentservice.model.request.CaseStudyUpdateRequest caseUpdate() {
+    var request = new com.takypok.contentservice.model.request.CaseStudyUpdateRequest();
+    request.setId(1L);
+    request.setTitle("Case");
+    request.setSlug("cs");
+    return request;
+  }
+
+  @Test
+  void aNewCaseStudyStoresItsSeoFieldsAndIsIndexableByDefault() {
+    when(contentItemRepository.findBySlug(1L, "case_study", "cs")).thenReturn(Mono.empty());
+    when(contentItemWriter.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    CaseStudyCreateRequest request = new CaseStudyCreateRequest();
+    request.setTitle("Case");
+    request.setSlug("cs");
+    request.setSeoTitle("Custom title");
+    request.setSeoDescription("  ");
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(
+            created -> {
+              assertEquals("Custom title", created.seoTitle());
+              assertNull(created.seoDescription());
+              assertFalse(created.seoNoindex());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void aCaseStudyUpdateThatLeavesTheSeoFieldsOutKeepsTheStoredOnes() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(1L, 1L))
+        .thenReturn(Mono.just(caseStudy(1L, 1L, SEO_CASE_STUDY)));
+    when(contentItemRepository.findBySlug(1L, "case_study", "cs")).thenReturn(Mono.empty());
+    when(contentItemWriter.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+    StepVerifier.create(service.update(1L, caseUpdate()))
+        .assertNext(
+            updated -> {
+              assertEquals("Stored SEO title", updated.seoTitle());
+              assertEquals("/media-service/images/seo.webp", updated.seoImage());
+              assertTrue(updated.seoNoindex());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void aCaseStudyUpdateWithBlankSeoFieldsClearsThem() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(1L, 1L))
+        .thenReturn(Mono.just(caseStudy(1L, 1L, SEO_CASE_STUDY)));
+    when(contentItemRepository.findBySlug(1L, "case_study", "cs")).thenReturn(Mono.empty());
+    when(contentItemWriter.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    var request = caseUpdate();
+    request.setSeoTitle("");
+    request.setSeoImage("");
+    request.setSeoNoindex(false);
+
+    StepVerifier.create(service.update(1L, request))
+        .assertNext(
+            updated -> {
+              assertNull(updated.seoTitle());
+              assertEquals("Stored description", updated.seoDescription(), "left out: kept");
+              assertNull(updated.seoImage());
+              assertFalse(updated.seoNoindex());
+            })
+        .verifyComplete();
   }
 }

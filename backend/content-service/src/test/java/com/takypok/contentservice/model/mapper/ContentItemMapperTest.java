@@ -207,6 +207,33 @@ class ContentItemMapperTest {
         .verify();
   }
 
+  @Test
+  void aSeoTitleOrDescriptionBeyondTheSafetyLimitIsRejected() throws Exception {
+    ContentItemMapper mapper =
+        mapperWithRegistry(
+            Map.of(
+                "post",
+                com.takypok.contentservice.model.content.types.PostFields.class,
+                "case_study",
+                com.takypok.contentservice.model.content.types.CaseStudyFields.class));
+
+    for (String type : new String[] {"post", "case_study"}) {
+      JsonNode tooLongTitle =
+          objectMapper.readTree("{\"title\": \"T\", \"seoTitle\": \"" + "x".repeat(256) + "\"}");
+      StepVerifier.create(mapper.resolveAndValidate(type, tooLongTitle))
+          .expectErrorMatches(
+              e -> e instanceof ApplicationException && e.getMessage().contains("seoTitle"))
+          .verify();
+      JsonNode tooLongDescription =
+          objectMapper.readTree(
+              "{\"title\": \"T\", \"seoDescription\": \"" + "x".repeat(501) + "\"}");
+      StepVerifier.create(mapper.resolveAndValidate(type, tooLongDescription))
+          .expectErrorMatches(
+              e -> e instanceof ApplicationException && e.getMessage().contains("seoDescription"))
+          .verify();
+    }
+  }
+
   private ContentItemMapper mapperWithRegistry(
       Map<String, Class<? extends ContentFields>> registry) {
     return new ContentItemMapper(objectMapper, validator, registry);

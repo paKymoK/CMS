@@ -18,6 +18,10 @@ public record PostDetailResponse(
     String authorBio,
     String authorAvatar,
     String layout,
+    String seoTitle,
+    String seoDescription,
+    String seoImage,
+    Boolean seoNoindex,
     int readMinutes,
     List<PostSummaryResponse> related) {
 
@@ -37,6 +41,10 @@ public record PostDetailResponse(
         post.authorBio(),
         post.authorAvatar(),
         post.layout() != null ? post.layout() : "default",
+        post.seoTitle(),
+        post.seoDescription(),
+        post.seoImage(),
+        Boolean.TRUE.equals(post.seoNoindex()),
         ReadTimeCalculator.minutesFor(post.body()),
         related);
   }

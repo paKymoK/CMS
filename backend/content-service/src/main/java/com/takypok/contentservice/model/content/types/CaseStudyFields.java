@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,4 +34,18 @@ public class CaseStudyFields implements ContentFields {
 
   /** content_item id of a "testimonial" item of the same site; null when there is no quote. */
   private Long testimonialId;
+
+  /** Search-engine title: when set it is the whole page title. */
+  @Size(max = 255)
+  private String seoTitle;
+
+  /** Search-engine description: when blank the summary is used. */
+  @Size(max = 500)
+  private String seoDescription;
+
+  /** Social-share image (media URL): when blank the cover image is used. */
+  private String seoImage;
+
+  /** Asks search engines not to index the case study. */
+  private Boolean seoNoindex;
 }

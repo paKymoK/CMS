@@ -83,4 +83,18 @@ class SearchTextExtractorTest {
     var none = SearchTextExtractor.extract((JsonNode) null);
     assertEquals("", none.title());
   }
+
+  @Test
+  void searchEngineTextIsNotIndexedBecauseItOnlyRepeatsTheTitleAndExcerpt() throws Exception {
+    var text =
+        extract(
+            """
+            {"title": "Cloud migration", "excerpt": "Moving a bank", "body": "<p>Real body.</p>",
+            "seoTitle": "Cloud migration | Brand", "seoDescription": "Marketing blurb for search",
+            "seoImage": "/media-service/images/x.webp", "seoNoindex": true}
+            """);
+    assertEquals("Real body.", text.body());
+    assertFalse(text.meta().contains("Brand"));
+    assertFalse(text.meta().contains("blurb"));
+  }
 }

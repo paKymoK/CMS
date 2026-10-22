@@ -14,6 +14,10 @@ public record CaseStudyDetailResponse(
     String date,
     String category,
     JsonNode results,
+    String seoTitle,
+    String seoDescription,
+    String seoImage,
+    Boolean seoNoindex,
     TestimonialSummary testimonial,
     List<CaseStudySummaryResponse> related) {
 
@@ -43,6 +47,10 @@ public record CaseStudyDetailResponse(
         caseStudy.date(),
         caseStudy.category(),
         caseStudy.results(),
+        caseStudy.seoTitle(),
+        caseStudy.seoDescription(),
+        caseStudy.seoImage(),
+        Boolean.TRUE.equals(caseStudy.seoNoindex()),
         testimonial,
         related);
   }

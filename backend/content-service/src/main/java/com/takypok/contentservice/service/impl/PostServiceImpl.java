@@ -15,6 +15,7 @@ import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SearchService;
+import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
@@ -79,6 +80,13 @@ public class PostServiceImpl implements PostService {
           fields.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
           fields.setLayout(validLayout(request.getLayout()));
           fields.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
+          applySeo(
+              fields,
+              null,
+              request.getSeoTitle(),
+              request.getSeoDescription(),
+              request.getSeoImage(),
+              request.getSeoNoindex());
           copyShared(
               fields,
               status,
@@ -139,6 +147,19 @@ public class PostServiceImpl implements PostService {
                           request.getAuthorBio(),
                           request.getAuthorAvatar(),
                           request.getTags());
+                      // Not sent by every client: left out keeps the stored value, blank clears it.
+                      fields.setAuthorBio(
+                          FieldRules.keepOrClear(request.getAuthorBio(), existing.getAuthorBio()));
+                      fields.setAuthorAvatar(
+                          FieldRules.keepOrClear(
+                              request.getAuthorAvatar(), existing.getAuthorAvatar()));
+                      applySeo(
+                          fields,
+                          existing,
+                          request.getSeoTitle(),
+                          request.getSeoDescription(),
+                          request.getSeoImage(),
+                          request.getSeoNoindex());
                       return save(
                           siteId,
                           item,
@@ -148,6 +169,30 @@ public class PostServiceImpl implements PostService {
                           request.getActive(),
                           request.getStatus());
                     }));
+  }
+
+  /**
+   * The search-engine fields. On update a field the request leaves out keeps its stored value, and
+   * a blank one clears it, so a client that does not know these fields never wipes them.
+   */
+  private static void applySeo(
+      PostFields fields,
+      PostFields existing,
+      String seoTitle,
+      String seoDescription,
+      String seoImage,
+      Boolean seoNoindex) {
+    fields.setSeoTitle(
+        FieldRules.keepOrClear(seoTitle, existing == null ? null : existing.getSeoTitle()));
+    fields.setSeoDescription(
+        FieldRules.keepOrClear(
+            seoDescription, existing == null ? null : existing.getSeoDescription()));
+    fields.setSeoImage(
+        FieldRules.keepOrClear(seoImage, existing == null ? null : existing.getSeoImage()));
+    fields.setSeoNoindex(
+        seoNoindex != null
+            ? seoNoindex
+            : existing != null && Boolean.TRUE.equals(existing.getSeoNoindex()));
   }
 
   /** The fields create and update treat identically: replaced wholesale from the request. */

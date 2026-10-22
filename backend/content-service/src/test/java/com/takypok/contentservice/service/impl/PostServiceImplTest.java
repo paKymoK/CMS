@@ -1,8 +1,10 @@
 package com.takypok.contentservice.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -17,6 +19,7 @@ import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
+import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.core.config.ConfigObjectMapper;
@@ -229,5 +232,154 @@ class PostServiceImplTest {
     StepVerifier.create(service.create(1L, request))
         .expectError(ApplicationException.class)
         .verify();
+  }
+
+  private static final String SEO_POST =
+      "{\"slug\":\"a-post\",\"title\":\"A post\",\"category\":\"insight\",\"layout\":\"default\","
+          + "\"authorBio\":\"Long bio\",\"authorAvatar\":\"/media-service/images/a.webp\","
+          + "\"seoTitle\":\"Stored SEO title\",\"seoDescription\":\"Stored SEO description\","
+          + "\"seoImage\":\"/media-service/images/seo.webp\",\"seoNoindex\":true}";
+
+  private PostUpdateRequest updateOf(long id) {
+    PostUpdateRequest request = new PostUpdateRequest();
+    request.setId(id);
+    request.setTitle("A post");
+    request.setSlug("a-post");
+    return request;
+  }
+
+  @Test
+  void aNewPostStoresItsSeoFieldsAndBlankOnesStayEmpty() {
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("A post");
+    request.setSlug("a-post");
+    request.setSeoTitle("Custom title");
+    request.setSeoDescription("   ");
+    request.setSeoNoindex(true);
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(
+            post -> {
+              assertEquals("Custom title", post.seoTitle());
+              assertNull(post.seoDescription(), "a blank value is stored as empty");
+              assertNull(post.seoImage());
+              assertTrue(post.seoNoindex());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void aNewPostIsIndexableByDefault() {
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("A post");
+    request.setSlug("a-post");
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(post -> assertFalse(post.seoNoindex()))
+        .verifyComplete();
+  }
+
+  @Test
+  void anUpdateThatLeavesTheSeoFieldsOutKeepsTheStoredOnes() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(post(5L, 1L, SEO_POST)));
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+
+    StepVerifier.create(service.update(1L, updateOf(5L)))
+        .assertNext(
+            post -> {
+              assertEquals("Stored SEO title", post.seoTitle());
+              assertEquals("Stored SEO description", post.seoDescription());
+              assertEquals("/media-service/images/seo.webp", post.seoImage());
+              assertTrue(post.seoNoindex());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void anUpdateWithBlankSeoFieldsClearsThemAndANewValueReplacesTheOldOne() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(post(5L, 1L, SEO_POST)));
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+    PostUpdateRequest request = updateOf(5L);
+    request.setSeoTitle("");
+    request.setSeoDescription("New description");
+    request.setSeoImage("");
+    request.setSeoNoindex(false);
+
+    StepVerifier.create(service.update(1L, request))
+        .assertNext(
+            post -> {
+              assertNull(post.seoTitle());
+              assertEquals("New description", post.seoDescription());
+              assertNull(post.seoImage());
+              assertFalse(post.seoNoindex());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void anUpdateFromAClientThatDoesNotSendTheAuthorBioOrAvatarKeepsThem() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(post(5L, 1L, SEO_POST)));
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+
+    StepVerifier.create(service.update(1L, updateOf(5L)))
+        .assertNext(
+            post -> {
+              assertEquals("Long bio", post.authorBio());
+              assertEquals("/media-service/images/a.webp", post.authorAvatar());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void aBlankAuthorBioClearsIt() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(post(5L, 1L, SEO_POST)));
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+    PostUpdateRequest request = updateOf(5L);
+    request.setAuthorBio("");
+
+    StepVerifier.create(service.update(1L, request))
+        .assertNext(post -> assertNull(post.authorBio()))
+        .verifyComplete();
+  }
+
+  @Test
+  void thePublicDetailCarriesTheSeoFieldsAndNoindexDefaultsToFalse() throws Exception {
+    ContentItem withSeo = post(1L, 1L, SEO_POST);
+    ContentItem without =
+        post(2L, 1L, "{\"slug\":\"plain\",\"title\":\"Plain\",\"category\":\"insight\"}");
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.just(withSeo));
+    when(contentItemRepository.findBySlug(1L, "post", "plain")).thenReturn(Mono.just(without));
+    when(contentItemRepository
+            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+                1L, "post", "PUBLISHED", true))
+        .thenReturn(Flux.just(withSeo, without));
+
+    StepVerifier.create(service.getPublishedDetailBySlug(1L, "a-post"))
+        .assertNext(
+            detail -> {
+              assertEquals("Stored SEO title", detail.seoTitle());
+              assertEquals("/media-service/images/seo.webp", detail.seoImage());
+              assertTrue(detail.seoNoindex());
+            })
+        .verifyComplete();
+    StepVerifier.create(service.getPublishedDetailBySlug(1L, "plain"))
+        .assertNext(
+            detail -> {
+              assertNull(detail.seoTitle());
+              assertFalse(detail.seoNoindex());
+            })
+        .verifyComplete();
   }
 }
