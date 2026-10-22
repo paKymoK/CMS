@@ -235,14 +235,16 @@ function ResourceEditorForm({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            <button
-              type="button"
-              aria-label={`Back to ${resource.label.toLowerCase()}`}
-              onClick={() => navigate(editor.backPath)}
-              style={{ width: 38, height: 38, flex: "none", borderRadius: 10, border: "1px solid #dde4f0", background: "transparent", cursor: "pointer", color: "#26354f" }}
-            >
-              ←
-            </button>
+            {!editor.singleton && (
+              <button
+                type="button"
+                aria-label={`Back to ${resource.label.toLowerCase()}`}
+                onClick={() => navigate(editor.backPath)}
+                style={{ width: 38, height: 38, flex: "none", borderRadius: 10, border: "1px solid #dde4f0", background: "transparent", cursor: "pointer", color: "#26354f" }}
+              >
+                ←
+              </button>
+            )}
             <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
               <span style={{ ...labelStyle, fontSize: 10 }}>
                 {resource.label} / {isNew ? "New" : `ID ${id}`} · {site ? site.toUpperCase() : ""}
@@ -371,32 +373,34 @@ function ResourceEditorForm({
                   ))}
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={labelStyle}>URL</span>
-                  <div style={{ display: "flex", alignItems: "center", border: "1px solid #dde4f0", background: "#f4f7fc", borderRadius: 10 }}>
-                    <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#7b8aa5", whiteSpace: "nowrap" }}>
-                      {siteSub ?? "site"}/{editor.slugPrefix}/
-                    </span>
-                    <input
-                      value={slug}
-                      onChange={(e) => {
-                        setSlug(slugify(e.target.value));
+                {!editor.noSlug && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={labelStyle}>URL</span>
+                    <div style={{ display: "flex", alignItems: "center", border: "1px solid #dde4f0", background: "#f4f7fc", borderRadius: 10 }}>
+                      <span style={{ padding: "0 0 0 12px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#7b8aa5", whiteSpace: "nowrap" }}>
+                        {siteSub ?? "site"}/{editor.slugPrefix}/
+                      </span>
+                      <input
+                        value={slug}
+                        onChange={(e) => {
+                          setSlug(slugify(e.target.value));
+                          touch();
+                        }}
+                        style={{ flex: 1, minWidth: 60, border: "none", background: "transparent", padding: "10px 12px 10px 2px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#0b1b3a", outline: "none" }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSlug(slugify(titleValue));
                         touch();
                       }}
-                      style={{ flex: 1, minWidth: 60, border: "none", background: "transparent", padding: "10px 12px 10px 2px", fontFamily: "var(--font-mono)", fontSize: 12, color: "#0b1b3a", outline: "none" }}
-                    />
+                      style={{ ...outlineButton, minHeight: 34, justifyContent: "center" }}
+                    >
+                      From title
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSlug(slugify(titleValue));
-                      touch();
-                    }}
-                    style={{ ...outlineButton, minHeight: 34, justifyContent: "center" }}
-                  >
-                    From title
-                  </button>
-                </div>
+                )}
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>

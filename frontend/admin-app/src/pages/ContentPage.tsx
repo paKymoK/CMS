@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import HistoryDrawer from "../components/HistoryDrawer";
 import type { ItemPrefill } from "../lib/audit";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
@@ -193,6 +193,8 @@ export default function ContentPage() {
   if (!resource) {
     return <Empty description="Unknown content type" />;
   }
+  // A singleton (the About page) has no list: open its editor.
+  if (resource.editor?.singleton) return <Navigate to={resource.editor.backPath} replace />;
 
   const openCreate = () => {
     if (resource.editorRoute) {

@@ -7,16 +7,22 @@ import { useSiteAccess } from "../auth/useSiteAccess";
 import { useSite } from "../lib/useSite";
 import AdminSearchBox from "./AdminSearchBox";
 import { NAVIGATION, type NavItem } from "../config/navigation";
+import { RESOURCES } from "../config/resources";
 import { SITES } from "../config/sites";
 
 // Under an "About Page" group, "About · Hero" repeats its own heading — drop the redundant prefix
 // in the sidebar (the page title in the topbar keeps the full label).
 const stripGroupPrefix = (label: string) => label.replace(/^About · /, "");
 
-// The post / case-study editors live outside /content/*, but belong to a sidebar entry.
+// Full-page editors live outside /content/*, but belong to a sidebar entry: their resource's list,
+// or the resource's own link when it is a singleton with no list.
 function navKeyFor(pathname: string): string {
   if (pathname.startsWith("/posts/")) return "/content/posts";
-  if (pathname.startsWith("/case-studies/")) return "/content/case-studies";
+  for (const r of RESOURCES) {
+    if (!r.editorRoute) continue;
+    const base = r.editorRoute("new").replace(/\/new$/, "");
+    if (pathname === base || pathname.startsWith(`${base}/`)) return r.editor?.singleton ? base : `/content/${r.key}`;
+  }
   return pathname;
 }
 

@@ -39,11 +39,11 @@ export const NAVIGATION: NavItem[] = [
     icon: "M4 21V6l8-3 8 3v15M9 21v-5h6v5M8 10h.01M12 10h.01M16 10h.01M8 13h.01M12 13h.01M16 13h.01",
     items: inGroup("company"),
   },
+  // One page per site, so no list: the link opens its editor directly (SingletonEditorRedirect).
   {
-    key: "about-page",
+    key: "/about-page",
     label: "About Page",
     icon: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8h.01M11 12h1v5h1",
-    items: inGroup("about"),
   },
   {
     key: "services-pages",

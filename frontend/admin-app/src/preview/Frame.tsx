@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CaseStudyArticle, IndustryPage, PostArticle, ServicePage } from "@cms/content-renderer";
+import { AboutPage, CaseStudyArticle, IndustryPage, PostArticle, ServicePage } from "@cms/content-renderer";
 import { CASE_STUDY_LABELS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 /** Stand-in for a section that reads site-wide content rather than the page being edited. */
@@ -51,6 +51,7 @@ export default function Frame() {
   }, []);
 
   if (!page) return null;
+  if (page.kind === "about") return <AboutPage page={page.page} />;
   if (page.kind === "industry") {
     return (
       <IndustryPage

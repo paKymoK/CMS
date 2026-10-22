@@ -2,6 +2,7 @@
 @import "../../../packages/content-renderer/src/theme.css";
 @import "../../../packages/content-renderer/src/post.css";
 @import "../../../packages/content-renderer/src/shared.css";
+@import "../../../packages/content-renderer/src/about.css";
 @import "../../../packages/content-renderer/src/industry.css";
 @import "../../../packages/content-renderer/src/service.css";
 @source "../../../packages/content-renderer/src";

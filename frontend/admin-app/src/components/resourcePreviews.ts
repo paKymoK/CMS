@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import CaseStudyPreview, { type ResourcePreviewProps } from "./CaseStudyPreview";
+import AboutPreview from "./AboutPreview";
 import IndustryPreview from "./IndustryPreview";
 import ServicePreview from "./ServicePreview";
 
@@ -8,4 +9,5 @@ export const RESOURCE_PREVIEWS: Record<string, ComponentType<ResourcePreviewProp
   "case-studies": CaseStudyPreview,
   "service-pages": ServicePreview,
   "industry-pages": IndustryPreview,
+  "about-page": AboutPreview,
 };

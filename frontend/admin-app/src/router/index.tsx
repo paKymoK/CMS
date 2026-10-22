@@ -10,6 +10,7 @@ import MediaLibraryPage from "../pages/MediaLibraryPage";
 import AssistantPage from "../pages/AssistantPage";
 import PostEditorPage from "../pages/PostEditorPage";
 import ResourceEditorPage from "../pages/ResourceEditorPage";
+import SingletonEditorRedirect from "../pages/SingletonEditorRedirect";
 import SearchPage from "../pages/SearchPage";
 import ActivityPage from "../pages/ActivityPage";
 import { RESOURCES } from "../config/resources";
@@ -35,6 +36,8 @@ export default function AppRouter() {
               <Route path="/case-studies/:id" element={<ResourceEditorPage resourceKey="case-studies" />} />
               <Route path="/service-pages/:id" element={<ResourceEditorPage resourceKey="service-pages" />} />
               <Route path="/industry-pages/:id" element={<ResourceEditorPage resourceKey="industry-pages" />} />
+              <Route path="/about-page" element={<SingletonEditorRedirect resourceKey="about-page" />} />
+              <Route path="/about-page/:id" element={<ResourceEditorPage resourceKey="about-page" />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />

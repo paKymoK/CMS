@@ -99,7 +99,15 @@ export interface ResourceConfig {
   /** Full-page editor only: sections for fields that set `group`. Ungrouped fields come first, then the sections in this order. */
   groups?: FieldGroup[];
   /** Present => the editorRoute page is the generic full-page form (ResourceEditorPage) driven by `fields`. */
-  editor?: { slugPrefix: string; singular: string; backPath: string };
+  editor?: {
+    slugPrefix: string;
+    singular: string;
+    backPath: string;
+    /** The site has exactly one: the sidebar opens the editor directly (no list, no back button). */
+    singleton?: boolean;
+    /** No URL of its own (the page lives at a fixed address), so the editor shows no URL box. */
+    noSlug?: boolean;
+  };
 }
 
 /** The field config a form path points at, e.g. ["results", 0, "value"] -> the `value` itemField of `results`. */
@@ -414,77 +422,75 @@ export const RESOURCES: ResourceConfig[] = [
     ],
   },
   {
-    key: "about-hero",
+    key: "about-page",
     group: "about",
-    label: "About · Hero",
+    label: "About page",
     apiPath: "/v1/admin/content-items",
-    contentType: "about_hero",
-    titleField: "title",
-    fields: [
-      field({ name: "breadcrumb", label: "Breadcrumb", type: "text" }),
-      field({ name: "title", label: "Headline", type: "textarea", required: true }),
-      field({ name: "subtitle", label: "Intro line", type: "textarea" }),
-      field({ name: "ctaLabel", label: "Button label", type: "text" }),
-      field({ name: "ctaUrl", label: "Button link", type: "text" }),
-      field({ name: "image", label: "Background photo", type: "image" }),
-      field({ name: "stats", label: "Three figures (value + label)", type: "stat-list" }),
+    contentType: "about_page",
+    titleField: "heroTitle",
+    editorRoute: (id) => `/about-page/${id}`,
+    editor: { slugPrefix: "about", singular: "About page", backPath: "/about-page", singleton: true, noSlug: true },
+    groups: [
+      { key: "hero", label: "Hero", defaultOpen: true },
+      { key: "intro", label: "Meet CMC Global", toggleable: true },
+      { key: "vision", label: "Our Vision", toggleable: true },
+      { key: "mission", label: "Our Mission", toggleable: true },
+      { key: "leaders", label: "Leadership team", toggleable: true },
+      { key: "values", label: "Our Values (4C)", toggleable: true },
+      { key: "seo", label: "SEO" },
     ],
-  },
-  {
-    key: "about-intro",
-    group: "about",
-    label: "About · Meet CMC Global",
-    apiPath: "/v1/admin/content-items",
-    contentType: "about_intro",
-    titleField: "title",
     fields: [
-      field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
-      field({ name: "title", label: "Heading", type: "text", required: true }),
-      field({ name: "body", label: "Story (blank line between paragraphs)", type: "textarea" }),
-      field({ name: "image", label: "Team collage (transparent PNG/WebP)", type: "image" }),
-      field({ name: "decorImage", label: "Background artwork", type: "image" }),
+      field({ name: "heroBreadcrumb", label: "Breadcrumb", type: "text", showInTable: false, group: "hero" }),
+      field({ name: "heroTitle", label: "Headline", type: "textarea", required: true, group: "hero" }),
+      field({ name: "heroSubtitle", label: "Intro line", type: "textarea", showInTable: false, group: "hero" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text", showInTable: false, group: "hero" }),
+      field({ name: "ctaUrl", label: "Button link", type: "text", showInTable: false, group: "hero" }),
+      field({ name: "heroImage", label: "Photo", type: "image", showInTable: false, group: "hero" }),
+      field({ name: "heroStats", label: "Three figures (value + label)", type: "stat-list", group: "hero" }),
+      field({ name: "introEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "intro" }),
+      field({ name: "introTitle", label: "Heading", type: "text", showInTable: false, group: "intro" }),
+      field({ name: "introBody", label: "Story (separate paragraphs with a blank line)", type: "textarea", showInTable: false, group: "intro" }),
+      field({ name: "introImage", label: "Team photo", type: "image", showInTable: false, group: "intro" }),
+      field({ name: "introDecorImage", label: "Decorative artwork behind the block", type: "image", showInTable: false, group: "intro" }),
+      field({ name: "growthTitle", label: "Heading above the growth figures", type: "text", showInTable: false, group: "intro" }),
+      field({ name: "growthStats", label: "Growth figures (the first five are shown)", type: "stat-list", group: "intro" }),
+      field({ name: "visionEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "vision" }),
+      field({ name: "visionTitle", label: "Statement (line break allowed)", type: "textarea", showInTable: false, group: "vision" }),
+      field({ name: "visionImage", label: "Background photo", type: "image", showInTable: false, group: "vision" }),
+      field({ name: "missionEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "mission" }),
+      field({ name: "missionBody", label: "Text (separate paragraphs with a blank line)", type: "textarea", showInTable: false, group: "mission" }),
+      field({ name: "missionImage", label: "Artwork", type: "image", showInTable: false, group: "mission" }),
+      field({ name: "leadersEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "leaders" }),
+      field({ name: "leadersTitle", label: "Heading", type: "text", showInTable: false, group: "leaders" }),
+      field({ name: "leadersRingImage", label: "Ring graphic behind the portraits", type: "image", showInTable: false, group: "leaders" }),
       field({
-        name: "statsTitle",
-        label: "Heading above the growth figures (the figures come from the Stats screen)",
-        type: "text",
-      }),
-    ],
-  },
-  {
-    key: "about-statements",
-    group: "about",
-    label: "About · Vision & Mission",
-    apiPath: "/v1/admin/content-items",
-    contentType: "about_statement",
-    titleField: "eyebrow",
-    fields: [
-      field({
-        name: "variant",
-        label: "Band",
-        type: "select",
-        required: true,
-        options: [
-          { label: "Vision (dark, big headline)", value: "vision" },
-          { label: "Mission (light, paragraph)", value: "mission" },
+        name: "leaders",
+        label: "Leaders (in display order)",
+        type: "object-list",
+        addLabel: "Add leader",
+        group: "leaders",
+        itemFields: [
+          field({ name: "name", label: "Name", type: "text", required: true }),
+          field({ name: "title", label: "Role", type: "text" }),
+          field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
         ],
       }),
-      field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
-      field({ name: "title", label: "Headline (Vision)", type: "textarea" }),
-      field({ name: "body", label: "Paragraph (Mission)", type: "textarea" }),
-      field({ name: "image", label: "Image", type: "image" }),
-    ],
-  },
-  {
-    key: "leaders",
-    group: "about",
-    label: "About · Leadership",
-    apiPath: "/v1/admin/content-items",
-    contentType: "leader",
-    titleField: "name",
-    fields: [
-      field({ name: "name", label: "Name", type: "text", required: true }),
-      field({ name: "title", label: "Role", type: "text" }),
-      field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
+      field({ name: "valuesEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "values" }),
+      field({ name: "valuesTitle", label: "Heading", type: "text", showInTable: false, group: "values" }),
+      field({ name: "valuesBody", label: "Description", type: "textarea", showInTable: false, group: "values" }),
+      field({
+        name: "values",
+        label: "Values (the first four are shown)",
+        type: "object-list",
+        addLabel: "Add value",
+        group: "values",
+        itemFields: [
+          field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
+          field({ name: "image", label: "Photo", type: "image" }),
+        ],
+      }),
+      field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
+      field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
     ],
   },
   {
@@ -583,18 +589,6 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "insightsLinkUrl", label: "Link", type: "text", showInTable: false, group: "insights" }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
-    ],
-  },
-  {
-    key: "about-values",
-    group: "about",
-    label: "About · Values (4C)",
-    apiPath: "/v1/admin/content-items",
-    contentType: "about_value",
-    titleField: "title",
-    fields: [
-      field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
-      field({ name: "image", label: "Photo", type: "image" }),
     ],
   },
   {
