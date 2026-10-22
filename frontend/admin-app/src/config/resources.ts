@@ -51,6 +51,8 @@ export interface FieldConfig {
   showInTable?: boolean;
   /** Full-page editor only: key of a `ResourceConfig.groups` entry; the field is drawn inside that collapsible section. */
   group?: string;
+  /** Full-page editor only: not drawn there because the editor already has a control for it (e.g. `slug`); still a list column. */
+  tableOnly?: boolean;
 }
 
 /** A collapsible section of the full-page editor's main column. */
@@ -61,6 +63,8 @@ export interface FieldGroup {
   toggleable?: boolean;
   /** Open when the editor loads. Defaults to closed. */
   defaultOpen?: boolean;
+  /** Text shown inside the section, for one that has no fields of its own (content edited elsewhere). */
+  description?: string;
 }
 
 /** Which sidebar group a screen lives in. */
@@ -572,10 +576,32 @@ export const RESOURCES: ResourceConfig[] = [
     contentType: "service_page",
     titleField: "navLabel",
     duplicable: true,
+    editorRoute: (id) => `/service-pages/${id}`,
+    editor: { slugPrefix: "services/[category]", singular: "service page", backPath: "/content/service-pages" },
+    groups: [
+      { key: "hero", label: "Hero", defaultOpen: true },
+      { key: "capabilities", label: "Capabilities", toggleable: true },
+      { key: "process", label: "Process", toggleable: true },
+      { key: "stories", label: "Success stories", toggleable: true },
+      { key: "reasons", label: "Reasons to partner", toggleable: true },
+      {
+        key: "industries",
+        label: "Industries strip",
+        toggleable: true,
+        description: "Shows the site's industries strip. Edit its cards under Service pages → Industries strip.",
+      },
+      {
+        key: "highlights",
+        label: "Latest highlights",
+        toggleable: true,
+        description: "Shows the latest published insights. Nothing to edit here.",
+      },
+      { key: "seo", label: "SEO" },
+    ],
     fields: [
       field({ name: "navLabel", label: "Menu name", type: "text", required: true }),
       field({ name: "shortLabel", label: "Breadcrumb name (defaults to the menu name)", type: "text", showInTable: false }),
-      field({ name: "slug", label: "URL slug", type: "text", required: true }),
+      field({ name: "slug", label: "URL slug", type: "text", required: true, tableOnly: true }),
       field({
         name: "category",
         label: "Category",
@@ -583,51 +609,55 @@ export const RESOURCES: ResourceConfig[] = [
         required: true,
         ref: { contentType: "service_category", valueField: "slug", labelField: "name" },
       }),
-      field({ name: "heroTitle", label: "Hero · Headline (line break allowed)", type: "textarea", required: true, showInTable: false }),
-      field({ name: "heroSubtitle", label: "Hero · Intro line", type: "textarea", showInTable: false }),
-      field({ name: "ctaLabel", label: "Hero · Button label", type: "text", showInTable: false }),
-      field({ name: "ctaUrl", label: "Hero · Button link", type: "text", showInTable: false }),
-      field({ name: "heroImage", label: "Hero · Artwork", type: "image", showInTable: false }),
-      field({ name: "heroStats", label: "Hero · Figures (optional, up to two)", type: "stat-list" }),
-      field({ name: "capabilitiesEyebrow", label: "Capabilities · Eyebrow", type: "text", showInTable: false }),
-      field({ name: "capabilitiesTitle", label: "Capabilities · Heading", type: "text", showInTable: false }),
-      field({ name: "capabilitiesSubtitle", label: "Capabilities · Description", type: "textarea", showInTable: false }),
+      field({ name: "heroTitle", label: "Headline (line break allowed)", type: "textarea", required: true, showInTable: false, group: "hero" }),
+      field({ name: "heroSubtitle", label: "Intro line", type: "textarea", showInTable: false, group: "hero" }),
+      field({ name: "ctaLabel", label: "Button label", type: "text", showInTable: false, group: "hero" }),
+      field({ name: "ctaUrl", label: "Button link", type: "text", showInTable: false, group: "hero" }),
+      field({ name: "heroImage", label: "Artwork", type: "image", showInTable: false, group: "hero" }),
+      field({ name: "heroStats", label: "Figures (optional, up to two)", type: "stat-list", group: "hero" }),
+      field({ name: "capabilitiesEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "capabilities" }),
+      field({ name: "capabilitiesTitle", label: "Heading", type: "text", showInTable: false, group: "capabilities" }),
+      field({ name: "capabilitiesSubtitle", label: "Description", type: "textarea", showInTable: false, group: "capabilities" }),
       field({
         name: "capabilities",
         label: "Capabilities (2 show as wide cards, 3+ as narrow ones)",
         type: "object-list",
         addLabel: "Add capability",
+        group: "capabilities",
         itemFields: [
           field({ name: "title", label: "Title", type: "text", required: true }),
           field({ name: "body", label: "Description", type: "textarea" }),
           field({ name: "image", label: "Image", type: "image" }),
         ],
       }),
-      field({ name: "processTitle", label: "Process · Heading", type: "text", showInTable: false }),
-      field({ name: "processSubtitle", label: "Process · Description", type: "textarea", showInTable: false }),
+      field({ name: "processTitle", label: "Heading", type: "text", showInTable: false, group: "process" }),
+      field({ name: "processSubtitle", label: "Description", type: "textarea", showInTable: false, group: "process" }),
       field({
         name: "processSteps",
         label: "Process steps (in order)",
         type: "object-list",
         addLabel: "Add step",
+        group: "process",
         itemFields: [
           field({ name: "title", label: "Title", type: "text", required: true }),
           field({ name: "image", label: "Image", type: "image" }),
         ],
       }),
-      field({ name: "storiesHeading", label: "Success stories · Left-column heading", type: "text", showInTable: false }),
+      field({ name: "storiesHeading", label: "Left-column heading", type: "text", showInTable: false, group: "stories" }),
       field({
         name: "caseStudies",
-        label: "Success stories · Case study slugs (first one supplies the figures)",
+        label: "Case study slugs (first one supplies the figures)",
         type: "string-list",
+        group: "stories",
       }),
-      field({ name: "reasonsTitle", label: "Reasons · Heading", type: "text", showInTable: false }),
-      field({ name: "reasonsSubtitle", label: "Reasons · Description", type: "textarea", showInTable: false }),
+      field({ name: "reasonsTitle", label: "Heading", type: "text", showInTable: false, group: "reasons" }),
+      field({ name: "reasonsSubtitle", label: "Description", type: "textarea", showInTable: false, group: "reasons" }),
       field({
         name: "reasons",
         label: "Reasons to partner (shown as a slider)",
         type: "object-list",
         addLabel: "Add reason",
+        group: "reasons",
         itemFields: [
           field({ name: "title", label: "Title", type: "text", required: true }),
           field({ name: "body", label: "Text", type: "textarea" }),
@@ -635,21 +665,8 @@ export const RESOURCES: ResourceConfig[] = [
           field({ name: "sideImage", label: "Small image", type: "image" }),
         ],
       }),
-      field({
-        name: "hiddenSections",
-        label: "Hide sections",
-        type: "multi-select",
-        options: [
-          { label: "Capabilities", value: "capabilities" },
-          { label: "Process", value: "process" },
-          { label: "Success stories", value: "stories" },
-          { label: "Reasons to partner", value: "reasons" },
-          { label: "Industries strip", value: "industries" },
-          { label: "Latest highlights", value: "highlights" },
-        ],
-      }),
-      field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false }),
-      field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false }),
+      field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
+      field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
     ],
   },
   {

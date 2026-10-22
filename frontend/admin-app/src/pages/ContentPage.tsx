@@ -226,6 +226,16 @@ export default function ContentPage() {
 
   // Opens the "new" form prefilled from an existing row: same content, a "-copy" slug, draft status.
   const openDuplicate = (row: Row) => {
+    if (resource.editorRoute) {
+      const content: Record<string, unknown> = { ...row };
+      delete content.id;
+      delete content.data;
+      if (typeof content.navLabel === "string") content.navLabel = `${content.navLabel} (copy)`;
+      navigate(resource.editorRoute("new"), {
+        state: { prefill: { data: content, displayOrder: row.displayOrder ?? 0, active: row.active } },
+      });
+      return;
+    }
     setEditing(null);
     form.resetFields();
     const values: Record<string, unknown> = { ...row };

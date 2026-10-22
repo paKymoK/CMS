@@ -157,7 +157,7 @@ function ResourceEditorForm({
   const [previewValues, setPreviewValues] = useState<Values | null>(null);
 
   const Preview = RESOURCE_PREVIEWS[resource.key];
-  const mainFields = resource.fields.filter((f) => f.area !== "side");
+  const mainFields = resource.fields.filter((f) => f.area !== "side" && !f.tableOnly);
   const groups = resource.groups ?? [];
   const plainFields = mainFields.filter((f) => !f.group || !groups.some((g) => g.key === f.group));
   const [openGroups, setOpenGroups] = useState<string[]>(groups.filter((g) => g.defaultOpen).map((g) => g.key));
@@ -171,9 +171,13 @@ function ResourceEditorForm({
   const saveMutation = useMutation({
     mutationFn: async (nextStatus: Status) => {
       const fieldValues = await form.validateFields();
+      // A loaded row also carries its metadata (siteId, createdAt, ...): only declared fields go into `data`.
+      const loaded = { ...form.getFieldsValue(true), ...fieldValues };
+      const content: Values = resource.contentType
+        ? Object.fromEntries(Object.entries(loaded).filter(([key]) => resource.fields.some((f) => f.name === key)))
+        : loaded;
       const values: Values = {
-        ...form.getFieldsValue(true),
-        ...fieldValues,
+        ...content,
         ...(isNew ? {} : { id: Number(id), version }),
         ...(groups.length ? { hiddenSections } : {}),
         slug: slug || undefined,
@@ -324,6 +328,7 @@ function ResourceEditorForm({
                         ) : undefined,
                         children: (
                           <div style={{ opacity: off ? 0.55 : 1 }}>
+                            {g.description && <p style={{ margin: 0, color: "#5b6b86", fontSize: 13 }}>{g.description}</p>}
                             {mainFields.filter((f) => f.group === g.key).map(renderField)}
                           </div>
                         ),

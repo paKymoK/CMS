@@ -33,6 +33,7 @@ export default function AppRouter() {
               <Route path="/content/:resourceKey" element={<ContentPage />} />
               <Route path="/posts/:id" element={<PostEditorPage />} />
               <Route path="/case-studies/:id" element={<ResourceEditorPage resourceKey="case-studies" />} />
+              <Route path="/service-pages/:id" element={<ResourceEditorPage resourceKey="service-pages" />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />
