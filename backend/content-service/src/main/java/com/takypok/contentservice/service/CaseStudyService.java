@@ -37,5 +37,4 @@ public interface CaseStudyService {
       Long siteId, String category, String q, int page, int size, boolean exact);
 
   Mono<CaseStudyDetailResponse> getPublishedDetailBySlug(Long siteId, String slug);
-
 }

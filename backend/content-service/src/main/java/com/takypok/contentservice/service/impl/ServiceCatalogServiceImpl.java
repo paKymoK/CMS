@@ -36,9 +36,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
 
   @Override
   public Mono<ServiceNavResponse> getNav(Long siteId) {
-    return Mono.zip(
-            items(siteId, CATEGORY).collectList(),
-            items(siteId, PAGE).collectList())
+    return Mono.zip(items(siteId, CATEGORY).collectList(), items(siteId, PAGE).collectList())
         .map(
             t -> {
               List<ServiceNavResponse.Category> categories = new ArrayList<>();
@@ -63,9 +61,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   public Mono<ServicePageResponse> getPage(Long siteId, String category, String slug) {
     Mono<ApplicationException> notFound =
         Mono.just(new ApplicationException(Message.Application.ERROR, "Service not found"));
-    return Mono.zip(
-            items(siteId, CATEGORY).collectList(),
-            items(siteId, PAGE).collectList())
+    return Mono.zip(items(siteId, CATEGORY).collectList(), items(siteId, PAGE).collectList())
         .flatMap(
             t -> {
               ContentItem categoryItem =

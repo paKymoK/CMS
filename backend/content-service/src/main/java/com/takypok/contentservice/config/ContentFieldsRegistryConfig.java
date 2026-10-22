@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Classpath-scans for ContentFields implementations carrying @ContentTypeKey, once at startup,
- * and keys them by the annotation's stable string value. This map is the only content-type
- * registry: ContentItemMapper rejects a content_item whose type isn't in it.
+ * Classpath-scans for ContentFields implementations carrying @ContentTypeKey, once at startup, and
+ * keys them by the annotation's stable string value. This map is the only content-type registry:
+ * ContentItemMapper rejects a content_item whose type isn't in it.
  */
 @Configuration
 public class ContentFieldsRegistryConfig {

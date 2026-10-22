@@ -48,9 +48,7 @@ public class UploadFileController {
                 .collectList());
   }
 
-  /**
-   * Media library listing for the admin picker — every uploaded image/file for one site.
-   */
+  /** Media library listing for the admin picker — every uploaded image/file for one site. */
   @GetMapping
   public Mono<List<UploadFile>> list(@RequestParam String site, Authentication authentication) {
     return cmsAdminGuard
