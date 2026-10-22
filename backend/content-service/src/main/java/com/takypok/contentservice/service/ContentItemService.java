@@ -22,7 +22,4 @@ public interface ContentItemService {
 
   /** Every published + active item of every type for the site, in display order. */
   Flux<ContentItem> getAllPublished(Long siteId);
-
-  /** Every item of every type for the site, drafts and inactive included (preview path only). */
-  Flux<ContentItem> getEveryItem(Long siteId);
 }

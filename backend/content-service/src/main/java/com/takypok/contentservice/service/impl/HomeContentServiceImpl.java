@@ -59,16 +59,6 @@ public class HomeContentServiceImpl implements HomeContentService {
     return contentItemService.getAllPublished(siteId).collectList().map(this::build);
   }
 
-  /**
-   * Same composition as {@link #getHomeContent}, over every item for the site — draft and inactive
-   * rows included. Only ever called from the token-gated preview path (PreviewController) — never
-   * cached, never reachable without a valid preview_token.
-   */
-  @Override
-  public Mono<HomeContentResponse> getPreviewContent(Long siteId) {
-    return contentItemService.getEveryItem(siteId).collectList().map(this::build);
-  }
-
   private HomeContentResponse build(List<ContentItem> items) {
     return new HomeContentResponse(
         stats(items),
@@ -142,7 +132,7 @@ public class HomeContentServiceImpl implements HomeContentService {
   /**
    * Only "insight"-category posts render on the homepage today — other categories exist for future
    * post types but aren't part of HomeContent yet. This also keeps a draft
-   * "press-release" post out of the homepage preview, for the same reason it wouldn't render once
+   * "press-release" post out of the homepage, for the same reason it wouldn't render once
    * published.
    */
   private List<HomeContentResponse.Insight> insights(List<ContentItem> items) {

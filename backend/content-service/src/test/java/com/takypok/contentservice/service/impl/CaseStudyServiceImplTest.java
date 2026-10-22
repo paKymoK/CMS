@@ -203,35 +203,6 @@ class CaseStudyServiceImplTest {
         .verify();
   }
 
-  @Test
-  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesCaseStudyForTheSameSlug()
-      throws Exception {
-    ContentItem siteOnesDraft =
-        caseStudy(
-            1L,
-            1L,
-            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's draft\",\"category\":\"cloud\"}");
-    siteOnesDraft.setStatus("DRAFT");
-    siteOnesDraft.setActive(false);
-
-    when(contentItemRepository.findBySlug(1L, "case_study", "shared-slug"))
-        .thenReturn(Mono.just(siteOnesDraft));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "case_study", "PUBLISHED", true))
-        .thenReturn(Flux.empty());
-    when(contentItemRepository.findBySlug(2L, "case_study", "shared-slug"))
-        .thenReturn(Mono.empty());
-
-    StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
-        .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))
-        .verifyComplete();
-
-    StepVerifier.create(service.getPreviewDetailBySlug(2L, "shared-slug"))
-        .expectError(ApplicationException.class)
-        .verify();
-  }
-
   private void publishedFor(long siteId, ContentItem... items) {
     when(contentItemRepository
             .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(

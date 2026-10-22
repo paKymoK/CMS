@@ -123,11 +123,6 @@ public class ContentItemServiceImpl implements ContentItemService {
         siteId, "PUBLISHED", true);
   }
 
-  @Override
-  public Flux<ContentItem> getEveryItem(Long siteId) {
-    return contentItemRepository.findAllBySiteIdOrderByDisplayOrderAsc(siteId);
-  }
-
   /**
    * Service categories are keyed by slug and service pages by category + slug (they form the page
    * URL), so a second item with the same key is rejected here rather than silently shadowed.

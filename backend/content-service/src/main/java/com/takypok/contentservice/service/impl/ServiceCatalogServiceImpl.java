@@ -23,12 +23,10 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
 
   private final ContentItemRepository contentItemRepository;
 
-  private Flux<ContentItem> items(Long siteId, String type, boolean preview) {
-    return preview
-        ? contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(siteId, type)
-        : contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                siteId, type, "PUBLISHED", true);
+  private Flux<ContentItem> items(Long siteId, String type) {
+    return contentItemRepository
+        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
+            siteId, type, "PUBLISHED", true);
   }
 
   private static String text(JsonNode data, String field) {
@@ -37,10 +35,10 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   }
 
   @Override
-  public Mono<ServiceNavResponse> getNav(Long siteId, boolean preview) {
+  public Mono<ServiceNavResponse> getNav(Long siteId) {
     return Mono.zip(
-            items(siteId, CATEGORY, preview).collectList(),
-            items(siteId, PAGE, preview).collectList())
+            items(siteId, CATEGORY).collectList(),
+            items(siteId, PAGE).collectList())
         .map(
             t -> {
               List<ServiceNavResponse.Category> categories = new ArrayList<>();
@@ -62,13 +60,12 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   }
 
   @Override
-  public Mono<ServicePageResponse> getPage(
-      Long siteId, String category, String slug, boolean preview) {
+  public Mono<ServicePageResponse> getPage(Long siteId, String category, String slug) {
     Mono<ApplicationException> notFound =
         Mono.just(new ApplicationException(Message.Application.ERROR, "Service not found"));
     return Mono.zip(
-            items(siteId, CATEGORY, preview).collectList(),
-            items(siteId, PAGE, preview).collectList())
+            items(siteId, CATEGORY).collectList(),
+            items(siteId, PAGE).collectList())
         .flatMap(
             t -> {
               ContentItem categoryItem =
@@ -107,10 +104,9 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
                       s -> contentItemRepository.findBySlug(siteId, CaseStudyServiceImpl.TYPE, s))
                   .filter(
                       c ->
-                          preview
-                              || (c.getActive() != null
-                                  && c.getActive()
-                                  && "PUBLISHED".equals(c.getStatus())))
+                          c.getActive() != null
+                              && c.getActive()
+                              && "PUBLISHED".equals(c.getStatus()))
                   .map(ServiceCatalogServiceImpl::featured)
                   .collectList()
                   .map(list -> new ServicePageResponse(pageItem.getData(), cat, list));

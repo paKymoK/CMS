@@ -6,8 +6,7 @@ import reactor.core.publisher.Mono;
 
 /** Read side of the Services section: the header menu tree and individual service pages. */
 public interface ServiceCatalogService {
-  /** {@code preview} includes drafts and inactive rows (token-gated preview path only). */
-  Mono<ServiceNavResponse> getNav(Long siteId, boolean preview);
+  Mono<ServiceNavResponse> getNav(Long siteId);
 
-  Mono<ServicePageResponse> getPage(Long siteId, String category, String slug, boolean preview);
+  Mono<ServicePageResponse> getPage(Long siteId, String category, String slug);
 }

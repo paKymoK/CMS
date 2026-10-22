@@ -198,33 +198,6 @@ class PostServiceImplTest {
   }
 
   @Test
-  void previewDetailIncludesDraftsButNeverLeaksAnotherSitesPostForTheSameSlug() throws Exception {
-    ContentItem siteOnesDraft =
-        post(
-            1L,
-            1L,
-            "{\"slug\":\"shared-slug\",\"title\":\"Site 1's draft\",\"category\":\"insight\"}");
-    siteOnesDraft.setStatus("DRAFT");
-    siteOnesDraft.setActive(false);
-
-    when(contentItemRepository.findBySlug(1L, "post", "shared-slug"))
-        .thenReturn(Mono.just(siteOnesDraft));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "post", "PUBLISHED", true))
-        .thenReturn(Flux.empty());
-    when(contentItemRepository.findBySlug(2L, "post", "shared-slug")).thenReturn(Mono.empty());
-
-    StepVerifier.create(service.getPreviewDetailBySlug(1L, "shared-slug"))
-        .assertNext(detail -> assertEquals("Site 1's draft", detail.title()))
-        .verifyComplete();
-
-    StepVerifier.create(service.getPreviewDetailBySlug(2L, "shared-slug"))
-        .expectError(ApplicationException.class)
-        .verify();
-  }
-
-  @Test
   void blankExcerptDateAndAuthorAreFilledOrLeftEmptyInsteadOfRejected() {
     when(contentItemRepository.findBySlug(1L, "post", "just-a-title")).thenReturn(Mono.empty());
     saveEchoesItem();

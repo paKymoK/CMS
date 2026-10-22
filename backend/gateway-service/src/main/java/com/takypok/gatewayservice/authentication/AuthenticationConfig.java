@@ -54,7 +54,7 @@ public class AuthenticationConfig {
                     // content-service's public Insights listing + Post/Case Study detail reads —
                     // GET only, same Host-header site resolution as /v1/home above. Mirrors
                     // core-v1's SecurityConfig carve-out for the direct port (this config is a
-                    // separate hand-duplicated copy, see the preview note below).
+                    // separate hand-duplicated copy of it; keep both in sync by hand).
                     // /content-service/v1/admin/posts and /v1/admin/case-studies are different
                     // path prefixes, untouched by this, and still fall through to
                     // .authenticated() below.
@@ -75,18 +75,6 @@ public class AuthenticationConfig {
                         HttpMethod.GET,
                         "/content-service/v1/services",
                         "/content-service/v1/services/**")
-                    .permitAll()
-                    // content-service's token-gated draft preview — anonymous at this layer (no
-                    // JWT presented), but every request is validated against a minted,
-                    // site-scoped, time-limited preview_token inside content-service itself (see
-                    // PreviewTokenGuard/PreviewTokenService); not a general bypass.
-                    // /content-service/v1/admin/preview-tokens (minting) is untouched by this and
-                    // still falls through to .authenticated() below. Mirrors core-v1's
-                    // SecurityConfig's own /v1/preview/** carve-out for content-service's direct
-                    // port — this gateway config is a separate, hand-duplicated copy (gateway's
-                    // GatewayServiceApplication scans only com.takypok.gatewayservice, so it never
-                    // loads core-v1's SecurityConfig at all), keep both in sync by hand.
-                    .pathMatchers("/content-service/v1/preview/**")
                     .permitAll()
                     // media-service's content-addressed static serving — public once a site's
                     // published page embeds the URL.

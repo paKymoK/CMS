@@ -27,7 +27,7 @@ public class PublicServiceController {
   public Mono<ResultMessage<ServiceNavResponse>> nav(ServerWebExchange exchange) {
     return siteService
         .resolveFromHost(exchange)
-        .flatMap(site -> serviceCatalogService.getNav(site.getId(), false))
+        .flatMap(site -> serviceCatalogService.getNav(site.getId()))
         .map(ResultMessage::success);
   }
 
@@ -36,7 +36,7 @@ public class PublicServiceController {
       @PathVariable String category, @PathVariable String slug, ServerWebExchange exchange) {
     return siteService
         .resolveFromHost(exchange)
-        .flatMap(site -> serviceCatalogService.getPage(site.getId(), category, slug, false))
+        .flatMap(site -> serviceCatalogService.getPage(site.getId(), category, slug))
         .map(ResultMessage::success);
   }
 }

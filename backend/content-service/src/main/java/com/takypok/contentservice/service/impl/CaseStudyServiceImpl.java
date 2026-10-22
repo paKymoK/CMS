@@ -178,24 +178,17 @@ public class CaseStudyServiceImpl implements CaseStudyService {
         siteId,
         contentItemRepository
             .findBySlug(siteId, TYPE, slug)
-            .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())),
-        true);
+            .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())));
   }
 
-  @Override
-  public Mono<CaseStudyDetailResponse> getPreviewDetailBySlug(Long siteId, String slug) {
-    return detailOf(siteId, contentItemRepository.findBySlug(siteId, TYPE, slug), false);
-  }
-
-  private Mono<CaseStudyDetailResponse> detailOf(
-      Long siteId, Mono<ContentItem> lookup, boolean requireActiveTestimonial) {
+  private Mono<CaseStudyDetailResponse> detailOf(Long siteId, Mono<ContentItem> lookup) {
     return lookup
         .switchIfEmpty(
             Mono.error(new ApplicationException(Message.Application.ERROR, "Case study not found")))
         .map(this::toResponse)
         .flatMap(
             caseStudy ->
-                resolveTestimonial(siteId, caseStudy.testimonialId(), requireActiveTestimonial)
+                resolveTestimonial(siteId, caseStudy.testimonialId())
                     .flatMap(
                         testimonial ->
                             getPublished(siteId)
@@ -290,14 +283,14 @@ public class CaseStudyServiceImpl implements CaseStudyService {
    * that section of the page rather than failing the whole case study.
    */
   private Mono<Optional<CaseStudyDetailResponse.TestimonialSummary>> resolveTestimonial(
-      Long siteId, Long testimonialId, boolean requireActive) {
+      Long siteId, Long testimonialId) {
     if (testimonialId == null) {
       return Mono.just(Optional.empty());
     }
     return contentItemRepository
         .findByIdAndSiteId(testimonialId, siteId)
         .filter(t -> TESTIMONIAL_TYPE.equals(t.getContentType()))
-        .filter(t -> !requireActive || Boolean.TRUE.equals(t.getActive()))
+        .filter(t -> Boolean.TRUE.equals(t.getActive()))
         .map(t -> objectMapper.convertValue(t.getData(), TestimonialFields.class))
         .map(CaseStudyDetailResponse.TestimonialSummary::from)
         .map(Optional::of)

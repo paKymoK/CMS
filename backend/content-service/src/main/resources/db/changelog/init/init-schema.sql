@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS site
 -- Envelope semantics: `status` (DRAFT/PUBLISHED — the public API only ever returns PUBLISHED+active
 -- rows; admin sees everything) and `version` (Spring Data R2DBC's @Version optimistic-locking
 -- column — a concurrent-edit guard, not a history table, not full audit trails). The two composite indexes below match the two query shapes every repository
--- issues: "everything of this type for this site" (admin) and "published of this type" (public /
--- preview). Composite since every query filters by site_id first.
+-- issues: "everything of this type for this site" (admin) and "published of this type" (public site).
+-- Composite since every query filters by site_id first.
 --
 -- This is deliberately NOT WordPress's wp_postmeta/EAV pattern: postmeta puts every field,
 -- including the ones always filtered on, into an untyped key-value row per field. Here, `data`
@@ -267,30 +267,6 @@ CREATE TRIGGER content_item_audit
     ON content_item
     FOR EACH ROW
 EXECUTE FUNCTION content_audit_record();
-
--- Token-based draft preview. A row here is a narrow, single-purpose
--- credential: opaque (not a JWT — presenting it as an Authorization: Bearer anywhere under
--- /v1/admin/** just fails JWT parsing, it isn't accepted as that credential type at all),
--- site-scoped, short-lived. It authorizes nothing beyond the unauthenticated-at-the-Spring-Security-
--- layer /v1/preview/** endpoints, which validate it themselves (see PreviewTokenGuard) — never a
--- general bypass.
---
--- id is the real @Id (bigserial), not `token` — Spring Data R2DBC's save() only inserts when the
--- @Id is null before save; a manually-assigned String @Id would look "already existing" and attempt
--- an update instead. token is looked up via a derived query, not findById.
-CREATE TABLE IF NOT EXISTS preview_token
-(
-    id         bigserial PRIMARY KEY,
-    token      character varying        NOT NULL UNIQUE,
-    site_id    bigint                   NOT NULL REFERENCES site (id),
-    minted_at  timestamp with time zone NOT NULL,
-    expires_at timestamp with time zone NOT NULL
-);
-
--- Refresh rotates (delete old row, insert new) rather than extending expires_at in place, so a
--- captured-but-unused old token stops being usable the moment a real refresh happens. No separate
--- index needed for lookups by token — UNIQUE already creates one.
-CREATE INDEX IF NOT EXISTS idx_preview_token_expires_at ON preview_token (expires_at);
 
 -- Author-saved starting points for new posts. A template only pre-fills the editor (body, layout,
 -- category, tags); nothing links a post back to the template it started from.

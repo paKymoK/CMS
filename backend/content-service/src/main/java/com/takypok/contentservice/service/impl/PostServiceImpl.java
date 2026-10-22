@@ -273,11 +273,6 @@ public class PostServiceImpl implements PostService {
             .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())));
   }
 
-  @Override
-  public Mono<PostDetailResponse> getPreviewDetailBySlug(Long siteId, String slug) {
-    return detailOf(siteId, contentItemRepository.findBySlug(siteId, TYPE, slug));
-  }
-
   private Mono<PostDetailResponse> detailOf(Long siteId, Mono<ContentItem> lookup) {
     return lookup
         .switchIfEmpty(
