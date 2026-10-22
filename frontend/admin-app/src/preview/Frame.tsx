@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { CaseStudyArticle, PostArticle } from "@cms/content-renderer";
+import { CaseStudyArticle, PostArticle, ServicePage } from "@cms/content-renderer";
 import { CASE_STUDY_LABELS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
+
+/** Stand-in for a section that reads site-wide content rather than the page being edited. */
+function SiteSection({ label }: { label: string }) {
+  return (
+    <div className="flex h-40 items-center justify-center border-y border-dashed border-[#c5d3e8] bg-[#f4f7fc] text-sm text-[#7b8aa5]">
+      {label}
+    </div>
+  );
+}
 
 /**
  * The document the admin's preview shows in an iframe. It holds no data of its own: the admin
@@ -42,6 +51,19 @@ export default function Frame() {
   }, []);
 
   if (!page) return null;
+  if (page.kind === "service") {
+    return (
+      <ServicePage
+        page={page.page}
+        categoryName={page.categoryName}
+        stories={page.stories}
+        storiesIntro={page.storiesIntro}
+        industries={<SiteSection label="Industries strip (site-wide, not previewed)" />}
+        highlights={<SiteSection label="Latest highlights (site-wide, not previewed)" />}
+        contact={<SiteSection label="Contact form (site-wide, not previewed)" />}
+      />
+    );
+  }
   if (page.kind === "case-study") return <CaseStudyArticle caseStudy={page.caseStudy} labels={CASE_STUDY_LABELS} />;
   return <PostArticle post={page.post} pageUrl={page.pageUrl} labels={POST_LABELS} />;
 }

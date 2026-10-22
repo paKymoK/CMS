@@ -1,8 +1,11 @@
 import type {
   CaseStudyArticleData,
   CaseStudyArticleLabels,
+  IndustryStoryData,
   PostArticleData,
   PostArticleLabels,
+  SectionIntroData,
+  ServicePageData,
 } from "@cms/content-renderer";
 
 // Kept apart from contentPreview.ts: the preview frame imports this, and must not pull in the admin's API/gateway config.
@@ -17,7 +20,8 @@ export const MSG_HEIGHT = "cms-preview:height";
 /** What the frame should draw. */
 export type PreviewPage =
   | { kind: "post"; post: PostArticleData; pageUrl: string }
-  | { kind: "case-study"; caseStudy: CaseStudyArticleData };
+  | { kind: "case-study"; caseStudy: CaseStudyArticleData }
+  | { kind: "service"; page: ServicePageData; categoryName: string; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData };
 
 export interface PreviewMessage {
   type: typeof MSG_RENDER;

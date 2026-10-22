@@ -263,7 +263,7 @@ function ResourceEditorForm({
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
             {Preview && site && (
-              <button type="button" onClick={() => setPreviewValues({ ...form.getFieldsValue(true) })} style={outlineButton}>
+              <button type="button" onClick={() => setPreviewValues({ ...form.getFieldsValue(true), slug, ...(groups.length ? { hiddenSections } : {}) })} style={outlineButton}>
                 Preview
               </button>
             )}
