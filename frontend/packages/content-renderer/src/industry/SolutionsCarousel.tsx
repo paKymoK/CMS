@@ -1,10 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { IndustrySolution, SectionIntro } from "@/content/home/types";
-
-const FALLBACK_INTRO: SectionIntro = { section: "industry-solutions", title: "Our Solutions" };
+import { useState, type CSSProperties, type ReactNode } from "react";
+import type { SectionIntroData } from "../types";
 
 const Chevron = ({ dir }: { dir: "left" | "right" }) => (
   <svg viewBox="0 0 12 22" className="h-[22px] w-[12px] fill-none stroke-current stroke-[2]" aria-hidden>
@@ -14,32 +11,33 @@ const Chevron = ({ dir }: { dir: "left" | "right" }) => (
 
 const lines = (text?: string) => (text ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
 
+export interface SolutionSlide {
+  tabLabel: string;
+  title?: string;
+  logo?: string;
+  columnA?: string;
+  columnB?: string;
+  /** The slide photo, already drawn by the host's image slot (slots are functions and cannot cross into this client component). */
+  photo?: ReactNode;
+}
+
+export interface SolutionGroup {
+  name: string;
+  slides: SolutionSlide[];
+}
+
 /**
  * "Our Solutions" (Figma "Industries" → "Capabilities"): a carousel card. On the left, the slide's
  * photo (with the partner logo) over a white panel holding two bullet columns; on the right, a
  * pale-blue panel with the group heading and a vertical tab list (one tab per slide). The arrows
  * move between solution groups, the tabs between a group's slides.
  */
-export function IndustrySolutions({
-  solutions,
-  intro = FALLBACK_INTRO,
-}: {
-  solutions: IndustrySolution[];
-  intro?: SectionIntro;
-}) {
-  // Slides sharing a `group` form one carousel page: the arrows move between groups, the tabs
-  // between the slides of the open group.
-  const groups = solutions.reduce<IndustrySolution[][]>((acc, sol) => {
-    const g = acc.find((list) => list[0].group === sol.group);
-    if (g) g.push(sol);
-    else acc.push([sol]);
-    return acc;
-  }, []);
+export function SolutionsCarousel({ groups, intro }: { groups: SolutionGroup[]; intro: SectionIntroData }) {
   const n = groups.length;
   const [groupIdx, setGroupIdx] = useState(0);
   const [active, setActive] = useState(0);
   if (n === 0) return null;
-  const slides = groups[groupIdx];
+  const slides = groups[groupIdx].slides;
   const slide = slides[Math.min(active, slides.length - 1)];
   const goGroup = (i: number) => {
     setGroupIdx(((i % n) + n) % n);
@@ -75,7 +73,7 @@ export function IndustrySolutions({
                   {s.tabLabel}
                 </button>
               ))}
-              <span className="ind-sol-bubble" style={{ "--i": active } as React.CSSProperties} aria-hidden>
+              <span className="ind-sol-bubble" style={{ "--i": active } as CSSProperties} aria-hidden>
                 {active + 1}
               </span>
             </div>
@@ -83,18 +81,10 @@ export function IndustrySolutions({
 
           <div className="ind-sol-media">
             <div className="ind-sol-photo">
-              {slide.image && (
-                <CoverImage
-                  src={slide.image}
-                  alt=""
-                  sizes="(min-width: 1280px) 45vw, 100vw"
-                  className="object-cover"
-                />
-              )}
+              {slide.photo}
               {slide.logo && (
                 <div className="ind-sol-logo">
                   {/* SVG brand marks: plain <img> so SVGs render without next/image's SVG guard. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={slide.logo} alt={slide.tabLabel} />
                 </div>
               )}

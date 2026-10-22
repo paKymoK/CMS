@@ -157,3 +157,59 @@ export interface SectionIntroData {
   title: string;
   body?: string;
 }
+
+export interface IndustrySlideData {
+  tabLabel: string;
+  title?: string;
+  logo?: string;
+  image?: string;
+  /** One bullet per line. */
+  columnA?: string;
+  columnB?: string;
+}
+
+/** One page of the solutions carousel; the arrows move between groups, the tabs between a group's slides. */
+export interface IndustrySolutionGroupData {
+  name: string;
+  slides?: IndustrySlideData[];
+}
+
+export interface IndustryReasonData {
+  title: string;
+  image?: string;
+}
+
+/** The content of one industry page (content_item "industry_page"); the website and the admin preview both fill it. */
+export interface IndustryPageData {
+  slug: string;
+  navLabel: string;
+  heroBreadcrumb?: string;
+  heroTitle: string;
+  heroSubtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  heroImage?: string;
+  heroStats?: ServiceStatData[];
+  solutionsEyebrow?: string;
+  solutionsTitle?: string;
+  solutionsBody?: string;
+  solutionGroups?: IndustrySolutionGroupData[];
+  reasonsEyebrow?: string;
+  reasonsTitle?: string;
+  reasonsBody?: string;
+  reasons?: IndustryReasonData[];
+  storiesEyebrow?: string;
+  storiesTitle?: string;
+  storiesBody?: string;
+  storiesHeading?: string;
+  storiesMetrics?: ServiceStatData[];
+  stories?: IndustryStoryData[];
+  insightsEyebrow?: string;
+  insightsTitle?: string;
+  insightsBody?: string;
+  insightsLinkLabel?: string;
+  insightsLinkUrl?: string;
+  hiddenSections?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+}
