@@ -9,7 +9,7 @@ import ContentPage from "../pages/ContentPage";
 import MediaLibraryPage from "../pages/MediaLibraryPage";
 import AssistantPage from "../pages/AssistantPage";
 import PostEditorPage from "../pages/PostEditorPage";
-import CaseStudyEditorPage from "../pages/CaseStudyEditorPage";
+import ResourceEditorPage from "../pages/ResourceEditorPage";
 import SearchPage from "../pages/SearchPage";
 import ActivityPage from "../pages/ActivityPage";
 import { RESOURCES } from "../config/resources";
@@ -32,7 +32,7 @@ export default function AppRouter() {
               <Route index element={<Navigate to={`/content/${RESOURCES[0].key}`} replace />} />
               <Route path="/content/:resourceKey" element={<ContentPage />} />
               <Route path="/posts/:id" element={<PostEditorPage />} />
-              <Route path="/case-studies/:id" element={<CaseStudyEditorPage />} />
+              <Route path="/case-studies/:id" element={<ResourceEditorPage resourceKey="case-studies" />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/activity" element={<ActivityPage />} />
               <Route path="/media" element={<MediaLibraryPage />} />

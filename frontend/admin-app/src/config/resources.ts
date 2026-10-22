@@ -17,6 +17,7 @@ export type FieldType =
   | "object-list"
   | "multi-select"
   | "content-ref"
+  | "richtext"
   | "json";
 
 export interface FieldOption {
@@ -35,13 +36,17 @@ export interface FieldConfig {
   /** object-list: label of the "add entry" button. */
   addLabel?: string;
   /** content-ref: pick one item of another content type; the stored value is its `valueField`. */
-  ref?: { contentType: string; valueField: string; labelField: string };
+  ref?: { contentType: string; valueField: string; labelField: string; labelSuffixField?: string };
   /** image: the exact proportions the website expects. The picker rejects an image whose aspect
    * ratio is off by more than 1% or whose width is below `width` (larger, same-ratio files such as
    * 2× versions are fine). */
   imageSpec?: { width: number; height: number };
   /** Only render this field while another field of the same form has the given value. */
   showWhen?: { field: string; equals: string };
+  /** Full-page editor only: where the field sits. "side" fields go in the sidebar cards; default is the main column. */
+  area?: "main" | "side";
+  /** Full-page editor only: cleared when a new item starts from a deleted item's content (e.g. a link to another row). */
+  dropOnCopy?: boolean;
   /** Shown as a column in the list table. Defaults to true for scalar field types. */
   showInTable?: boolean;
 }
@@ -75,10 +80,12 @@ export interface ResourceConfig {
    * generic drawer form; ContentPage navigates here on row-click/"New" rather than opening the
    * drawer. `id` is the row id, or "new" for create. */
   editorRoute?: (id: number | "new") => string;
+  /** Present => the editorRoute page is the generic full-page form (ResourceEditorPage) driven by `fields`. */
+  editor?: { slugPrefix: string; singular: string; backPath: string };
 }
 
 const scalarDefault = (type: FieldType) =>
-  !["textarea", "json", "string-list", "stat-list", "object-list", "multi-select"].includes(type);
+  !["textarea", "richtext", "json", "string-list", "stat-list", "object-list", "multi-select"].includes(type);
 
 function field(config: FieldConfig): FieldConfig {
   return { showInTable: scalarDefault(config.type), ...config };
@@ -133,11 +140,34 @@ export const RESOURCES: ResourceConfig[] = [
     apiPath: "/v1/admin/case-studies",
     titleField: "title",
     editorRoute: (id) => `/case-studies/${id}`,
+    editor: { slugPrefix: "case-studies", singular: "case study", backPath: "/content/case-studies" },
     fields: [
       field({ name: "title", label: "Title", type: "text", required: true }),
-      field({ name: "date", label: "Date", type: "text" }),
-      field({ name: "category", label: "Category", type: "text" }),
-      field({ name: "image", label: "Image", type: "image" }),
+      field({ name: "summary", label: "Summary (shown on cards and under the title)", type: "textarea", showInTable: false }),
+      field({ name: "image", label: "Cover image", type: "image" }),
+      field({ name: "body", label: "Body (use H2 Challenge / Solution / Outcome)", type: "richtext" }),
+      field({ name: "date", label: "Display date", type: "text", area: "side" }),
+      field({ name: "category", label: "Category", type: "text", area: "side" }),
+      field({
+        name: "results",
+        label: "Results (e.g. 40% / Faster deployment)",
+        type: "object-list",
+        addLabel: "Add result",
+        area: "side",
+        itemFields: [
+          field({ name: "value", label: "Value", type: "text", required: true }),
+          field({ name: "label", label: "Label", type: "text", required: true }),
+        ],
+      }),
+      field({
+        name: "testimonialId",
+        label: "Testimonial",
+        type: "content-ref",
+        ref: { contentType: "testimonial", valueField: "id", labelField: "name", labelSuffixField: "company" },
+        area: "side",
+        dropOnCopy: true,
+        showInTable: false,
+      }),
     ],
   },
   {
