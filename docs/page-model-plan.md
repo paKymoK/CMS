@@ -1,6 +1,6 @@
 # Plan: one row = one page (About, Industry, Service, Home)
 
-Status: **proposal, nothing implemented yet.** Case Studies, Posts and Service pages already follow this (one `content_item` row is one page, edited in one form).
+Status: **phases 1 to 3 done** (editor foundations, service pages, industry pages). Case Studies, Posts, Service pages and Industry pages follow this: one `content_item` row is one page, edited in one form, previewed in the iframe. About and Home are next.
 
 Ground rules for this plan:
 
@@ -121,15 +121,17 @@ Bottom line: nesting depth and tens of KB are well within what jsonb handles eas
 
 ## 8. Phases
 
-1. **Editor foundations:** groups, singleton, nested field types, nested `imageSpec`, version conflict, Fields validation for nested data. Tested on service pages.
-2. **Service pages:** generic editor, `ServicePage` in the renderer, iframe preview, embed the case study teasers. Lowest risk; proves the pattern.
-3. **Industry:** `industry_page`, seed data, `/industries/[slug]`, renderer, preview.
+1. **Editor foundations** (done, except the items below): groups, singleton, nested field types, nested `imageSpec`, version conflict, Fields validation for nested data. Tested on service pages.
+2. **Service pages** (done): generic editor, `ServicePage` in the renderer, iframe preview, embed the case study teasers. Lowest risk; proves the pattern.
+3. **Industry** (done): `industry_page` with nested `solutionGroups[].slides[]`, public `GET /v1/industries/{slug}`, `/industries/[slug]`, renderer, preview. BFSI migrated into the new row; the old per-section types, screens and the hard-coded route are gone. Verified identical computed styles and text on the BFSI page at three widths.
 4. **About:** `about_page`, same steps.
 5. **Home:** `home_page`, last; includes the home-specific rendering decision.
 6. **Cleanup:** delete the per-page section types, Fields classes, screens, sidebar items; drop the GIN index; add the Redis cache for page responses.
 7. **Library mode:** `{mode, refs}` fields, resolver, picker UI, "Convert to custom", dangling-reference handling, preview resolve, cache eviction. Embedded mode works without it, so earlier phases do not wait.
 
 Each phase is its own commit, with baseline-vs-after screenshots for the website page it touches. Build and test per `CLAUDE.md`.
+
+Phase 1 left over, to do with the phase that needs it: **singleton mode** (backend unique-per-site + editor opening the single row) comes with About (phase 4); **recursive validation** is per page type, already in place for `service_page` and `industry_page` (nested `@Valid`, tested for `industry_page`).
 
 ## 9. Decisions
 
