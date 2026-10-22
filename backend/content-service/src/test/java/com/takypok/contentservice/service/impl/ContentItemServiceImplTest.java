@@ -114,4 +114,83 @@ class ContentItemServiceImplTest {
 
     verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
+
+  private ContentItem aboutPage(long id) {
+    ContentItem item = new ContentItem();
+    item.setId(id);
+    item.setContentType("about_page");
+    return item;
+  }
+
+  @Test
+  void aSiteCannotGetASecondAboutPage() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
+    when(contentItemMapper.resolveAndValidate("about_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "about_page"))
+        .thenReturn(reactor.core.publisher.Flux.just(aboutPage(5L)));
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("about_page");
+    request.setData(data);
+
+    StepVerifier.create(service.create(1L, request))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("already has its"))
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void aSiteWithoutAnAboutPageMayCreateOne() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
+    when(contentItemMapper.resolveAndValidate("about_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "about_page"))
+        .thenReturn(reactor.core.publisher.Flux.empty());
+    when(contentItemWriter.save(any(ContentItem.class)))
+        .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("about_page");
+    request.setData(data);
+
+    StepVerifier.create(service.create(1L, request))
+        .assertNext(
+            item ->
+                org.junit.jupiter.api.Assertions.assertEquals("about_page", item.getContentType()))
+        .verifyComplete();
+  }
+
+  @Test
+  void anotherItemCannotBeTurnedIntoASecondAboutPage() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
+    ContentItem other = new ContentItem();
+    other.setId(9L);
+    other.setContentType("faq");
+    when(contentItemRepository.findByIdAndSiteId(9L, 1L)).thenReturn(Mono.just(other));
+    when(contentItemMapper.resolveAndValidate("about_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "about_page"))
+        .thenReturn(reactor.core.publisher.Flux.just(aboutPage(5L)));
+    ContentItemUpdateRequest request = new ContentItemUpdateRequest();
+    request.setId(9L);
+    request.setContentType("about_page");
+    request.setData(data);
+
+    StepVerifier.create(service.update(1L, request))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("already has its"))
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
 }

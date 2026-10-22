@@ -95,6 +95,9 @@ public class SecurityConfig {
                     // Industry pages (see PublicIndustryController).
                     .pathMatchers(HttpMethod.GET, "/v1/industries/**")
                     .permitAll()
+                    // The About page (see PublicAboutController).
+                    .pathMatchers(HttpMethod.GET, "/v1/about")
+                    .permitAll()
                     // chat-service's public marketing assistant — anonymous site visitors,
                     // IP-rate-limited in PublicAssistantController itself. /v1/assistant/ingest
                     // is untouched by this and still falls through to .authenticated() below.

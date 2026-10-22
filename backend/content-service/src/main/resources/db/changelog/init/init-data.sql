@@ -120,58 +120,13 @@ VALUES ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
 }'::jsonb, 0, 'PUBLISHED');
 
 
--- ── 'en' About page (copy and imagery from the Figma "About Us" frame) ─────────────────────────
+-- ── 'en' About page: one row holds the whole page (copy and imagery from the Figma "About Us" frame) ──
 INSERT INTO content_item (site_id, content_type, data, display_order, status)
-VALUES ((SELECT id FROM site WHERE code = 'en'), 'about_hero', '{
-  "breadcrumb": "About Us",
-  "title": "Transforming Ideas into Global Impact, Together",
-  "subtitle": "We unite passionate experts with advanced technology to scale your most ambitious digital vision",
-  "ctaLabel": "Meet the people behind our promise", "ctaUrl": "#leaders",
-  "image": "/media-service/images/dc66d6ec-213b-555b-976d-f4c389750a75.webp",
-  "stats": [
-    {"value": "33+", "label": "Years of Engineering Excellence"},
-    {"value": "3000+", "label": "Engineering Experts"},
-    {"value": "10+", "label": "Global Offices"}
-  ]
-}'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_intro', '{
-  "eyebrow": "Meet CMC Global", "title": "Meet CMC Global",
-  "body": "At CMC Global, we believe true digital transformation is not about chasing the next big trend. It’s about mastering it to redefine what’s possible, and making technology work seamlessly for the business. Built on the deep technical foundation of CMC Corporation, we exist to turn complex technology into your clearest competitive advantage.\n\nAs global business enters the AI-first landscape, we architect intelligent, future-ready organizations from the ground up. By bridging technical mastery with global scale, we stand as the reliable partner behind your boldest ambitions, helping over 300 global leaders modernize with certainty and unlock steady growth.",
-  "image": "/media-service/images/4cdf62ba-f05f-5384-9ed3-b224308cd66b.webp", "decorImage": "/media-service/images/853efbb8-b6d5-583d-be2e-5a07468c2da9.webp",
-  "statsTitle": "Our Growth in Numbers"
-}'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_statement', '{
-  "variant": "vision", "eyebrow": "Our Vision",
-  "title": "Establishing a global presence\n& providing world-class services",
-  "image": "/media-service/images/3e0f1666-e7d6-58f9-9b7f-ad905b8cea24.webp"
-}'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_statement', '{
-  "variant": "mission", "eyebrow": "Our Mission",
-  "body": "Our mission is simple: to make complex technology work for people and businesses, everywhere.\n\nWe empower organizations to grow with confidence through practical innovation, while building a culture where talent thrives, learns, and creates meaningful impact every day.",
-  "image": "/media-service/images/3c11354d-e12c-5ab8-bb7b-9e8e1dfb5339.webp"
-}'::jsonb, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
-  "section": "leaders", "eyebrow": "Our People", "title": "Leadership Team",
-  "image": "/media-service/images/b0ec2e5c-6d91-5d0d-9880-697ad31c24d2.webp"
-}'::jsonb, 7, 'PUBLISHED'),
+VALUES ((SELECT id FROM site WHERE code = 'en'), 'about_page', '{"heroBreadcrumb": "About Us", "heroTitle": "Transforming Ideas into Global Impact, Together", "heroSubtitle": "We unite passionate experts with advanced technology to scale your most ambitious digital vision", "ctaLabel": "Meet the people behind our promise", "ctaUrl": "#leaders", "heroImage": "/media-service/images/dc66d6ec-213b-555b-976d-f4c389750a75.webp", "heroStats": [{"value": "33+", "label": "Years of Engineering Excellence"}, {"value": "3000+", "label": "Engineering Experts"}, {"value": "10+", "label": "Global Offices"}], "introEyebrow": "Meet CMC Global", "introTitle": "Meet CMC Global", "introBody": "At CMC Global, we believe true digital transformation is not about chasing the next big trend. It’s about mastering it to redefine what’s possible, and making technology work seamlessly for the business. Built on the deep technical foundation of CMC Corporation, we exist to turn complex technology into your clearest competitive advantage.\n\nAs global business enters the AI-first landscape, we architect intelligent, future-ready organizations from the ground up. By bridging technical mastery with global scale, we stand as the reliable partner behind your boldest ambitions, helping over 300 global leaders modernize with certainty and unlock steady growth.", "introImage": "/media-service/images/4cdf62ba-f05f-5384-9ed3-b224308cd66b.webp", "introDecorImage": "/media-service/images/853efbb8-b6d5-583d-be2e-5a07468c2da9.webp", "growthTitle": "Our Growth in Numbers", "growthStats": [{"value": "32+", "label": "Years Of Experience"}, {"value": "3000+", "label": "Employees"}, {"value": "300+", "label": "Global Clients"}, {"value": "35+", "label": "Business Partners"}, {"value": "30+", "label": "Countries"}], "visionEyebrow": "Our Vision", "visionTitle": "Establishing a global presence\n& providing world-class services", "visionImage": "/media-service/images/3e0f1666-e7d6-58f9-9b7f-ad905b8cea24.webp", "missionEyebrow": "Our Mission", "missionBody": "Our mission is simple: to make complex technology work for people and businesses, everywhere.\n\nWe empower organizations to grow with confidence through practical innovation, while building a culture where talent thrives, learns, and creates meaningful impact every day.", "missionImage": "/media-service/images/3c11354d-e12c-5ab8-bb7b-9e8e1dfb5339.webp", "leadersEyebrow": "Our People", "leadersTitle": "Leadership Team", "leadersRingImage": "/media-service/images/b0ec2e5c-6d91-5d0d-9880-697ad31c24d2.webp", "leaders": [{"name": "Mr. Ho Thanh Tung", "title": "President of CMC Global", "photo": "/media-service/images/bcffa7c5-5272-56dd-bba1-04801dd02208.webp"}, {"name": "Mr. Dang Ngoc Bao", "title": "Chief Executive Officer of CMC Global", "photo": "/media-service/images/a02e0ce2-c478-58c7-8179-d2d377b79737.webp"}, {"name": "Mr. Nguyen Viet Bach", "title": "Deputy CEO / Chief Delivery Officer of CMC Global", "photo": "/media-service/images/eae5d034-5a79-544d-80f1-80fabc1bf1b4.webp"}, {"name": "Ms. Hoang Thi Thanh Hoa", "title": "Chief Finance Officer of CMC Global", "photo": "/media-service/images/0aa04ce3-4345-5884-862e-288364fe0a0f.webp"}, {"name": "Mr. Nguyen Cao Cuong", "title": "Chief Sales Officer of CMC Global", "photo": "/media-service/images/c7c6d745-7a25-50a5-a901-52512e5f71a4.webp"}], "valuesEyebrow": "Our Values 4C", "valuesTitle": "The DNA of Our Growth", "valuesBody": "We empower our global team to do their best work in a culture of dedication, creativity, and global collaboration.", "values": [{"title": "Commitment", "image": "/media-service/images/13c10ea3-a2a6-5eab-a68a-54bba2708cab.webp"}, {"title": "Creativity", "image": "/media-service/images/c9926596-5469-5d41-aec8-b4c3cc8792c7.webp"}, {"title": "Customer\nCentricity", "image": "/media-service/images/f9e51d36-62d2-58d7-9828-f3a6918ced82.webp"}, {"title": "Speed", "image": "/media-service/images/03a414f9-4a03-583a-b3f7-649961c1b52e.webp"}], "seoTitle": "About Us | CMC Global", "seoDescription": "CMC Global unites passionate experts with advanced technology to scale your most ambitious digital vision — 33+ years of engineering excellence, 3000+ experts and offices across the world."}'::jsonb, 0, 'PUBLISHED'),
        ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{
   "section": "insights-page", "eyebrow": "Insights", "title": "Perspectives",
   "image": "/media-service/images/5618b749-88d7-5bc5-9e3f-6e499fdb3194.webp"
-}'::jsonb, 8, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Ho Thanh Tung", "title": "President of CMC Global", "photo": "/media-service/images/bcffa7c5-5272-56dd-bba1-04801dd02208.webp"}'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Dang Ngoc Bao", "title": "Chief Executive Officer of CMC Global", "photo": "/media-service/images/a02e0ce2-c478-58c7-8179-d2d377b79737.webp"}'::jsonb, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Viet Bach", "title": "Deputy CEO / Chief Delivery Officer of CMC Global", "photo": "/media-service/images/eae5d034-5a79-544d-80f1-80fabc1bf1b4.webp"}'::jsonb, 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Ms. Hoang Thi Thanh Hoa", "title": "Chief Finance Officer of CMC Global", "photo": "/media-service/images/0aa04ce3-4345-5884-862e-288364fe0a0f.webp"}'::jsonb, 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'leader', '{"name": "Mr. Nguyen Cao Cuong", "title": "Chief Sales Officer of CMC Global", "photo": "/media-service/images/c7c6d745-7a25-50a5-a901-52512e5f71a4.webp"}'::jsonb, 4, 'PUBLISHED');
-
--- About page: Our Values 4C
-INSERT INTO content_item (site_id, content_type, data, display_order, status)
-VALUES
-       ((SELECT id FROM site WHERE code = 'en'), 'section_intro', '{"section": "values", "eyebrow": "Our Values 4C", "title": "The DNA of Our Growth", "body": "We empower our global team to do their best work in a culture of dedication, creativity, and global collaboration."}'::jsonb, 13, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Commitment", "image": "/media-service/images/13c10ea3-a2a6-5eab-a68a-54bba2708cab.webp"}'::jsonb, 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Creativity", "image": "/media-service/images/c9926596-5469-5d41-aec8-b4c3cc8792c7.webp"}'::jsonb, 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Customer\nCentricity", "image": "/media-service/images/f9e51d36-62d2-58d7-9828-f3a6918ced82.webp"}'::jsonb, 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 'about_value', '{"title": "Speed", "image": "/media-service/images/03a414f9-4a03-583a-b3f7-649961c1b52e.webp"}'::jsonb, 3, 'PUBLISHED');
+}'::jsonb, 8, 'PUBLISHED');
 
 -- Case studies featured on the service pages (display order after the homepage ones)
 INSERT INTO content_item (site_id, content_type, data, display_order, status)

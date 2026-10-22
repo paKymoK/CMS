@@ -28,6 +28,11 @@ public class ContentItemServiceImpl implements ContentItemService {
   private static final Set<String> SPECIALIZED_TYPES =
       Set.of(CaseStudyServiceImpl.TYPE, PostServiceImpl.TYPE);
 
+  /**
+   * Types a site has exactly one of (the About page); the schema backs this with a unique index.
+   */
+  private static final Set<String> SINGLETON_TYPES = Set.of(AboutPageServiceImpl.TYPE);
+
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
   private final ContentItemWriter contentItemWriter;
@@ -56,7 +61,10 @@ public class ContentItemServiceImpl implements ContentItemService {
     return contentItemMapper
         .resolveAndValidate(request.getContentType(), request.getData())
         .flatMap(
-            data -> ensureUnique(siteId, request.getContentType(), data, null).thenReturn(data))
+            data ->
+                ensureSingleton(siteId, request.getContentType(), null)
+                    .then(ensureUnique(siteId, request.getContentType(), data, null))
+                    .thenReturn(data))
         .flatMap(
             validatedData -> {
               ContentItem item = new ContentItem();
@@ -86,7 +94,10 @@ public class ContentItemServiceImpl implements ContentItemService {
                     .resolveAndValidate(request.getContentType(), request.getData())
                     .flatMap(
                         data ->
-                            ensureUnique(siteId, request.getContentType(), data, item.getId())
+                            ensureSingleton(siteId, request.getContentType(), item.getId())
+                                .then(
+                                    ensureUnique(
+                                        siteId, request.getContentType(), data, item.getId()))
                                 .thenReturn(data))
                     .flatMap(
                         validatedData -> {
@@ -123,6 +134,23 @@ public class ContentItemServiceImpl implements ContentItemService {
   public Flux<ContentItem> getAllPublished(Long siteId) {
     return contentItemRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
         siteId, "PUBLISHED", true);
+  }
+
+  /** A site has one item of each singleton type: a second one is rejected with a plain message. */
+  private Mono<Void> ensureSingleton(Long siteId, String contentType, Long selfId) {
+    if (!SINGLETON_TYPES.contains(contentType)) return Mono.empty();
+    return contentItemRepository
+        .findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(siteId, contentType)
+        .filter(other -> !other.getId().equals(selfId))
+        .hasElements()
+        .flatMap(
+            exists ->
+                exists
+                    ? Mono.<Void>error(
+                        new ApplicationException(
+                            Message.Application.ERROR,
+                            "type: this site already has its " + contentType + "; edit that one"))
+                    : Mono.<Void>empty());
   }
 
   /**

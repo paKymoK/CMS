@@ -67,6 +67,10 @@ CREATE INDEX IF NOT EXISTS idx_content_item_site_type_order
     ON content_item (site_id, content_type, display_order);
 CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
     ON content_item (site_id, content_type, status, active, display_order);
+-- A site has exactly one item of each singleton type (the About page). ContentItemServiceImpl rejects a
+-- second one with a plain message; this index is the backstop against two concurrent creates.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_singleton
+    ON content_item (site_id, content_type) WHERE content_type IN ('about_page');
 -- GIN index so a query into a specific field inside `data` (e.g. data->>'category') can still be
 -- indexed if one is ever needed — the option WordPress's flat postmeta rows never had.
 CREATE INDEX IF NOT EXISTS idx_content_item_data ON content_item USING GIN (data);

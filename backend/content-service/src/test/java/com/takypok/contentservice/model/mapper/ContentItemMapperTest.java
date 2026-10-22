@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.model.content.ContentFields;
+import com.takypok.contentservice.model.content.types.AboutPageFields;
 import com.takypok.contentservice.model.content.types.FaqFields;
 import com.takypok.contentservice.model.content.types.IndustryPageFields;
 import com.takypok.core.config.ConfigObjectMapper;
@@ -136,6 +137,53 @@ class ContentItemMapperTest {
     StepVerifier.create(mapper.resolveAndValidate("industry_page", input))
         .expectErrorMatches(
             e -> e instanceof ApplicationException && e.getMessage().contains("slug"))
+        .verify();
+  }
+
+  @Test
+  void aboutPageKeepsLeadersValuesAndGrowthFiguresAndDropsUnknownFields() throws Exception {
+    ContentItemMapper mapper = mapperWithRegistry(Map.of("about_page", AboutPageFields.class));
+    JsonNode input =
+        objectMapper.readTree(
+            """
+            {"heroTitle": "Hello", "bogus": 1,
+            "growthStats": [{"value": "33+", "label": "Years"}],
+            "leaders": [{"name": "A", "title": "CEO", "extra": 1}],
+            "values": [{"title": "Speed"}]}
+            """);
+
+    StepVerifier.create(mapper.resolveAndValidate("about_page", input))
+        .assertNext(
+            result -> {
+              assertEquals("33+", result.at("/growthStats/0/value").asText());
+              assertEquals("A", result.at("/leaders/0/name").asText());
+              assertEquals("Speed", result.at("/values/0/title").asText());
+              assertTrue(result.at("/leaders/0/extra").isMissingNode());
+              assertTrue(result.path("bogus").isMissingNode());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void aboutPageRejectsALeaderWithoutANameNamingItsPath() throws Exception {
+    ContentItemMapper mapper = mapperWithRegistry(Map.of("about_page", AboutPageFields.class));
+    JsonNode input =
+        objectMapper.readTree(
+            "{\"heroTitle\": \"Hello\", \"leaders\": [{\"name\": \"A\"}, {\"title\": \"no name\"}]}");
+
+    StepVerifier.create(mapper.resolveAndValidate("about_page", input))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("leaders[1].name"))
+        .verify();
+  }
+
+  @Test
+  void aboutPageRequiresAHeroTitle() throws Exception {
+    ContentItemMapper mapper = mapperWithRegistry(Map.of("about_page", AboutPageFields.class));
+
+    StepVerifier.create(mapper.resolveAndValidate("about_page", objectMapper.readTree("{}")))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("heroTitle"))
         .verify();
   }
 
