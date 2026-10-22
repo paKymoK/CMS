@@ -1,5 +1,7 @@
-import { Button, ColorPicker, DatePicker, Form, Image, Input, InputNumber, Select, Switch, type FormInstance } from "antd";
+import { Button, ColorPicker, DatePicker, Form, Image, Input, InputNumber, Segmented, Select, Switch, type FormInstance } from "antd";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import type { NamePath } from "antd/es/form/interface";
 import { DeleteIcon, PictureIcon, PlusIcon } from "./icons";
 import { contentApi } from "../lib/api";
@@ -162,6 +164,9 @@ export function FieldInput({
       </Form.Item>
     );
   }
+  if (f.type === "stat-list" && f.library) {
+    return <LibraryStatList field={f} form={form} name={name} absName={absName} prefix={prefix} abs={abs} />;
+  }
   if (f.type === "stat-list") {
     return (
       <Form.Item label={f.label}>
@@ -248,6 +253,150 @@ export function FieldInput({
     <Form.Item name={name} label={f.label} rules={rules}>
       <Input />
     </Form.Item>
+  );
+}
+
+/**
+ * A stat-list that can come from a library (the published rows of another content type) instead of
+ * being typed into the page. The switch is a real form control, so changing it marks the form
+ * unsaved; "Convert to custom" copies the library's figures into the page and switches to custom.
+ */
+function LibraryStatList({
+  field: f,
+  form,
+  name,
+  absName,
+  prefix,
+  abs,
+}: {
+  field: FieldConfig;
+  form: FormInstance;
+  name: Path;
+  absName: Path;
+  prefix: Path;
+  abs: Path;
+}) {
+  const library = f.library!;
+  const { site } = useSite();
+  const source = (Form.useWatch([...abs, library.sourceField], form) as string | undefined) ?? "custom";
+  const rows = useQuery({
+    queryKey: ["library", library.contentType, site],
+    queryFn: async () => {
+      const { data } = await contentApi.get("/v1/admin/content-items", { params: { site, type: library.contentType } });
+      return (data.data as { status: string; active: boolean; data: { value: string; label: string } }[])
+        .filter((row) => row.status === "PUBLISHED" && row.active)
+        .map((row) => ({ value: row.data.value, label: row.data.label }));
+    },
+    enabled: !!site && source === "library",
+  });
+  // The library can change while this page is open (another tab, the Stats screen): show it fresh whenever it is in use.
+  const refetchLibrary = rows.refetch;
+  useEffect(() => {
+    if (source === "library") void refetchLibrary();
+  }, [source, refetchLibrary]);
+
+  return (
+    <Form.Item label={f.label}>
+      <Form.Item name={[...prefix, library.sourceField]} noStyle>
+        <SourceSwitch
+          manageLabel={library.manageLabel}
+          managePath={library.managePath}
+          rows={rows.data}
+          loading={rows.isLoading}
+          onConvert={async () => {
+            // Read the library at click time, not from the cache: a stale copy is the one thing this must not make.
+            const fresh = await refetchLibrary();
+            form.setFieldValue(absName, fresh.data ?? []);
+          }}
+        />
+      </Form.Item>
+      {source !== "library" && (
+        <Form.List name={name}>
+          {(figures, { add, remove }) => (
+            <div className="flex flex-col gap-2" style={{ marginTop: 12 }}>
+              {figures.map((figure) => (
+                <div key={figure.key} className="flex items-start gap-2">
+                  <Form.Item name={[figure.name, "value"]} rules={[{ required: true, message: "Value" }]} style={{ width: 110, marginBottom: 0 }}>
+                    <Input placeholder="33+" />
+                  </Form.Item>
+                  <Form.Item name={[figure.name, "label"]} rules={[{ required: true, message: "Label" }]} style={{ flex: 1, marginBottom: 0 }}>
+                    <Input placeholder="Years of engineering excellence" />
+                  </Form.Item>
+                  <Button icon={<DeleteIcon />} onClick={() => remove(figure.name)} aria-label="Remove" />
+                </div>
+              ))}
+              <Button type="dashed" icon={<PlusIcon />} onClick={() => add({ value: "", label: "" })}>
+                Add figure
+              </Button>
+            </div>
+          )}
+        </Form.List>
+      )}
+    </Form.Item>
+  );
+}
+
+/** The Custom / From library switch (a Form.Item control), with the library's figures and the convert button shown in library mode. */
+function SourceSwitch({
+  value = "custom",
+  onChange,
+  manageLabel,
+  managePath,
+  rows,
+  loading,
+  onConvert,
+}: {
+  value?: string;
+  onChange?: (value: string) => void;
+  manageLabel: string;
+  managePath: string;
+  rows?: { value: string; label: string }[];
+  loading: boolean;
+  onConvert: () => Promise<void>;
+}) {
+  return (
+    <div>
+      <Segmented
+        value={value}
+        onChange={(v) => onChange?.(String(v))}
+        options={[
+          { label: "Custom", value: "custom" },
+          { label: `From the ${manageLabel} library`, value: "library" },
+        ]}
+      />
+      {value === "library" && (
+        <div style={{ marginTop: 12, border: "1px solid #dde4f0", borderRadius: 8, padding: 12, background: "#fafbfc" }}>
+          <div style={{ fontSize: 12.5, color: "#5b6b86", marginBottom: 8 }}>
+            Shows the published figures of the {manageLabel} screen, in its order. Edit them there,{" "}
+            <Link to={managePath}>open {manageLabel}</Link>.
+          </div>
+          {loading ? (
+            <div style={{ color: "#7b8aa5" }}>Loading…</div>
+          ) : (rows ?? []).length === 0 ? (
+            <div style={{ color: "#7b8aa5" }}>No published figures yet.</div>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {(rows ?? []).map((row) => (
+                <li key={`${row.value}-${row.label}`}>
+                  <strong>{row.value}</strong> {row.label}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button
+            size="small"
+            style={{ marginTop: 10 }}
+            disabled={!rows || rows.length === 0}
+            onClick={async () => {
+              await onConvert();
+              onChange?.("custom");
+            }}
+          >
+            Convert to custom
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 

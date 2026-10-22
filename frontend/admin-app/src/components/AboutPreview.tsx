@@ -1,5 +1,7 @@
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { AboutPageData } from "@cms/content-renderer";
+import { contentApi } from "../lib/api";
 import { mediaSrc } from "../lib/media";
 import type { PreviewPage } from "../lib/previewProtocol";
 import type { ResourcePreviewProps } from "./CaseStudyPreview";
@@ -49,8 +51,24 @@ function toAboutPageData(values: Record<string, unknown>): AboutPageData {
   };
 }
 
-/** Preview of the About page being edited. Everything it shows is in the form, so nothing else is fetched. */
-export default function AboutPreview({ values, onClose }: ResourcePreviewProps) {
-  const page = useMemo<PreviewPage>(() => ({ kind: "about", page: toAboutPageData(values) }), [values]);
+/** Preview of the About page being edited. Everything it shows is in the form, except the growth figures when they come from the Stats library. */
+export default function AboutPreview({ site, values, onClose }: ResourcePreviewProps) {
+  const library = values.growthSource === "library";
+  // Growth figures from the Stats library: the published rows, as the public endpoint serves them.
+  const statsQuery = useQuery({
+    queryKey: ["preview-stats", site],
+    queryFn: async () => {
+      const { data } = await contentApi.get("/v1/admin/content-items", { params: { site, type: "stat" } });
+      return (data.data as { status: string; active: boolean; data: { value: string; label: string } }[])
+        .filter((row) => row.status === "PUBLISHED" && row.active)
+        .map((row) => ({ value: row.data.value, label: row.data.label }));
+    },
+    staleTime: 60_000,
+    enabled: library,
+  });
+  const page = useMemo<PreviewPage>(() => {
+    const data = toAboutPageData(values);
+    return { kind: "about", page: library ? { ...data, growthStats: statsQuery.data ?? [] } : data };
+  }, [values, library, statsQuery.data]);
   return <PreviewPanel page={page} onClose={onClose} />;
 }

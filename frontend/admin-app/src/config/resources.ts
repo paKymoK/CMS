@@ -53,6 +53,12 @@ export interface FieldConfig {
   group?: string;
   /** Full-page editor only: not drawn there because the editor already has a control for it (e.g. `slug`); still a list column. */
   tableOnly?: boolean;
+  /**
+   * stat-list: the figures can instead be the published rows of another content type (a "library").
+   * `sourceField` is the sibling field that holds "custom" or "library"; the server swaps the library
+   * rows in before answering, so a page renders the same either way.
+   */
+  library?: { contentType: string; sourceField: string; manageLabel: string; managePath: string };
 }
 
 /** A collapsible section of the full-page editor's main column. */
@@ -453,7 +459,14 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "introImage", label: "Team photo", type: "image", showInTable: false, group: "intro" }),
       field({ name: "introDecorImage", label: "Decorative artwork behind the block", type: "image", showInTable: false, group: "intro" }),
       field({ name: "growthTitle", label: "Heading above the growth figures", type: "text", showInTable: false, group: "intro" }),
-      field({ name: "growthStats", label: "Growth figures (the first five are shown)", type: "stat-list", group: "intro" }),
+      field({ name: "growthSource", label: "Growth figures source", type: "text", showInTable: false, tableOnly: true }),
+      field({
+        name: "growthStats",
+        label: "Growth figures (the first five are shown)",
+        type: "stat-list",
+        group: "intro",
+        library: { contentType: "stat", sourceField: "growthSource", manageLabel: "Stats", managePath: "/content/stats" },
+      }),
       field({ name: "visionEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "vision" }),
       field({ name: "visionTitle", label: "Statement (line break allowed)", type: "textarea", showInTable: false, group: "vision" }),
       field({ name: "visionImage", label: "Background photo", type: "image", showInTable: false, group: "vision" }),
