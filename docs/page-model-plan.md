@@ -1,6 +1,6 @@
 # Plan: one row = one page (About, Industry, Service, Home)
 
-Status: **phases 1 to 4 done** (editor foundations, service pages, industry pages, About). Case Studies, Posts, Service pages and Industry pages follow this: one `content_item` row is one page, edited in one form, previewed in the iframe. Home is next.
+Status: **phases 1 to 4 and 6 done** (editor foundations, service pages, industry pages, About, cleanup); phase 5 (Home) deferred; phase 7 (library mode) is next. Case Studies, Posts, Service pages and Industry pages follow this: one `content_item` row is one page, edited in one form, previewed in the iframe. **Home (phase 5) is deferred by decision**: it keeps its current rows and screens, with no page row and no preview, until a cheaper approach is found. Its investigation is recorded in section 11.
 
 Ground rules for this plan:
 
@@ -125,8 +125,8 @@ Bottom line: nesting depth and tens of KB are well within what jsonb handles eas
 2. **Service pages** (done): generic editor, `ServicePage` in the renderer, iframe preview, embed the case study teasers. Lowest risk; proves the pattern.
 3. **Industry** (done): `industry_page` with nested `solutionGroups[].slides[]`, public `GET /v1/industries/{slug}`, `/industries/[slug]`, renderer, preview. BFSI migrated into the new row; the old per-section types, screens and the hard-coded route are gone. Verified identical computed styles and text on the BFSI page at three widths.
 4. **About** (done): `about_page`, a singleton per site (service check plus a partial unique index in the schema), public `GET /v1/about`, `AboutPage` in the renderer, preview. The sidebar link opens the editor directly (or the "new" editor while the site has none). The Stats figures and the leaders/values section intros are now embedded in the row; the "Our Growth in Numbers" figures are a copy of the Stats library and will become a "From library" field in phase 7. Verified identical text, alt text and computed styles at three widths.
-5. **Home:** `home_page`, last; includes the home-specific rendering decision.
-6. **Cleanup:** delete the per-page section types, Fields classes, screens, sidebar items; drop the GIN index; add the Redis cache for page responses.
+5. **Home** (deferred, not planned): see section 11. Home keeps its current per-section rows and screens.
+6. **Cleanup** (done): the per-page section types, Fields classes, screens and sidebar items were deleted with their phases (3 and 4); this phase dropped the unused GIN index on `data` (0 scans, the largest index on the table) and left the `sections` plumbing in place because Home still uses it. **The Redis cache for page responses was measured and not built**: a public page answers in about 8 to 14 ms at the median (p95 13 to 18 ms) straight from content-service, the website already caches each page for 60 seconds, and a cache would add a new dependency and invalidation paths (stale content after an edit, restore or delete) to save a few milliseconds. Revisit only if load ever makes the read a bottleneck.
 7. **Library mode:** `{mode, refs}` fields, resolver, picker UI, "Convert to custom", dangling-reference handling, preview resolve, cache eviction. Embedded mode works without it, so earlier phases do not wait.
 
 Each phase is its own commit, with baseline-vs-after screenshots for the website page it touches. Build and test per `CLAUDE.md`.
@@ -157,3 +157,11 @@ Case Studies is the first page already on this model (generic editor, `CaseStudy
 - **Backend:** run the case study tests (`CaseStudyService` and its fields class) with every content-service change.
 - **Phase 7:** Case Studies is both a library type (featured case studies on other pages resolve to it) and a consumer of the library (its testimonial reference). Its own testimonial reference should be moved onto the same `{mode, refs}` field so the pattern is proven on the existing page first.
 - Anything learned while building Case Studies (editor gaps, awkward field types, preview quirks) is fed back into the plan before the next page starts.
+
+## 11. Why Home is deferred
+
+Investigated after phase 4. Home is ten sections (hero carousel, assistant band, what we do, testimonials, global delivery, extended workforce, case studies, insights, recognition, contact form) fed by about 50 rows (~12 KB), most of them Home-only (service cards, offices, awards, certifications, partners, stats). Only `testimonial` (case studies reference it) and the live case study / post lists are genuinely shared.
+
+What makes a full conversion costly: the canvas globe (needs `d3-geo`, `topojson-client` and a data file fetched from the website's public folder), the hero carousel (autoplay and art-directed `next/image` sources), the assistant band (a live chat widget with `next-intl`, scroll-spy and the section dock), and about 1,800 lines of CSS to move. A preview would need stand-ins for most of it.
+
+Considered split, if it is ever picked up: 5a one `home_page` row and editor with the website components unchanged (no design-drift risk); 5b move the sections that move cleanly plus a reduced preview; 5c the globe, carousel and assistant, one at a time. Decision: cost is too high for the gain, so Home stays as it is. `/v1/home` keeps serving Home, the header, the footer and the list pages' intros.
