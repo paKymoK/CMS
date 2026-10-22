@@ -23,3 +23,7 @@ pnpm build          # build everything
 Run a script in one app with `pnpm --filter cms-admin-app <script>` or `pnpm --filter landing-page <script>`.
 
 The website image is built from this folder: `docker build -f website/Dockerfile -t cms-website .`
+
+## pnpm only
+
+Do not run `npm install`, `yarn` or `bun` anywhere under `frontend/`. Each package sets `engine-strict=true` (`.npmrc`) and an `engines` entry that npm and yarn reject, so they stop before touching `node_modules` or creating a lockfile. `scripts/enforce-pnpm.cjs` (the `preinstall` script) is a second check. Stray `package-lock.json` / `yarn.lock` files are git-ignored.

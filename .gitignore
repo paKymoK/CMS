@@ -33,3 +33,10 @@ Thumbs.db
 logs/
 
 design/
+
+# frontend is pnpm-only: never commit another package manager's lockfile
+frontend/**/package-lock.json
+frontend/**/yarn.lock
+frontend/**/npm-shrinkwrap.json
+frontend/**/bun.lock
+frontend/**/bun.lockb

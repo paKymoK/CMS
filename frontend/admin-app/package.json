@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "node ../scripts/enforce-pnpm.cjs",
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -42,5 +43,10 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"
+  },
+  "engines": {
+    "npm": "please-use-pnpm",
+    "yarn": "please-use-pnpm",
+    "pnpm": ">=10"
   }
 }
