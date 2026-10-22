@@ -18,6 +18,7 @@ import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.CaseStudyService;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.RichTextSanitizer;
+import com.takypok.contentservice.util.StaleEdit;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.ArrayList;
@@ -82,6 +83,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
   @Override
   public Mono<CaseStudyResponse> update(Long siteId, CaseStudyUpdateRequest request) {
     return findItem(request.getId(), siteId)
+        .doOnNext(item -> StaleEdit.check(item, request.getVersion()))
         .flatMap(
             item ->
                 Mono.defer(

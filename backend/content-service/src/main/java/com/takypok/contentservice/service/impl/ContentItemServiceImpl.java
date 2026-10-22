@@ -8,6 +8,7 @@ import com.takypok.contentservice.model.request.ContentItemCreateRequest;
 import com.takypok.contentservice.model.request.ContentItemUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ContentItemService;
+import com.takypok.contentservice.util.StaleEdit;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.List;
@@ -78,6 +79,7 @@ public class ContentItemServiceImpl implements ContentItemService {
     return getById(request.getId(), siteId)
         .filter(item -> !SPECIALIZED_TYPES.contains(item.getContentType()))
         .switchIfEmpty(Mono.error(specializedTypeError("case_study or post")))
+        .doOnNext(item -> StaleEdit.check(item, request.getVersion()))
         .flatMap(
             item ->
                 contentItemMapper

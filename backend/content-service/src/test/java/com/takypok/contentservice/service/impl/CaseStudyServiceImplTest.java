@@ -14,6 +14,7 @@ import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.CaseStudyCreateRequest;
+import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.SearchService;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.OptimisticLockingFailureException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -314,5 +316,23 @@ class CaseStudyServiceImplTest {
               assertEquals(0, page.items().size());
             })
         .verifyComplete();
+  }
+
+  @Test
+  void updatingFromAnOutOfDateCopyIsRejectedAndNothingIsSaved() throws Exception {
+    ContentItem current = caseStudy(1L, 1L, "{\"slug\":\"a\",\"title\":\"Newer\"}");
+    current.setVersion(4);
+    when(contentItemRepository.findByIdAndSiteId(1L, 1L)).thenReturn(Mono.just(current));
+
+    CaseStudyUpdateRequest request = new CaseStudyUpdateRequest();
+    request.setId(1L);
+    request.setTitle("Older edit");
+    request.setVersion(3);
+
+    StepVerifier.create(service.update(1L, request))
+        .expectError(OptimisticLockingFailureException.class)
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
 }

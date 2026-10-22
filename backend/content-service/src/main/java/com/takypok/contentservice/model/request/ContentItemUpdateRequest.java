@@ -15,4 +15,5 @@ public class ContentItemUpdateRequest {
   private Integer displayOrder;
   private Boolean active;
   private String status;
+  private Integer version;
 }

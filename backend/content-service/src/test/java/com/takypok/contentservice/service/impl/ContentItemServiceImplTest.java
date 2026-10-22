@@ -3,6 +3,7 @@ package com.takypok.contentservice.service.impl;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.takypok.contentservice.audit.ContentItemWriter;
 import com.takypok.contentservice.model.entity.ContentItem;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.OptimisticLockingFailureException;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +64,27 @@ class ContentItemServiceImplTest {
 
     StepVerifier.create(service.update(1L, request))
         .expectError(ApplicationException.class)
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void updatingFromAnOutOfDateCopyIsRejectedAndNothingIsSaved() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    ContentItem current = new ContentItem();
+    current.setId(1L);
+    current.setContentType("service_page");
+    current.setVersion(4);
+    when(contentItemRepository.findByIdAndSiteId(1L, 1L)).thenReturn(Mono.just(current));
+    ContentItemUpdateRequest request = new ContentItemUpdateRequest();
+    request.setId(1L);
+    request.setContentType("service_page");
+    request.setVersion(3);
+
+    StepVerifier.create(service.update(1L, request))
+        .expectError(OptimisticLockingFailureException.class)
         .verify();
 
     verify(contentItemWriter, never()).save(any(ContentItem.class));

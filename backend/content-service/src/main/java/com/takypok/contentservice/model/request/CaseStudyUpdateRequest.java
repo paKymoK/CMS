@@ -22,4 +22,5 @@ public class CaseStudyUpdateRequest {
   private String summary;
   private JsonNode results;
   private Long testimonialId;
+  private Integer version;
 }
