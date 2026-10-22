@@ -32,6 +32,6 @@ public class SectionIntroFields implements ContentFields {
 
   private String linkUrl;
 
-  /** Decorative artwork used by the section (e.g. the rings behind the leadership team). */
+  /** Decorative artwork used by the section (e.g. the artwork behind the insights page heading). */
   private String image;
 }

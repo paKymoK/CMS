@@ -71,9 +71,10 @@ CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
 -- second one with a plain message; this index is the backstop against two concurrent creates.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_singleton
     ON content_item (site_id, content_type) WHERE content_type IN ('about_page');
--- GIN index so a query into a specific field inside `data` (e.g. data->>'category') can still be
--- indexed if one is ever needed — the option WordPress's flat postmeta rows never had.
-CREATE INDEX IF NOT EXISTS idx_content_item_data ON content_item USING GIN (data);
+-- Deliberately no GIN index on `data`: a page is one large row, so such an index grows with every key
+-- and value in it and slows every write, while nothing queries by containment (lookups use
+-- `data ->> 'slug'`, which uq_content_item_slug serves, and a GIN index would not). If a containment
+-- query ever appears, add a `jsonb_path_ops` index for it then.
 -- Full-text search over search_vec, and trigram matching on the title for typos and half-typed words.
 CREATE INDEX IF NOT EXISTS idx_content_item_search ON content_item USING GIN (search_vec);
 CREATE INDEX IF NOT EXISTS idx_content_item_search_title_trgm
