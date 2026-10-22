@@ -187,6 +187,26 @@ class ContentItemMapperTest {
         .verify();
   }
 
+  @Test
+  void aboutPageAcceptsTheLibraryGrowthSourceAndRejectsAnythingElse() throws Exception {
+    ContentItemMapper mapper = mapperWithRegistry(Map.of("about_page", AboutPageFields.class));
+
+    StepVerifier.create(
+            mapper.resolveAndValidate(
+                "about_page",
+                objectMapper.readTree("{\"heroTitle\": \"H\", \"growthSource\": \"library\"}")))
+        .assertNext(result -> assertEquals("library", result.get("growthSource").asText()))
+        .verifyComplete();
+
+    StepVerifier.create(
+            mapper.resolveAndValidate(
+                "about_page",
+                objectMapper.readTree("{\"heroTitle\": \"H\", \"growthSource\": \"bogus\"}")))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("growthSource"))
+        .verify();
+  }
+
   private ContentItemMapper mapperWithRegistry(
       Map<String, Class<? extends ContentFields>> registry) {
     return new ContentItemMapper(objectMapper, validator, registry);
