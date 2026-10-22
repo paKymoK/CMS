@@ -1,11 +1,12 @@
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { ServicePageData } from "@/lib/cms/services";
+import { defaultSlots } from "../defaults";
+import type { PostArticleSlots, ServicePageData } from "../types";
 
 /**
  * "Our Capabilities" (Figma "Capabilities"): a heading, a thin tab-style rule and a row of image
  * cards, each with a title and a short description. Two cards render wide, three or more narrow.
  */
-export function ServiceCapabilities({ page }: { page: ServicePageData }) {
+export function ServiceCapabilities({ page, slots = defaultSlots }: { page: ServicePageData; slots?: PostArticleSlots }) {
+  const { Image } = slots;
   const items = page.capabilities ?? [];
   if (items.length === 0) return null;
   const wide = items.length <= 2;
@@ -27,9 +28,8 @@ export function ServiceCapabilities({ page }: { page: ServicePageData }) {
             <li key={c.title} className="svc-cap-card">
               <div className="svc-cap-img">
                 {c.image && (
-                  <CoverImage
+                  <Image
                     src={c.image}
-                    alt=""
                     sizes={wide ? "(min-width: 1280px) 31vw, 90vw" : "(min-width: 1280px) 14vw, 45vw"}
                     className="object-cover"
                   />

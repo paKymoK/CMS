@@ -1,23 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { IndustryStory, SectionIntro } from "@/content/home/types";
+import { useState, type ReactNode } from "react";
+import type { IndustryStoryData, SectionIntroData } from "./types";
 
-const FALLBACK_INTRO: SectionIntro = { section: "industry-stories", title: "Success Stories" };
+const FALLBACK_INTRO: SectionIntroData = { title: "Success Stories" };
 
 /**
  * "Success Stories" (Figma "BFSI" → "Success Stories"): a headline and four figures on the left, and
  * a stack of story cards on the right — the front card is the open story, the others peek out
  * behind it. The two squares (or a click on a card behind) bring another story forward.
  */
-export function IndustryStories({
+export type StoryCard = IndustryStoryData & {
+  /** The card photo, already drawn by the host's image slot (slots are functions and cannot cross into this client component). */
+  photo?: ReactNode;
+};
+
+export function IndustryStoriesView({
   stories,
   intro = FALLBACK_INTRO,
   variant,
 }: {
-  stories: IndustryStory[];
-  intro?: SectionIntro;
+  stories: StoryCard[];
+  intro?: SectionIntroData;
   /** Extra class on the section root, for pages whose layout differs slightly (service pages). */
   variant?: string;
 }) {
@@ -66,14 +70,7 @@ export function IndustryStories({
                 aria-hidden={rel !== 0}
                 onClick={rel === 0 ? undefined : () => go(i)}
               >
-                {s.image && (
-                  <CoverImage
-                    src={s.image}
-                    alt=""
-                    sizes="(min-width: 1280px) 28vw, 90vw"
-                    className="object-cover"
-                  />
-                )}
+                {s.photo}
                 <div className="ind-story-body">
                   {s.tag && <p className="ind-story-tag">{s.tag}</p>}
                   <h3>{s.title}</h3>

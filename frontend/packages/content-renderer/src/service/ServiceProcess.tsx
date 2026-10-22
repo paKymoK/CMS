@@ -1,19 +1,20 @@
 import type { CSSProperties } from "react";
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { ServicePageData } from "@/lib/cms/services";
+import { defaultSlots } from "../defaults";
+import type { PostArticleSlots, ServicePageData } from "../types";
 
 /**
  * "Our Process" (Figma "Content" → "Our Process"): a dark band with a looping strip of numbered
  * step cards (photo with a white caption). The strip scrolls on its own and pauses on hover; with
  * reduced motion it sits still and scrolls by hand.
  */
-export function ServiceProcess({ page }: { page: ServicePageData }) {
+export function ServiceProcess({ page, slots = defaultSlots }: { page: ServicePageData; slots?: PostArticleSlots }) {
+  const { Image } = slots;
   const steps = page.processSteps ?? [];
   if (steps.length === 0) return null;
   const card = (s: (typeof steps)[number], i: number, copy: boolean) => (
     <li key={`${copy ? "b" : "a"}-${i}`} className="svc-step" aria-hidden={copy || undefined}>
       {s.image && (
-        <CoverImage src={s.image} alt="" sizes="(min-width: 1280px) 21vw, 70vw" className="object-cover" />
+        <Image src={s.image} sizes="(min-width: 1280px) 21vw, 70vw" className="object-cover" />
       )}
       <div className="svc-step-cap">
         <span className="svc-step-num">{i + 1}</span>

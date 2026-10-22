@@ -1,5 +1,6 @@
 import { resolveMediaUrls } from "./media";
 import { cmsFetch } from "./cmsFetch";
+import type { ServicePageData, ServiceStatData } from "@cms/content-renderer";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -7,39 +8,13 @@ export type ServiceLink = { slug: string; label: string };
 export type ServiceCategory = { slug: string; name: string; services: ServiceLink[] };
 export type ServiceNav = { categories: ServiceCategory[] };
 
-export type ServiceCapability = { title: string; body?: string; image?: string };
-export type ServiceStep = { title: string; image?: string };
-export type ServiceReason = { title: string; body?: string; image?: string; sideImage?: string };
-export type ServiceStat = { value: string; label: string };
-
-/** content_item type "service_page" — see content-service's ServicePageFields. */
-export type ServicePageData = {
-  slug: string;
-  category: string;
-  navLabel: string;
-  shortLabel?: string;
-  heroTitle: string;
-  heroSubtitle?: string;
-  ctaLabel?: string;
-  ctaUrl?: string;
-  heroImage?: string;
-  heroStats?: ServiceStat[];
-  capabilitiesEyebrow?: string;
-  capabilitiesTitle?: string;
-  capabilitiesSubtitle?: string;
-  capabilities?: ServiceCapability[];
-  processTitle?: string;
-  processSubtitle?: string;
-  processSteps?: ServiceStep[];
-  storiesHeading?: string;
-  caseStudies?: string[];
-  reasonsTitle?: string;
-  reasonsSubtitle?: string;
-  reasons?: ServiceReason[];
-  hiddenSections?: string[];
-  seoTitle?: string;
-  seoDescription?: string;
-};
+export type {
+  ServiceCapabilityData as ServiceCapability,
+  ServicePageData,
+  ServiceReasonData as ServiceReason,
+  ServiceStatData as ServiceStat,
+  ServiceStepData as ServiceStep,
+} from "@cms/content-renderer";
 
 export type FeaturedCaseStudy = {
   slug: string;
@@ -47,7 +22,7 @@ export type FeaturedCaseStudy = {
   summary?: string;
   image?: string;
   category?: string;
-  results?: ServiceStat[];
+  results?: ServiceStatData[];
 };
 
 export type ServicePage = {

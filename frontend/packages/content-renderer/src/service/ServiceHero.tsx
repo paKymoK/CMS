@@ -1,5 +1,5 @@
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { ServicePageData } from "@/lib/cms/services";
+import { defaultSlots } from "../defaults";
+import type { PostArticleSlots, ServicePageData } from "../types";
 
 /**
  * Top of a service page (Figma "Digital Engineering" → hero): dark gradient, breadcrumb, headline,
@@ -9,19 +9,21 @@ import type { ServicePageData } from "@/lib/cms/services";
 export function ServiceHero({
   page,
   categoryName,
+  slots = defaultSlots,
 }: {
   page: ServicePageData;
   categoryName: string;
+  slots?: PostArticleSlots;
 }) {
+  const { Image } = slots;
   const crumb = `Services > ${categoryName} > ${page.shortLabel || page.navLabel}`;
   return (
     <section aria-labelledby="svc-hero-title" className="design-canvas">
       <div className={`svc-hero${page.heroStats?.length ? " svc-hero--stats" : ""}`}>
         {page.heroImage && (
           <div className="svc-hero-art">
-            <CoverImage
+            <Image
               src={page.heroImage}
-              alt=""
               priority
               sizes="(min-width: 1280px) 60vw, 100vw"
               className="object-contain object-right"

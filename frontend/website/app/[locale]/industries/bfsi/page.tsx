@@ -7,7 +7,8 @@ import { sectionIntro } from "@/lib/sectionIntro";
 import { IndustryHero } from "@/components/industry/IndustryHero";
 import { IndustrySolutions } from "@/components/industry/IndustrySolutions";
 import { IndustryReasons } from "@/components/industry/IndustryReasons";
-import { IndustryStories } from "@/components/industry/IndustryStories";
+import { IndustryStories } from "@cms/content-renderer";
+import { siteSlots } from "@/components/content/siteSlots";
 import { InsightsAccordion } from "@/components/home/InsightsAccordion";
 import { ContactForm } from "@/components/home/ContactForm";
 
@@ -45,6 +46,7 @@ export default async function BfsiPage(props: PageProps<"/[locale]/industries/bf
       <IndustryStories
         stories={s?.industry_story ?? []}
         intro={sectionIntro(content, "industry-stories")}
+        slots={siteSlots}
       />
       <InsightsAccordion
         insights={content.insights}

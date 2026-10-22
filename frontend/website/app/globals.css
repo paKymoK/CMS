@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "../../packages/content-renderer/src/theme.css";
 @import "../../packages/content-renderer/src/post.css";
+@import "../../packages/content-renderer/src/shared.css";
 @source "../../packages/content-renderer/src";
 
 
@@ -173,30 +174,6 @@ body {
     transform: none;
     transition: none;
   }
-}
-
-
-
-/* Eyebrow used above every section heading in the design: short rule + 15px SemiBold navy caps. */
-.cmc-eyebrow {
-  position: relative;
-  padding-left: 29px;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: 0;
-  color: var(--cmc-navy);
-  text-transform: uppercase;
-}
-.cmc-eyebrow::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  width: 17px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--cmc-navy);
 }
 
 /* ---- Hero carousel (components/home/HeroCarousel.tsx): progress segments ------------------------- */

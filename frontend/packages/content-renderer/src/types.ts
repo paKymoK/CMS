@@ -86,3 +86,74 @@ export interface CaseStudyArticleLabels {
   moreWork: string;
   relatedCaseStudies: string;
 }
+
+export interface ServiceStatData {
+  value: string;
+  label: string;
+}
+
+export interface ServiceCapabilityData {
+  title: string;
+  body?: string;
+  image?: string;
+}
+
+export interface ServiceStepData {
+  title: string;
+  image?: string;
+}
+
+export interface ServiceReasonData {
+  title: string;
+  body?: string;
+  image?: string;
+  sideImage?: string;
+}
+
+/** The content of one service page (content_item "service_page"); the website and the admin preview both fill it. */
+export interface ServicePageData {
+  slug: string;
+  category: string;
+  navLabel: string;
+  shortLabel?: string;
+  heroTitle: string;
+  heroSubtitle?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  heroImage?: string;
+  heroStats?: ServiceStatData[];
+  capabilitiesEyebrow?: string;
+  capabilitiesTitle?: string;
+  capabilitiesSubtitle?: string;
+  capabilities?: ServiceCapabilityData[];
+  processTitle?: string;
+  processSubtitle?: string;
+  processSteps?: ServiceStepData[];
+  storiesHeading?: string;
+  caseStudies?: string[];
+  reasonsTitle?: string;
+  reasonsSubtitle?: string;
+  reasons?: ServiceReasonData[];
+  hiddenSections?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
+}
+
+/** One card of the success-stories stack; the first card carries the left-column heading and figures. */
+export interface IndustryStoryData {
+  tag?: string;
+  title: string;
+  body?: string;
+  image?: string;
+  linkLabel?: string;
+  linkUrl?: string;
+  heading?: string;
+  metrics?: ServiceStatData[];
+}
+
+/** Eyebrow, title and one-line description above a section. */
+export interface SectionIntroData {
+  eyebrow?: string;
+  title: string;
+  body?: string;
+}

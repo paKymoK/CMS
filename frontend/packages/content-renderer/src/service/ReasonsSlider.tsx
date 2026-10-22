@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { CoverImage } from "@/components/ui/CoverImage";
-import type { ServicePageData } from "@/lib/cms/services";
+import { useState, type ReactNode } from "react";
 
 const Chevron = ({ dir }: { dir: "left" | "right" }) => (
   <svg viewBox="0 0 12 22" className="h-[14px] w-[8px] fill-none stroke-current stroke-[2]" aria-hidden>
@@ -15,8 +13,15 @@ const Chevron = ({ dir }: { dir: "left" | "right" }) => (
  * the left, a large photo with a smaller one overlapping it on the right, and a "1/3" counter with
  * arrows. The counter and arrows only appear with more than one reason.
  */
-export function ServiceReasons({ page }: { page: ServicePageData }) {
-  const reasons = page.reasons ?? [];
+export interface ReasonSlide {
+  title: string;
+  body?: string;
+  /** The large photo and the small overlapping one, already drawn by the host's image slot. */
+  main?: ReactNode;
+  side?: ReactNode;
+}
+
+export function ReasonsSlider({ title, subtitle, reasons }: { title: string; subtitle?: string; reasons: ReasonSlide[] }) {
   const n = reasons.length;
   const [i, setI] = useState(0);
   if (n === 0) return null;
@@ -30,9 +35,9 @@ export function ServiceReasons({ page }: { page: ServicePageData }) {
         </div>
         <div className="svc-sec-head">
           <h2 id="svc-reasons-title" className="sec-title">
-            {page.reasonsTitle ?? "Reasons to Partner With Us"}
+            {title}
           </h2>
-          {page.reasonsSubtitle && <p>{page.reasonsSubtitle}</p>}
+          {subtitle && <p>{subtitle}</p>}
         </div>
 
         <div className="svc-reason">
@@ -40,16 +45,8 @@ export function ServiceReasons({ page }: { page: ServicePageData }) {
             <h3>{r.title}</h3>
             {r.body && <p>{r.body}</p>}
           </div>
-          <div className="svc-reason-main">
-            {r.image && (
-              <CoverImage src={r.image} alt="" sizes="(min-width: 1280px) 36vw, 90vw" className="object-cover" />
-            )}
-          </div>
-          {r.sideImage && (
-            <div className="svc-reason-side">
-              <CoverImage src={r.sideImage} alt="" sizes="(min-width: 1280px) 21vw, 50vw" className="object-cover" />
-            </div>
-          )}
+          <div className="svc-reason-main">{r.main}</div>
+          {r.side && <div className="svc-reason-side">{r.side}</div>}
         </div>
 
         {n > 1 && (
