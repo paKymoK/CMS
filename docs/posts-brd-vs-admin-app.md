@@ -69,6 +69,14 @@ Extras the app has that the BRD does not mention: callout, two-column layout, ac
 - BRD: live content must be unpublished or archived before delete; wants Trash with restore.
 - Today a deleted item is recoverable only via the audit trail ("Create new from this version").
 
+### G10. Create a translated draft in another site (feature)
+- BRD intent: when an editor drafts a post in EN, they can create a new **DRAFT** of it in another site (e.g. VI) with the content auto-translated, then review and edit it independently.
+- Model stays `site == locale`. The action copies the post into the target site as a new `content_item` row (`status = DRAFT`), so the existing per-site slug rule, audit trail and access guard apply unchanged.
+- Fields to translate: title, excerpt, body (HTML, tags and embeds must survive), image alt/captions, SEO fields once G4 exists. Not translated: slug is re-resolved for the target site, tags/category follow G2, media URLs and dates are copied.
+- Target sites per BRD: Global → VI (auto-translate or manual upload); APAC → Thai/Chinese/Malay; Korea and Deutschland → auto from EN; Japan → manual.
+- Existing building block: the "Create a new item from this version" prefill flow (`prefillAsPost`) already opens the editor on a new draft with copied content.
+- A source reference on the new row (optional) would only be for display ("translated from EN post #123"), not required for the feature.
+
 ### G9. Roles
 - Guard checks site access only. No Editor vs Admin separation on post actions found.
 - To verify: `CmsAdminGuard`, auth-service client roles.
@@ -77,7 +85,7 @@ Extras the app has that the BRD does not mention: callout, two-column layout, ac
 
 | Topic | Current | BRD | Note |
 |---|---|---|---|
-| Language model | `site == locale`; content authored independently per site; no shared translation key | Manage EN/VI versions of the same content; auto-translate | No link between sibling rows. Cross-site linking is a gap. |
+| Language model | `site == locale`; content authored independently per site | Manage EN/VI versions of the same content | **Keep as is.** The BRD need is a feature (see G10), not a model change. |
 | `active` vs `status` | Both exist and overlap (`active=false` acts like hidden) | Status only | Consider folding `active` into the status model. |
 | Version history | Full history | 1 previous version | Keep the app's approach. |
 | Tag parent field | n/a | Tags section lists "parent category" | Ignore: BRD says Tags are non-hierarchical. |
@@ -88,14 +96,17 @@ Extras the app has that the BRD does not mention: callout, two-column layout, ac
 2. **Category and Tag tables** per site, with posts referencing them (G2).
 3. **SEO fields** in `PostFields`, DTOs and editor sidebar (G4).
 4. **Dedicated post list page** with search, filters, bulk actions (G3).
-5. Editor blocks and preview improvements (G5–G7).
-6. Roles check (G9).
+5. Translated-draft action (G10), after G1 and G2 so the copy carries the right status and taxonomy.
+6. Editor blocks and preview improvements (G5–G7).
+7. Roles check (G9).
 
 ## 5. Open questions for the critical review
 
 - Is `active` still needed once `status` covers Scheduled/Archived?
 - Do Categories and Tags need a tenant-wide or per-site scope, and are they translated per site?
-- How should sibling-language posts be linked (shared key column vs separate table)?
+- Translation engine for G10: which service, who pays, and is the call synchronous or a background job?
+- Does the translated draft keep an optional "translated from" reference, or stay fully independent?
+- Does G10 need permission rules (who may create drafts in other sites)?
 - Is the Tiptap editor acceptable, or does the BRD "block" language require a block builder?
 - Where should the scheduler live (content-service job vs external)?
 
