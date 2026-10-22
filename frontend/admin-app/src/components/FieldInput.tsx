@@ -29,69 +29,83 @@ function HexColorInput({
   );
 }
 
+type Path = (string | number)[];
+
+/**
+ * One form field of any type. object-list entries render their `itemFields` through this same
+ * component, so lists nest to any depth. `prefix` is the field's path relative to the enclosing
+ * Form.List (what Form.Item names need); `abs` is the enclosing path from the form root (what
+ * useWatch, setFieldValue and the media picker need).
+ */
 export function FieldInput({
   field: f,
   form,
   onOpenPicker,
+  prefix = [],
+  abs = [],
 }: {
   field: FieldConfig;
   form: FormInstance;
   onOpenPicker: (path?: NamePath) => void;
+  prefix?: Path;
+  abs?: Path;
 }) {
   const rules = f.required ? [{ required: true, message: `${f.label} is required` }] : [];
-  const currentValue = Form.useWatch(f.name, form) as string | undefined;
-  const gate = Form.useWatch(f.showWhen?.field ?? f.name, form) as string | undefined;
+  const name = [...prefix, f.name];
+  const absName = [...abs, f.name];
+  const currentValue = Form.useWatch(absName, form) as string | undefined;
+  const gate = Form.useWatch(f.showWhen ? [...abs, f.showWhen.field] : absName, form) as string | undefined;
 
   if (f.showWhen && gate !== f.showWhen.equals) return null;
 
   if (f.type === "boolean") {
     return (
-      <Form.Item name={f.name} label={f.label} valuePropName="checked">
+      <Form.Item name={name} label={f.label} valuePropName="checked">
         <Switch />
       </Form.Item>
     );
   }
   if (f.type === "number") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <InputNumber style={{ width: "100%" }} />
       </Form.Item>
     );
   }
   if (f.type === "textarea" || f.type === "json") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <Input.TextArea rows={f.type === "json" ? 4 : 3} />
       </Form.Item>
     );
   }
   if (f.type === "select") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <Select options={f.options} />
       </Form.Item>
     );
   }
   if (f.type === "datetime") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <DatePicker showTime style={{ width: "100%" }} />
       </Form.Item>
     );
   }
   if (f.type === "multi-select") {
     return (
-      <Form.Item name={f.name} label={f.label}>
+      <Form.Item name={name} label={f.label}>
         <Select mode="multiple" options={f.options} allowClear />
       </Form.Item>
     );
   }
   if (f.type === "content-ref") {
-    return <ContentRefSelect field={f} rules={rules} />;
+    return <ContentRefSelect field={f} name={name} rules={rules} />;
   }
   if (f.type === "richtext") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules} valuePropName="value" trigger="onChange">
+      <Form.Item name={name} label={f.label} rules={rules} valuePropName="value" trigger="onChange">
         <RichTextField />
       </Form.Item>
     );
@@ -99,7 +113,7 @@ export function FieldInput({
   if (f.type === "object-list") {
     return (
       <Form.Item label={f.label}>
-        <Form.List name={f.name}>
+        <Form.List name={name}>
           {(entries, { add, remove, move }) => (
             <div className="flex flex-col gap-3">
               {entries.map((entry, index) => (
@@ -125,16 +139,18 @@ export function FieldInput({
                       <Button size="small" danger icon={<DeleteIcon />} onClick={() => remove(entry.name)} aria-label="Remove" />
                     </div>
                   </div>
-                  {(f.itemFields ?? []).map((sub) => (
-                    <SubFieldInput
-                      key={sub.name}
-                      path={[entry.name, sub.name]}
-                      sub={sub}
-                      form={form}
-                      parent={f.name}
-                      onOpenPicker={onOpenPicker}
-                    />
-                  ))}
+                  <div className="cms-nested-field">
+                    {(f.itemFields ?? []).map((sub) => (
+                      <FieldInput
+                        key={sub.name}
+                        field={sub}
+                        form={form}
+                        onOpenPicker={onOpenPicker}
+                        prefix={[entry.name]}
+                        abs={[...absName, entry.name]}
+                      />
+                    ))}
+                  </div>
                 </div>
               ))}
               <Button type="dashed" icon={<PlusIcon />} onClick={() => add({})}>
@@ -149,7 +165,7 @@ export function FieldInput({
   if (f.type === "stat-list") {
     return (
       <Form.Item label={f.label}>
-        <Form.List name={f.name}>
+        <Form.List name={name}>
           {(fields, { add, remove }) => (
             <div className="flex flex-col gap-2">
               {fields.map((field) => (
@@ -182,7 +198,7 @@ export function FieldInput({
   }
   if (f.type === "string-list") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <Select mode="tags" style={{ width: "100%" }} open={false} tokenSeparators={[","]} />
       </Form.Item>
     );
@@ -194,10 +210,10 @@ export function FieldInput({
           {currentValue ? (
             <Image src={mediaSrc(currentValue as string)} width={56} height={56} className="object-cover rounded" />
           ) : null}
-          <Form.Item name={f.name} rules={rules} noStyle>
+          <Form.Item name={name} rules={rules} noStyle>
             <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />
           </Form.Item>
-          <Button icon={<PictureIcon />} onClick={() => onOpenPicker()}>
+          <Button icon={<PictureIcon />} onClick={() => onOpenPicker(absName)}>
             Choose
           </Button>
         </div>
@@ -206,7 +222,7 @@ export function FieldInput({
   }
   if (f.type === "color") {
     return (
-      <Form.Item name={f.name} label={f.label} rules={rules}>
+      <Form.Item name={name} label={f.label} rules={rules}>
         <HexColorInput />
       </Form.Item>
     );
@@ -215,62 +231,22 @@ export function FieldInput({
     return (
       <Form.Item label={f.label}>
         <div className="flex items-center gap-3">
-          <Form.Item name={f.name} rules={rules} noStyle>
+          <Form.Item name={name} rules={rules} noStyle>
             <Input placeholder="No video selected" readOnly style={{ flex: 1 }} />
           </Form.Item>
-          <Button icon={<PictureIcon />} onClick={() => onOpenPicker()}>
+          <Button icon={<PictureIcon />} onClick={() => onOpenPicker(absName)}>
             Choose
           </Button>
           {currentValue ? (
-            <Button onClick={() => form.setFieldValue(f.name, undefined)}>Clear</Button>
+            <Button onClick={() => form.setFieldValue(absName, undefined)}>Clear</Button>
           ) : null}
         </div>
       </Form.Item>
     );
   }
   return (
-    <Form.Item name={f.name} label={f.label} rules={rules}>
+    <Form.Item name={name} label={f.label} rules={rules}>
       <Input />
-    </Form.Item>
-  );
-}
-
-// A field inside an object-list entry: text, textarea or image only.
-function SubFieldInput({
-  path,
-  sub,
-  form,
-  parent,
-  onOpenPicker,
-}: {
-  path: (string | number)[];
-  sub: FieldConfig;
-  form: FormInstance;
-  parent: string;
-  onOpenPicker: (path?: NamePath) => void;
-}) {
-  const rules = sub.required ? [{ required: true, message: `${sub.label} is required` }] : [];
-  const current = Form.useWatch([parent, ...path], form) as string | undefined;
-  if (sub.type === "image") {
-    return (
-      <Form.Item label={sub.label} style={{ marginBottom: 12 }}>
-        <div className="flex items-center gap-3">
-          {current ? (
-            <Image src={mediaSrc(current)} width={48} height={48} className="object-cover rounded" />
-          ) : null}
-          <Form.Item name={path} rules={rules} noStyle>
-            <Input placeholder="No image selected" readOnly style={{ flex: 1 }} />
-          </Form.Item>
-          <Button icon={<PictureIcon />} onClick={() => onOpenPicker([parent, ...path])}>
-            Choose
-          </Button>
-        </div>
-      </Form.Item>
-    );
-  }
-  return (
-    <Form.Item name={path} label={sub.label} rules={rules} style={{ marginBottom: 12 }}>
-      {sub.type === "textarea" ? <Input.TextArea rows={2} /> : <Input />}
     </Form.Item>
   );
 }
@@ -279,9 +255,11 @@ function SubFieldInput({
 // label but storing its `valueField` (the slug).
 function ContentRefSelect({
   field: f,
+  name,
   rules,
 }: {
   field: FieldConfig;
+  name: Path;
   rules: { required: boolean; message: string }[];
 }) {
   const { site } = useSite();
@@ -304,7 +282,7 @@ function ContentRefSelect({
     enabled: !!site && !!f.ref,
   });
   return (
-    <Form.Item name={f.name} label={f.label} rules={rules}>
+    <Form.Item name={name} label={f.label} rules={rules}>
       <Select options={q.data ?? []} loading={q.isLoading} showSearch optionFilterProp="label" />
     </Form.Item>
   );

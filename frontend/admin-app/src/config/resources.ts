@@ -31,7 +31,7 @@ export interface FieldConfig {
   type: FieldType;
   required?: boolean;
   options?: FieldOption[];
-  /** object-list: the fields of each entry (text / textarea / image only). */
+  /** object-list: the fields of each entry. Any field type, including another object-list (any depth). */
   itemFields?: FieldConfig[];
   /** object-list: label of the "add entry" button. */
   addLabel?: string;
@@ -49,6 +49,18 @@ export interface FieldConfig {
   dropOnCopy?: boolean;
   /** Shown as a column in the list table. Defaults to true for scalar field types. */
   showInTable?: boolean;
+  /** Full-page editor only: key of a `ResourceConfig.groups` entry; the field is drawn inside that collapsible section. */
+  group?: string;
+}
+
+/** A collapsible section of the full-page editor's main column. */
+export interface FieldGroup {
+  key: string;
+  label: string;
+  /** Shows an on/off switch; off sections are listed in the page's `hiddenSections` and not rendered by the website. */
+  toggleable?: boolean;
+  /** Open when the editor loads. Defaults to closed. */
+  defaultOpen?: boolean;
 }
 
 /** Which sidebar group a screen lives in. */
@@ -80,8 +92,23 @@ export interface ResourceConfig {
    * generic drawer form; ContentPage navigates here on row-click/"New" rather than opening the
    * drawer. `id` is the row id, or "new" for create. */
   editorRoute?: (id: number | "new") => string;
+  /** Full-page editor only: sections for fields that set `group`. Ungrouped fields come first, then the sections in this order. */
+  groups?: FieldGroup[];
   /** Present => the editorRoute page is the generic full-page form (ResourceEditorPage) driven by `fields`. */
   editor?: { slugPrefix: string; singular: string; backPath: string };
+}
+
+/** The field config a form path points at, e.g. ["results", 0, "value"] -> the `value` itemField of `results`. */
+export function findFieldByPath(fields: FieldConfig[], path: string | number | (string | number)[]): FieldConfig | undefined {
+  const names = (Array.isArray(path) ? path : [path]).filter((p): p is string => typeof p === "string");
+  let list = fields;
+  let found: FieldConfig | undefined;
+  for (const n of names) {
+    found = list.find((f) => f.name === n);
+    if (!found) return undefined;
+    list = found.itemFields ?? [];
+  }
+  return found;
 }
 
 const scalarDefault = (type: FieldType) =>

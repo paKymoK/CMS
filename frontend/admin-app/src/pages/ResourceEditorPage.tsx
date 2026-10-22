@@ -1,12 +1,12 @@
 import { useState, type CSSProperties } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Empty, Form, message } from "antd";
+import { Collapse, Empty, Form, Switch, message } from "antd";
 import type { NamePath } from "antd/es/form/interface";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
-import { findResource, type FieldConfig, type ResourceConfig } from "../config/resources";
+import { findFieldByPath, findResource, type FieldConfig, type ResourceConfig } from "../config/resources";
 import { checkImageSpec } from "../lib/media";
 import { flattenItem, toItemPayload } from "../lib/contentItem";
 import type { ItemPrefill } from "../lib/audit";
@@ -149,6 +149,8 @@ function ResourceEditorForm({
   const [displayOrder, setDisplayOrder] = useState((initial?.displayOrder as number | undefined) ?? 0);
   const [active, setActive] = useState((initial?.active as boolean | undefined) ?? true);
   const [status, setStatus] = useState<Status>((initial?.status as Status | undefined) ?? "DRAFT");
+  // The row version this form was loaded with; the server rejects a save made against an older one.
+  const [version, setVersion] = useState(initial?.version as number | undefined);
   const [dirty, setDirty] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [pickerField, setPickerField] = useState<NamePath | null>(null);
@@ -156,6 +158,10 @@ function ResourceEditorForm({
 
   const Preview = RESOURCE_PREVIEWS[resource.key];
   const mainFields = resource.fields.filter((f) => f.area !== "side");
+  const groups = resource.groups ?? [];
+  const plainFields = mainFields.filter((f) => !f.group || !groups.some((g) => g.key === f.group));
+  const [openGroups, setOpenGroups] = useState<string[]>(groups.filter((g) => g.defaultOpen).map((g) => g.key));
+  const [hiddenSections, setHiddenSections] = useState<string[]>((initial?.hiddenSections as string[] | undefined) ?? []);
   const sideFields = resource.fields.filter((f) => f.area === "side");
   const siteSub = site ? SITES.find((s) => s.code === site)?.subdomain : undefined;
   const titleValue = (Form.useWatch(resource.titleField, form) as string | undefined) ?? "";
@@ -168,7 +174,8 @@ function ResourceEditorForm({
       const values: Values = {
         ...form.getFieldsValue(true),
         ...fieldValues,
-        ...(isNew ? {} : { id: Number(id) }),
+        ...(isNew ? {} : { id: Number(id), version }),
+        ...(groups.length ? { hiddenSections } : {}),
         slug: slug || undefined,
         displayOrder,
         active,
@@ -180,6 +187,7 @@ function ResourceEditorForm({
         : contentApi.put(resource.apiPath, body, { params: { site } });
     },
     onSuccess: (res, nextStatus) => {
+      setVersion((res.data.data as { version?: number }).version);
       setStatus(nextStatus);
       setDirty(false);
       message.success(nextStatus === "PUBLISHED" ? "Published" : "Saved as draft");
@@ -191,6 +199,16 @@ function ResourceEditorForm({
       }
     },
   });
+
+  const setSectionVisible = (key: string, visible: boolean) => {
+    const rest = hiddenSections.filter((k) => k !== key);
+    setHiddenSections(visible ? rest : [...rest, key]);
+    touch();
+  };
+  const jumpTo = (key: string) => {
+    setOpenGroups((open) => (open.includes(key) ? open : [...open, key]));
+    requestAnimationFrame(() => document.getElementById(`group-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   const renderField = (f: FieldConfig) => <FieldInput key={f.name} field={f} form={form} onOpenPicker={(path) => setPickerField(path ?? f.name)} />;
 
@@ -273,7 +291,48 @@ function ResourceEditorForm({
       <Form form={form} layout="vertical" initialValues={initial ?? undefined} onValuesChange={touch} requiredMark={false}>
         <div className="cms-editor-body" style={{ margin: "0 auto", padding: "0 0 80px", display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24 }}>
           <main style={{ ...cardStyle, flex: "1 1 640px", minWidth: 0, padding: "clamp(20px,3vw,32px)" }}>
-            {mainFields.map(renderField)}
+            {plainFields.map(renderField)}
+            {groups.map((g) => {
+              const off = g.toggleable && hiddenSections.includes(g.key);
+              return (
+                <div key={g.key} id={`group-${g.key}`} style={{ marginTop: 16, scrollMarginTop: 88 }}>
+                  <Collapse
+                    activeKey={openGroups.includes(g.key) ? [g.key] : []}
+                    onChange={(keys) =>
+                      setOpenGroups((open) => [...open.filter((k) => k !== g.key), ...(keys.length ? [g.key] : [])])
+                    }
+                    items={[
+                      {
+                        key: g.key,
+                        forceRender: true,
+                        label: (
+                          <span style={{ fontWeight: 600, color: off ? "#7b8aa5" : "#0b1b3a" }}>
+                            {g.label}
+                            {off ? " · hidden on the website" : ""}
+                          </span>
+                        ),
+                        extra: g.toggleable ? (
+                          <Switch
+                            size="small"
+                            checked={!off}
+                            aria-label={`Show ${g.label} on the website`}
+                            onClick={(checked, e) => {
+                              e.stopPropagation();
+                              setSectionVisible(g.key, checked);
+                            }}
+                          />
+                        ) : undefined,
+                        children: (
+                          <div style={{ opacity: off ? 0.55 : 1 }}>
+                            {mainFields.filter((f) => f.group === g.key).map(renderField)}
+                          </div>
+                        ),
+                      },
+                    ]}
+                  />
+                </div>
+              );
+            })}
           </main>
 
           <aside style={{ flex: "0 1 330px", minWidth: 280, display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 88 }}>
@@ -365,6 +424,25 @@ function ResourceEditorForm({
               </div>
             </div>
 
+            {groups.length > 0 && (
+              <div style={cardStyle}>
+                <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...labelStyle }}>Sections</div>
+                <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column" }}>
+                  {groups.map((g) => (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => jumpTo(g.key)}
+                      style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "7px 8px", border: "none", background: "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", fontSize: 13, color: g.toggleable && hiddenSections.includes(g.key) ? "#a3afc4" : "#26354f", textAlign: "left" }}
+                    >
+                      {g.label}
+                      {g.toggleable && hiddenSections.includes(g.key) ? <span style={{ fontSize: 11 }}>hidden</span> : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {sideFields.length > 0 && (
               <div style={cardStyle}>
                 <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...labelStyle }}>Details</div>
@@ -384,7 +462,7 @@ function ResourceEditorForm({
         onClose={() => setPickerField(null)}
         onSelect={async (url) => {
           const target = pickerField;
-          const spec = typeof target === "string" ? resource.fields.find((f) => f.name === target)?.imageSpec : undefined;
+          const spec = target ? findFieldByPath(resource.fields, target)?.imageSpec : undefined;
           if (spec) {
             const problem = await checkImageSpec(url, spec);
             if (problem) {
