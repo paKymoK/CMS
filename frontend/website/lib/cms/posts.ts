@@ -38,29 +38,6 @@ export async function getPosts(params?: {
   }
 }
 
-/**
- * Draft-inclusive counterpart of getPost for the token-gated preview path — see
- * homeContent.ts's getPreviewHomeContent. no-store so it never shares getPost's ISR cache entry;
- * null (→ notFound) when the token is bad/expired or no post has that slug on the token's site.
- */
-export async function getPreviewPost(slug: string, token: string): Promise<PostDetail | null> {
-  try {
-    const res = await cmsFetch(
-      `${CMS_BASE}/content-service/v1/preview/posts/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`,
-      { cache: "no-store" },
-    );
-    if (!res.ok) {
-      console.error(`Failed to load preview post "${slug}": ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const body = (await res.json()) as { data: PostDetail };
-    return body.data ? resolveMediaUrls(body.data) : null;
-  } catch (err) {
-    console.error(`Failed to load preview post "${slug}"`, err);
-    return null;
-  }
-}
-
 export async function getPost(slug: string): Promise<PostDetail | null> {
   try {
     const res = await cmsFetch(`${CMS_BASE}/content-service/v1/posts/${encodeURIComponent(slug)}`, {

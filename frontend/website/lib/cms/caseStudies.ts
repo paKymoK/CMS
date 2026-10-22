@@ -28,28 +28,6 @@ export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null
   }
 }
 
-/** Draft-inclusive counterpart of getCaseStudy — see posts.ts's getPreviewPost. */
-export async function getPreviewCaseStudy(
-  slug: string,
-  token: string,
-): Promise<CaseStudyDetail | null> {
-  try {
-    const res = await cmsFetch(
-      `${CMS_BASE}/content-service/v1/preview/case-studies/${encodeURIComponent(slug)}?token=${encodeURIComponent(token)}`,
-      { cache: "no-store" },
-    );
-    if (!res.ok) {
-      console.error(`Failed to load preview case study "${slug}": ${res.status} ${res.statusText}`);
-      return null;
-    }
-    const body = (await res.json()) as { data: CaseStudyDetail };
-    return body.data ? resolveMediaUrls(body.data) : null;
-  } catch (err) {
-    console.error(`Failed to load preview case study "${slug}"`, err);
-    return null;
-  }
-}
-
 export const CASE_STUDIES_PAGE_SIZE = 6;
 
 const EMPTY_PAGE: CaseStudyPage = {

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { ListHero } from "@/components/list/ListHero";
 import { ContactForm } from "@/components/home/ContactForm";
 
@@ -16,11 +15,10 @@ export default async function PerspectivesListLayout({
 }: {
   children: ReactNode;
 }) {
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
   const hero = sectionIntro(content, "insights-page");
   return (
     <>
-      {isPreview && <DraftBanner />}
       <ListHero
         crumbs={[
           { label: hero?.eyebrow ?? "Insights" },

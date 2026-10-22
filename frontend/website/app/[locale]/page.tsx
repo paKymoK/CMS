@@ -3,9 +3,8 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { JsonLd, organizationJsonLd } from "@/lib/seo/jsonld";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { AssistantBand } from "@/components/home/AssistantBand";
 import { WhatWeDo } from "@/components/home/WhatWeDo";
@@ -44,11 +43,10 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
 
   setRequestLocale(locale);
 
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
 
   return (
     <>
-      {isPreview && <DraftBanner />}
       <JsonLd data={organizationJsonLd()} />
       <HeroCarousel slides={content.sections?.hero_slide ?? []} />
       {content.sections?.assistant_band?.[0] && (

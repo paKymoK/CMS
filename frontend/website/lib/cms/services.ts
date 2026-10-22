@@ -1,6 +1,5 @@
 import { resolveMediaUrls } from "./media";
 import { cmsFetch } from "./cmsFetch";
-import { getPreviewToken } from "./previewSession";
 
 const CMS_BASE = process.env.NEXT_PUBLIC_CMS_API_BASE_URL!;
 
@@ -78,17 +77,11 @@ export async function getServiceNav(): Promise<ServiceNav> {
 }
 
 export async function getServicePage(category: string, slug: string): Promise<ServicePage | null> {
-  const token = await getPreviewToken();
   const path = `${encodeURIComponent(category)}/${encodeURIComponent(slug)}`;
   try {
-    const res = token
-      ? await cmsFetch(
-          `${CMS_BASE}/content-service/v1/preview/services/${path}?token=${encodeURIComponent(token)}`,
-          { cache: "no-store" },
-        )
-      : await cmsFetch(`${CMS_BASE}/content-service/v1/services/${path}`, {
-          next: { revalidate: 60 },
-        });
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/services/${path}`, {
+      next: { revalidate: 60 },
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as { data: ServicePage };
     return body.data ? resolveMediaUrls(body.data) : null;

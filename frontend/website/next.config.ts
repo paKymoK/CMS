@@ -4,6 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Workspace packages ship TypeScript source.
+  transpilePackages: ["@cms/post-renderer"],
   // output: "standalone", // needed for Docker builds; conflicts with Vercel's own output tracing, so disabled while deploying there
   images: {
     // media-service-hosted images/logos come back as full absolute URLs from content-service's

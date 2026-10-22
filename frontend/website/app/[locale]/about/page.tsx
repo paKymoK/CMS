@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { AboutHero } from "@/components/about/AboutHero";
 import { MeetCmc } from "@/components/about/MeetCmc";
 import { StatementBand } from "@/components/about/StatementBand";
@@ -25,7 +24,7 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
   if (locale !== "en") notFound();
   setRequestLocale(locale);
 
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
   const s = content.sections;
   const hero = s?.about_hero?.[0];
   const intro = s?.about_intro?.[0];
@@ -34,7 +33,6 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
 
   return (
     <>
-      {isPreview && <DraftBanner />}
       {hero && <AboutHero hero={hero} />}
       {intro && <MeetCmc intro={intro} stats={content.stats} />}
       {vision && <StatementBand statement={vision} />}

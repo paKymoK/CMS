@@ -5,17 +5,14 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { Link } from "@/i18n/navigation";
-import { getCaseStudy, getPreviewCaseStudy } from "@/lib/cms/caseStudies";
-import { getPreviewToken } from "@/lib/cms/previewSession";
-import { DraftBanner } from "@/components/preview/DraftBanner";
+import { getCaseStudy } from "@/lib/cms/caseStudies";
 import { Placeholder } from "@/components/ui/Placeholder";
 
 export async function generateMetadata(
   props: PageProps<"/[locale]/case-studies/[slug]">,
 ): Promise<Metadata> {
   const { locale, slug } = await props.params;
-  const token = await getPreviewToken();
-  const caseStudy = token ? await getPreviewCaseStudy(slug, token) : await getCaseStudy(slug);
+  const caseStudy = await getCaseStudy(slug);
   if (!caseStudy) {
     return buildPageMetadata({
       locale,
@@ -31,7 +28,6 @@ export async function generateMetadata(
     title: `${caseStudy.title} — CMC Global`,
     description: caseStudy.summary,
     ogImage: caseStudy.image,
-    noIndex: token !== null,
   });
 }
 
@@ -46,15 +42,13 @@ export default async function CaseStudyDetailPage(
   setRequestLocale(locale);
 
   const t = await getTranslations("caseStudies");
-  const token = await getPreviewToken();
-  const caseStudy = token ? await getPreviewCaseStudy(slug, token) : await getCaseStudy(slug);
+  const caseStudy = await getCaseStudy(slug);
   if (!caseStudy) {
     notFound();
   }
 
   return (
     <div className="font-wave-sans text-[#0f172a]">
-      {token !== null && <DraftBanner />}
       <section className="mx-auto max-w-[1180px] px-6 pt-[150px] pb-16">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] items-center gap-[clamp(32px,5vw,64px)]">
           <div className="min-w-0">

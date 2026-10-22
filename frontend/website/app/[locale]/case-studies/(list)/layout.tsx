@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { ListHero } from "@/components/list/ListHero";
 import { ContactForm } from "@/components/home/ContactForm";
 
@@ -17,10 +16,9 @@ export default async function CaseStudiesListLayout({
 }: {
   children: ReactNode;
 }) {
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
   return (
     <>
-      {isPreview && <DraftBanner />}
       <ListHero
         crumbs={[
           { label: "Insights", href: "/insights" },

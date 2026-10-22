@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Select, Button, Empty } from "antd";
-import { LogoutIcon, EyeIcon, MenuIcon, CloseIcon, ChevronRightIcon, ChevronsLeftIcon } from "./icons";
-import { useMutation } from "@tanstack/react-query";
+import { LogoutIcon, MenuIcon, CloseIcon, ChevronRightIcon, ChevronsLeftIcon } from "./icons";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { useSiteAccess } from "../auth/useSiteAccess";
 import { useSite } from "../lib/useSite";
-import { openPreview } from "../lib/preview";
 import AdminSearchBox from "./AdminSearchBox";
 import { NAVIGATION, type NavItem } from "../config/navigation";
 import { SITES } from "../config/sites";
@@ -126,14 +124,6 @@ export default function AppShell() {
       return value;
     });
   }, []);
-
-  // Whole-homepage preview, next to the site switcher. Per-item previews (one post / case study
-  // on its real detail page) live in each editor page instead — see usePreviewItem.
-  const previewMutation = useMutation({
-    mutationFn: async () => {
-      if (site) await openPreview(site);
-    },
-  });
 
   const activeKey = navKeyFor(location.pathname);
 
@@ -310,15 +300,6 @@ export default function AppShell() {
                 label: SITES.find((s) => s.code === code)?.label ?? code,
               }))}
             />
-            <Button
-              type="primary"
-              icon={<EyeIcon />}
-              disabled={!site}
-              loading={previewMutation.isPending}
-              onClick={() => previewMutation.mutate()}
-            >
-              <span className="cms-preview-label">Preview site ↗</span>
-            </Button>
           </div>
         </header>
         <main className="cms-content" style={{ flex: 1, width: "100%", margin: "0 auto" }}>

@@ -5,11 +5,11 @@ import { Input, Modal, message } from "antd";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
-import { usePreviewItem } from "../lib/usePreviewItem";
 import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
+import PostPreviewPanel from "../components/PostPreviewPanel";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
 import HistoryDrawer from "../components/HistoryDrawer";
 import type { ItemPrefill } from "../lib/audit";
@@ -203,18 +203,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     },
   });
 
-  const previewMutation = usePreviewItem({
-    site,
-    section: "insights",
-    isNew,
-    dirty,
-    serverStatus: isNew ? undefined : initial?.status,
-    slug,
-    saveAsDraft: async () => {
-      const res = await saveMutation.mutateAsync("DRAFT");
-      return (res.data.data as { slug: string | null }).slug;
-    },
-  });
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const [templateOpen, setTemplateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -326,8 +315,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
             {site && (
               <button
                 type="button"
-                onClick={() => previewMutation.mutate()}
-                disabled={previewMutation.isPending || saveMutation.isPending}
+                onClick={() => setPreviewOpen(true)}
                 style={{
                   minHeight: 40,
                   display: "flex",
@@ -340,7 +328,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                   cursor: "pointer",
                 }}
               >
-                {previewMutation.isPending ? "Opening…" : "Preview ↗"}
+                Preview
               </button>
             )}
             {!isNew && (
@@ -834,6 +822,14 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
           onClose={() => setHistoryOpen(false)}
           itemId={Number(id)}
           onRestored={onRestored}
+        />
+      )}
+      {previewOpen && site && (
+        <PostPreviewPanel
+          site={site}
+          slug={slug}
+          draft={{ id: isNew ? undefined : Number(id), title, image, date, category, body, authorName, authorRole, layout }}
+          onClose={() => setPreviewOpen(false)}
         />
       )}
       <MediaPickerModal

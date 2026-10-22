@@ -1,0 +1,53 @@
+/* Brand tokens, Tailwind theme and the .design-canvas scale used by the post renderer.
+   Imported by the website (app/globals.css) and by the admin preview frame, so both use one copy. */
+
+/*
+ * Real color tokens, sampled live from https://cmcglobal.com.vn/ on 2026-08-27
+ * via getComputedStyle(): eyebrow/link blue #189FE0, hero CTA cyan #00BBE4,
+ * dark navy section background #0A2540, light section background #F6F9FC.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --brand-primary: #189fe0;
+  --brand-primary-dark: #0a2540;
+  --brand-accent: #00bbe4;
+  --brand-surface: #f6f9fc;
+
+  /* Figma design tokens ("CMC Global - Website 2026", Homepage frame). */
+  --cmc-navy: #002d68;
+  --cmc-navy-deep: #001449;
+  --cmc-blue: #0083ff;
+  --cmc-sky: #00bbff;
+  --cmc-sky-active: #00a9ff;
+  --cmc-ink: #7e7e7e;
+  --cmc-tint: #edf5ff;
+  --cmc-tint-2: #e2f1ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-dark: var(--brand-primary-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-surface: var(--brand-surface);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-ibm-plex-mono);
+  /* Redesigned homepage body sections only — see components/home/*.
+     Kept separate from font-sans/font-mono so the header/footer (unchanged)
+     keep Montserrat/IBM Plex Mono. */
+  --font-mono-wave: var(--font-jetbrains-mono);
+  --color-cmc-navy: var(--cmc-navy);
+  --color-cmc-blue: var(--cmc-blue);
+  --color-cmc-sky: var(--cmc-sky);
+  --font-wave-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Design-scale layout: the hero/assistant bands are drawn on a 1920px artboard, so anything inside
+   a `.design-canvas` can size itself in artboard pixels via `calc(<px> * var(--u))` and scale with
+   the band's own width (container query units), exactly matching the Figma at every desktop size. */
+.design-canvas {
+  container-type: inline-size;
+  --u: calc(100cqw / 1920);
+}

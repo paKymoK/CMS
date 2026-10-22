@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "@cms/post-renderer/theme.css";
+@import "@cms/post-renderer/post.css";
+@source "../../../packages/post-renderer/src";
+
+/* The website gets these from next/font; the preview frame loads the same families from Google Fonts. */
+:root {
+  --font-inter: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-ibm-plex-mono: "IBM Plex Mono", monospace;
+  --font-jetbrains-mono: "JetBrains Mono", monospace;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

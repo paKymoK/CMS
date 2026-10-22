@@ -5,7 +5,6 @@ import { message } from "antd";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
-import { usePreviewItem } from "../lib/usePreviewItem";
 import { mediaSrc } from "../lib/media";
 import MediaPickerModal from "../components/MediaPickerModal";
 import HistoryDrawer from "../components/HistoryDrawer";
@@ -201,19 +200,6 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
     },
   });
 
-  const previewMutation = usePreviewItem({
-    site,
-    section: "case-studies",
-    isNew,
-    dirty,
-    serverStatus: isNew ? undefined : initial?.status,
-    slug,
-    saveAsDraft: async () => {
-      const res = await saveMutation.mutateAsync("DRAFT");
-      return (res.data.data as { slug: string | null }).slug;
-    },
-  });
-
   const updateResult = (index: number, field: keyof CaseStudyResult, val: string) => {
     setResults((rs) => rs.map((r, i) => (i === index ? { ...r, [field]: val } : r)));
     setDirty(true);
@@ -306,26 +292,6 @@ function CaseStudyEditorForm({ id, isNew, initial, onRestored }: { id: string; i
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbff" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
-            {site && (
-              <button
-                type="button"
-                onClick={() => previewMutation.mutate()}
-                disabled={previewMutation.isPending || saveMutation.isPending}
-                style={{
-                  minHeight: 40,
-                  display: "flex",
-                  alignItems: "center",
-                  padding: "0 16px",
-                  border: "1px solid #dde4f0", borderRadius: 10,
-                  background: "#ffffff",
-                  fontFamily: "inherit", fontSize: 13, fontWeight: 600,
-                  color: "#26354f",
-                  cursor: "pointer",
-                }}
-              >
-                {previewMutation.isPending ? "Opening…" : "Preview ↗"}
-              </button>
-            )}
             {!isNew && (
               <button
                 type="button"

@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { IndustryHero } from "@/components/industry/IndustryHero";
 import { IndustrySolutions } from "@/components/industry/IndustrySolutions";
 import { IndustryReasons } from "@/components/industry/IndustryReasons";
@@ -28,13 +27,12 @@ export default async function BfsiPage(props: PageProps<"/[locale]/industries/bf
   if (locale !== "en") notFound();
   setRequestLocale(locale);
 
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
   const s = content.sections;
   const hero = s?.industry_hero?.[0];
 
   return (
     <>
-      {isPreview && <DraftBanner />}
       {hero && <IndustryHero hero={hero} />}
       <IndustrySolutions
         solutions={s?.industry_solution ?? []}

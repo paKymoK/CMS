@@ -3,10 +3,8 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServicePage } from "@/lib/cms/services";
-import { getPreviewToken } from "@/lib/cms/previewSession";
-import { loadContent } from "@/lib/cms/loadContent";
+import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { DraftBanner } from "@/components/preview/DraftBanner";
 import { ServiceHero } from "@/components/service/ServiceHero";
 import { ServiceCapabilities } from "@/components/service/ServiceCapabilities";
 import { ServiceProcess } from "@/components/service/ServiceProcess";
@@ -32,7 +30,6 @@ export async function generateMetadata(
     title: d.seoTitle || `${d.navLabel} | CMC Global`,
     description: d.seoDescription || d.heroSubtitle || "",
     ogImage: d.heroImage,
-    noIndex: (await getPreviewToken()) !== null,
   });
 }
 
@@ -44,7 +41,7 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
   const page = await getServicePage(category, slug);
   if (!page) notFound();
 
-  const { content, isPreview } = await loadContent();
+  const content = await getHomeContent();
   const d = page.data;
   const hidden = new Set(d.hiddenSections ?? []);
   const first = page.caseStudies[0];
@@ -60,7 +57,6 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
 
   return (
     <>
-      {isPreview && <DraftBanner />}
       <ServiceHero page={d} categoryName={page.category.name} />
       {!hidden.has("capabilities") && <ServiceCapabilities page={d} />}
       {!hidden.has("process") && <ServiceProcess page={d} />}

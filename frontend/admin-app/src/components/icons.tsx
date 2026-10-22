@@ -41,12 +41,6 @@ export const PictureIcon = make(
 export const MenuIcon = make(<path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />);
 export const LogoutIcon = make(<path d="M8 3.5H4.5v13H8M8 10h8.5M13.5 6.5L17 10l-3.5 3.5" />);
 export const InboxIcon = make(<path d="M3 11l2-6.5h10L17 11M3 11v5h14v-5M3 11h4.5l.8 2h3.4l.8-2H17" />);
-export const EyeIcon = make(
-  <>
-    <path d="M1.8 10S5 4.5 10 4.5 18.2 10 18.2 10 15 15.5 10 15.5 1.8 10 1.8 10z" />
-    <circle cx="10" cy="10" r="2.4" />
-  </>,
-);
 export const CloseIcon = make(<path d="M5 5l10 10M15 5L5 15" />);
 export const ChevronRightIcon = make(<path d="M7.5 4.5L13 10l-5.5 5.5" />);
 export const ChevronsLeftIcon = make(<path d="M9.5 5L4.5 10l5 5M15.5 5l-5 5 5 5" />);
