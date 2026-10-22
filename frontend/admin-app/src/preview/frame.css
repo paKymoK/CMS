@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@import "@cms/content-renderer/theme.css";
-@import "@cms/content-renderer/post.css";
+@import "../../../packages/content-renderer/src/theme.css";
+@import "../../../packages/content-renderer/src/post.css";
 @source "../../../packages/content-renderer/src";
 
 /* The website gets these from next/font; the preview frame loads the same families from Google Fonts. */

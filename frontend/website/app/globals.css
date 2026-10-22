@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@import "@cms/content-renderer/theme.css";
-@import "@cms/content-renderer/post.css";
+@import "../../packages/content-renderer/src/theme.css";
+@import "../../packages/content-renderer/src/post.css";
 @source "../../packages/content-renderer/src";
 
 
