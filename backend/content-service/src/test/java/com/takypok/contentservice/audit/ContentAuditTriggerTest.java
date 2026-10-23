@@ -259,4 +259,29 @@ class ContentAuditTriggerTest {
     assertEquals("Jane", scalar("SELECT audit_title('{\"name\":\"Jane\",\"label\":\"x\"}')"));
     assertEquals("", scalar("SELECT audit_title('{}')"));
   }
+
+  @Test
+  void archivingIsItsOwnActionAndComingBackToDraftIsAnUpdate() throws Exception {
+    long id = insertAsApp("post", "{\"title\":\"Post\"}", "admin");
+    updateAsApp(id, "status = 'PUBLISHED'", "admin");
+    updateAsApp(id, "status = 'ARCHIVED'", "admin");
+    updateAsApp(id, "status = 'DRAFT'", "admin");
+    updateAsApp(id, "status = 'PUBLISHED'", "admin");
+    updateAsApp(id, "status = 'DRAFT'", "admin");
+
+    List<String> trail = trail(id);
+    assertEquals("PUBLISH | admin | [\"status\"]", trail.get(1));
+    assertEquals("ARCHIVE | admin | [\"status\"]", trail.get(2));
+    assertEquals("UPDATE | admin | [\"status\"]", trail.get(3), "archived back to draft");
+    assertEquals("PUBLISH | admin | [\"status\"]", trail.get(4));
+    assertEquals("UNPUBLISH | admin | [\"status\"]", trail.get(5), "published back to draft");
+  }
+
+  @Test
+  void theTableAcceptsArchivedAndNoOtherNewStatus() throws Exception {
+    long id = insertAsApp("post", "{\"title\":\"Post\"}", "admin");
+    updateAsApp(id, "status = 'ARCHIVED'", "admin");
+    org.junit.jupiter.api.Assertions.assertThrows(
+        SQLException.class, () -> updateAsApp(id, "status = 'SCHEDULED'", "admin"));
+  }
 }

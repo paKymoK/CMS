@@ -9,6 +9,7 @@ import com.takypok.contentservice.model.request.ContentItemUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ContentItemService;
 import com.takypok.contentservice.util.StaleEdit;
+import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.List;
@@ -58,8 +59,13 @@ public class ContentItemServiceImpl implements ContentItemService {
     if (SPECIALIZED_TYPES.contains(request.getContentType())) {
       return Mono.error(specializedTypeError(request.getContentType()));
     }
-    return contentItemMapper
-        .resolveAndValidate(request.getContentType(), request.getData())
+    return Mono.<Void>fromRunnable(
+            () -> StatusRules.requireAllowed(request.getContentType(), request.getStatus()))
+        .then(
+            Mono.defer(
+                () ->
+                    contentItemMapper.resolveAndValidate(
+                        request.getContentType(), request.getData())))
         .flatMap(
             data ->
                 ensureSingleton(siteId, request.getContentType(), null)
@@ -84,7 +90,9 @@ public class ContentItemServiceImpl implements ContentItemService {
     if (SPECIALIZED_TYPES.contains(request.getContentType())) {
       return Mono.error(specializedTypeError(request.getContentType()));
     }
-    return getById(request.getId(), siteId)
+    return Mono.<Void>fromRunnable(
+            () -> StatusRules.requireAllowed(request.getContentType(), request.getStatus()))
+        .then(Mono.defer(() -> getById(request.getId(), siteId)))
         .filter(item -> !SPECIALIZED_TYPES.contains(item.getContentType()))
         .switchIfEmpty(Mono.error(specializedTypeError("case_study or post")))
         .doOnNext(item -> StaleEdit.check(item, request.getVersion()))

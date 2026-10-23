@@ -8,6 +8,8 @@ public enum AuditAction {
   PUBLISH,
   /** Its status went from PUBLISHED back to DRAFT. */
   UNPUBLISH,
+  /** Its status became ARCHIVED: taken off the site but kept. */
+  ARCHIVE,
   DELETE,
   /** Its content was put back to what an earlier audit entry recorded. */
   RESTORE

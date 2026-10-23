@@ -20,6 +20,7 @@ import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.contentservice.util.StaleEdit;
+import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.ArrayList;
@@ -222,6 +223,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
       Integer displayOrder,
       Boolean active,
       String status) {
+    StatusRules.requireAllowed(TYPE, status);
     fields.setBody(RichTextSanitizer.sanitizeOrReject(fields.getBody()));
     return validateTestimonial(siteId, fields.getTestimonialId())
         .then(Mono.defer(() -> resolveSlug(siteId, item.getId(), requestedSlug, title)))

@@ -382,4 +382,82 @@ class PostServiceImplTest {
             })
         .verifyComplete();
   }
+
+  private ContentItem postWithStatus(long id, String status) throws Exception {
+    ContentItem item =
+        post(id, 1L, "{\"slug\":\"a-post\",\"title\":\"A post\",\"category\":\"insight\"}");
+    item.setStatus(status);
+    return item;
+  }
+
+  @Test
+  void aPostCanBeArchivedAndBroughtBackToDraft() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(postWithStatus(5L, "PUBLISHED")));
+    when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.empty());
+    saveEchoesItem();
+    PostUpdateRequest archive = updateOf(5L);
+    archive.setStatus("ARCHIVED");
+
+    StepVerifier.create(service.update(1L, archive))
+        .assertNext(post -> assertEquals("ARCHIVED", post.status()))
+        .verifyComplete();
+
+    when(contentItemRepository.findByIdAndSiteId(6L, 1L))
+        .thenReturn(Mono.just(postWithStatus(6L, "ARCHIVED")));
+    PostUpdateRequest back = updateOf(6L);
+    back.setStatus("DRAFT");
+    StepVerifier.create(service.update(1L, back))
+        .assertNext(post -> assertEquals("DRAFT", post.status()))
+        .verifyComplete();
+  }
+
+  @Test
+  void aStatusThePostsDoNotHaveIsRejectedAndNothingIsSaved() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(postWithStatus(5L, "DRAFT")));
+    PostUpdateRequest request = updateOf(5L);
+    request.setStatus("SCHEDULED");
+
+    StepVerifier.create(service.update(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void aPublishedPostCannotBeDeleted() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
+        .thenReturn(Mono.just(postWithStatus(5L, "PUBLISHED")));
+
+    StepVerifier.create(service.delete(5L, 1L))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("archive it"))
+        .verify();
+    verify(contentItemWriter, never()).delete(any(ContentItem.class));
+  }
+
+  @Test
+  void aDraftOrArchivedPostCanBeDeleted() throws Exception {
+    ContentItem draft = postWithStatus(5L, "DRAFT");
+    ContentItem archived = postWithStatus(6L, "ARCHIVED");
+    when(contentItemRepository.findByIdAndSiteId(5L, 1L)).thenReturn(Mono.just(draft));
+    when(contentItemRepository.findByIdAndSiteId(6L, 1L)).thenReturn(Mono.just(archived));
+    when(contentItemWriter.delete(any(ContentItem.class))).thenReturn(Mono.empty());
+
+    StepVerifier.create(service.delete(5L, 1L)).verifyComplete();
+    StepVerifier.create(service.delete(6L, 1L)).verifyComplete();
+    verify(contentItemWriter).delete(draft);
+    verify(contentItemWriter).delete(archived);
+  }
+
+  @Test
+  void anArchivedPostIsNotServedPublicly() throws Exception {
+    when(contentItemRepository.findBySlug(1L, "post", "a-post"))
+        .thenReturn(Mono.just(postWithStatus(5L, "ARCHIVED")));
+
+    StepVerifier.create(service.getPublishedDetailBySlug(1L, "a-post"))
+        .expectError(ApplicationException.class)
+        .verify();
+  }
 }

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS site
 -- `data`, so a new content type is a new Java ContentFields class (@ContentTypeKey), not a new table.
 -- There is deliberately no content_type registry table: the Java classes are the registry.
 --
--- Envelope semantics: `status` (DRAFT/PUBLISHED — the public API only ever returns PUBLISHED+active
+-- Envelope semantics: `status` (DRAFT/PUBLISHED/ARCHIVED — the public API only ever returns PUBLISHED+active
 -- rows; admin sees everything) and `version` (Spring Data R2DBC's @Version optimistic-locking
 -- column — a concurrent-edit guard, not a history table, not full audit trails). The two composite indexes below match the two query shapes every repository
 -- issues: "everything of this type for this site" (admin) and "published of this type" (public site).
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS content_item
     data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see ContentItemMapper
     display_order  integer           NOT NULL DEFAULT 0,
     active         boolean           NOT NULL DEFAULT true,
-    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED')),
+    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
     version        integer           NOT NULL DEFAULT 0,
     -- Search text, written by the application whenever `data` is (ContentItemSearchCallback; rows
     -- inserted by SQL are filled in at startup by SearchIndexBackfill). Plain text with accents
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS content_audit
     item_id      bigint                   NOT NULL,
     content_type character varying        NOT NULL,
     action       character varying        NOT NULL
-        CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'UNPUBLISH', 'DELETE', 'RESTORE')),
+        CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE')),
     title        text,
     actor        jsonb,                   -- the signed-in user, as stored in created_by/modified_by
     actor_name   character varying,       -- the user's display name, for filtering
@@ -237,7 +237,9 @@ BEGIN
         act := CASE
                    WHEN NEW.status = OLD.status THEN 'UPDATE'
                    WHEN NEW.status = 'PUBLISHED' THEN 'PUBLISH'
-                   ELSE 'UNPUBLISH' END;
+                   WHEN NEW.status = 'ARCHIVED' THEN 'ARCHIVE'
+                   WHEN OLD.status = 'PUBLISHED' THEN 'UNPUBLISH'
+                   ELSE 'UPDATE' END; -- e.g. ARCHIVED back to DRAFT: the status change is listed as a changed field
         direct := NEW.modified_at IS NOT DISTINCT FROM OLD.modified_at
             AND NEW.modified_by IS NOT DISTINCT FROM OLD.modified_by;
     ELSE

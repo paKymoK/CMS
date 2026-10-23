@@ -413,4 +413,17 @@ class CaseStudyServiceImplTest {
             })
         .verifyComplete();
   }
+
+  @Test
+  void aCaseStudyCannotBeArchived() throws Exception {
+    when(contentItemRepository.findByIdAndSiteId(1L, 1L))
+        .thenReturn(Mono.just(caseStudy(1L, 1L, SEO_CASE_STUDY)));
+    var request = caseUpdate();
+    request.setStatus("ARCHIVED");
+
+    StepVerifier.create(service.update(1L, request))
+        .expectError(ApplicationException.class)
+        .verify();
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
 }

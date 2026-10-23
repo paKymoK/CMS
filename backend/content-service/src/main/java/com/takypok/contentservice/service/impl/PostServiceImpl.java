@@ -17,6 +17,7 @@ import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
+import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.time.LocalDate;
@@ -75,6 +76,7 @@ public class PostServiceImpl implements PostService {
     // assembly time
     return Mono.defer(
         () -> {
+          StatusRules.requireAllowed(TYPE, request.getStatus());
           String status = request.getStatus() != null ? request.getStatus() : "DRAFT";
           PostFields fields = new PostFields();
           fields.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
@@ -118,6 +120,7 @@ public class PostServiceImpl implements PostService {
             item ->
                 Mono.defer(
                     () -> {
+                      StatusRules.requireAllowed(TYPE, request.getStatus());
                       PostFields existing = toFields(item);
                       String status =
                           request.getStatus() != null ? request.getStatus() : item.getStatus();
@@ -298,7 +301,16 @@ public class PostServiceImpl implements PostService {
 
   @Override
   public Mono<Void> delete(Long id, Long siteId) {
-    return findItem(id, siteId).flatMap(contentItemWriter::delete);
+    return findItem(id, siteId)
+        .flatMap(
+            item ->
+                "PUBLISHED".equals(item.getStatus())
+                    ? Mono.<Void>error(
+                        new ApplicationException(
+                            Message.Application.ERROR,
+                            "A published post cannot be deleted: archive it or move it to draft"
+                                + " first"))
+                    : contentItemWriter.delete(item));
   }
 
   @Override

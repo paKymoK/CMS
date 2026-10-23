@@ -193,4 +193,26 @@ class ContentItemServiceImplTest {
 
     verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
+
+  @Test
+  void aGenericContentTypeCannotBeArchivedOrScheduled() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+    ContentItemCreateRequest create = new ContentItemCreateRequest();
+    create.setContentType("service_page");
+    create.setStatus("ARCHIVED");
+    StepVerifier.create(service.create(1L, create))
+        .expectError(ApplicationException.class)
+        .verify();
+
+    ContentItemUpdateRequest update = new ContentItemUpdateRequest();
+    update.setId(1L);
+    update.setContentType("service_page");
+    update.setStatus("SCHEDULED");
+    StepVerifier.create(service.update(1L, update))
+        .expectError(ApplicationException.class)
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
 }
