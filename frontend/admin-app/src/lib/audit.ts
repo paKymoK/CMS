@@ -1,7 +1,7 @@
 import { contentApi } from "./api";
 import { RESOURCES } from "../config/resources";
 
-export type AuditAction = "CREATE" | "UPDATE" | "PUBLISH" | "UNPUBLISH" | "DELETE" | "RESTORE";
+export type AuditAction = "CREATE" | "UPDATE" | "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "DELETE" | "RESTORE";
 
 /** One line of an item's history or of the site's activity feed. */
 export interface AuditEntry {
@@ -97,6 +97,7 @@ export const ACTION_LABELS: Record<AuditAction, string> = {
   UPDATE: "Updated",
   PUBLISH: "Published",
   UNPUBLISH: "Unpublished",
+  ARCHIVE: "Archived",
   DELETE: "Deleted",
   RESTORE: "Restored",
 };
@@ -107,6 +108,7 @@ export const ACTION_COLORS: Record<AuditAction, string> = {
   UPDATE: "blue",
   PUBLISH: "cyan",
   UNPUBLISH: "orange",
+  ARCHIVE: "gold",
   DELETE: "red",
   RESTORE: "purple",
 };

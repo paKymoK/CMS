@@ -41,7 +41,7 @@ export async function getPosts(params?: {
 export async function getPost(slug: string): Promise<PostDetail | null> {
   try {
     const res = await cmsFetch(`${CMS_BASE}/content-service/v1/posts/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) {
       if (res.status !== 404) {

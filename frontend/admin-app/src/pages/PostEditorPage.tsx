@@ -20,6 +20,10 @@ import type { PostTemplate } from "../lib/postTemplates";
 
 const API_PATH = "/v1/admin/posts";
 
+/** Draft: being written. Published: on the site. Archived: taken off the site but kept. */
+type PostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+const STATUS_LABELS: Record<PostStatus, string> = { DRAFT: "Draft", PUBLISHED: "Published", ARCHIVED: "Archived" };
+
 interface PostRecord {
   id: number;
   title: string;
@@ -149,7 +153,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [displayOrder, setDisplayOrder] = useState(initial?.displayOrder ?? 0);
   const [active, setActive] = useState(initial?.active ?? true);
   const [category, setCategory] = useState(initial?.category ?? seed?.category ?? "insight");
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">((initial?.status as "DRAFT" | "PUBLISHED") ?? "DRAFT");
+  const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "DRAFT");
   const [body, setBody] = useState(initial?.body ?? seed?.body ?? "");
   const [authorName, setAuthorName] = useState(initial?.authorName ?? "");
   const [authorRole, setAuthorRole] = useState(initial?.authorRole ?? "");
@@ -191,7 +195,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [snippetOpen, setSnippetOpen] = useState(false);
 
   const saveMutation = useMutation({
-    mutationFn: async (nextStatus: "DRAFT" | "PUBLISHED") => {
+    mutationFn: async (nextStatus: PostStatus) => {
       const payload = {
         ...(isNew ? {} : { id: Number(id) }),
         title,
@@ -220,7 +224,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     onSuccess: (res, nextStatus) => {
       setStatus(nextStatus);
       setDirty(false);
-      message.success(nextStatus === "PUBLISHED" ? "Published" : "Saved as draft");
+      message.success(nextStatus === "PUBLISHED" ? "Published" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft");
       queryClient.invalidateQueries({ queryKey: ["content", "posts", site] });
       if (isNew) {
         const created = res.data.data as PostRecord;
@@ -321,11 +325,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 padding: "4px 10px",
                 borderRadius: 999,
                 fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-                background: pub ? "#e3f7ee" : "#fff4e0",
-                color: pub ? "#0b7a55" : "#9a5b00",
+                background: pub ? "#e3f7ee" : status === "ARCHIVED" ? "#eceff4" : "#fff4e0",
+                color: pub ? "#0b7a55" : status === "ARCHIVED" ? "#5b6b86" : "#9a5b00",
               }}
             >
-              {pub ? "Published" : "Draft"}
+              {STATUS_LABELS[status]}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -399,8 +403,37 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 cursor: "pointer",
               }}
             >
-              Save draft
+              {status === "ARCHIVED" ? "Move to draft" : "Save draft"}
             </button>
+            {status === "ARCHIVED" ? (
+              <button
+                type="button"
+                onClick={() => saveMutation.mutate("ARCHIVED")}
+                disabled={saveMutation.isPending}
+                style={{ minHeight: 40, padding: "0 16px", border: "1px solid #dde4f0", borderRadius: 10, background: "#ffffff", fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: "#26354f", cursor: "pointer" }}
+              >
+                Save
+              </button>
+            ) : !isNew ? (
+              <button
+                type="button"
+                onClick={() =>
+                  status === "PUBLISHED"
+                    ? Modal.confirm({
+                        title: "Archive this post?",
+                        content: "It is taken off the site and its address stops working, but the post is kept. You can publish it again or move it back to draft.",
+                        okText: "Archive",
+                        cancelText: "Cancel",
+                        onOk: () => saveMutation.mutate("ARCHIVED"),
+                      })
+                    : saveMutation.mutate("ARCHIVED")
+                }
+                disabled={saveMutation.isPending}
+                style={{ minHeight: 40, padding: "0 16px", border: "1px solid #dde4f0", borderRadius: 10, background: "#ffffff", fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: "#26354f", cursor: "pointer" }}
+              >
+                Archive
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() =>
@@ -565,8 +598,8 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
           <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Publishing</div>
             <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
-                {(["DRAFT", "PUBLISHED"] as const).map((s) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
+                {(["DRAFT", "PUBLISHED", "ARCHIVED"] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -587,10 +620,15 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                       color: status === s ? "#0b1b3a" : "#5b6b86",
                     }}
                   >
-                    {s === "DRAFT" ? "Draft" : "Published"}
+                    {STATUS_LABELS[s]}
                   </button>
                 ))}
               </div>
+              {status === "ARCHIVED" && (
+                <span style={{ fontSize: 12.5, color: "#7b8aa5", lineHeight: 1.45 }}>
+                  Archived: not on the site, but kept. Use Save to keep it archived, or Publish / Move to draft to bring it back.
+                </span>
+              )}
               <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <span style={cardLabelStyle}>Display date</span>
                 <input

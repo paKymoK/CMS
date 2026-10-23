@@ -12,7 +12,7 @@ export async function getCaseStudy(slug: string): Promise<CaseStudyDetail | null
   try {
     const res = await cmsFetch(
       `${CMS_BASE}/content-service/v1/case-studies/${encodeURIComponent(slug)}`,
-      { next: { revalidate: 60 } },
+      { cache: "no-store" },
     );
     if (!res.ok) {
       if (res.status !== 404) {

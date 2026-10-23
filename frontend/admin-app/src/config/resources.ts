@@ -96,6 +96,8 @@ export interface ResourceConfig {
   contentType?: string;
   supportsTypeFilter?: boolean;
   typeFilterOptions?: FieldOption[];
+  /** A published item cannot be deleted from the list: it must be archived or moved to draft first (the server enforces it too). */
+  deleteRequiresUnpublished?: boolean;
   /** Adds a "Duplicate" row action that opens the form prefilled from the row (slug suffixed). */
   duplicable?: boolean;
   /** Present => this resource has a dedicated editor route (rich body, slug, etc.) instead of the
@@ -247,6 +249,7 @@ export const RESOURCES: ResourceConfig[] = [
     apiPath: "/v1/admin/posts",
     titleField: "title",
     editorRoute: (id) => `/posts/${id}`,
+    deleteRequiresUnpublished: true,
     fields: [
       field({ name: "title", label: "Title", type: "text", required: true }),
       field({ name: "category", label: "Category", type: "text" }),

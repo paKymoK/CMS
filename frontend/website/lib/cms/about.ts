@@ -9,7 +9,7 @@ export type { AboutPageData } from "@cms/content-renderer";
 
 export async function getAboutPage(): Promise<AboutPageData | null> {
   try {
-    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/about`, { next: { revalidate: 60 } });
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/about`, { cache: "no-store" });
     if (!res.ok) return null;
     const body = (await res.json()) as { data: { data: AboutPageData } };
     return body.data?.data ? resolveMediaUrls(body.data.data) : null;

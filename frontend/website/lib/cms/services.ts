@@ -55,7 +55,7 @@ export async function getServicePage(category: string, slug: string): Promise<Se
   const path = `${encodeURIComponent(category)}/${encodeURIComponent(slug)}`;
   try {
     const res = await cmsFetch(`${CMS_BASE}/content-service/v1/services/${path}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const body = (await res.json()) as { data: ServicePage };

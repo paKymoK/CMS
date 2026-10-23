@@ -10,7 +10,7 @@ export type { IndustryPageData } from "@cms/content-renderer";
 export async function getIndustryPage(slug: string): Promise<IndustryPageData | null> {
   try {
     const res = await cmsFetch(`${CMS_BASE}/content-service/v1/industries/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const body = (await res.json()) as { data: { data: IndustryPageData } };

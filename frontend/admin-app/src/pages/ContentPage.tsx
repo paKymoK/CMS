@@ -316,8 +316,8 @@ export default function ContentPage() {
       title: <ColHeader>Status</ColHeader>,
       dataIndex: "status",
       render: (status: string) => (
-        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : ""}`}>
-          {status === "PUBLISHED" ? "Published" : "Draft"}
+        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : status === "ARCHIVED" ? " is-archived" : ""}`}>
+          {status === "PUBLISHED" ? "Published" : status === "ARCHIVED" ? "Archived" : "Draft"}
         </span>
       ),
     },
@@ -362,7 +362,14 @@ export default function ContentPage() {
             </Button>
           )}
           <Popconfirm title="Delete this item?" onConfirm={() => deleteMutation.mutate(row.id)}>
-            <Button size="small" className="cms-mini-btn" danger icon={<DeleteIcon />}>
+            <Button
+              size="small"
+              className="cms-mini-btn"
+              danger
+              icon={<DeleteIcon />}
+              disabled={resource.deleteRequiresUnpublished && row.status === "PUBLISHED"}
+              title={resource.deleteRequiresUnpublished && row.status === "PUBLISHED" ? "Archive it or move it to draft first" : undefined}
+            >
               Delete
             </Button>
           </Popconfirm>

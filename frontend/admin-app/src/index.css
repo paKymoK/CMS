@@ -450,6 +450,13 @@ body {
 .cms-status.is-published::before {
   background: #12b886;
 }
+.cms-status.is-archived {
+  background: #eceff4;
+  color: #5b6b86;
+}
+.cms-status.is-archived::before {
+  background: #9aa7bd;
+}
 
 /* Primary page CTA ("New …"): one solid brand-blue button per screen. */
 .cms-cta.ant-btn {
