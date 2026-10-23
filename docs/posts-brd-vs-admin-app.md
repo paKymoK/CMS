@@ -13,7 +13,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 |---|---|---|---|
 | 1 | Fields: title, slug, excerpt, featured image, author, date, category, tags | `PostFields` has all of them, plus `authorBio`, `authorAvatar`, `layout` | ✅ |
 | 2 | Slug unique per site | Partial unique index `uq_content_item_slug`, auto-resolved by `Slugs.resolve` | ✅ |
-| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | Only `DRAFT` / `PUBLISHED` (DB CHECK), plus an `active` flag. "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived. The gap is Scheduled and Archived (G1) | 🟡 |
+| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server), plus an `active` flag. Archive is done; Schedule is parked (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived. The remaining gap is Scheduled (G1) | 🟡 |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
 | 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |
 | 6 | Video via URL (YouTube/Vimeo), responsive | `embed` node, allow-listed hosts only | ✅ |
@@ -34,8 +34,20 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 ## 2. Gaps
 
 ### G1. Scheduling and Archive
-- DB `CHECK (status IN ('DRAFT','PUBLISHED'))`, so no `SCHEDULED` or `ARCHIVED`.
-- No publish or unpublish date columns and no scheduler.
+- **Archive: done (posts).** Statuses are Draft, Published and Archived. Archived is off the site but kept, and can go back to Draft or be published again. The audit trail has an `ARCHIVE` action (archived back to draft is an update that lists the status change; publishing is still `PUBLISH`). **Archived posts stay editable (decision):** the status only controls whether the post is public, as with Draft and Private in WordPress, which has no built-in archived status and locks only Trash. Locking them would be a rule of our own: the server would reject content edits on an archived post and the editor would open read-only. Only posts may be archived; the server rejects ARCHIVED or any unknown status for the other content types. The Post editor has a three-way status switch, an **Archive** button (with a confirmation for a live post), **Save** and **Move to draft** for an archived post, and an "Archived" label in the list, Activity and search.
+- **Public side:** an archived post answers "not found" like an unknown address and drops out of the public list and search with no read path changed (every public read matches `'PUBLISHED'` exactly). **Detail pages on the website are now fetched without Next's data cache** (`cache: "no-store"`): that cache only stores 200 responses, so a page that had been visited kept being served from its old copy after it was archived or unpublished. Lists keep the 60 s cache.
+- **Schedule: not done, parked** (see below). No `SCHEDULED` status and no `publish_at` / `unpublish_at` yet.
+
+**Parked by decision: scheduling and the `active` flag are left for later while the owner thinks them over.** The analysis so far, so nothing has to be rediscovered:
+
+- **Safest scheduling design: a background check that flips the status.** Every place that decides what the public sees (about 15, all exact matches on `'PUBLISHED'`) already ignores any other status, so Scheduled and Archived are invisible with no read path changed. A check every ~30 s flips `SCHEDULED` to `PUBLISHED` when `publish_at` is due (and `PUBLISHED` to `ARCHIVED` at `unpublish_at`); after downtime it catches up on overdue items. The media service already has a `@Scheduled` sweeper to copy, the auditing code already credits "System" when nobody is logged in, and the version check makes two servers flipping the same row harmless. The alternative, computing visibility from the clock on every read, needs a time condition in all ~15 places, and missing one would show an unpublished post early.
+- **Timing:** about 30 s plus the website's 60 s page cache, so "09:00" means roughly 09:00 to 09:02.
+- **Statuses (Posts first):** Draft, Scheduled, Published, Archived. The BRD lists "Unpublished/Archived" as one state. "Preview" stays the preview action. Other content types keep Draft and Published, enforced by the server so they cannot get stuck as Scheduled.
+- **Database:** widen the status check, add `publish_at` / `unpublish_at` with sanity checks and small indexes. **The audit trigger only knows PUBLISH and UNPUBLISH** (anything else it logs as UNPUBLISH), so Schedule and Archive actions must be added, and the two times recorded in the snapshots. Restoring an old version that was Scheduled for a time now past should come back as Draft.
+- **Delete rule (G8 lite):** only Draft or Archived items can be deleted. A real Trash is a separate decision.
+- **Editor:** the Draft/Published switch becomes Save draft, Publish now, Schedule… (time, optional unpublish time), Archive / Move to Draft; the status labels in the list and Activity need the new states.
+- **Open decisions:** (1) the background check (recommended) or visibility decided on read; (2) the time zone of the picker: the editor's browser zone, shown clearly and stored as UTC (recommended), or a zone per site (needs a new setting); (3) keep `active` as it is for now (other content types rely on it) or fold it into the status; (4) skip Trash and let Archived plus the delete rule cover it (recommended), or add a Trash status and a purge job; (5) Posts only first (recommended).
+- **Suggested split when picked up:** part 1 statuses, rules, delete rule and editor labels (no time handling); part 2 the schedule columns, the check and the picker.
 
 ### G2. Categories and Tags management
 - `category` is a free-text string; `tags` is a string array inside `data`.
@@ -66,9 +78,8 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 - It is a Tiptap text editor, not a block builder.
 
 ### G8. Delete rule and Trash
-- `PostServiceImpl.delete` calls `contentItemWriter.delete` directly, with no status check.
-- BRD: live content must be unpublished or archived before delete; wants Trash with restore.
-- Today a deleted item is recoverable only via the audit trail ("Create new from this version").
+- **Delete rule: done (posts).** A published post cannot be deleted, from the API (400: "archive it or move it to draft first") or the list (the Delete button is disabled with a tooltip). Draft and archived posts can be deleted.
+- **Trash with restore: not built.** A deleted post is still recoverable only through the audit trail ("Create new from this version"). Archived is the safe place for content that should leave the site but not be lost.
 
 ### G10. Create a translated draft in another site (feature)
 - BRD intent: when an editor drafts a post in EN, they can create a new **DRAFT** of it in another site (e.g. VI) with the content auto-translated, then review and edit it independently.
@@ -93,7 +104,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 
 ## 4. Suggested order
 
-1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. Also enables the delete rule and Trash (G1, G8).
+1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. Also enables the delete rule and Trash (G1, G8). *(Archive and the delete rule are done; scheduling is parked: see G1.)*
 2. **Category and Tag tables** per site, with posts referencing them (G2).
 3. ~~**SEO fields** in `PostFields`, DTOs and editor sidebar (G4)~~ done, together with the checklist; redirects and code injection remain.
 4. **Dedicated post list page** with search, filters, bulk actions (G3).
