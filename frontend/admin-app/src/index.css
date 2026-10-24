@@ -1495,3 +1495,29 @@ body {
     0 8px 24px rgba(10, 30, 70, 0.04),
     0 1px 2px rgba(10, 30, 70, 0.04);
 }
+
+/* The date-and-time picker is a calendar and time columns side by side (about 515px): on a phone it
+   would run off the screen, so it is pinned to the left edge, may shrink, and the time columns go under the calendar. */
+@media (max-width: 600px) {
+  .ant-picker-dropdown {
+    left: 12px !important;
+    max-width: calc(100vw - 24px);
+  }
+  .ant-picker-dropdown .ant-picker-panel-container,
+  .ant-picker-dropdown .ant-picker-datetime-panel,
+  .ant-picker-dropdown .ant-picker-date-panel {
+    width: 100%;
+  }
+  .ant-picker-dropdown .ant-picker-datetime-panel {
+    flex-direction: column;
+  }
+  .ant-picker-dropdown .ant-picker-datetime-panel .ant-picker-time-panel {
+    width: 100%;
+    border-inline-start: 0;
+    border-top: 1px solid #e3e9f4;
+  }
+  .ant-picker-dropdown .ant-picker-datetime-panel .ant-picker-time-panel-column {
+    flex: 1;
+    height: 140px;
+  }
+}
