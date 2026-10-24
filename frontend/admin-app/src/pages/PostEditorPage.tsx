@@ -1,7 +1,8 @@
 import { useRef, useState, type CSSProperties } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Input, Modal, message } from "antd";
+import { DatePicker, Input, Modal, message } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
@@ -20,9 +21,12 @@ import type { PostTemplate } from "../lib/postTemplates";
 
 const API_PATH = "/v1/admin/posts";
 
-/** Draft: being written. Published: on the site. Archived: taken off the site but kept. */
-type PostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-const STATUS_LABELS: Record<PostStatus, string> = { DRAFT: "Draft", PUBLISHED: "Published", ARCHIVED: "Archived" };
+/** Draft: being written. Scheduled: goes live by itself at a set time. Published: on the site. Archived: taken off the site but kept. */
+type PostStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
+const STATUS_LABELS: Record<PostStatus, string> = { DRAFT: "Draft", SCHEDULED: "Scheduled", PUBLISHED: "Published", ARCHIVED: "Archived" };
+const TIME_FORMAT = "D MMM YYYY, HH:mm";
+/** The editor's own time zone, shown beside the pickers: times are picked in it and stored as UTC. */
+const ZONE = `${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${dayjs().format("Z")})`;
 
 interface PostRecord {
   id: number;
@@ -35,6 +39,8 @@ interface PostRecord {
   displayOrder: number;
   active: boolean;
   status: string;
+  publishAt: string | null;
+  unpublishAt: string | null;
   body: string | null;
   authorName: string | null;
   authorRole: string | null;
@@ -154,6 +160,9 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [active, setActive] = useState(initial?.active ?? true);
   const [category, setCategory] = useState(initial?.category ?? seed?.category ?? "insight");
   const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "DRAFT");
+  // Picked in the editor's time zone; sent as UTC. The job that acts on them runs once a minute.
+  const [publishAt, setPublishAt] = useState<Dayjs | null>(initial?.publishAt ? dayjs(initial.publishAt) : null);
+  const [unpublishAt, setUnpublishAt] = useState<Dayjs | null>(initial?.unpublishAt ? dayjs(initial.unpublishAt) : null);
   const [body, setBody] = useState(initial?.body ?? seed?.body ?? "");
   const [authorName, setAuthorName] = useState(initial?.authorName ?? "");
   const [authorRole, setAuthorRole] = useState(initial?.authorRole ?? "");
@@ -207,6 +216,8 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         active,
         category,
         status: nextStatus,
+        publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
+        unpublishAt: (nextStatus === "SCHEDULED" || nextStatus === "PUBLISHED") && unpublishAt ? unpublishAt.toISOString() : null,
         body,
         authorName,
         authorRole,
@@ -224,7 +235,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     onSuccess: (res, nextStatus) => {
       setStatus(nextStatus);
       setDirty(false);
-      message.success(nextStatus === "PUBLISHED" ? "Published" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft");
+      if (nextStatus !== "SCHEDULED") setPublishAt(null);
+      if (nextStatus === "DRAFT" || nextStatus === "ARCHIVED") setUnpublishAt(null);
+      message.success(
+        nextStatus === "PUBLISHED" ? "Published" : nextStatus === "SCHEDULED" ? "Scheduled" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft",
+      );
       queryClient.invalidateQueries({ queryKey: ["content", "posts", site] });
       if (isNew) {
         const created = res.data.data as PostRecord;
@@ -259,6 +274,17 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
 
   const siteSub = site ? SITES.find((s) => s.code === site)?.subdomain : undefined;
   const pub = status === "PUBLISHED";
+  const scheduled = status === "SCHEDULED";
+  // Checked here for a quick answer; the server checks again.
+  const scheduleProblem = !scheduled
+    ? null
+    : !publishAt
+      ? "Choose when the post should be published."
+      : !publishAt.isAfter(dayjs()) && !(initial?.publishAt && dayjs(initial.publishAt).isSame(publishAt))
+        ? "The publish time must be in the future."
+        : unpublishAt && !unpublishAt.isAfter(publishAt)
+          ? "The unpublish time must be after the publish time."
+          : null;
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -325,8 +351,8 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 padding: "4px 10px",
                 borderRadius: 999,
                 fontFamily: "inherit", fontSize: 12, fontWeight: 600,
-                background: pub ? "#e3f7ee" : status === "ARCHIVED" ? "#eceff4" : "#fff4e0",
-                color: pub ? "#0b7a55" : status === "ARCHIVED" ? "#5b6b86" : "#9a5b00",
+                background: pub ? "#e3f7ee" : scheduled ? "#e6f1ff" : status === "ARCHIVED" ? "#eceff4" : "#fff4e0",
+                color: pub ? "#0b7a55" : scheduled ? "#0058b3" : status === "ARCHIVED" ? "#5b6b86" : "#9a5b00",
               }}
             >
               {STATUS_LABELS[status]}
@@ -436,11 +462,17 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
             ) : null}
             <button
               type="button"
-              onClick={() =>
-                status === "PUBLISHED"
-                  ? saveMutation.mutate("PUBLISHED")
-                  : publishUnlessSeoMissing(seoCheckList, () => saveMutation.mutate("PUBLISHED"))
-              }
+              onClick={() => {
+                if (scheduleProblem) {
+                  message.error(scheduleProblem);
+                  return;
+                }
+                const goal: PostStatus = scheduled ? "SCHEDULED" : "PUBLISHED";
+                // Only a post that is not live yet gets the SEO prompt; updating one never asks.
+                return status === "PUBLISHED" || initial?.status === goal
+                  ? saveMutation.mutate(goal)
+                  : publishUnlessSeoMissing(seoCheckList, () => saveMutation.mutate(goal));
+              }}
               disabled={saveMutation.isPending}
               style={{
                 minHeight: 40,
@@ -453,7 +485,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 cursor: "pointer",
               }}
             >
-              {pub ? "Update" : "Publish"}
+              {scheduled ? (initial?.status === "SCHEDULED" ? "Update schedule" : "Schedule") : pub ? "Update" : "Publish"}
             </button>
           </div>
         </div>
@@ -598,8 +630,8 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
           <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Publishing</div>
             <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
-                {(["DRAFT", "PUBLISHED", "ARCHIVED"] as const).map((s) => (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
+                {(["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -627,6 +659,45 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
               {status === "ARCHIVED" && (
                 <span style={{ fontSize: 12.5, color: "#7b8aa5", lineHeight: 1.45 }}>
                   Archived: not on the site, but kept. Use Save to keep it archived, or Publish / Move to draft to bring it back.
+                </span>
+              )}
+              {scheduled && (
+                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={cardLabelStyle}>Publish at</span>
+                  <DatePicker
+                    showTime={{ format: "HH:mm" }}
+                    format={TIME_FORMAT}
+                    value={publishAt}
+                    minDate={dayjs()}
+                    onChange={(v) => {
+                      setPublishAt(v ? v.startOf("minute") : null);
+                      setDirty(true);
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </label>
+              )}
+              {(scheduled || pub) && (
+                <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <span style={cardLabelStyle}>Take offline at (optional)</span>
+                  <DatePicker
+                    showTime={{ format: "HH:mm" }}
+                    format={TIME_FORMAT}
+                    value={unpublishAt}
+                    minDate={dayjs()}
+                    allowClear
+                    onChange={(v) => {
+                      setUnpublishAt(v ? v.startOf("minute") : null);
+                      setDirty(true);
+                    }}
+                    style={{ width: "100%" }}
+                  />
+                </label>
+              )}
+              {(scheduled || (pub && unpublishAt)) && (
+                <span style={{ fontSize: 12.5, color: scheduleProblem ? "#c4341c" : "#7b8aa5", lineHeight: 1.45 }}>
+                  {scheduleProblem ??
+                    `Times are in your time zone, ${ZONE}. The site checks once a minute, so a change can take up to a minute to show.`}
                 </span>
               )}
               <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>

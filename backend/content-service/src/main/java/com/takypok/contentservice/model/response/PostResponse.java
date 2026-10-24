@@ -3,6 +3,7 @@ package com.takypok.contentservice.model.response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.contentservice.model.content.types.PostFields;
 import com.takypok.contentservice.model.entity.ContentItem;
+import java.time.Instant;
 
 /**
  * A post content_item flattened back to the shape the admin editor and the public pages use: its
@@ -31,6 +32,8 @@ public record PostResponse(
     Integer displayOrder,
     Boolean active,
     String status,
+    Instant publishAt,
+    Instant unpublishAt,
     Integer version) {
 
   public static PostResponse from(ContentItem item, PostFields fields) {
@@ -57,6 +60,8 @@ public record PostResponse(
         item.getDisplayOrder(),
         item.getActive(),
         item.getStatus(),
+        item.getPublishAt(),
+        item.getUnpublishAt(),
         item.getVersion());
   }
 }

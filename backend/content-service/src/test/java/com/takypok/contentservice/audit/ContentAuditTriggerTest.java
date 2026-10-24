@@ -278,10 +278,102 @@ class ContentAuditTriggerTest {
   }
 
   @Test
-  void theTableAcceptsArchivedAndNoOtherNewStatus() throws Exception {
+  void theTableAcceptsTheFourStatusesAndNoOther() throws Exception {
     long id = insertAsApp("post", "{\"title\":\"Post\"}", "admin");
     updateAsApp(id, "status = 'ARCHIVED'", "admin");
     org.junit.jupiter.api.Assertions.assertThrows(
-        SQLException.class, () -> updateAsApp(id, "status = 'SCHEDULED'", "admin"));
+        SQLException.class, () -> updateAsApp(id, "status = 'TRASHED'", "admin"));
+  }
+
+  // ---- scheduled publishing -------------------------------------------------------------------
+
+  private long scheduled(String publishAt, String unpublishAt) throws SQLException {
+    long id = insertAsApp("post", "{\"title\":\"Post\"}", "editor");
+    updateAsApp(
+        id,
+        "status = 'SCHEDULED', publish_at = "
+            + publishAt
+            + ", unpublish_at = "
+            + (unpublishAt == null ? "NULL" : unpublishAt),
+        "editor");
+    return id;
+  }
+
+  @Test
+  void schedulingIsItsOwnActionAndRecordsTheTimes() throws Exception {
+    long id = scheduled("now() + interval '1 day'", "now() + interval '2 days'");
+    List<String> trail = trail(id);
+    assertEquals(2, trail.size());
+    assertTrue(trail.get(1).startsWith("SCHEDULE | editor | "), trail.get(1));
+    assertTrue(trail.get(1).contains("publishAt") && trail.get(1).contains("unpublishAt"));
+    assertTrue(
+        scalar(
+                "SELECT after_data::text FROM content_audit WHERE item_id = "
+                    + id
+                    + " ORDER BY id DESC LIMIT 1")
+            .contains("\"publishAt\": \""));
+  }
+
+  @Test
+  void theJobPublishesWhatIsDueAndLeavesTheRestAlone() throws Exception {
+    long due = scheduled("now() - interval '1 minute'", null);
+    long later = scheduled("now() + interval '1 hour'", null);
+    long draft = insertAsApp("post", "{\"title\":\"Draft\"}", "editor");
+
+    assertEquals("1", scalar("SELECT publish_scheduled_content()"));
+
+    assertEquals("PUBLISHED", scalar("SELECT status FROM content_item WHERE id = " + due));
+    assertEquals("SCHEDULED", scalar("SELECT status FROM content_item WHERE id = " + later));
+    assertEquals("DRAFT", scalar("SELECT status FROM content_item WHERE id = " + draft));
+    assertEquals("0", scalar("SELECT publish_scheduled_content()"), "nothing left to do");
+    // credited to System, version bumped for the out-of-date-form check
+    List<String> trail = trail(due);
+    assertEquals("PUBLISH | System | [\"status\"]", trail.get(trail.size() - 1));
+    assertEquals("2", scalar("SELECT version FROM content_item WHERE id = " + due));
+  }
+
+  @Test
+  void theJobCatchesUpOnEverythingOverdue() throws Exception {
+    long a = scheduled("now() - interval '3 days'", null);
+    long b = scheduled("now() - interval '5 minutes'", null);
+    assertTrue(Integer.parseInt(scalar("SELECT publish_scheduled_content()")) >= 2);
+    assertEquals("PUBLISHED", scalar("SELECT status FROM content_item WHERE id = " + a));
+    assertEquals("PUBLISHED", scalar("SELECT status FROM content_item WHERE id = " + b));
+  }
+
+  @Test
+  void theJobArchivesALiveItemAtItsUnpublishTimeAndClearsIt() throws Exception {
+    long id = insertAsApp("post", "{\"title\":\"Live\"}", "editor");
+    updateAsApp(id, "status = 'PUBLISHED', unpublish_at = now() + interval '1 hour'", "editor");
+    assertEquals("0", scalar("SELECT publish_scheduled_content()"), "not due yet");
+    exec("UPDATE content_item SET unpublish_at = now() - interval '1 minute' WHERE id = " + id);
+
+    assertEquals("1", scalar("SELECT publish_scheduled_content()"));
+
+    assertEquals("ARCHIVED", scalar("SELECT status FROM content_item WHERE id = " + id));
+    assertEquals(
+        "true", scalar("SELECT (unpublish_at IS NULL)::text FROM content_item WHERE id = " + id));
+    List<String> trail = trail(id);
+    assertEquals("ARCHIVE | System | [\"status\", \"unpublishAt\"]", trail.get(trail.size() - 1));
+  }
+
+  @Test
+  void aScheduledItemNeedsATimeAndTheUnpublishTimeMustComeLater() throws Exception {
+    long id = insertAsApp("post", "{\"title\":\"Post\"}", "editor");
+    org.junit.jupiter.api.Assertions.assertThrows(
+        SQLException.class, () -> updateAsApp(id, "status = 'SCHEDULED'", "editor"));
+    org.junit.jupiter.api.Assertions.assertThrows(
+        SQLException.class,
+        () ->
+            updateAsApp(
+                id,
+                "publish_at = now() + interval '2 days', unpublish_at = now() + interval '1 day'",
+                "editor"));
+  }
+
+  @Test
+  void withoutPgCronTheSchemaStillLoadsAndNoJobIsCreated() throws Exception {
+    // this test database is not the one pg_cron is configured for, so the job block is skipped
+    assertEquals("0", scalar("SELECT count(*) FROM pg_extension WHERE extname = 'pg_cron'"));
   }
 }

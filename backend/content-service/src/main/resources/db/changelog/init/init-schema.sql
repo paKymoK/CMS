@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS site
 -- `data`, so a new content type is a new Java ContentFields class (@ContentTypeKey), not a new table.
 -- There is deliberately no content_type registry table: the Java classes are the registry.
 --
--- Envelope semantics: `status` (DRAFT/PUBLISHED/ARCHIVED — the public API only ever returns PUBLISHED+active
+-- Envelope semantics: `status` (DRAFT/SCHEDULED/PUBLISHED/ARCHIVED — the public API only ever returns PUBLISHED+active
 -- rows; admin sees everything) and `version` (Spring Data R2DBC's @Version optimistic-locking
 -- column — a concurrent-edit guard, not a history table, not full audit trails). The two composite indexes below match the two query shapes every repository
 -- issues: "everything of this type for this site" (admin) and "published of this type" (public site).
@@ -44,8 +44,13 @@ CREATE TABLE IF NOT EXISTS content_item
     data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see ContentItemMapper
     display_order  integer           NOT NULL DEFAULT 0,
     active         boolean           NOT NULL DEFAULT true,
-    status         character varying NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')),
+    status         character varying NOT NULL DEFAULT 'DRAFT'
+        CHECK (status IN ('DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED')),
     version        integer           NOT NULL DEFAULT 0,
+    -- When a SCHEDULED item goes live, and when a live one is taken off the site (archived). Used by
+    -- posts only; publish_scheduled_content() below, run every minute by pg_cron, does the flipping.
+    publish_at     timestamp with time zone,
+    unpublish_at   timestamp with time zone,
     -- Search text, written by the application whenever `data` is (ContentItemSearchCallback; rows
     -- inserted by SQL are filled in at startup by SearchIndexBackfill). Plain text with accents
     -- folded, split by weight: the title/name, then category/tags/summary, then everything else.
@@ -61,12 +66,20 @@ CREATE TABLE IF NOT EXISTS content_item
     created_at     timestamp with time zone,
     created_by     jsonb,
     modified_at    timestamp with time zone,
-    modified_by    jsonb
+    modified_by    jsonb,
+    CONSTRAINT ck_content_item_scheduled_has_time CHECK (status <> 'SCHEDULED' OR publish_at IS NOT NULL),
+    CONSTRAINT ck_content_item_schedule_order CHECK (publish_at IS NULL OR unpublish_at IS NULL OR unpublish_at > publish_at)
 );
 CREATE INDEX IF NOT EXISTS idx_content_item_site_type_order
     ON content_item (site_id, content_type, display_order);
 CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
     ON content_item (site_id, content_type, status, active, display_order);
+-- What the once-a-minute job looks for: only the few rows that are waiting for a time, so the check
+-- costs the same however big the table is.
+CREATE INDEX IF NOT EXISTS idx_content_item_due_publish
+    ON content_item (publish_at) WHERE status = 'SCHEDULED';
+CREATE INDEX IF NOT EXISTS idx_content_item_due_unpublish
+    ON content_item (unpublish_at) WHERE status = 'PUBLISHED' AND unpublish_at IS NOT NULL;
 -- A site has exactly one item of each singleton type (the About page). ContentItemServiceImpl rejects a
 -- second one with a plain message; this index is the backstop against two concurrent creates.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_singleton
@@ -120,7 +133,7 @@ CREATE TABLE IF NOT EXISTS content_audit
     item_id      bigint                   NOT NULL,
     content_type character varying        NOT NULL,
     action       character varying        NOT NULL
-        CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE')),
+        CHECK (action IN ('CREATE', 'UPDATE', 'SCHEDULE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE')),
     title        text,
     actor        jsonb,                   -- the signed-in user, as stored in created_by/modified_by
     actor_name   character varying,       -- the user's display name, for filtering
@@ -176,6 +189,11 @@ CREATE OR REPLACE FUNCTION audit_snapshot(ci content_item) RETURNS jsonb AS
 $$
 SELECT jsonb_build_object('contentType', ci.content_type, 'data', ci.data, 'status', ci.status,
                           'active', ci.active, 'displayOrder', ci.display_order)
+           -- the schedule times (UTC) only when set, so items that never had one keep the old shape
+           || CASE WHEN ci.publish_at IS NULL THEN '{}'::jsonb
+                   ELSE jsonb_build_object('publishAt', to_char(ci.publish_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) END
+           || CASE WHEN ci.unpublish_at IS NULL THEN '{}'::jsonb
+                   ELSE jsonb_build_object('unpublishAt', to_char(ci.unpublish_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) END
 $$ LANGUAGE sql IMMUTABLE;
 
 -- The readable title of an item's data (rich text reduced to text), '' when it has none.
@@ -191,7 +209,7 @@ SELECT coalesce((SELECT btrim(regexp_replace(regexp_replace(t.v, '<[^>]*>', ' ',
 $$ LANGUAGE sql IMMUTABLE;
 
 -- The top-level fields that differ between two snapshots: the item's own data fields, then any of
--- contentType/status/active/displayOrder. Every field for a create or a delete (one side is null).
+-- contentType/status/active/displayOrder/publishAt/unpublishAt. Every field for a create or a delete (one side is null).
 CREATE OR REPLACE FUNCTION audit_changed(before_snap jsonb, after_snap jsonb) RETURNS jsonb AS
 $$
 SELECT coalesce(jsonb_agg(c.name ORDER BY c.grp, c.name), '[]'::jsonb)
@@ -205,10 +223,14 @@ FROM (SELECT k.key AS name, 0 AS grp
             audit_norm(after_snap #> ARRAY ['data', k.key])
       UNION ALL
       SELECT e.name, 1
-      FROM unnest(ARRAY ['contentType', 'status', 'active', 'displayOrder']) AS e(name)
-      WHERE before_snap IS NULL
-         OR after_snap IS NULL
-         OR before_snap -> e.name IS DISTINCT FROM after_snap -> e.name) c
+      FROM unnest(ARRAY ['contentType', 'status', 'active', 'displayOrder', 'publishAt', 'unpublishAt']) AS e(name)
+      -- the schedule times are in a snapshot only when set, so they are listed only when one side has them
+      WHERE (e.name NOT IN ('publishAt', 'unpublishAt')
+          OR coalesce(jsonb_exists(before_snap, e.name), false)
+          OR coalesce(jsonb_exists(after_snap, e.name), false))
+        AND (before_snap IS NULL
+          OR after_snap IS NULL
+          OR before_snap -> e.name IS DISTINCT FROM after_snap -> e.name)) c
 $$ LANGUAGE sql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION content_audit_record() RETURNS trigger AS
@@ -237,9 +259,10 @@ BEGIN
         act := CASE
                    WHEN NEW.status = OLD.status THEN 'UPDATE'
                    WHEN NEW.status = 'PUBLISHED' THEN 'PUBLISH'
+                   WHEN NEW.status = 'SCHEDULED' THEN 'SCHEDULE'
                    WHEN NEW.status = 'ARCHIVED' THEN 'ARCHIVE'
                    WHEN OLD.status = 'PUBLISHED' THEN 'UNPUBLISH'
-                   ELSE 'UPDATE' END; -- e.g. ARCHIVED back to DRAFT: the status change is listed as a changed field
+                   ELSE 'UPDATE' END; -- e.g. ARCHIVED or SCHEDULED back to DRAFT: the status change is listed as a changed field
         direct := NEW.modified_at IS NOT DISTINCT FROM OLD.modified_at
             AND NEW.modified_by IS NOT DISTINCT FROM OLD.modified_by;
     ELSE
@@ -293,3 +316,70 @@ CREATE TABLE IF NOT EXISTS post_template
     modified_by  jsonb
 );
 CREATE INDEX IF NOT EXISTS idx_post_template_site ON post_template (site_id);
+
+-- ---- Scheduled publishing -------------------------------------------------------------------------
+-- Moves what is due: SCHEDULED items whose publish_at has passed become PUBLISHED, and PUBLISHED items
+-- whose unpublish_at has passed become ARCHIVED (their unpublish_at is cleared, so publishing the item
+-- again by hand is not undone at once). Returns how many items it moved.
+--
+-- One statement per direction, so it is atomic, and SKIP LOCKED makes a second runner (a second
+-- database, a manual call) skip rows the first one holds instead of waiting or doing them twice. It
+-- is also catch-up by construction: it takes everything overdue, so a missed run, or downtime, only
+-- delays publishing. The write is stamped as the "System" user and the version is bumped, so the audit
+-- trail credits System and an editor with the item open gets the usual out-of-date-form warning.
+CREATE OR REPLACE FUNCTION publish_scheduled_content() RETURNS integer AS
+$$
+DECLARE
+    moved integer := 0;
+    n     integer;
+    sys   CONSTANT jsonb := jsonb_build_object('sub', 'system', 'name', 'System');
+BEGIN
+    UPDATE content_item ci
+    SET status      = 'PUBLISHED',
+        version     = ci.version + 1,
+        modified_at = now(),
+        modified_by = sys
+    FROM (SELECT id
+          FROM content_item
+          WHERE status = 'SCHEDULED'
+            AND publish_at <= now()
+          ORDER BY publish_at
+          FOR UPDATE SKIP LOCKED) due
+    WHERE ci.id = due.id;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    moved := moved + n;
+
+    UPDATE content_item ci
+    SET status       = 'ARCHIVED',
+        unpublish_at = NULL,
+        version      = ci.version + 1,
+        modified_at  = now(),
+        modified_by  = sys
+    FROM (SELECT id
+          FROM content_item
+          WHERE status = 'PUBLISHED'
+            AND unpublish_at <= now()
+          ORDER BY unpublish_at
+          FOR UPDATE SKIP LOCKED) due
+    WHERE ci.id = due.id;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    RETURN moved + n;
+END;
+$$ LANGUAGE plpgsql;
+
+-- The job: every minute, in the database named by cron.database_name (see the postgres image's
+-- postgresql.conf). It is created only where pg_cron is there, so a database without it (a test
+-- database, a managed Postgres without the extension) still loads; scheduled items then wait until
+-- publish_scheduled_content() is run some other way.
+DO
+$$
+BEGIN
+    IF current_database() = current_setting('cron.database_name', true)
+        AND EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'pg_cron') THEN
+        CREATE EXTENSION IF NOT EXISTS pg_cron;
+        PERFORM cron.schedule('publish-scheduled-content', '* * * * *', 'SELECT publish_scheduled_content()');
+    ELSE
+        RAISE WARNING 'pg_cron is not available in database %: scheduled content will not be published automatically', current_database();
+    END IF;
+END
+$$;

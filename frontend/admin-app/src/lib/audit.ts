@@ -1,7 +1,7 @@
 import { contentApi } from "./api";
 import { RESOURCES } from "../config/resources";
 
-export type AuditAction = "CREATE" | "UPDATE" | "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "DELETE" | "RESTORE";
+export type AuditAction = "CREATE" | "UPDATE" | "SCHEDULE" | "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "DELETE" | "RESTORE";
 
 /** One line of an item's history or of the site's activity feed. */
 export interface AuditEntry {
@@ -95,6 +95,7 @@ export async function restoreAudit(site: string, id: number): Promise<Restored> 
 export const ACTION_LABELS: Record<AuditAction, string> = {
   CREATE: "Created",
   UPDATE: "Updated",
+  SCHEDULE: "Scheduled",
   PUBLISH: "Published",
   UNPUBLISH: "Unpublished",
   ARCHIVE: "Archived",
@@ -106,6 +107,7 @@ export const ACTION_LABELS: Record<AuditAction, string> = {
 export const ACTION_COLORS: Record<AuditAction, string> = {
   CREATE: "green",
   UPDATE: "blue",
+  SCHEDULE: "geekblue",
   PUBLISH: "cyan",
   UNPUBLISH: "orange",
   ARCHIVE: "gold",

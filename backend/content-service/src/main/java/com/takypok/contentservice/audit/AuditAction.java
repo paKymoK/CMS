@@ -4,7 +4,12 @@ package com.takypok.contentservice.audit;
 public enum AuditAction {
   CREATE,
   UPDATE,
-  /** Its status went from DRAFT to PUBLISHED (any other change in the same save is listed too). */
+  /** Its status became SCHEDULED: it will go live by itself at its publish time. */
+  SCHEDULE,
+  /**
+   * Its status went to PUBLISHED, by an editor or when its scheduled time came (any other change in
+   * the same save is listed too).
+   */
   PUBLISH,
   /** Its status went from PUBLISHED back to DRAFT. */
   UNPUBLISH,

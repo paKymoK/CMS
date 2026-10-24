@@ -2,6 +2,7 @@ package com.takypok.contentservice.model.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotBlank;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +17,11 @@ public class PostCreateRequest {
   private Integer displayOrder;
   private Boolean active;
   private String status;
+
+  /** For SCHEDULED: when it goes live. For PUBLISHED or SCHEDULED: when it is archived. */
+  private Instant publishAt;
+
+  private Instant unpublishAt;
   private String slug;
   private String body;
   private String authorName;

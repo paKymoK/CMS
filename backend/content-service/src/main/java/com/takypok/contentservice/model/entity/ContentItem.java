@@ -3,6 +3,7 @@ package com.takypok.contentservice.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.core.model.IdEntity;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -31,6 +32,11 @@ public class ContentItem extends IdEntity {
   private Boolean active;
   private String status;
   @Version private Integer version;
+
+  /** Posts only: when a SCHEDULED item goes live, and when a live one is archived. */
+  private Instant publishAt;
+
+  private Instant unpublishAt;
 
   /**
    * The search text derived from {@code data} (see SearchTextExtractor / the search_vec column):

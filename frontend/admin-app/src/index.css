@@ -450,6 +450,13 @@ body {
 .cms-status.is-published::before {
   background: #12b886;
 }
+.cms-status.is-scheduled {
+  background: #e6f1ff;
+  color: #0058b3;
+}
+.cms-status.is-scheduled::before {
+  background: #0083ff;
+}
 .cms-status.is-archived {
   background: #eceff4;
   color: #5b6b86;

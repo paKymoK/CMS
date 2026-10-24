@@ -316,8 +316,10 @@ export default function ContentPage() {
       title: <ColHeader>Status</ColHeader>,
       dataIndex: "status",
       render: (status: string) => (
-        <span className={`cms-status${status === "PUBLISHED" ? " is-published" : status === "ARCHIVED" ? " is-archived" : ""}`}>
-          {status === "PUBLISHED" ? "Published" : status === "ARCHIVED" ? "Archived" : "Draft"}
+        <span
+          className={`cms-status${status === "PUBLISHED" ? " is-published" : status === "SCHEDULED" ? " is-scheduled" : status === "ARCHIVED" ? " is-archived" : ""}`}
+        >
+          {status === "PUBLISHED" ? "Published" : status === "SCHEDULED" ? "Scheduled" : status === "ARCHIVED" ? "Archived" : "Draft"}
         </span>
       ),
     },

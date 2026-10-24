@@ -42,6 +42,12 @@ The following databases are created automatically on first start via `init-datab
 
 ---
 
+## pg_cron
+
+The image includes pg_cron, preloaded and pointed at the `content` database (`cron.database_name` in `postgresql.conf`). content-service's `init-schema.sql` creates the extension and the once-a-minute job that publishes scheduled posts. After recreating the `content` database, restarting content-service re-creates the job.
+
+---
+
 ## Notes
 
 - Uses a custom image (`tqthai/postgres`) built from the local `Dockerfile` with a tuned `postgresql.conf`

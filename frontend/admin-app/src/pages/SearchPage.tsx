@@ -121,11 +121,11 @@ export default function SearchPage() {
                       borderRadius: 999,
                       fontSize: 12,
                       fontWeight: 600,
-                      background: published ? "#e3f7ee" : hit.status === "ARCHIVED" ? "#eceff4" : "#fff4e0",
-                      color: published ? "#0b7a55" : hit.status === "ARCHIVED" ? "#5b6b86" : "#9a5b00",
+                      background: published ? "#e3f7ee" : hit.status === "SCHEDULED" ? "#e6f1ff" : hit.status === "ARCHIVED" ? "#eceff4" : "#fff4e0",
+                      color: published ? "#0b7a55" : hit.status === "SCHEDULED" ? "#0058b3" : hit.status === "ARCHIVED" ? "#5b6b86" : "#9a5b00",
                     }}
                   >
-                    {published ? "Published" : hit.status === "ARCHIVED" ? "Archived" : "Draft"}
+                    {published ? "Published" : hit.status === "SCHEDULED" ? "Scheduled" : hit.status === "ARCHIVED" ? "Archived" : "Draft"}
                   </span>
                 </button>
               </li>

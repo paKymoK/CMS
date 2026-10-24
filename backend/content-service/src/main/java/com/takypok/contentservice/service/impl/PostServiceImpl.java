@@ -17,10 +17,13 @@ import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
+import com.takypok.contentservice.util.ScheduleRules;
 import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -78,6 +81,15 @@ public class PostServiceImpl implements PostService {
         () -> {
           StatusRules.requireAllowed(TYPE, request.getStatus());
           String status = request.getStatus() != null ? request.getStatus() : "DRAFT";
+          ScheduleRules.Times times =
+              ScheduleRules.resolve(
+                  status,
+                  request.getPublishAt(),
+                  request.getUnpublishAt(),
+                  null,
+                  null,
+                  null,
+                  Instant.now());
           PostFields fields = new PostFields();
           fields.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
           fields.setLayout(validLayout(request.getLayout()));
@@ -92,6 +104,7 @@ public class PostServiceImpl implements PostService {
           copyShared(
               fields,
               status,
+              times.publishAt(),
               request.getImage(),
               request.getTitle(),
               request.getExcerpt(),
@@ -109,7 +122,8 @@ public class PostServiceImpl implements PostService {
               fields,
               request.getDisplayOrder(),
               request.getActive(),
-              status);
+              status,
+              times);
         });
   }
 
@@ -124,6 +138,15 @@ public class PostServiceImpl implements PostService {
                       PostFields existing = toFields(item);
                       String status =
                           request.getStatus() != null ? request.getStatus() : item.getStatus();
+                      ScheduleRules.Times times =
+                          ScheduleRules.resolve(
+                              status,
+                              request.getPublishAt(),
+                              request.getUnpublishAt(),
+                              item.getStatus(),
+                              item.getPublishAt(),
+                              item.getUnpublishAt(),
+                              Instant.now());
                       PostFields fields = new PostFields();
                       fields.setCategory(
                           request.getCategory() != null
@@ -140,6 +163,7 @@ public class PostServiceImpl implements PostService {
                       copyShared(
                           fields,
                           status,
+                          times.publishAt(),
                           request.getImage(),
                           request.getTitle(),
                           request.getExcerpt(),
@@ -170,7 +194,8 @@ public class PostServiceImpl implements PostService {
                           fields,
                           request.getDisplayOrder(),
                           request.getActive(),
-                          request.getStatus());
+                          status,
+                          times);
                     }));
   }
 
@@ -202,6 +227,7 @@ public class PostServiceImpl implements PostService {
   private static void copyShared(
       PostFields fields,
       String status,
+      Instant publishAt,
       String image,
       String title,
       String excerpt,
@@ -217,7 +243,7 @@ public class PostServiceImpl implements PostService {
     fields.setTitle(title);
     fields.setBody(cleanBody);
     fields.setExcerpt(excerptOrDerived(excerpt, cleanBody));
-    fields.setDate(dateOrToday(date, status));
+    fields.setDate(dateOrToday(date, status, publishAt));
     fields.setAuthorName(authorName);
     fields.setAuthorRole(authorRole);
     fields.setAuthorBio(authorBio);
@@ -233,7 +259,8 @@ public class PostServiceImpl implements PostService {
       PostFields fields,
       Integer displayOrder,
       Boolean active,
-      String status) {
+      String status,
+      ScheduleRules.Times times) {
     return resolveSlug(siteId, item.getId(), requestedSlug, fields.getTitle())
         .flatMap(
             slug -> {
@@ -249,8 +276,9 @@ public class PostServiceImpl implements PostService {
               else if (item.getDisplayOrder() == null) item.setDisplayOrder(0);
               if (active != null) item.setActive(active);
               else if (item.getActive() == null) item.setActive(true);
-              if (status != null) item.setStatus(status);
-              else if (item.getStatus() == null) item.setStatus("DRAFT");
+              item.setStatus(status);
+              item.setPublishAt(times.publishAt());
+              item.setUnpublishAt(times.unpublishAt());
               return contentItemWriter.save(item);
             })
         .map(this::toResponse);
@@ -293,9 +321,15 @@ public class PostServiceImpl implements PostService {
     return text.substring(0, cut > EXCERPT_MAX / 2 ? cut : EXCERPT_MAX).trim() + "…";
   }
 
-  /** The display date is optional: a post published without one is dated today. */
-  private static String dateOrToday(String date, String status) {
+  /**
+   * The display date is optional: a post published without one is dated today, and a scheduled one
+   * the day it goes live.
+   */
+  private static String dateOrToday(String date, String status, Instant publishAt) {
     if (date != null && !date.isBlank()) return date;
+    if ("SCHEDULED".equals(status) && publishAt != null) {
+      return publishAt.atZone(ZoneOffset.UTC).toLocalDate().format(DISPLAY_DATE);
+    }
     return "PUBLISHED".equals(status) ? LocalDate.now().format(DISPLAY_DATE) : date;
   }
 

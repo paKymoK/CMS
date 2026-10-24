@@ -29,10 +29,18 @@ class StatusRulesTest {
   }
 
   @Test
+  void onlyPostsMayBeScheduled() {
+    assertDoesNotThrow(() -> StatusRules.requireAllowed("post", "SCHEDULED"));
+    for (String type : new String[] {"case_study", "service_page", "industry_page", "about_page"}) {
+      assertThrows(ApplicationException.class, () -> StatusRules.requireAllowed(type, "SCHEDULED"));
+    }
+  }
+
+  @Test
   void anUnknownStatusIsRejectedWithItsName() {
     ApplicationException e =
         assertThrows(
-            ApplicationException.class, () -> StatusRules.requireAllowed("post", "SCHEDULED"));
-    org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("SCHEDULED"));
+            ApplicationException.class, () -> StatusRules.requireAllowed("post", "TRASHED"));
+    org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("TRASHED"));
   }
 }

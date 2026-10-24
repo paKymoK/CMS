@@ -13,7 +13,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 |---|---|---|---|
 | 1 | Fields: title, slug, excerpt, featured image, author, date, category, tags | `PostFields` has all of them, plus `authorBio`, `authorAvatar`, `layout` | ✅ |
 | 2 | Slug unique per site | Partial unique index `uq_content_item_slug`, auto-resolved by `Slugs.resolve` | ✅ |
-| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server), plus an `active` flag. Archive is done; Schedule is parked (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived. The remaining gap is Scheduled (G1) | 🟡 |
+| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server), plus an `active` flag. Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
 | 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |
 | 6 | Video via URL (YouTube/Vimeo), responsive | `embed` node, allow-listed hosts only | ✅ |
@@ -22,7 +22,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 | 9 | Table of contents (H1→H3) | Outline panel built from H2 only; no TOC block | 🟡 |
 | 10 | Undo / Redo | Toolbar | ✅ |
 | 11 | Preview before publish (desktop/tablet/mobile) | Preview button opens the page in an iframe drawn by the same renderer as the website, from the **unsaved** editor state, with Desktop, Tablet (820 px) and Mobile (390 px) widths (`PreviewPanel`). Works for Posts, Case Studies, Service, Industry and About pages. The site header, footer and contact form are not part of the preview, and Home has none. The earlier token-based preview was removed | ✅ |
-| 12 | Search-snippet preview (BRD: the post as it looks in a search result, mobile and desktop, with an example image) | none. The fields it needs now exist (G4), so it can be built next | ❌ |
+| 12 | Search-snippet preview (BRD: the post as it looks in a search result, mobile and desktop, with an example image) | "Search result preview" button in the SEO checklist opens desktop and mobile results built from the unsaved form (`SearchSnippetModal`); also on Case Studies and the page types | ✅ |
 | 13 | One previous version + restore | Full history in `content_audit` (before/after snapshots), `HistoryDrawer`, RESTORE action | ✅ (exceeds BRD) |
 | 14 | Audit log | DB trigger records CREATE/UPDATE/PUBLISH/UNPUBLISH/DELETE/RESTORE, including direct SQL | ✅ |
 | 15 | Multi-site, per-site access | `site` table (one row per locale), `CmsAdminGuard.requireSiteAccess` | ✅ |
@@ -36,18 +36,19 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 ### G1. Scheduling and Archive
 - **Archive: done (posts).** Statuses are Draft, Published and Archived. Archived is off the site but kept, and can go back to Draft or be published again. The audit trail has an `ARCHIVE` action (archived back to draft is an update that lists the status change; publishing is still `PUBLISH`). **Archived posts stay editable (decision):** the status only controls whether the post is public, as with Draft and Private in WordPress, which has no built-in archived status and locks only Trash. Locking them would be a rule of our own: the server would reject content edits on an archived post and the editor would open read-only. Only posts may be archived; the server rejects ARCHIVED or any unknown status for the other content types. The Post editor has a three-way status switch, an **Archive** button (with a confirmation for a live post), **Save** and **Move to draft** for an archived post, and an "Archived" label in the list, Activity and search.
 - **Public side:** an archived post answers "not found" like an unknown address and drops out of the public list and search with no read path changed (every public read matches `'PUBLISHED'` exactly). **Detail pages on the website are now fetched without Next's data cache** (`cache: "no-store"`): that cache only stores 200 responses, so a page that had been visited kept being served from its old copy after it was archived or unpublished. Lists keep the 60 s cache.
-- **Schedule: not done, parked** (see below). No `SCHEDULED` status and no `publish_at` / `unpublish_at` yet.
+- **Schedule: done (posts), cron-based.** Statuses are now Draft, Scheduled, Published and Archived. The `active` flag is unchanged. See "Scheduled publishing" below.
 
-**Parked by decision: scheduling and the `active` flag are left for later while the owner thinks them over.** The analysis so far, so nothing has to be rediscovered:
+**Scheduled publishing (built).**
 
-- **Safest scheduling design: a background check that flips the status.** Every place that decides what the public sees (about 15, all exact matches on `'PUBLISHED'`) already ignores any other status, so Scheduled and Archived are invisible with no read path changed. A check every ~30 s flips `SCHEDULED` to `PUBLISHED` when `publish_at` is due (and `PUBLISHED` to `ARCHIVED` at `unpublish_at`); after downtime it catches up on overdue items. The media service already has a `@Scheduled` sweeper to copy, the auditing code already credits "System" when nobody is logged in, and the version check makes two servers flipping the same row harmless. The alternative, computing visibility from the clock on every read, needs a time condition in all ~15 places, and missing one would show an unpublished post early.
-- **Timing:** about 30 s plus the website's 60 s page cache, so "09:00" means roughly 09:00 to 09:02.
-- **Statuses (Posts first):** Draft, Scheduled, Published, Archived. The BRD lists "Unpublished/Archived" as one state. "Preview" stays the preview action. Other content types keep Draft and Published, enforced by the server so they cannot get stuck as Scheduled.
-- **Database:** widen the status check, add `publish_at` / `unpublish_at` with sanity checks and small indexes. **The audit trigger only knows PUBLISH and UNPUBLISH** (anything else it logs as UNPUBLISH), so Schedule and Archive actions must be added, and the two times recorded in the snapshots. Restoring an old version that was Scheduled for a time now past should come back as Draft.
-- **Delete rule (G8 lite):** only Draft or Archived items can be deleted. A real Trash is a separate decision.
-- **Editor:** the Draft/Published switch becomes Save draft, Publish now, Schedule… (time, optional unpublish time), Archive / Move to Draft; the status labels in the list and Activity need the new states.
-- **Open decisions:** (1) the background check (recommended) or visibility decided on read; (2) the time zone of the picker: the editor's browser zone, shown clearly and stored as UTC (recommended), or a zone per site (needs a new setting); (3) keep `active` as it is for now (other content types rely on it) or fold it into the status; (4) skip Trash and let Archived plus the delete rule cover it (recommended), or add a Trash status and a purge job; (5) Posts only first (recommended).
-- **Suggested split when picked up:** part 1 statuses, rules, delete rule and editor labels (no time handling); part 2 the schedule columns, the check and the picker.
+- **Mechanism: pg_cron, once a minute.** The Postgres image already had pg_cron (`Dockerfile`, `postgresql.conf`: `shared_preload_libraries` and `cron.database_name = 'content'`). `init-schema.sql` now creates the extension and the job `publish-scheduled-content` (`* * * * *`, running `SELECT publish_scheduled_content()`). Once a minute was chosen over once a second to keep load low under pressure. The job is created only where pg_cron exists (the database named by `cron.database_name`); elsewhere (test databases, a managed Postgres without the extension) the schema still loads with a warning and scheduled items wait until the function is run some other way.
+- **The function** `publish_scheduled_content()` moves due `SCHEDULED` items to `PUBLISHED` and due `PUBLISHED` items (with an `unpublish_at`) to `ARCHIVED`, clearing `unpublish_at`. Each direction is one `UPDATE` over a `FOR UPDATE SKIP LOCKED` selection: atomic, and a second runner skips rows the first holds. It takes everything overdue, so downtime or a missed run only delays publishing: seen live, after the machine slept for 14 minutes the job published and archived on its first run back. It stamps the write as the `System` user and bumps `version`, so Activity shows "System" and an editor with the item open gets the out-of-date-form warning.
+- **Data:** `content_item.publish_at` / `unpublish_at` (timestamptz), checks (a scheduled item needs `publish_at`; `unpublish_at` must be later), and two small partial indexes so the minute check touches only waiting rows. The audit trigger has a `SCHEDULE` action and records both times (UTC) in the snapshots.
+- **Rules (`ScheduleRules`):** posts only. Draft and Archived carry no times; Scheduled needs a future publish time (optional later unpublish time); a live post may have a future unpublish time. Times are kept to the minute. A time unchanged from what is stored is not re-checked against the clock, so saving in the minute before the job runs is not refused. A scheduled post without a display date is dated the day it goes live.
+- **Editor:** a four-way status switch; for Scheduled a "Publish at" picker, for Scheduled and Published an optional "Take offline at" picker, with the editor's time zone shown (times are picked in it and stored as UTC). The main button reads Publish, Update, Schedule or Update schedule; publishing or scheduling a draft with SEO items missing asks once, as before. Labels for Scheduled are in the list, Activity and search.
+- **Timing:** up to a minute for the job, plus the website's 60 s list cache; detail pages are not cached, so they appear as soon as the job runs.
+- **Verified:** 129 content-service tests (new: `ScheduleRulesTest`, scheduling tests in `ContentAuditTriggerTest` that run the function against a real database, `StatusRulesTest`); the real pg_cron job published and archived a test row at the exact minutes; the editor was driven in a browser (schedule, SEO prompt, saved times, audit entry).
+- **Limits:** the website's public pages and tablet and mobile widths of the new picker panel were not re-checked in a browser. If production Postgres is managed without pg_cron, the job must be set up there (or `publish_scheduled_content()` called by another scheduler); the schema loads either way but would only warn.
+- **Still open:** the `active` flag stays as it is; Trash stays skipped (Archived plus the delete rule covers it); other content types are not schedulable.
 
 ### G2. Categories and Tags management
 - `category` is a free-text string; `tags` is a string array inside `data`.
@@ -69,7 +70,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 
 ### G6. Preview
 - **Done:** the Desktop / Tablet / Mobile preview of unsaved edits (row 11).
-- **Missing:** the search-result preview (row 12): title, URL and description as a search engine would show them, mobile and desktop, with the image. It depends on G4 for Posts (meta title and description), and it is not built for any page type.
+- **Done:** the search-result preview (row 12), desktop and mobile, from the unsaved form.
 - **Limits of what exists:** the preview draws the article or page only, without the site header, footer or contact form; the site-wide sections of Service and Industry pages show a labelled stand-in; Home (not on the page model) has no preview.
 
 ### G7. Editor blocks missing
@@ -104,7 +105,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 
 ## 4. Suggested order
 
-1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. Also enables the delete rule and Trash (G1, G8). *(Archive and the delete rule are done; scheduling is parked: see G1.)*
+1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. Also enables the delete rule and Trash (G1, G8). *(Done: archive, the delete rule and scheduling with a pg_cron job; see G1.)*
 2. **Category and Tag tables** per site, with posts referencing them (G2).
 3. ~~**SEO fields** in `PostFields`, DTOs and editor sidebar (G4)~~ done, together with the checklist; redirects and code injection remain.
 4. **Dedicated post list page** with search, filters, bulk actions (G3).
