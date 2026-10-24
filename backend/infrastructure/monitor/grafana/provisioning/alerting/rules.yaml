@@ -16,7 +16,7 @@ groups:
           severity: critical
         annotations:
           summary: '{{ $labels.job }} is down'
-          description: '{{ $labels.job }} has pushed no metrics for {{ $values.B }}s (86400s = never seen in the last 24h). Check the process, OTLP_EXPORT_ENABLED and Alloy.'
+          description: '{{ $labels.job }} has not pushed metrics for {{ humanizeDuration $values.B.Value }} (a full day means it was never seen in the last 24h). Check the process, OTLP_EXPORT_ENABLED and Alloy.'
         data:
           - refId: A
             relativeTimeRange:
@@ -59,7 +59,7 @@ groups:
           severity: critical
         annotations:
           summary: '{{ $labels.job }}: 5xx ratio above 5%'
-          description: '{{ $labels.job }} is answering {{ humanizePercentage $values.B }} of requests with 5xx (5m window, ignored below 0.05 req/s).'
+          description: '{{ $labels.job }} is answering {{ humanizePercentage $values.B.Value }} of requests with 5xx (5m window, ignored below 0.05 req/s).'
         data:
           - refId: A
             relativeTimeRange:
@@ -102,7 +102,7 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.job }}: p99 latency above 2s'
-          description: '{{ $labels.job }} p99 request latency is {{ $values.B }}s over 5m.'
+          description: '{{ $labels.job }} p99 request latency is {{ printf "%.2f" $values.B.Value }}s over 5m.'
         data:
           - refId: A
             relativeTimeRange:
@@ -145,7 +145,7 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.job }}: heap above 90%'
-          description: '{{ $labels.job }} heap usage is {{ humanizePercentage $values.B }} of max for 10m.'
+          description: '{{ $labels.job }} heap usage is {{ humanizePercentage $values.B.Value }} of max for 10m.'
         data:
           - refId: A
             relativeTimeRange:
@@ -188,7 +188,7 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.job }}: GC pausing over 20% of the time'
-          description: '{{ $labels.job }} spends {{ humanizePercentage $values.B }} of wall time in GC pauses.'
+          description: '{{ $labels.job }} spends {{ humanizePercentage $values.B.Value }} of wall time in GC pauses.'
         data:
           - refId: A
             relativeTimeRange:
@@ -231,7 +231,7 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.job }}: threads waiting for a DB connection'
-          description: '{{ $labels.job }} has {{ $values.B }} callers pending on the connection pool for 5m.'
+          description: '{{ $labels.job }} has {{ printf "%.0f" $values.B.Value }} callers pending on the connection pool for 5m.'
         data:
           - refId: A
             relativeTimeRange:
@@ -323,7 +323,7 @@ groups:
           severity: critical
         annotations:
           summary: 'Host memory under 10% available'
-          description: 'Only {{ humanizePercentage $values.B }} of host memory is available.'
+          description: 'Only {{ humanizePercentage $values.B.Value }} of host memory is available.'
         data:
           - refId: A
             relativeTimeRange:
@@ -366,7 +366,7 @@ groups:
           severity: warning
         annotations:
           summary: 'Host CPU above 90%'
-          description: 'Host CPU has been at {{ humanizePercentage $values.B }} for 10m.'
+          description: 'Host CPU has been at {{ humanizePercentage $values.B.Value }} for 10m.'
         data:
           - refId: A
             relativeTimeRange:
@@ -409,7 +409,7 @@ groups:
           severity: warning
         annotations:
           summary: 'Host disk under 15% free'
-          description: 'The fullest filesystem has {{ humanizePercentage $values.B }} free.'
+          description: 'The fullest filesystem has {{ humanizePercentage $values.B.Value }} free.'
         data:
           - refId: A
             relativeTimeRange:
@@ -458,7 +458,7 @@ groups:
           severity: warning
         annotations:
           summary: '{{ $labels.service }}: more than 5 ERROR logs in 5m'
-          description: '{{ $labels.service }} logged {{ $values.B }} ERROR lines in the last 5m. Check Loki: {level="ERROR", service="{{ $labels.service }}"}.'
+          description: '{{ $labels.service }} logged {{ printf "%.0f" $values.B.Value }} ERROR lines in the last 5m. Check Loki: {level="ERROR", service="{{ $labels.service }}"}.'
         data:
           - refId: A
             relativeTimeRange:

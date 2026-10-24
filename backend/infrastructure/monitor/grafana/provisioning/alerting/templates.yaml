@@ -1,0 +1,18 @@
+apiVersion: 1
+
+templates:
+  - orgId: 1
+    name: discord
+    template: |
+      {{ define "discord.title" -}}
+      {{ if eq .Status "firing" }}🔴 FIRING{{ else }}🟢 RESOLVED{{ end }} · {{ .CommonLabels.alertname }}{{ if gt (len .Alerts) 1 }} (×{{ len .Alerts }}){{ end }}
+      {{- end }}
+
+      {{ define "discord.message" -}}
+      {{ range .Alerts -}}
+      {{ if eq .Status "firing" }}🔴{{ else }}🟢{{ end }} **{{ .Annotations.summary }}**{{ with .Labels.severity }} · `{{ . }}`{{ end }}
+      {{ .Annotations.description }}
+      {{ if eq .Status "firing" }}Since <t:{{ .StartsAt.Unix }}:R>{{ else }}Resolved <t:{{ .EndsAt.Unix }}:R>{{ end }} · [Status]({{ $.ExternalURL }}d/service-status) · [Silence]({{ .SilenceURL }})
+
+      {{ end -}}
+      {{- end }}

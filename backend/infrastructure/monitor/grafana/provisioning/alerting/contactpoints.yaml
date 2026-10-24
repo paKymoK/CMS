@@ -12,3 +12,5 @@ contactPoints:
         type: discord
         settings:
           url: $DISCORD_WEBHOOK_URL
+          title: '{{ template "discord.title" . }}'
+          message: '{{ template "discord.message" . }}'
