@@ -136,6 +136,40 @@ prometheus.scrape "exporters" {
   scrape_interval = "15s"
 }
 
+// ---- Up/down probes for the status dashboard: website, admin app, database ----
+// Backend services are not probed: their up/down comes from the metrics they push.
+// Addresses come from the PROBE_* env vars (see alloy/docker-compose.yml).
+
+prometheus.exporter.blackbox "status" {
+  config = `{ modules: { http_2xx: { prober: http, timeout: 5s, http: { preferred_ip_protocol: ip4, ip_protocol_fallback: false } }, tcp_connect: { prober: tcp, timeout: 5s } } }`
+
+  target {
+    name    = "website"
+    address = sys.env("PROBE_WEBSITE_URL")
+    module  = "http_2xx"
+    labels  = { "component" = "website" }
+  }
+  target {
+    name    = "admin"
+    address = sys.env("PROBE_ADMIN_URL")
+    module  = "http_2xx"
+    labels  = { "component" = "admin" }
+  }
+  target {
+    name    = "database"
+    address = sys.env("PROBE_DATABASE_ADDR")
+    module  = "tcp_connect"
+    labels  = { "component" = "database" }
+  }
+}
+
+prometheus.scrape "probes" {
+  targets         = prometheus.exporter.blackbox.status.targets
+  job_name        = "probe"
+  forward_to      = [prometheus.remote_write.default.receiver]
+  scrape_interval = "15s"
+}
+
 prometheus.remote_write "default" {
   endpoint {
     url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")

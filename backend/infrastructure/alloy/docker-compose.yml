@@ -38,6 +38,12 @@ services:
       PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
       LOG_PATH_GLOB: ${LOG_PATH_GLOB:-/var/log/takypok/*/*.log}
       TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
+      # Status dashboard probes; defaults reach a website / admin app running on the docker host
+      PROBE_WEBSITE_URL: ${PROBE_WEBSITE_URL:-http://host.docker.internal:3000}
+      PROBE_ADMIN_URL: ${PROBE_ADMIN_URL:-http://host.docker.internal:5173}
+      PROBE_DATABASE_ADDR: ${PROBE_DATABASE_ADDR:-postgres:5432}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - takypok_default
     restart: unless-stopped

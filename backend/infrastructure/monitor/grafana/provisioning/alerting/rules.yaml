@@ -10,21 +10,21 @@ groups:
         title: Service down
         condition: C
         for: 1m
-        noDataState: OK
+        noDataState: Alerting
         execErrState: Error
         labels:
           severity: critical
         annotations:
           summary: '{{ $labels.job }} is down'
-          description: '{{ $labels.job }} has pushed no metrics for {{ $values.B }}s (all instances). Check the container and Alloy.'
+          description: '{{ $labels.job }} has pushed no metrics for {{ $values.B }}s (86400s = never seen in the last 24h). Check the process, OTLP_EXPORT_ENABLED and Alloy.'
         data:
           - refId: A
             relativeTimeRange:
-              from: 21600
+              from: 86400
               to: 0
             datasourceUid: prometheus
             model:
-              expr: 'min by (job) (time() - timestamp(last_over_time(process_uptime_seconds{job=~".*-service"}[6h])))'
+              expr: 'min by (job) (time() - max_over_time(timestamp(process_uptime_seconds{job=~".*-service"})[24h:30s])) or label_replace(vector(86400), "job", "discovery-service", "", "") or label_replace(vector(86400), "job", "auth-service", "", "") or label_replace(vector(86400), "job", "media-service", "", "") or label_replace(vector(86400), "job", "content-service", "", "") or label_replace(vector(86400), "job", "gateway-service", "", "")'
               instant: true
               intervalMs: 1000
               maxDataPoints: 43200
@@ -263,6 +263,49 @@ groups:
                     type: gt
                     params:
                       - 0
+              refId: C
+      - uid: probe-down
+        title: Website, admin or database down
+        condition: C
+        for: 1m
+        noDataState: Alerting
+        execErrState: Error
+        labels:
+          severity: critical
+        annotations:
+          summary: '{{ $labels.component }} is down'
+          description: 'The {{ $labels.component }} probe has been failing (or has no data) for 1m. Check the {{ $labels.component }} and Alloy.'
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 'max by (component) (probe_success{component=~"website|admin|database"}) or label_replace(vector(0), "component", "website", "", "") or label_replace(vector(0), "component", "admin", "", "") or label_replace(vector(0), "component", "database", "", "")'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              settings:
+                mode: dropNN
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1
               refId: C
 
   - orgId: 1
