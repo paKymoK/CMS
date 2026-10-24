@@ -73,7 +73,6 @@ class PostServiceImplTest {
     item.setContentType("post");
     item.setData(objectMapper.readTree(json));
     item.setDisplayOrder(0);
-    item.setActive(true);
     item.setStatus("PUBLISHED");
     return item;
   }
@@ -94,9 +93,8 @@ class PostServiceImplTest {
     // Site 1 has a published post at this slug...
     when(contentItemRepository.findBySlug(1L, "post", "shared-slug"))
         .thenReturn(Mono.just(siteOnesPost));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "post", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "post", "PUBLISHED"))
         .thenReturn(Flux.just(siteOnesPost));
     // ...but site 2 does not, even though the slug string is identical.
     when(contentItemRepository.findBySlug(2L, "post", "shared-slug")).thenReturn(Mono.empty());
@@ -123,9 +121,8 @@ class PostServiceImplTest {
 
   @Test
   void listingOnlyEverQueriesTheResolvedSiteNeverAnother() {
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                2L, "post", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            2L, "post", "PUBLISHED"))
         .thenReturn(Flux.empty());
 
     StepVerifier.create(service.searchPublished(2L, null, null))
@@ -133,11 +130,9 @@ class PostServiceImplTest {
         .verifyComplete();
 
     verify(contentItemRepository)
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            2L, "post", "PUBLISHED", true);
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(2L, "post", "PUBLISHED");
     verify(contentItemRepository, never())
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            1L, "post", "PUBLISHED", true);
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(1L, "post", "PUBLISHED");
   }
 
   @Test
@@ -361,9 +356,8 @@ class PostServiceImplTest {
         post(2L, 1L, "{\"slug\":\"plain\",\"title\":\"Plain\",\"category\":\"insight\"}");
     when(contentItemRepository.findBySlug(1L, "post", "a-post")).thenReturn(Mono.just(withSeo));
     when(contentItemRepository.findBySlug(1L, "post", "plain")).thenReturn(Mono.just(without));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "post", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "post", "PUBLISHED"))
         .thenReturn(Flux.just(withSeo, without));
 
     StepVerifier.create(service.getPublishedDetailBySlug(1L, "a-post"))

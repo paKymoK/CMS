@@ -22,7 +22,6 @@ export interface Snapshot {
   contentType: string;
   data: Record<string, unknown>;
   status: string;
-  active: boolean;
   displayOrder: number;
 }
 
@@ -65,12 +64,11 @@ export interface Restored {
 export interface ItemPrefill {
   data: Record<string, unknown>;
   displayOrder: number;
-  active: boolean;
 }
 
 /** The prefill a snapshot of a deleted item offers. */
 export function prefillFrom(snapshot: Snapshot): ItemPrefill {
-  return { data: snapshot.data, displayOrder: snapshot.displayOrder, active: snapshot.active };
+  return { data: snapshot.data, displayOrder: snapshot.displayOrder };
 }
 
 export async function listAudit(site: string, query: AuditQuery): Promise<AuditPage> {

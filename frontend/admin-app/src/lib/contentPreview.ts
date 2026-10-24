@@ -30,7 +30,6 @@ export interface PostListItem {
   category: string | null;
   tags: string[] | null;
   status: string;
-  active: boolean;
   displayOrder: number;
 }
 
@@ -47,7 +46,7 @@ export function readMinutes(body: string): number {
 /** Same pick content-service makes (PostServiceImpl.relatedTo): same category first, then the rest in order. */
 export function relatedFor(draft: Pick<PostDraft, "id" | "category">, all: PostListItem[]): PostCardData[] {
   const published = all
-    .filter((p) => p.status === "PUBLISHED" && p.active && p.slug && p.id !== draft.id)
+    .filter((p) => p.status === "PUBLISHED" && p.slug && p.id !== draft.id)
     .sort((a, b) => a.displayOrder - b.displayOrder);
   const same = published.filter((p) => p.category && p.category === draft.category);
   const others = published.filter((p) => !(p.category && p.category === draft.category));
@@ -96,7 +95,6 @@ export interface CaseStudyListItem {
   image: string | null;
   category: string | null;
   status: string;
-  active: boolean;
   displayOrder: number;
 }
 
@@ -106,7 +104,7 @@ export function relatedCaseStudiesFor(
   all: CaseStudyListItem[],
 ): CaseStudyCardData[] {
   const published = all
-    .filter((c) => c.status === "PUBLISHED" && c.active && c.slug && c.id !== draft.id)
+    .filter((c) => c.status === "PUBLISHED" && c.slug && c.id !== draft.id)
     .sort((a, b) => a.displayOrder - b.displayOrder);
   const same = published.filter((c) => c.category && c.category === draft.category);
   const others = published.filter((c) => !(c.category && c.category === draft.category));

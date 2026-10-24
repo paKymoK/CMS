@@ -17,7 +17,6 @@ public class PostUpdateRequest {
   private String excerpt;
   private String date;
   private Integer displayOrder;
-  private Boolean active;
   private String status;
 
   /** For SCHEDULED: when it goes live. For PUBLISHED or SCHEDULED: when it is archived. */

@@ -59,8 +59,8 @@ export default function AboutPreview({ site, values, onClose }: ResourcePreviewP
     queryKey: ["preview-stats", site],
     queryFn: async () => {
       const { data } = await contentApi.get("/v1/admin/content-items", { params: { site, type: "stat" } });
-      return (data.data as { status: string; active: boolean; data: { value: string; label: string } }[])
-        .filter((row) => row.status === "PUBLISHED" && row.active)
+      return (data.data as { status: string; data: { value: string; label: string } }[])
+        .filter((row) => row.status === "PUBLISHED")
         .map((row) => ({ value: row.data.value, label: row.data.label }));
     },
     staleTime: 60_000,

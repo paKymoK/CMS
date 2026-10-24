@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS site
 -- The one content table.
 -- Every piece of site content (a post, a case study, a stat, an office, a hero slide, a service
 -- page, ...) is a row here, identified by `content_type`. They all share one envelope — site_id,
--- display_order, active, status, version, timestamps — kept as real, typed, indexed columns
+-- display_order, status, version, timestamps — kept as real, typed, indexed columns
 -- (exactly what every query filters/sorts by); only the genuinely type-specific fields go into
 -- `data`, so a new content type is a new Java ContentFields class (@ContentTypeKey), not a new table.
 -- There is deliberately no content_type registry table: the Java classes are the registry.
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS site
 -- This is deliberately NOT WordPress's wp_postmeta/EAV pattern: postmeta puts every field,
 -- including the ones always filtered on, into an untyped key-value row per field. Here, `data`
 -- holds one structured jsonb document per item, and the columns every query actually needs
--- (site_id, content_type, status, active, display_order) stay real indexed columns.
+-- (site_id, content_type, status, display_order) stay real indexed columns.
 CREATE TABLE IF NOT EXISTS content_item
 (
     id             bigserial PRIMARY KEY,
@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS content_item
     content_type   character varying NOT NULL, -- must match a @ContentTypeKey class; checked in ContentItemMapper
     data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see ContentItemMapper
     display_order  integer           NOT NULL DEFAULT 0,
-    active         boolean           NOT NULL DEFAULT true,
     status         character varying NOT NULL DEFAULT 'DRAFT'
         CHECK (status IN ('DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED')),
     version        integer           NOT NULL DEFAULT 0,
@@ -73,7 +72,7 @@ CREATE TABLE IF NOT EXISTS content_item
 CREATE INDEX IF NOT EXISTS idx_content_item_site_type_order
     ON content_item (site_id, content_type, display_order);
 CREATE INDEX IF NOT EXISTS idx_content_item_site_type_status_active_order
-    ON content_item (site_id, content_type, status, active, display_order);
+    ON content_item (site_id, content_type, status, display_order);
 -- What the once-a-minute job looks for: only the few rows that are waiting for a time, so the check
 -- costs the same however big the table is.
 CREATE INDEX IF NOT EXISTS idx_content_item_due_publish
@@ -100,14 +99,14 @@ CREATE INDEX IF NOT EXISTS idx_content_item_search_title_trgm
 CREATE OR REPLACE VIEW search_term AS
 SELECT ci.site_id,
        w.word,
-       (ci.status = 'PUBLISHED' AND ci.active) AS visible,
+       (ci.status = 'PUBLISHED')              AS visible,
        count(DISTINCT ci.id)                   AS doc_count
 FROM content_item ci
          CROSS JOIN LATERAL regexp_split_to_table(
         lower(coalesce(ci.search_title, '') || ' ' || coalesce(ci.search_meta, '')), '[^a-z0-9]+') AS w(word)
 WHERE length(w.word) >= 3
   AND w.word !~ '^[0-9]+$'
-GROUP BY ci.site_id, w.word, (ci.status = 'PUBLISHED' AND ci.active);
+GROUP BY ci.site_id, w.word, (ci.status = 'PUBLISHED');
 -- A post's or case study's slug is the URL segment of its detail page: unique per site and type,
 -- never across sites. Partial on the types with a detail page, so the others keep their own (or
 -- no) slug rules.
@@ -123,7 +122,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_slug
 -- item_id has no foreign key on purpose: the history of a deleted item must outlive it (and a
 -- DELETE row's `before_data` is what restores it). `title` is copied from the item's data so the
 -- activity feed stays readable after the item is gone. before_data/after_data are whole snapshots of
--- the item ({contentType, data, status, active, displayOrder}), null on the side that doesn't exist
+-- the item ({contentType, data, status, displayOrder, and the schedule times when set}), null on the side that doesn't exist
 -- (no before for a create, no after for a delete); `changed` lists the top-level fields that differ,
 -- so the feed can say what changed without loading the snapshots.
 CREATE TABLE IF NOT EXISTS content_audit
@@ -188,7 +187,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 CREATE OR REPLACE FUNCTION audit_snapshot(ci content_item) RETURNS jsonb AS
 $$
 SELECT jsonb_build_object('contentType', ci.content_type, 'data', ci.data, 'status', ci.status,
-                          'active', ci.active, 'displayOrder', ci.display_order)
+                          'displayOrder', ci.display_order)
            -- the schedule times (UTC) only when set, so items that never had one keep the old shape
            || CASE WHEN ci.publish_at IS NULL THEN '{}'::jsonb
                    ELSE jsonb_build_object('publishAt', to_char(ci.publish_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) END
@@ -209,7 +208,7 @@ SELECT coalesce((SELECT btrim(regexp_replace(regexp_replace(t.v, '<[^>]*>', ' ',
 $$ LANGUAGE sql IMMUTABLE;
 
 -- The top-level fields that differ between two snapshots: the item's own data fields, then any of
--- contentType/status/active/displayOrder/publishAt/unpublishAt. Every field for a create or a delete (one side is null).
+-- contentType/status/displayOrder/publishAt/unpublishAt. Every field for a create or a delete (one side is null).
 CREATE OR REPLACE FUNCTION audit_changed(before_snap jsonb, after_snap jsonb) RETURNS jsonb AS
 $$
 SELECT coalesce(jsonb_agg(c.name ORDER BY c.grp, c.name), '[]'::jsonb)
@@ -223,7 +222,7 @@ FROM (SELECT k.key AS name, 0 AS grp
             audit_norm(after_snap #> ARRAY ['data', k.key])
       UNION ALL
       SELECT e.name, 1
-      FROM unnest(ARRAY ['contentType', 'status', 'active', 'displayOrder', 'publishAt', 'unpublishAt']) AS e(name)
+      FROM unnest(ARRAY ['contentType', 'status', 'displayOrder', 'publishAt', 'unpublishAt']) AS e(name)
       -- the schedule times are in a snapshot only when set, so they are listed only when one side has them
       WHERE (e.name NOT IN ('publishAt', 'unpublishAt')
           OR coalesce(jsonb_exists(before_snap, e.name), false)

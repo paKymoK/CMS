@@ -20,6 +20,6 @@ public interface ContentItemService {
 
   Flux<ContentItem> getPublished(Long siteId, String contentType);
 
-  /** Every published + active item of every type for the site, in display order. */
+  /** Every published item of every type for the site, in display order. */
   Flux<ContentItem> getAllPublished(Long siteId);
 }

@@ -146,7 +146,7 @@ class ContentAuditTriggerTest {
 
     assertEquals(
         List.of(
-            "CREATE | admin | [\"slug\", \"title\", \"active\", \"contentType\", \"displayOrder\", \"status\"]"),
+            "CREATE | admin | [\"slug\", \"title\", \"contentType\", \"displayOrder\", \"status\"]"),
         trail(id));
   }
 

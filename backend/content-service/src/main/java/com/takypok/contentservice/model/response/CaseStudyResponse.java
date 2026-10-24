@@ -24,7 +24,6 @@ public record CaseStudyResponse(
     String seoImage,
     Boolean seoNoindex,
     Integer displayOrder,
-    Boolean active,
     String status,
     Integer version) {
 
@@ -45,7 +44,6 @@ public record CaseStudyResponse(
         fields.getSeoImage(),
         fields.getSeoNoindex(),
         item.getDisplayOrder(),
-        item.getActive(),
         item.getStatus(),
         item.getVersion());
   }

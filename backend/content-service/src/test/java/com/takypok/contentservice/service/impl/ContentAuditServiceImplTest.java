@@ -66,7 +66,6 @@ class ContentAuditServiceImplTest {
     item.setContentType("post");
     item.setData(json.readTree(data));
     item.setStatus(status);
-    item.setActive(false);
     item.setDisplayOrder(7);
     return item;
   }
@@ -83,7 +82,7 @@ class ContentAuditServiceImplTest {
   @Test
   void aDeleteEntryHasNothingToRestoreInPlace() throws Exception {
     String last =
-        "{\"contentType\":\"post\",\"data\":{\"title\":\"Gone\"},\"status\":\"DRAFT\",\"active\":true,\"displayOrder\":0}";
+        "{\"contentType\":\"post\",\"data\":{\"title\":\"Gone\"},\"status\":\"DRAFT\",\"displayOrder\":0}";
     when(audits.findByIdAndSiteId(9L, 1L)).thenReturn(Mono.just(entry("DELETE", last, null)));
 
     StepVerifier.create(service.restore(1L, 9L))
@@ -98,7 +97,7 @@ class ContentAuditServiceImplTest {
   @Test
   void anItemThatHasSinceBeenDeletedIsNotRecreatedByARestore() throws Exception {
     String after =
-        "{\"contentType\":\"post\",\"data\":{\"title\":\"Old\"},\"status\":\"DRAFT\",\"active\":true,\"displayOrder\":0}";
+        "{\"contentType\":\"post\",\"data\":{\"title\":\"Old\"},\"status\":\"DRAFT\",\"displayOrder\":0}";
     when(audits.findByIdAndSiteId(9L, 1L)).thenReturn(Mono.just(entry("UPDATE", null, after)));
     when(items.findByIdAndSiteId(5L, 1L)).thenReturn(Mono.empty());
 
@@ -113,7 +112,7 @@ class ContentAuditServiceImplTest {
   @Test
   void restoringPutsTheOldContentBackButKeepsTheCurrentStatus() throws Exception {
     String after =
-        "{\"contentType\":\"post\",\"data\":{\"title\":\"Old title\"},\"status\":\"DRAFT\",\"active\":true,\"displayOrder\":2}";
+        "{\"contentType\":\"post\",\"data\":{\"title\":\"Old title\"},\"status\":\"DRAFT\",\"displayOrder\":2}";
     when(audits.findByIdAndSiteId(9L, 1L)).thenReturn(Mono.just(entry("UPDATE", null, after)));
     ContentItem live = item("PUBLISHED", "{\"title\":\"New title\"}");
     when(items.findByIdAndSiteId(5L, 1L)).thenReturn(Mono.just(live));
@@ -129,7 +128,6 @@ class ContentAuditServiceImplTest {
 
     assertEquals("Old title", live.getData().path("title").asText());
     assertEquals(2, live.getDisplayOrder());
-    assertTrue(live.getActive());
     assertEquals("PUBLISHED", live.getStatus(), "a restore must not change whether it is live");
   }
 }

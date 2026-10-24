@@ -170,19 +170,18 @@ export default function ContentPage() {
     },
   });
 
-  // Flips just `active`, resending the row's other fields unchanged — same PUT contract the
-  // drawer's full save uses, just triggered from the list instead of opening it.
-  const toggleActiveMutation = useMutation({
+  // Flips a row between Draft and Published, resending its other fields unchanged — same PUT contract
+  // the drawer's full save uses, just triggered from the list instead of opening it.
+  const toggleLiveMutation = useMutation({
     mutationFn: async (row: Row) => {
-      const next = { ...row, active: !row.active };
+      const next = { ...row, status: row.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" };
       const body = resource!.contentType
         ? {
             id: row.id,
             contentType: resource!.contentType,
             data: row.data,
             displayOrder: row.displayOrder,
-            active: next.active,
-            status: row.status,
+            status: next.status,
           }
         : next;
       return contentApi.put(resource!.apiPath, body, { params: { site } });
@@ -203,7 +202,7 @@ export default function ContentPage() {
     }
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ active: true, status: "DRAFT", displayOrder: 0 });
+    form.setFieldsValue({ status: "DRAFT", displayOrder: 0 });
     setDrawerOpen(true);
   };
 
@@ -234,7 +233,7 @@ export default function ContentPage() {
       delete content.data;
       if (typeof content.navLabel === "string") content.navLabel = `${content.navLabel} (copy)`;
       navigate(resource.editorRoute("new"), {
-        state: { prefill: { data: content, displayOrder: row.displayOrder ?? 0, active: row.active } },
+        state: { prefill: { data: content, displayOrder: row.displayOrder ?? 0 } },
       });
       return;
     }
@@ -324,14 +323,16 @@ export default function ContentPage() {
       ),
     },
     {
-      title: <ColHeader>Active</ColHeader>,
-      dataIndex: "active",
-      render: (active: boolean, row: Row) => (
+      title: <ColHeader>Live</ColHeader>,
+      dataIndex: "status",
+      render: (status: string, row: Row) => (
         <Switch
           size="small"
-          checked={active}
-          loading={toggleActiveMutation.isPending && toggleActiveMutation.variables?.id === row.id}
-          onChange={() => toggleActiveMutation.mutate(row)}
+          checked={status === "PUBLISHED"}
+          // Scheduled and Archived posts are changed in their editor, not flipped from here.
+          disabled={status !== "PUBLISHED" && status !== "DRAFT"}
+          loading={toggleLiveMutation.isPending && toggleLiveMutation.variables?.id === row.id}
+          onChange={() => toggleLiveMutation.mutate(row)}
         />
       ),
     },
@@ -391,7 +392,6 @@ export default function ContentPage() {
             id: 0,
             status: "DRAFT",
             displayOrder: prefill.displayOrder,
-            active: prefill.active,
           })
         }
       />
@@ -502,9 +502,6 @@ export default function ContentPage() {
           ))}
           <Form.Item name="displayOrder" label="Display order">
             <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="active" label="Active" valuePropName="checked">
-            <Switch />
           </Form.Item>
           <Form.Item name="status" label="Status">
             <Select options={STATUS_OPTIONS} />

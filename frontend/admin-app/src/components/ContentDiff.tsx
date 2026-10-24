@@ -17,7 +17,6 @@ const blockStyle: CSSProperties = {
 
 const ENVELOPE: { key: keyof Snapshot; label: string }[] = [
   { key: "status", label: "Status" },
-  { key: "active", label: "Active" },
   { key: "displayOrder", label: "Display order" },
 ];
 

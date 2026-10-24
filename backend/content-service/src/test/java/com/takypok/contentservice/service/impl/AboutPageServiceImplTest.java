@@ -29,9 +29,8 @@ class AboutPageServiceImplTest {
   void thePublishedPageIsReturnedAsItsStoredData() {
     ContentItem item = new ContentItem();
     item.setData(objectMapper.createObjectNode().put("heroTitle", "Hello"));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "about_page", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "about_page", "PUBLISHED"))
         .thenReturn(Flux.just(item));
 
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
@@ -41,9 +40,8 @@ class AboutPageServiceImplTest {
 
   @Test
   void aSiteWithoutAPublishedPageHasNone() {
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                2L, "about_page", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            2L, "about_page", "PUBLISHED"))
         .thenReturn(Flux.empty());
 
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(2L))
@@ -68,18 +66,16 @@ class AboutPageServiceImplTest {
   }
 
   private void aboutPageIs(ContentItem about) {
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "about_page", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "about_page", "PUBLISHED"))
         .thenReturn(Flux.just(about));
   }
 
   @Test
   void libraryModeServesThePublishedStatsInsteadOfTheEmbeddedFigures() {
     aboutPageIs(aboutWith("library"));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "stat", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "stat", "PUBLISHED"))
         .thenReturn(Flux.just(stat("32+", "Years"), stat("3000+", "Employees")));
 
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
@@ -107,8 +103,8 @@ class AboutPageServiceImplTest {
         .verifyComplete();
 
     verify(contentItemRepository, never())
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            eq(1L), eq("stat"), eq("PUBLISHED"), eq(true));
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            eq(1L), eq("stat"), eq("PUBLISHED"));
   }
 
   @Test
@@ -126,9 +122,8 @@ class AboutPageServiceImplTest {
   @Test
   void libraryModeWithNoPublishedStatsShowsNoFigures() {
     aboutPageIs(aboutWith("library"));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "stat", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "stat", "PUBLISHED"))
         .thenReturn(Flux.empty());
 
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))

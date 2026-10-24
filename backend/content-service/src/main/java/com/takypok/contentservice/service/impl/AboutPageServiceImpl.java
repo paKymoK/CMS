@@ -24,8 +24,7 @@ public class AboutPageServiceImpl implements AboutPageService {
   @Override
   public Mono<AboutPageResponse> getPage(Long siteId) {
     return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, TYPE, "PUBLISHED", true)
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, TYPE, "PUBLISHED")
         .next()
         .flatMap(item -> withGrowthStats(siteId, item.getData()))
         .map(AboutPageResponse::new)
@@ -41,8 +40,7 @@ public class AboutPageServiceImpl implements AboutPageService {
   private Mono<JsonNode> withGrowthStats(Long siteId, JsonNode data) {
     if (!"library".equals(data.path("growthSource").asText())) return Mono.just(data);
     return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, STAT, "PUBLISHED", true)
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, STAT, "PUBLISHED")
         .map(
             stat -> {
               ObjectNode figure = JsonNodeFactory.instance.objectNode();

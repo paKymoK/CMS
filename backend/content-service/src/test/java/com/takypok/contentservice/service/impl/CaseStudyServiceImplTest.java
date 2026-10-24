@@ -70,7 +70,6 @@ class CaseStudyServiceImplTest {
     item.setContentType("case_study");
     item.setData(objectMapper.readTree(json));
     item.setDisplayOrder(0);
-    item.setActive(true);
     item.setStatus("PUBLISHED");
     return item;
   }
@@ -94,9 +93,8 @@ class CaseStudyServiceImplTest {
 
     when(contentItemRepository.findBySlug(1L, "case_study", "shared-slug"))
         .thenReturn(Mono.just(siteOnes));
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                1L, "case_study", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            1L, "case_study", "PUBLISHED"))
         .thenReturn(Flux.just(siteOnes));
     when(contentItemRepository.findBySlug(2L, "case_study", "shared-slug"))
         .thenReturn(Mono.empty());
@@ -172,7 +170,6 @@ class CaseStudyServiceImplTest {
               assertEquals("a-case-study", created.slug());
               assertEquals(5L, created.testimonialId());
               assertEquals("DRAFT", created.status());
-              assertEquals(true, created.active());
             })
         .verifyComplete();
   }
@@ -209,9 +206,8 @@ class CaseStudyServiceImplTest {
   }
 
   private void publishedFor(long siteId, ContentItem... items) {
-    when(contentItemRepository
-            .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-                siteId, "case_study", "PUBLISHED", true))
+    when(contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+            siteId, "case_study", "PUBLISHED"))
         .thenReturn(Flux.just(items));
   }
 

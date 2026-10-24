@@ -20,8 +20,7 @@ public class IndustryPageServiceImpl implements IndustryPageService {
   public Mono<IndustryPageResponse> getPage(Long siteId, String slug) {
     return contentItemRepository
         .findBySlug(siteId, TYPE, slug)
-        .filter(
-            item -> Boolean.TRUE.equals(item.getActive()) && "PUBLISHED".equals(item.getStatus()))
+        .filter(item -> "PUBLISHED".equals(item.getStatus()))
         .map(item -> new IndustryPageResponse(item.getData()))
         .switchIfEmpty(
             Mono.error(new ApplicationException(Message.Application.ERROR, "Industry not found")));

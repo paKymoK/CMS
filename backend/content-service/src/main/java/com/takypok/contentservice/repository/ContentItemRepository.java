@@ -10,11 +10,10 @@ public interface ContentItemRepository extends R2dbcRepository<ContentItem, Long
   Flux<ContentItem> findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
       Long siteId, String contentType);
 
-  Flux<ContentItem> findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-      Long siteId, String contentType, String status, Boolean active);
+  Flux<ContentItem> findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+      Long siteId, String contentType, String status);
 
-  Flux<ContentItem> findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-      Long siteId, String status, Boolean active);
+  Flux<ContentItem> findAllBySiteIdAndStatusOrderByDisplayOrderAsc(Long siteId, String status);
 
   Mono<ContentItem> findByIdAndSiteId(Long id, Long siteId);
 

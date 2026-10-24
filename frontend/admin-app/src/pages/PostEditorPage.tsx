@@ -37,7 +37,6 @@ interface PostRecord {
   date: string | null;
   category: string | null;
   displayOrder: number;
-  active: boolean;
   status: string;
   publishAt: string | null;
   unpublishAt: string | null;
@@ -109,7 +108,6 @@ function prefillAsPost(prefill: ItemPrefill): PostRecord {
     id: 0,
     slug: null,
     displayOrder: prefill.displayOrder,
-    active: prefill.active,
     status: "DRAFT",
   };
 }
@@ -157,7 +155,6 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [image, setImage] = useState<string | null>(initial?.image ?? null);
   const [date, setDate] = useState(initial?.date ?? "");
   const [displayOrder, setDisplayOrder] = useState(initial?.displayOrder ?? 0);
-  const [active, setActive] = useState(initial?.active ?? true);
   const [category, setCategory] = useState(initial?.category ?? seed?.category ?? "insight");
   const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "DRAFT");
   // Picked in the editor's time zone; sent as UTC. The job that acts on them runs once a minute.
@@ -213,7 +210,6 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         image,
         date,
         displayOrder,
-        active,
         category,
         status: nextStatus,
         publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
@@ -712,7 +708,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                   style={inputStyle}
                 />
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <span style={cardLabelStyle}>Order</span>
                   <input
@@ -725,43 +721,6 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                     style={inputStyle}
                   />
                 </label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <span style={cardLabelStyle}>Active</span>
-                  <button
-                    type="button"
-                    aria-label="Toggle active"
-                    onClick={() => {
-                      setActive(!active);
-                      setDirty(true);
-                    }}
-                    style={{
-                      position: "relative",
-                      width: 44,
-                      height: 24,
-                      marginTop: 6,
-                      borderRadius: 999,
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
-                      background: active ? "#0083ff" : "#cfd2d6",
-                      transition: "background .2s",
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: 3,
-                        left: active ? 23 : 3,
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        background: "#ffffff",
-                        boxShadow: "0 1px 3px rgba(10,37,64,.25)",
-                        transition: "left .2s",
-                      }}
-                    />
-                  </button>
-                </div>
               </div>
               <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <span style={cardLabelStyle}>Category</span>

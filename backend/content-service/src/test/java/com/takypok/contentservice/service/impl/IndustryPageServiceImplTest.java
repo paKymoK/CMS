@@ -21,21 +21,20 @@ class IndustryPageServiceImplTest {
 
   @Mock private ContentItemRepository contentItemRepository;
 
-  private ContentItem page(String status, boolean active) {
+  private ContentItem page(String status) {
     ContentItem item = new ContentItem();
     item.setId(1L);
     item.setSiteId(1L);
     item.setContentType("industry_page");
     item.setData(objectMapper.createObjectNode().put("slug", "bfsi").put("navLabel", "Banking"));
     item.setStatus(status);
-    item.setActive(active);
     return item;
   }
 
   @Test
-  void aPublishedActivePageIsReturnedAsItsStoredData() {
+  void aPublishedPageIsReturnedAsItsStoredData() {
     when(contentItemRepository.findBySlug(1L, "industry_page", "bfsi"))
-        .thenReturn(Mono.just(page("PUBLISHED", true)));
+        .thenReturn(Mono.just(page("PUBLISHED")));
 
     StepVerifier.create(new IndustryPageServiceImpl(contentItemRepository).getPage(1L, "bfsi"))
         .assertNext(response -> assertEquals("Banking", response.data().get("navLabel").asText()))
@@ -45,17 +44,7 @@ class IndustryPageServiceImplTest {
   @Test
   void aDraftPageIsNotFound() {
     when(contentItemRepository.findBySlug(1L, "industry_page", "bfsi"))
-        .thenReturn(Mono.just(page("DRAFT", true)));
-
-    StepVerifier.create(new IndustryPageServiceImpl(contentItemRepository).getPage(1L, "bfsi"))
-        .expectError(ApplicationException.class)
-        .verify();
-  }
-
-  @Test
-  void anInactivePageIsNotFound() {
-    when(contentItemRepository.findBySlug(1L, "industry_page", "bfsi"))
-        .thenReturn(Mono.just(page("PUBLISHED", false)));
+        .thenReturn(Mono.just(page("DRAFT")));
 
     StepVerifier.create(new IndustryPageServiceImpl(contentItemRepository).getPage(1L, "bfsi"))
         .expectError(ApplicationException.class)

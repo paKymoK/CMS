@@ -29,7 +29,6 @@ public class ContentItem extends IdEntity {
   private String contentType;
   private JsonNode data;
   private Integer displayOrder;
-  private Boolean active;
   private String status;
   @Version private Integer version;
 

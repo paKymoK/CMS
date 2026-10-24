@@ -10,8 +10,8 @@ import reactor.core.publisher.Mono;
 /**
  * The SQL behind search. Everything here reads content_item's search columns and the search_term
  * view (see init-schema.sql); nothing writes. {@code publicOnly} restricts every query to what the
- * public site may show — PUBLISHED and active — which is the only thing the visitor-facing
- * endpoints ever pass as true; admin search passes false and sees drafts too.
+ * public site may show — PUBLISHED — which is the only thing the visitor-facing endpoints ever pass
+ * as true; admin search passes false and sees drafts too.
  */
 @Repository
 @RequiredArgsConstructor
@@ -36,7 +36,7 @@ public class SearchRepository {
   /** Site, optional type list and visibility — the scope every item query shares. */
   private static final String SCOPE =
       " ci.site_id = :site AND (:allTypes = true OR ci.content_type = ANY(:types))"
-          + " AND (:publicOnly = false OR (ci.status = 'PUBLISHED' AND ci.active = true))";
+          + " AND (:publicOnly = false OR ci.status = 'PUBLISHED')";
 
   private final DatabaseClient databaseClient;
 

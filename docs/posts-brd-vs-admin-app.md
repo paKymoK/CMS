@@ -13,7 +13,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 |---|---|---|---|
 | 1 | Fields: title, slug, excerpt, featured image, author, date, category, tags | `PostFields` has all of them, plus `authorBio`, `authorAvatar`, `layout` | ✅ |
 | 2 | Slug unique per site | Partial unique index `uq_content_item_slug`, auto-resolved by `Slugs.resolve` | ✅ |
-| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server), plus an `active` flag. Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
+| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server). There is no separate `active` flag any more (G1). Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
 | 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |
 | 6 | Video via URL (YouTube/Vimeo), responsive | `embed` node, allow-listed hosts only | ✅ |
@@ -36,7 +36,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 ### G1. Scheduling and Archive
 - **Archive: done (posts).** Statuses are Draft, Published and Archived. Archived is off the site but kept, and can go back to Draft or be published again. The audit trail has an `ARCHIVE` action (archived back to draft is an update that lists the status change; publishing is still `PUBLISH`). **Archived posts stay editable (decision):** the status only controls whether the post is public, as with Draft and Private in WordPress, which has no built-in archived status and locks only Trash. Locking them would be a rule of our own: the server would reject content edits on an archived post and the editor would open read-only. Only posts may be archived; the server rejects ARCHIVED or any unknown status for the other content types. The Post editor has a three-way status switch, an **Archive** button (with a confirmation for a live post), **Save** and **Move to draft** for an archived post, and an "Archived" label in the list, Activity and search.
 - **Public side:** an archived post answers "not found" like an unknown address and drops out of the public list and search with no read path changed (every public read matches `'PUBLISHED'` exactly). **Detail pages on the website are now fetched without Next's data cache** (`cache: "no-store"`): that cache only stores 200 responses, so a page that had been visited kept being served from its old copy after it was archived or unpublished. Lists keep the 60 s cache.
-- **Schedule: done (posts), cron-based.** Statuses are now Draft, Scheduled, Published and Archived. The `active` flag is unchanged. See "Scheduled publishing" below.
+- **Schedule: done (posts), cron-based.** Statuses are now Draft, Scheduled, Published and Archived. The `active` flag is gone: status alone decides what is public (see "The `active` flag" below). See "Scheduled publishing" below.
 
 **Scheduled publishing (built).**
 
@@ -48,7 +48,9 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 - **Timing:** up to a minute for the job, plus the website's 60 s list cache; detail pages are not cached, so they appear as soon as the job runs.
 - **Verified:** 129 content-service tests (new: `ScheduleRulesTest`, scheduling tests in `ContentAuditTriggerTest` that run the function against a real database, `StatusRulesTest`); the real pg_cron job published and archived a test row at the exact minutes; the editor was driven in a browser (schedule, SEO prompt, saved times, audit entry).
 - **Limits:** the website's public pages and tablet and mobile widths of the new picker panel were not re-checked in a browser. If production Postgres is managed without pg_cron, the job must be set up there (or `publish_scheduled_content()` called by another scheduler); the schema loads either way but would only warn.
-- **Still open:** the `active` flag stays as it is; Trash stays skipped (Archived plus the delete rule covers it); other content types are not schedulable.
+- **Still open:** Trash stays skipped (Archived plus the delete rule covers it); other content types are not schedulable.
+
+**The `active` flag (folded into status: done).** `content_item.active` is removed. What the public sees is now exactly `status = 'PUBLISHED'`: every public read, the search view and the full-text search dropped their `active` condition. An item that used to be inactive is simply a Draft (a post can also be Scheduled or Archived). In the admin the "Active" switches are gone from the Post, Case Study, page and list drawers; the list's old Active column is now a **Live** switch that flips Draft and Published (disabled for Scheduled and Archived posts, which are changed in the editor). The API no longer accepts or returns `active`; the audit snapshots no longer carry it. Two small behaviour changes: a case study's testimonial now shows only when the testimonial is **Published** (before, only active was checked, which the code comment already described as "unpublished quote omitted"), and restoring a version no longer restores an old active value. The seed data was unaffected (every seeded row is Published). The Banner's own "Active from / until" dates are separate fields in its data and are unchanged. The init SQL changed: recreate the local `content` database.
 
 ### G2. Categories and Tags management
 - `category` is a free-text string; `tags` is a string array inside `data`.
@@ -56,7 +58,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 - Editor category field is a plain text input defaulting to `"insight"`.
 
 ### G3. Post list view
-- Posts use the generic `ContentPage`: ID, title, a few columns, status, active, order.
+- Posts use the generic `ContentPage`: ID, title, a few columns, status, order.
 - No bulk actions, no search, no filter (status/category/site), no sort by updated date or updater, no language column.
 
 ### G4. SEO
@@ -99,7 +101,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 | Topic | Current | BRD | Note |
 |---|---|---|---|
 | Language model | `site == locale`; content authored independently per site | Manage EN/VI versions of the same content | **Keep as is.** The BRD need is a feature (see G10), not a model change. |
-| `active` vs `status` | Both exist and overlap (`active=false` acts like hidden) | Status only | Consider folding `active` into the status model. |
+| `active` vs `status` | Folded: `active` is removed, status alone decides what is public | Status only | **Done** (G1). |
 | Version history | Full history | 1 previous version | Keep the app's approach. |
 | Tag parent field | n/a | Tags section lists "parent category" | Ignore: BRD says Tags are non-hierarchical. |
 
@@ -115,7 +117,6 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 
 ## 5. Open questions for the critical review
 
-- Is `active` still needed once `status` covers Scheduled/Archived?
 - Do Categories and Tags need a tenant-wide or per-site scope, and are they translated per site?
 - Translation engine for G10: which service, who pays, and is the call synchronous or a background job?
 - Does the translated draft keep an optional "translated from" reference, or stay fully independent?

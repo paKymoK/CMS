@@ -9,10 +9,10 @@ import java.util.Map;
  * by content_type, each list in display order and holding the items' validated {@code data} objects
  * — so a new design section is a ContentFields class plus website code, with no change here.
  *
- * <p>Mirrors the landing page's content/home/types.ts HomeContent field-for-field. Only PUBLISHED +
- * active rows ever land here — draft/inactive content never reaches the public API. Banner is
- * deliberately excluded: it's not part of HomeContent yet (unused by the current homepage build),
- * even though it's fully manageable via its own admin endpoint.
+ * <p>Mirrors the landing page's content/home/types.ts HomeContent field-for-field. Only PUBLISHED
+ * rows ever land here — draft content never reaches the public API. Banner is deliberately
+ * excluded: it's not part of HomeContent yet (unused by the current homepage build), even though
+ * it's fully manageable via its own admin endpoint.
  */
 public record HomeContentResponse(
     List<Stat> stats,

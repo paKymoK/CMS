@@ -11,6 +11,5 @@ public class ContentItemCreateRequest {
   @NotBlank private String contentType;
   private JsonNode data;
   private Integer displayOrder;
-  private Boolean active;
   private String status;
 }

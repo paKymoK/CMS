@@ -13,7 +13,6 @@ public class ContentItemUpdateRequest {
   @NotBlank private String contentType;
   private JsonNode data;
   private Integer displayOrder;
-  private Boolean active;
   private String status;
   private Integer version;
 }

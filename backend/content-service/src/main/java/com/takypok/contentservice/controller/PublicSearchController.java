@@ -23,8 +23,8 @@ import reactor.core.publisher.Mono;
  *       results for…" line.
  * </ul>
  *
- * Published, active content only; site resolved from the visitor's Host header like every other
- * public read. /v1/admin/search is a different prefix and is authenticated.
+ * Published content only; site resolved from the visitor's Host header like every other public
+ * read. /v1/admin/search is a different prefix and is authenticated.
  */
 @RestController
 @RequiredArgsConstructor

@@ -24,9 +24,8 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   private final ContentItemRepository contentItemRepository;
 
   private Flux<ContentItem> items(Long siteId, String type) {
-    return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, type, "PUBLISHED", true);
+    return contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+        siteId, type, "PUBLISHED");
   }
 
   private static String text(JsonNode data, String field) {
@@ -98,11 +97,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
               return Flux.fromIterable(wanted)
                   .concatMap(
                       s -> contentItemRepository.findBySlug(siteId, CaseStudyServiceImpl.TYPE, s))
-                  .filter(
-                      c ->
-                          c.getActive() != null
-                              && c.getActive()
-                              && "PUBLISHED".equals(c.getStatus()))
+                  .filter(c -> "PUBLISHED".equals(c.getStatus()))
                   .map(ServiceCatalogServiceImpl::featured)
                   .collectList()
                   .map(list -> new ServicePageResponse(pageItem.getData(), cat, list));

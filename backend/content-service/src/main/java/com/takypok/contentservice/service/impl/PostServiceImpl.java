@@ -121,7 +121,6 @@ public class PostServiceImpl implements PostService {
               request.getSlug(),
               fields,
               request.getDisplayOrder(),
-              request.getActive(),
               status,
               times);
         });
@@ -193,7 +192,6 @@ public class PostServiceImpl implements PostService {
                           request.getSlug(),
                           fields,
                           request.getDisplayOrder(),
-                          request.getActive(),
                           status,
                           times);
                     }));
@@ -258,7 +256,6 @@ public class PostServiceImpl implements PostService {
       String requestedSlug,
       PostFields fields,
       Integer displayOrder,
-      Boolean active,
       String status,
       ScheduleRules.Times times) {
     return resolveSlug(siteId, item.getId(), requestedSlug, fields.getTitle())
@@ -274,8 +271,6 @@ public class PostServiceImpl implements PostService {
               item.setData(data);
               if (displayOrder != null) item.setDisplayOrder(displayOrder);
               else if (item.getDisplayOrder() == null) item.setDisplayOrder(0);
-              if (active != null) item.setActive(active);
-              else if (item.getActive() == null) item.setActive(true);
               item.setStatus(status);
               item.setPublishAt(times.publishAt());
               item.setUnpublishAt(times.unpublishAt());
@@ -350,8 +345,7 @@ public class PostServiceImpl implements PostService {
   @Override
   public Flux<PostResponse> getPublished(Long siteId) {
     return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, TYPE, "PUBLISHED", true)
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, TYPE, "PUBLISHED")
         .map(this::toResponse);
   }
 
@@ -361,7 +355,7 @@ public class PostServiceImpl implements PostService {
         siteId,
         contentItemRepository
             .findBySlug(siteId, TYPE, slug)
-            .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())));
+            .filter(i -> "PUBLISHED".equals(i.getStatus())));
   }
 
   private Mono<PostDetailResponse> detailOf(Long siteId, Mono<ContentItem> lookup) {

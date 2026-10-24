@@ -58,7 +58,6 @@ interface FeaturedRow {
   category: string | null;
   results?: ServiceStatData[] | null;
   status: string;
-  active: boolean;
 }
 
 /** Preview of the service page being edited: the form values, plus the site content the page reads (category name, featured case studies, section intro). */
@@ -91,7 +90,7 @@ export default function ServicePreview({ site, values, onClose }: ResourcePrevie
   const page = useMemo<PreviewPage>(() => {
     const data = toServicePageData(values);
     const featured = (data.caseStudies ?? [])
-      .map((slug) => caseStudiesQuery.data?.find((c) => c.slug === slug && c.status === "PUBLISHED" && c.active))
+      .map((slug) => caseStudiesQuery.data?.find((c) => c.slug === slug && c.status === "PUBLISHED"))
       .filter((c): c is FeaturedRow => !!c);
     // The first story supplies the left-column heading and figures, as on the website.
     const stories: IndustryStoryData[] = featured.map((c, i) => ({

@@ -25,7 +25,7 @@ public interface SearchService {
 
   /**
    * @param types content types to search; empty means every type
-   * @param publicOnly only published, active items (the public site) — false adds drafts (admin)
+   * @param publicOnly only published items (the public site) — false adds drafts (admin)
    * @param allowCorrection false for "search exactly what I typed": no spelling correction
    */
   Mono<Resolution> resolve(

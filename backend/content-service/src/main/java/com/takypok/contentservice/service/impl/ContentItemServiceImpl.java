@@ -79,7 +79,6 @@ public class ContentItemServiceImpl implements ContentItemService {
               item.setData(validatedData);
               item.setDisplayOrder(
                   request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
-              item.setActive(request.getActive() != null ? request.getActive() : true);
               item.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
               return contentItemWriter.save(item);
             });
@@ -114,7 +113,6 @@ public class ContentItemServiceImpl implements ContentItemService {
                           if (request.getDisplayOrder() != null) {
                             item.setDisplayOrder(request.getDisplayOrder());
                           }
-                          if (request.getActive() != null) item.setActive(request.getActive());
                           if (request.getStatus() != null) item.setStatus(request.getStatus());
                           return contentItemWriter.save(item);
                         }));
@@ -133,15 +131,14 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   @Override
   public Flux<ContentItem> getPublished(Long siteId, String contentType) {
-    return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, contentType, "PUBLISHED", true);
+    return contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
+        siteId, contentType, "PUBLISHED");
   }
 
   @Override
   public Flux<ContentItem> getAllPublished(Long siteId) {
-    return contentItemRepository.findAllBySiteIdAndStatusAndActiveOrderByDisplayOrderAsc(
-        siteId, "PUBLISHED", true);
+    return contentItemRepository.findAllBySiteIdAndStatusOrderByDisplayOrderAsc(
+        siteId, "PUBLISHED");
   }
 
   /** A site has one item of each singleton type: a second one is rejected with a plain message. */

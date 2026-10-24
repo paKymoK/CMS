@@ -151,7 +151,7 @@ export default function ResourceEditorPage({ resourceKey }: { resourceKey: strin
 
   const initial: Values | null = isNew
     ? prefill
-      ? { ...prefillValues(resource, prefill), displayOrder: prefill.displayOrder, active: prefill.active, status: "DRAFT" }
+      ? { ...prefillValues(resource, prefill), displayOrder: prefill.displayOrder, status: "DRAFT" }
       : null
     : (detailQuery.data ?? null);
 
@@ -190,7 +190,6 @@ function ResourceEditorForm({
   const [form] = Form.useForm<Values>();
   const [slug, setSlug] = useState((initial?.slug as string | null | undefined) ?? "");
   const [displayOrder, setDisplayOrder] = useState((initial?.displayOrder as number | undefined) ?? 0);
-  const [active, setActive] = useState((initial?.active as boolean | undefined) ?? true);
   const [status, setStatus] = useState<Status>((initial?.status as Status | undefined) ?? "DRAFT");
   // The row version this form was loaded with; the server rejects a save made against an older one.
   const [version, setVersion] = useState(initial?.version as number | undefined);
@@ -225,7 +224,6 @@ function ResourceEditorForm({
         ...(groups.length ? { hiddenSections } : {}),
         slug: slug || undefined,
         displayOrder,
-        active,
         status: nextStatus,
       };
       const body = resource.contentType ? toItemPayload(resource.contentType, values) : values;
@@ -450,7 +448,7 @@ function ResourceEditorForm({
                   </div>
                 )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <span style={labelStyle}>Order</span>
                     <input
@@ -463,20 +461,6 @@ function ResourceEditorForm({
                       style={inputStyle}
                     />
                   </label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <span style={labelStyle}>Active</span>
-                    <button
-                      type="button"
-                      aria-label="Toggle active"
-                      onClick={() => {
-                        setActive(!active);
-                        touch();
-                      }}
-                      style={{ position: "relative", width: 44, height: 24, marginTop: 6, borderRadius: 999, border: "none", cursor: "pointer", padding: 0, background: active ? "#0083ff" : "#cfd2d6", transition: "background .2s" }}
-                    >
-                      <span style={{ position: "absolute", top: 3, left: active ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#ffffff", boxShadow: "0 1px 3px rgba(10,37,64,.25)", transition: "left .2s" }} />
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>

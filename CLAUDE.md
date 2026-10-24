@@ -88,7 +88,7 @@ Type checks do not prove a UI works. For any change to a page, editor or preview
 
 ## Where things live
 
-- Content model: single table `content_item` (jsonb `data`, `status`, `active`, `display_order`, optimistic `version`, audit trigger → `content_audit`). `site == locale`. Schema: `backend/content-service/src/main/resources/db/changelog/init/init-schema.sql`.
+- Content model: single table `content_item` (jsonb `data`, `status`, `display_order`, optimistic `version`, audit trigger → `content_audit`). `site == locale`. Schema: `backend/content-service/src/main/resources/db/changelog/init/init-schema.sql`.
 - Admin resource config (generic forms/lists): `frontend/admin-app/src/config/resources.ts`; generic full-page editor: `src/pages/ResourceEditorPage.tsx`; field components: `src/components/FieldInput.tsx`.
 - Plans and status: `docs/posts-brd-vs-admin-app.md` (BRD gaps), `docs/page-model-plan.md` (one row = one page, proposal).
 

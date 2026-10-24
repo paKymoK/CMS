@@ -78,7 +78,6 @@ public class CaseStudyServiceImpl implements CaseStudyService {
                 request.getSlug(),
                 toFields(request),
                 request.getDisplayOrder(),
-                request.getActive(),
                 request.getStatus()));
   }
 
@@ -97,7 +96,6 @@ public class CaseStudyServiceImpl implements CaseStudyService {
                             request.getSlug(),
                             withStoredSeo(toFields(request), item, request),
                             request.getDisplayOrder(),
-                            request.getActive(),
                             request.getStatus())));
   }
 
@@ -109,8 +107,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
   @Override
   public Flux<CaseStudyResponse> getPublished(Long siteId) {
     return contentItemRepository
-        .findAllBySiteIdAndContentTypeAndStatusAndActiveOrderByDisplayOrderAsc(
-            siteId, TYPE, "PUBLISHED", true)
+        .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, TYPE, "PUBLISHED")
         .map(this::toResponse);
   }
 
@@ -182,7 +179,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
         siteId,
         contentItemRepository
             .findBySlug(siteId, TYPE, slug)
-            .filter(i -> "PUBLISHED".equals(i.getStatus()) && Boolean.TRUE.equals(i.getActive())));
+            .filter(i -> "PUBLISHED".equals(i.getStatus())));
   }
 
   private Mono<CaseStudyDetailResponse> detailOf(Long siteId, Mono<ContentItem> lookup) {
@@ -221,7 +218,6 @@ public class CaseStudyServiceImpl implements CaseStudyService {
       String requestedSlug,
       CaseStudyFields fields,
       Integer displayOrder,
-      Boolean active,
       String status) {
     StatusRules.requireAllowed(TYPE, status);
     fields.setBody(RichTextSanitizer.sanitizeOrReject(fields.getBody()));
@@ -239,8 +235,6 @@ public class CaseStudyServiceImpl implements CaseStudyService {
               item.setData(data);
               if (displayOrder != null) item.setDisplayOrder(displayOrder);
               else if (item.getDisplayOrder() == null) item.setDisplayOrder(0);
-              if (active != null) item.setActive(active);
-              else if (item.getActive() == null) item.setActive(true);
               if (status != null) item.setStatus(status);
               else if (item.getStatus() == null) item.setStatus("DRAFT");
               return contentItemWriter.save(item);
@@ -312,8 +306,8 @@ public class CaseStudyServiceImpl implements CaseStudyService {
 
   /**
    * Empty Optional (never a Mono error/empty) whenever there's no testimonialId, the id doesn't
-   * resolve for this site, or the testimonial isn't active — a missing/unpublished quote just omits
-   * that section of the page rather than failing the whole case study.
+   * resolve for this site, or the testimonial isn't published — a missing/unpublished quote just
+   * omits that section of the page rather than failing the whole case study.
    */
   private Mono<Optional<CaseStudyDetailResponse.TestimonialSummary>> resolveTestimonial(
       Long siteId, Long testimonialId) {
@@ -323,7 +317,7 @@ public class CaseStudyServiceImpl implements CaseStudyService {
     return contentItemRepository
         .findByIdAndSiteId(testimonialId, siteId)
         .filter(t -> TESTIMONIAL_TYPE.equals(t.getContentType()))
-        .filter(t -> Boolean.TRUE.equals(t.getActive()))
+        .filter(t -> "PUBLISHED".equals(t.getStatus()))
         .map(t -> objectMapper.convertValue(t.getData(), TestimonialFields.class))
         .map(CaseStudyDetailResponse.TestimonialSummary::from)
         .map(Optional::of)

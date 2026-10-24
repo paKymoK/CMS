@@ -169,7 +169,6 @@ public class ContentAuditServiceImpl implements ContentAuditService {
                                     // The content comes back; whether it is published stays as now.
                                     existing.setData(data);
                                     existing.setDisplayOrder(target.path("displayOrder").asInt(0));
-                                    existing.setActive(target.path("active").asBoolean(true));
                                     return writer.restore(existing);
                                   }))
                   .map(saved -> new AuditResponses.Restored(saved.getId(), contentType));

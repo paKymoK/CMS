@@ -15,7 +15,6 @@ public class CaseStudyUpdateRequest {
   @NotBlank private String title;
   private String category;
   private Integer displayOrder;
-  private Boolean active;
   private String status;
   private String slug;
   private String body;
