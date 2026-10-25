@@ -8,6 +8,7 @@ import com.takypok.contentservice.model.request.ContentItemCreateRequest;
 import com.takypok.contentservice.model.request.ContentItemUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ContentItemService;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.contentservice.util.StaleEdit;
 import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
@@ -37,6 +38,7 @@ public class ContentItemServiceImpl implements ContentItemService {
   private final ContentItemRepository contentItemRepository;
   private final ContentItemMapper contentItemMapper;
   private final ContentItemWriter contentItemWriter;
+  private final SlugRegistry slugRegistry;
 
   @Override
   public Mono<List<ContentItem>> getAll(Long siteId, String contentType) {
@@ -161,7 +163,8 @@ public class ContentItemServiceImpl implements ContentItemService {
   /**
    * Service categories and industry pages are keyed by slug and service pages by category + slug
    * (they form the page URL), so a second item with the same key is rejected here rather than
-   * silently shadowed.
+   * silently shadowed. For the pages that keep old addresses, an old slug of another item counts as
+   * taken too.
    */
   private Mono<Void> ensureUnique(Long siteId, String contentType, JsonNode data, Long selfId) {
     boolean category = "service_category".equals(contentType);
@@ -178,6 +181,11 @@ public class ContentItemServiceImpl implements ContentItemService {
                 slug.equals(other.getData().path("slug").asText())
                     && (slugOnly || parent.equals(other.getData().path("category").asText())))
         .hasElements()
+        .flatMap(
+            current ->
+                current || category
+                    ? Mono.just(current)
+                    : slugRegistry.isAliasOfOther(siteId, contentType, parent, slug, selfId))
         .flatMap(
             taken ->
                 taken

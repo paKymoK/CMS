@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { IndustryPage as IndustryPageView } from "@cms/content-renderer";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getIndustryPage } from "@/lib/cms/industries";
+import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
 import { siteSlots } from "@/components/content/siteSlots";
@@ -35,7 +36,10 @@ export default async function IndustryPage(props: PageProps<"/[locale]/industrie
   setRequestLocale(locale);
 
   const page = await getIndustryPage(slug);
-  if (!page) notFound();
+  if (!page) {
+    await redirectIfRenamed(locale, "industries", "industries", [slug]);
+    notFound();
+  }
 
   const content = await getHomeContent();
 

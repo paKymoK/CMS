@@ -107,12 +107,92 @@ FROM content_item ci
 WHERE length(w.word) >= 3
   AND w.word !~ '^[0-9]+$'
 GROUP BY ci.site_id, w.word, (ci.status = 'PUBLISHED');
--- A post's or case study's slug is the URL segment of its detail page: unique per site and type,
--- never across sites. Partial on the types with a detail page, so the others keep their own (or
--- no) slug rules.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_content_item_slug
-    ON content_item (site_id, content_type, (data ->> 'slug'))
-    WHERE content_type IN ('post', 'case_study');
+-- ---- Slugs ------------------------------------------------------------------------------------------
+-- Every URL segment an item has had, so a renamed page keeps answering on its old address (the website
+-- redirects it to the current one) instead of turning into a 404. One row per slug; exactly one per item
+-- is the primary (the current slug, kept in data ->> 'slug'), the rest are aliases (old slugs).
+--
+-- `scope` is the part of the address the slug is unique within: empty for posts, case studies and
+-- industry pages, the category slug for a service page (/services/{category}/{slug}). A slug is unique
+-- per site, type and scope, whether it is a primary or an alias, so an old slug can never shadow another
+-- page's address. The same slug may exist under different types or scopes.
+--
+-- Nobody writes this table directly: the content_item_slug trigger below keeps it in step with
+-- data ->> 'slug' (and data ->> 'category' for service pages), for the application and plain SQL alike.
+CREATE TABLE IF NOT EXISTS content_slug
+(
+    id           bigserial PRIMARY KEY,
+    site_id      bigint            NOT NULL REFERENCES site (id),
+    content_type character varying NOT NULL,
+    scope        character varying NOT NULL DEFAULT '',
+    slug         character varying NOT NULL,
+    item_id      bigint            NOT NULL REFERENCES content_item (id) ON DELETE CASCADE,
+    is_primary   boolean           NOT NULL DEFAULT false,
+    created_at   timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT uq_content_slug UNIQUE (site_id, content_type, scope, slug)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_content_slug_primary ON content_slug (item_id) WHERE is_primary;
+CREATE INDEX IF NOT EXISTS idx_content_slug_item ON content_slug (item_id);
+
+-- Keeps content_slug in step with the item's slug, for the types that have a detail page.
+--   * New item: its slug becomes the primary row.
+--   * Slug (or a service page's category) changed: the old address stays as an alias when the item was
+--     ever live (not a draft, or a draft that has been published before); otherwise it is dropped, so a
+--     typo fixed before publishing does not reserve the typo.
+--   * Changed back to one of its own old slugs: that alias becomes the primary again.
+--   * The new slug belongs to another item, as primary or alias: unique_violation, which the
+--     application reports as "slug already in use". It checks first; this is the backstop for races.
+-- Deleting the item deletes its rows (ON DELETE CASCADE).
+CREATE OR REPLACE FUNCTION content_slug_sync() RETURNS trigger AS
+$$
+DECLARE
+    new_slug  text;
+    new_scope text;
+    cur       content_slug;
+    live      boolean;
+    n         integer;
+BEGIN
+    IF NEW.content_type NOT IN ('post', 'case_study', 'industry_page', 'service_page') THEN
+        RETURN NULL;
+    END IF;
+    new_slug := nullif(btrim(NEW.data ->> 'slug'), '');
+    new_scope := CASE WHEN NEW.content_type = 'service_page' THEN coalesce(NEW.data ->> 'category', '') ELSE '' END;
+
+    SELECT * INTO cur FROM content_slug WHERE item_id = NEW.id AND is_primary;
+    IF FOUND AND new_slug IS NOT DISTINCT FROM cur.slug AND new_scope = cur.scope THEN
+        RETURN NULL; -- the address did not change
+    END IF;
+
+    IF FOUND THEN
+        live := OLD.status <> 'DRAFT'
+            OR EXISTS (SELECT 1 FROM content_audit WHERE item_id = NEW.id AND action = 'PUBLISH');
+        IF live THEN
+            UPDATE content_slug SET is_primary = false WHERE id = cur.id;
+        ELSE
+            DELETE FROM content_slug WHERE id = cur.id;
+        END IF;
+    END IF;
+
+    IF new_slug IS NOT NULL THEN
+        INSERT INTO content_slug (site_id, content_type, scope, slug, item_id, is_primary)
+        VALUES (NEW.site_id, NEW.content_type, new_scope, new_slug, NEW.id, true)
+        ON CONFLICT ON CONSTRAINT uq_content_slug
+            DO UPDATE SET is_primary = true WHERE content_slug.item_id = NEW.id;
+        GET DIAGNOSTICS n = ROW_COUNT;
+        IF n = 0 THEN
+            RAISE EXCEPTION 'Slug already in use: %', new_slug USING ERRCODE = 'unique_violation';
+        END IF;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS content_item_slug ON content_item;
+CREATE TRIGGER content_item_slug
+    AFTER INSERT OR UPDATE OF data
+    ON content_item
+    FOR EACH ROW
+EXECUTE FUNCTION content_slug_sync();
 
 -- Audit trail of content changes: one row per create, update, publish, unpublish, delete or
 -- restore of a content_item, written by the content_item_audit trigger below — so it records every

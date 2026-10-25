@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { ServicePage as ServicePageView } from "@cms/content-renderer";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServicePage } from "@/lib/cms/services";
+import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
 import { ServiceIndustries } from "@/components/service/ServiceIndustries";
@@ -37,7 +38,10 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
   setRequestLocale(locale);
 
   const page = await getServicePage(category, slug);
-  if (!page) notFound();
+  if (!page) {
+    await redirectIfRenamed(locale, "services", "services", [category, slug]);
+    notFound();
+  }
 
   const content = await getHomeContent();
   const first = page.caseStudies[0];

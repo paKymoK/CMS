@@ -13,6 +13,7 @@ import { wordsAndOutline } from "../lib/richText";
 import PostPreview from "../components/PostPreview";
 import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePicker";
 import HistoryDrawer from "../components/HistoryDrawer";
+import PreviousUrls from "../components/PreviousUrls";
 import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks } from "../lib/seo";
@@ -237,6 +238,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         nextStatus === "PUBLISHED" ? "Published" : nextStatus === "SCHEDULED" ? "Scheduled" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft",
       );
       queryClient.invalidateQueries({ queryKey: ["content", "posts", site] });
+      queryClient.invalidateQueries({ queryKey: ["slugs", site] });
       if (isNew) {
         const created = res.data.data as PostRecord;
         navigate(`/posts/${created.id}`, { replace: true });
@@ -588,6 +590,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 From title
               </button>
             </div>
+            <PreviousUrls itemId={isNew ? undefined : id} slug={slug} live={status !== "DRAFT"} prefix={`${siteSub ?? "site"}/insights/`} />
 
           </div>
 

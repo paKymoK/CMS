@@ -98,6 +98,9 @@ public class SecurityConfig {
                     // The About page (see PublicAboutController).
                     .pathMatchers(HttpMethod.GET, "/v1/about")
                     .permitAll()
+                    // Where a renamed page now lives (see PublicSlugController).
+                    .pathMatchers(HttpMethod.GET, "/v1/slug-redirect")
+                    .permitAll()
                     // chat-service's public marketing assistant — anonymous site visitors,
                     // IP-rate-limited in PublicAssistantController itself. /v1/assistant/ingest
                     // is untouched by this and still falls through to .authenticated() below.

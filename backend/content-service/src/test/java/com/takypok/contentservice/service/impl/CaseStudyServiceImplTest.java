@@ -21,6 +21,7 @@ import com.takypok.contentservice.model.request.CaseStudyUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.SearchService;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import java.util.List;
@@ -45,6 +46,7 @@ class CaseStudyServiceImplTest {
   @Mock private ContentItemMapper contentItemMapper;
   @Mock private SearchService searchService;
   @Mock private ContentItemWriter contentItemWriter;
+  @Mock private SlugRegistry slugRegistry;
 
   private CaseStudyServiceImpl service;
 
@@ -56,7 +58,12 @@ class CaseStudyServiceImplTest {
             contentItemMapper,
             objectMapper,
             searchService,
-            contentItemWriter);
+            contentItemWriter,
+            slugRegistry);
+    // no old slugs unless a test says so
+    lenient()
+        .when(slugRegistry.isAliasOfOther(any(), any(), any(), any(), any()))
+        .thenReturn(Mono.just(false));
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("case_study"), any(JsonNode.class)))

@@ -10,7 +10,7 @@ import lombok.Setter;
 
 /**
  * A case study. The slug is the URL segment of its detail page and is unique per site (enforced by
- * the uq_content_item_case_study_slug index and resolved by CaseStudyServiceImpl).
+ * the content_slug table, which also keeps its old slugs, and resolved by CaseStudyServiceImpl).
  */
 @Getter
 @Setter

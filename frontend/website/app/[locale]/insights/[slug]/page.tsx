@@ -6,6 +6,7 @@ import { PostArticle } from "@cms/content-renderer";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SITE_URL } from "@/lib/seo/constants";
 import { getPost } from "@/lib/cms/posts";
+import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { siteSlots } from "@/components/content/siteSlots";
 
 export async function generateMetadata(props: PageProps<"/[locale]/insights/[slug]">): Promise<Metadata> {
@@ -41,6 +42,7 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
   const t = await getTranslations("insights");
   const post = await getPost(slug);
   if (!post) {
+    await redirectIfRenamed(locale, "posts", "insights", [slug]);
     notFound();
   }
 

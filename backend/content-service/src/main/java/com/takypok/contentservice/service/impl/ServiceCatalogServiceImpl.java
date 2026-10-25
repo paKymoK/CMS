@@ -6,6 +6,7 @@ import com.takypok.contentservice.model.response.ServiceNavResponse;
 import com.takypok.contentservice.model.response.ServicePageResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ServiceCatalogService;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   static final String PAGE = "service_page";
 
   private final ContentItemRepository contentItemRepository;
+  private final SlugRegistry slugRegistry;
 
   private Flux<ContentItem> items(Long siteId, String type) {
     return contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
@@ -96,7 +98,13 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
 
               return Flux.fromIterable(wanted)
                   .concatMap(
-                      s -> contentItemRepository.findBySlug(siteId, CaseStudyServiceImpl.TYPE, s))
+                      s ->
+                          contentItemRepository
+                              .findBySlug(siteId, CaseStudyServiceImpl.TYPE, s)
+                              // a renamed case study is still found under its old slug
+                              .switchIfEmpty(
+                                  slugRegistry.findPublishedByAlias(
+                                      siteId, CaseStudyServiceImpl.TYPE, "", s)))
                   .filter(c -> "PUBLISHED".equals(c.getStatus()))
                   .map(ServiceCatalogServiceImpl::featured)
                   .collectList()

@@ -18,9 +18,9 @@ public interface ContentItemRepository extends R2dbcRepository<ContentItem, Long
   Mono<ContentItem> findByIdAndSiteId(Long id, Long siteId);
 
   /**
-   * Items keyed by a slug stored inside {@code data} (case studies). At most one row can match: the
-   * uq_content_item_case_study_slug index backs it for case_study, and the service-catalog types
-   * check their own uniqueness on write.
+   * Items keyed by their current slug stored inside {@code data}. At most one row can match: the
+   * content_slug table keeps a slug unique per site and type for the types with a detail page. Old
+   * slugs are not found here; see SlugRegistry.
    */
   @Query(
       "SELECT * FROM content_item WHERE site_id = :siteId AND content_type = :contentType"

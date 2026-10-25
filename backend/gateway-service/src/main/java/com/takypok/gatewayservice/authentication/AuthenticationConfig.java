@@ -82,6 +82,9 @@ public class AuthenticationConfig {
                     // The About page (see PublicAboutController).
                     .pathMatchers(HttpMethod.GET, "/content-service/v1/about")
                     .permitAll()
+                    // Where a renamed page now lives (see PublicSlugController).
+                    .pathMatchers(HttpMethod.GET, "/content-service/v1/slug-redirect")
+                    .permitAll()
                     // media-service's content-addressed static serving — public once a site's
                     // published page embeds the URL.
                     .pathMatchers("/media-service/images/**", "/media-service/files/**")

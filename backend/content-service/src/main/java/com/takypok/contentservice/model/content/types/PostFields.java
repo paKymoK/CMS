@@ -11,7 +11,7 @@ import lombok.Setter;
 /**
  * An article (Insights today; "category" lets it cover other post-like content such as press
  * releases). The slug is the URL segment of its detail page and is unique per site (enforced by the
- * uq_content_item_slug index and resolved by PostServiceImpl).
+ * content_slug table, which also keeps its old slugs, and resolved by PostServiceImpl).
  */
 @Getter
 @Setter

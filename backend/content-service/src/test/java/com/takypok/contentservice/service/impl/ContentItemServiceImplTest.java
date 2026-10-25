@@ -11,6 +11,7 @@ import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.ContentItemCreateRequest;
 import com.takypok.contentservice.model.request.ContentItemUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.core.exception.ApplicationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,11 +26,13 @@ class ContentItemServiceImplTest {
   @Mock private ContentItemRepository contentItemRepository;
   @Mock private ContentItemMapper contentItemMapper;
   @Mock private ContentItemWriter contentItemWriter;
+  @Mock private SlugRegistry slugRegistry;
 
   @Test
   void caseStudiesCannotBeCreatedThroughTheGenericPath() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItemCreateRequest request = new ContentItemCreateRequest();
     request.setContentType("case_study");
 
@@ -43,7 +46,8 @@ class ContentItemServiceImplTest {
   @Test
   void postsCannotBeCreatedThroughTheGenericPath() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItemCreateRequest request = new ContentItemCreateRequest();
     request.setContentType("post");
 
@@ -57,7 +61,8 @@ class ContentItemServiceImplTest {
   @Test
   void caseStudiesCannotBeUpdatedThroughTheGenericPath() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItemUpdateRequest request = new ContentItemUpdateRequest();
     request.setId(1L);
     request.setContentType("case_study");
@@ -72,7 +77,8 @@ class ContentItemServiceImplTest {
   @Test
   void updatingFromAnOutOfDateCopyIsRejectedAndNothingIsSaved() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItem current = new ContentItem();
     current.setId(1L);
     current.setContentType("service_page");
@@ -93,7 +99,8 @@ class ContentItemServiceImplTest {
   @Test
   void twoIndustryPagesCannotShareASlug() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     com.fasterxml.jackson.databind.node.ObjectNode data =
         new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("slug", "bfsi");
     ContentItem existing = new ContentItem();
@@ -115,6 +122,61 @@ class ContentItemServiceImplTest {
     verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
 
+  @Test
+  void anIndustrySlugThatIsAnOldSlugOfAnotherIndustryIsRejected() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("slug", "bfsi");
+    when(contentItemMapper.resolveAndValidate("industry_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "industry_page"))
+        .thenReturn(reactor.core.publisher.Flux.empty());
+    when(slugRegistry.isAliasOfOther(1L, "industry_page", "", "bfsi", null))
+        .thenReturn(Mono.just(true));
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("industry_page");
+    request.setData(data);
+
+    StepVerifier.create(service.create(1L, request))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("another industry"))
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void aServiceSlugIsCheckedAgainstOldSlugsOfItsOwnCategoryOnly() {
+    ContentItemServiceImpl service =
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
+    com.fasterxml.jackson.databind.node.ObjectNode data =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .createObjectNode()
+            .put("slug", "dev")
+            .put("category", "web");
+    when(contentItemMapper.resolveAndValidate("service_page", data)).thenReturn(Mono.just(data));
+    when(contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+            1L, "service_page"))
+        .thenReturn(reactor.core.publisher.Flux.empty());
+    when(slugRegistry.isAliasOfOther(1L, "service_page", "web", "dev", null))
+        .thenReturn(Mono.just(true));
+    ContentItemCreateRequest request = new ContentItemCreateRequest();
+    request.setContentType("service_page");
+    request.setData(data);
+
+    StepVerifier.create(service.create(1L, request))
+        .expectErrorMatches(
+            e ->
+                e instanceof ApplicationException
+                    && e.getMessage().contains("service in this category"))
+        .verify();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
   private ContentItem aboutPage(long id) {
     ContentItem item = new ContentItem();
     item.setId(id);
@@ -125,7 +187,8 @@ class ContentItemServiceImplTest {
   @Test
   void aSiteCannotGetASecondAboutPage() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     com.fasterxml.jackson.databind.node.ObjectNode data =
         new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
     when(contentItemMapper.resolveAndValidate("about_page", data)).thenReturn(Mono.just(data));
@@ -147,7 +210,8 @@ class ContentItemServiceImplTest {
   @Test
   void aSiteWithoutAnAboutPageMayCreateOne() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     com.fasterxml.jackson.databind.node.ObjectNode data =
         new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
     when(contentItemMapper.resolveAndValidate("about_page", data)).thenReturn(Mono.just(data));
@@ -170,7 +234,8 @@ class ContentItemServiceImplTest {
   @Test
   void anotherItemCannotBeTurnedIntoASecondAboutPage() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     com.fasterxml.jackson.databind.node.ObjectNode data =
         new com.fasterxml.jackson.databind.ObjectMapper().createObjectNode().put("heroTitle", "H");
     ContentItem other = new ContentItem();
@@ -197,7 +262,8 @@ class ContentItemServiceImplTest {
   @Test
   void aGenericContentTypeCannotBeArchivedOrScheduled() {
     ContentItemServiceImpl service =
-        new ContentItemServiceImpl(contentItemRepository, contentItemMapper, contentItemWriter);
+        new ContentItemServiceImpl(
+            contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItemCreateRequest create = new ContentItemCreateRequest();
     create.setContentType("service_page");
     create.setStatus("ARCHIVED");

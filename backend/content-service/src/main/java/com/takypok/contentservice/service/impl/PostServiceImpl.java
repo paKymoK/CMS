@@ -15,6 +15,7 @@ import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SearchService;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.contentservice.util.ScheduleRules;
@@ -59,6 +60,7 @@ public class PostServiceImpl implements PostService {
   private final ObjectMapper objectMapper;
   private final SearchService searchService;
   private final ContentItemWriter contentItemWriter;
+  private final SlugRegistry slugRegistry;
 
   @Override
   public Mono<List<PostResponse>> getAll(Long siteId) {
@@ -446,6 +448,11 @@ public class PostServiceImpl implements PostService {
     return contentItemRepository
         .findBySlug(siteId, TYPE, slug)
         .filter(other -> excludeId == null || !other.getId().equals(excludeId))
-        .hasElement();
+        .hasElement()
+        .flatMap(
+            current ->
+                current
+                    ? Mono.just(true)
+                    : slugRegistry.isAliasOfOther(siteId, TYPE, "", slug, excludeId));
   }
 }

@@ -4,6 +4,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCaseStudy } from "@/lib/cms/caseStudies";
+import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { CaseStudyArticle } from "@cms/content-renderer";
 import { siteSlots } from "@/components/content/siteSlots";
 
@@ -44,6 +45,7 @@ export default async function CaseStudyDetailPage(
   const t = await getTranslations("caseStudies");
   const caseStudy = await getCaseStudy(slug);
   if (!caseStudy) {
+    await redirectIfRenamed(locale, "case-studies", "case-studies", [slug]);
     notFound();
   }
 

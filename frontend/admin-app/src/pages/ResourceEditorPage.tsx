@@ -13,6 +13,7 @@ import type { ItemPrefill } from "../lib/audit";
 import { FieldInput } from "../components/FieldInput";
 import MediaPickerModal from "../components/MediaPickerModal";
 import HistoryDrawer from "../components/HistoryDrawer";
+import PreviousUrls from "../components/PreviousUrls";
 import { RESOURCE_PREVIEWS } from "../components/resourcePreviews";
 import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
@@ -237,6 +238,7 @@ function ResourceEditorForm({
       setDirty(false);
       message.success(nextStatus === "PUBLISHED" ? "Published" : "Saved as draft");
       queryClient.invalidateQueries({ queryKey: ["content", resource.key, site] });
+      queryClient.invalidateQueries({ queryKey: ["slugs", site] });
       if (isNew) {
         navigate(resource.editorRoute!((res.data.data as { id: number }).id), { replace: true });
       } else {
@@ -445,6 +447,7 @@ function ResourceEditorForm({
                     >
                       From title
                     </button>
+                    <PreviousUrls itemId={isNew ? undefined : id} slug={slug} live={status !== "DRAFT"} prefix={`${siteSub ?? "site"}/${editor.slugPrefix.split("/")[0]}/`} />
                   </div>
                 )}
 

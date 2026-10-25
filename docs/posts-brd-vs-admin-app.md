@@ -12,7 +12,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 | # | BRD requirement | Current implementation | Status |
 |---|---|---|---|
 | 1 | Fields: title, slug, excerpt, featured image, author, date, category, tags | `PostFields` has all of them, plus `authorBio`, `authorAvatar`, `layout` | ✅ |
-| 2 | Slug unique per site | Partial unique index `uq_content_item_slug`, auto-resolved by `Slugs.resolve` | ✅ |
+| 2 | Slug unique per site | `content_slug` table (unique per site, type and scope, primary and old slugs alike, kept by a trigger), auto-resolved by `Slugs.resolve`. A renamed page keeps its old slugs, which 308-redirect to the current one; "Previous URLs" in the editor releases them. Also covers case studies, industry and service pages | ✅ |
 | 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server). There is no separate `active` flag any more (G1). Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
 | 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |

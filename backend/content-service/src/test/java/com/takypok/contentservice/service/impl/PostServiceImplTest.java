@@ -22,6 +22,7 @@ import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.SearchService;
+import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,7 @@ class PostServiceImplTest {
   @Mock private ContentItemMapper contentItemMapper;
   @Mock private SearchService searchService;
   @Mock private ContentItemWriter contentItemWriter;
+  @Mock private SlugRegistry slugRegistry;
 
   private PostServiceImpl service;
 
@@ -59,7 +61,12 @@ class PostServiceImplTest {
             contentItemMapper,
             objectMapper,
             searchService,
-            contentItemWriter);
+            contentItemWriter,
+            slugRegistry);
+    // no old slugs unless a test says so
+    lenient()
+        .when(slugRegistry.isAliasOfOther(any(), any(), any(), any(), any()))
+        .thenReturn(Mono.just(false));
     // validation itself is ContentItemMapperTest's job: pass the data through unchanged
     lenient()
         .when(contentItemMapper.resolveAndValidate(eq("post"), any(JsonNode.class)))
@@ -167,6 +174,22 @@ class PostServiceImplTest {
 
     StepVerifier.create(service.create(1L, request))
         .expectError(ApplicationException.class)
+        .verify();
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void aSlugThatIsAnOldSlugOfAnotherPostIsRejected() {
+    when(contentItemRepository.findBySlug(1L, "post", "renamed")).thenReturn(Mono.empty());
+    when(slugRegistry.isAliasOfOther(1L, "post", "", "renamed", null)).thenReturn(Mono.just(true));
+
+    PostCreateRequest request = new PostCreateRequest();
+    request.setTitle("Some Title");
+    request.setSlug("renamed");
+
+    StepVerifier.create(service.create(1L, request))
+        .expectErrorMatches(
+            e -> e instanceof ApplicationException && e.getMessage().contains("already in use"))
         .verify();
     verify(contentItemWriter, never()).save(any(ContentItem.class));
   }
