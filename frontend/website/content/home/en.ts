@@ -125,57 +125,49 @@ export const homeContentEn: HomeContent = {
       lon: 105.78,
       flag: "#da251d",
       big: true,
-      address: "7 - 10F, CMC Tower, 11 Duy Tan Street, Cau Giay\nWard, Hanoi 100000, Vietnam",
+      address:
+        "7 - 10F, CMC Tower, 11 Duy Tan Street, Cau Giay\nWard, Hanoi 100000, Vietnam",
+    },
+    {
+      city: "Da Nang Office",
+      lat: 16.07,
+      lon: 108.22,
+      flag: "#da251d",
+      address:
+        "G8 Golden Building, 65 Hai Phong Street,\nHai Chau Ward, Da Nang, Vietnam",
     },
     {
       city: "Ho Chi Minh City Office",
-      lat: 10.78,
-      lon: 106.7,
+      lat: 10.75,
+      lon: 106.73,
       flag: "#da251d",
-      address: "Delivery centre · 1200+ engineers\nDistrict 1, Ho Chi Minh City, Vietnam",
+      address:
+        "CMC Creative Space, Street 19, Tan Thuan Export\nProcessing Zone, Tan Thuan Ward, Ho Chi Minh City, Vietnam",
+    },
+    {
+      city: "Tokyo Office",
+      lat: 35.62,
+      lon: 139.74,
+      flag: "#bc002d",
+      address:
+        "Sumitomo Fudosan Osaki Twin Bldg. East 7F, 5-1-18\nKitashinagawa, Shinagawa-ku, Tokyo 141-0001, Japan",
     },
     {
       city: "Osaka Office",
-      lat: 34.69,
+      lat: 34.7,
       lon: 135.5,
       flag: "#bc002d",
       big: true,
-      address: "Mosaiwaki Frontier Bldg. 1F, 1-12-23\nSakaedori-Machi, Kita-ku, Osaka, Japan",
-    },
-    {
-      city: "Seoul Office",
-      lat: 37.56,
-      lon: 126.98,
-      flag: "#0047a0",
-      address: "Korea market & partnerships\nGangnam-gu, Seoul, Korea",
+      address:
+        "Midosuji Frontier Bldg. 14F, 1-13-22 Sonezakishinchi,\nKita-ku, Osaka 530-0002, Japan",
     },
     {
       city: "Singapore Office",
-      lat: 1.29,
+      lat: 1.28,
       lon: 103.85,
       flag: "#ed2939",
-      address: "APAC hub · Sales & advisory\nDowntown Core, Singapore",
-    },
-    {
-      city: "Sydney Office",
-      lat: -33.87,
-      lon: 151.21,
-      flag: "#00247d",
-      address: "ANZ market\nSydney CBD, NSW, Australia",
-    },
-    {
-      city: "San Jose Office",
-      lat: 37.34,
-      lon: -121.89,
-      flag: "#b22234",
-      address: "Silicon Valley\nSan Jose, California, USA",
-    },
-    {
-      city: "Frankfurt Office",
-      lat: 50.11,
-      lon: 8.68,
-      flag: "#1a1a1a",
-      address: "DACH market\nFrankfurt am Main, Germany",
+      address:
+        "1 Finlayson Green, #15-02, One Finlayson Green,\nSingapore 049246",
     },
   ],
   caseStudies: [

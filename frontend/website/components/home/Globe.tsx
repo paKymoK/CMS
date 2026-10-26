@@ -31,6 +31,8 @@ const CLOSE_DELAY_MS = 400;
 // Gap between the hovered dot's centre and the card edge; sized to the edge of
 // the marker's 44px hit area so the pointer can travel dot -> card without a dead zone.
 const CARD_OFFSET = 22;
+// Diameter of any office dot while hovered; it grows to hold the CMC logo.
+const DOT_HOVER = 25;
 
 const clampTilt = (deg: number) => Math.max(-MAX_TILT_DEG, Math.min(MAX_TILT_DEG, deg));
 
@@ -302,7 +304,7 @@ export function Globe({
           ref={(el) => {
             markerRefs.current[i] = el;
           }}
-          className="absolute top-0 left-0 flex items-center justify-center"
+          className="absolute top-0 left-0 flex cursor-default items-center justify-center"
           style={{ width: 44, height: 44, opacity: 0 }}
           data-globe-marker
           onPointerEnter={() => openOffice(i)}
@@ -310,14 +312,36 @@ export function Globe({
           onClick={() => (hoveredIndex === i ? closeOffice() : openOffice(i))}
         >
           <span
-            className="block rounded-full shadow-[0_2px_8px_rgba(16,58,102,.35)]"
+            className="relative block overflow-hidden rounded-full transition-[width,height,box-shadow] duration-200 ease-out"
             style={{
-              width: office.big ? 12 : 8,
-              height: office.big ? 12 : 8,
-              background: "#2f86cf",
-              border: office.big ? "2px solid #fff" : undefined,
+              width: hoveredIndex === i ? DOT_HOVER : office.big ? 12 : 8,
+              height: hoveredIndex === i ? DOT_HOVER : office.big ? 12 : 8,
+              background: hoveredIndex === i ? "#fff" : "#2f86cf",
+              border: office.big || hoveredIndex === i ? "2px solid #fff" : undefined,
+              boxShadow:
+                hoveredIndex === i
+                  ? "0 0 0 3px rgba(47,134,207,.35), 0 6px 18px rgba(16,58,102,.35)"
+                  : "0 2px 8px rgba(16,58,102,.35)",
             }}
-          />
+          >
+            {/* Crop the wordmark to its cloud icon: the height puts the icon at
+                ~70% of the dot, the left offset centres it and the clip drops the text. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo.svg"
+              alt=""
+              aria-hidden
+              className="absolute max-w-none transition-opacity duration-200"
+              style={{
+                height: DOT_HOVER * 0.5,
+                top: "50%",
+                left: "50%",
+                clipPath: "inset(0 66.3% 0 0)",
+                transform: `translate(${-0.718 * DOT_HOVER * 0.5}px, -50%)`,
+                opacity: hoveredIndex === i ? 1 : 0,
+              }}
+            />
+          </span>
         </div>
       ))}
 

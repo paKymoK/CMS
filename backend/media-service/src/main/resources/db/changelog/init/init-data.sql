@@ -128,5 +128,11 @@ VALUES
        ('10dd8b7a-b14d-56a3-9843-4164c3f3380c', 'ind-logistics.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('d28e20c1-8aba-58ca-a48b-81dda2b6280e', 'ind-automotive.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
        ('df48a354-ba1e-5988-9cf4-b6c4a93c2642', 'ind-it-services.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
-       ('d6e10c89-93e8-56f4-907d-1cbb81b66315', 'ind-healthcare.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
+       ('d6e10c89-93e8-56f4-907d-1cbb81b66315', 'ind-healthcare.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('7feb69f2-1a3a-5a8b-8d5c-3b80ad1733b7', 'office-hanoi.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('f2956c75-a613-55f1-a4aa-ba6912e61aba', 'office-danang.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('4d2af786-2d31-5756-a110-1bbe06d395dc', 'office-hcm.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('a34ada23-c6a1-585c-b4fc-3d6038c40122', 'office-tokyo.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('db47e0bd-e54f-5c2e-9198-75c6e5f5b55d', 'office-osaka.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en'),
+       ('86fe4f44-28d1-51d0-a6ca-7fee785e06ad', 'office-singapore.webp', '.webp', now(), '{"sub": "seed"}'::jsonb, now(), '{"sub": "seed"}'::jsonb, 'en')
 ON CONFLICT (id) DO NOTHING;

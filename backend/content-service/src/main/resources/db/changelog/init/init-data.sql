@@ -226,21 +226,17 @@ SELECT site_id, 'office', jsonb_strip_nulls(jsonb_build_object(
        'address', address,
        'image', image)), display_order, status
 FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 21.03, 105.78, '#da251d', true, 'Hanoi Office (Headquarter)', '7 - 10F, CMC Tower, 11 Duy Tan Street, Cau Giay
-Ward, Hanoi 100000, Vietnam', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 0, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 10.78, 106.70, '#da251d', false, 'Ho Chi Minh City Office', 'Delivery centre · 1200+ engineers
-District 1, Ho Chi Minh City, Vietnam', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 1, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 34.69, 135.50, '#bc002d', true, 'Osaka Office', 'Mosaiwaki Frontier Bldg. 1F, 1-12-23
-Sakaedori-Machi, Kita-ku, Osaka, Japan', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 2, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 37.56, 126.98, '#0047a0', false, 'Seoul Office', 'Korea market & partnerships
-Gangnam-gu, Seoul, Korea', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 3, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 1.29, 103.85, '#ed2939', false, 'Singapore Office', 'APAC hub · Sales & advisory
-Downtown Core, Singapore', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 4, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), -33.87, 151.21, '#00247d', false, 'Sydney Office', 'ANZ market
-Sydney CBD, NSW, Australia', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 5, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 37.34, -121.89, '#b22234', false, 'San Jose Office', 'Silicon Valley
-San Jose, California, USA', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 6, 'PUBLISHED'),
-       ((SELECT id FROM site WHERE code = 'en'), 50.11, 8.68, '#1a1a1a', false, 'Frankfurt Office', 'DACH market
-Frankfurt am Main, Germany', '/media-service/images/249edde3-116e-551f-a8c5-c51ebc320264.webp', 7, 'PUBLISHED')
+Ward, Hanoi 100000, Vietnam', '/media-service/images/7feb69f2-1a3a-5a8b-8d5c-3b80ad1733b7.webp', 0, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 16.07, 108.22, '#da251d', false, 'Da Nang Office', 'G8 Golden Building, 65 Hai Phong Street,
+Hai Chau Ward, Da Nang, Vietnam', '/media-service/images/f2956c75-a613-55f1-a4aa-ba6912e61aba.webp', 1, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 10.75, 106.73, '#da251d', false, 'Ho Chi Minh City Office', 'CMC Creative Space, Street 19, Tan Thuan Export
+Processing Zone, Tan Thuan Ward, Ho Chi Minh City, Vietnam', '/media-service/images/4d2af786-2d31-5756-a110-1bbe06d395dc.webp', 2, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 35.62, 139.74, '#bc002d', false, 'Tokyo Office', 'Sumitomo Fudosan Osaki Twin Bldg. East 7F, 5-1-18
+Kitashinagawa, Shinagawa-ku, Tokyo 141-0001, Japan', '/media-service/images/a34ada23-c6a1-585c-b4fc-3d6038c40122.webp', 3, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 34.7, 135.5, '#bc002d', true, 'Osaka Office', 'Midosuji Frontier Bldg. 14F, 1-13-22 Sonezakishinchi,
+Kita-ku, Osaka 530-0002, Japan', '/media-service/images/db47e0bd-e54f-5c2e-9198-75c6e5f5b55d.webp', 4, 'PUBLISHED'),
+       ((SELECT id FROM site WHERE code = 'en'), 1.28, 103.85, '#ed2939', false, 'Singapore Office', '1 Finlayson Green, #15-02, One Finlayson Green,
+Singapore 049246', '/media-service/images/86fe4f44-28d1-51d0-a6ca-7fee785e06ad.webp', 5, 'PUBLISHED')
 ) AS v (site_id, lat, lon, flag_color, big, city, address, image, display_order, status);
 
 -- Logo badges (awards / certifications / partners)
