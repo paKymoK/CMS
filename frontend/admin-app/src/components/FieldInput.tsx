@@ -9,6 +9,7 @@ import { useSite } from "../lib/useSite";
 import { mediaSrc } from "../lib/media";
 import type { FieldConfig } from "../config/resources";
 import RichTextField from "./RichTextField";
+import { BlocksInput } from "./BlocksInput";
 
 /** Hex colour picker bound to a Form.Item (stores "#rrggbb", or nothing when cleared). */
 function HexColorInput({
@@ -111,6 +112,9 @@ export function FieldInput({
         <RichTextField />
       </Form.Item>
     );
+  }
+  if (f.type === "blocks") {
+    return <BlocksInput field={f} form={form} onOpenPicker={onOpenPicker} prefix={prefix} abs={abs} />;
   }
   if (f.type === "object-list") {
     return (

@@ -1,18 +1,23 @@
 package com.takypok.contentservice.model.content.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
+import com.takypok.contentservice.model.content.blocks.IndustryBlock;
+import com.takypok.contentservice.model.content.blocks.InsightsBlock;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * One page of the Industries section (/industries/{slug}), e.g. "Banking, Finance &amp; Insurance".
- * Every industry page uses the same template; this is its content. A section with no content (or
- * listed in {@code hiddenSections}) is simply not rendered.
+ * A page has a hero and SEO fields of its own and a list of {@link IndustryBlock}s for everything
+ * in between. A block with no content (or marked hidden) is simply not rendered.
  */
 @Getter
 @Setter
@@ -39,35 +44,13 @@ public class IndustryPageFields implements ContentFields {
 
   @Valid private List<StatItem> heroStats;
 
-  // ── Solutions carousel: the arrows move between groups, the tabs between a group's slides ──
-  private String solutionsEyebrow;
-  private String solutionsTitle;
-  private String solutionsBody;
-  @Valid private List<SolutionGroup> solutionGroups;
-
-  // ── Reasons to partner (the first three are shown) ──
-  private String reasonsEyebrow;
-  private String reasonsTitle;
-  private String reasonsBody;
-  @Valid private List<Reason> reasons;
-
-  // ── Success stories; the left column's heading and figures belong to the page, not a card ──
-  private String storiesEyebrow;
-  private String storiesTitle;
-  private String storiesBody;
-  private String storiesHeading;
-  @Valid private List<StatItem> storiesMetrics;
-  @Valid private List<Story> stories;
-
-  // ── Insights strip (the latest posts themselves are read from the site) ──
-  private String insightsEyebrow;
-  private String insightsTitle;
-  private String insightsBody;
-  private String insightsLinkLabel;
-  private String insightsLinkUrl;
-
-  /** solutions | reasons | stories | insights */
-  private List<String> hiddenSections;
+  /**
+   * The sections below the hero, in page order. Each is one of the types {@link IndustryBlock}
+   * lists; the insights strip may appear once.
+   */
+  @Valid
+  @Size(max = 40)
+  private List<IndustryBlock> blocks;
 
   /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
@@ -80,50 +63,17 @@ public class IndustryPageFields implements ContentFields {
   /** Asks search engines not to index the page. */
   private Boolean seoNoindex;
 
-  @Getter
-  @Setter
-  public static class SolutionGroup {
-    @NotBlank private String name;
-    @Valid private List<Slide> slides;
+  @JsonIgnore
+  @AssertTrue(message = "the insights strip may appear only once")
+  public boolean isInsightsBlockUnique() {
+    return blocks == null
+        || blocks.stream().filter(b -> b.getProps() instanceof InsightsBlock).count() <= 1;
   }
 
-  @Getter
-  @Setter
-  public static class Slide {
-    /** Name shown on the tab list beside the slide. */
-    @NotBlank private String tabLabel;
-
-    /** Large heading on the slide's photo card. */
-    private String title;
-
-    /** Partner logo (SVG/PNG) shown in the badge on the slide. */
-    private String logo;
-
-    private String image;
-
-    /** First and second bullet columns — one bullet per line. */
-    private String columnA;
-
-    private String columnB;
-  }
-
-  @Getter
-  @Setter
-  public static class Reason {
-    @NotBlank private String title;
-    private String image;
-  }
-
-  @Getter
-  @Setter
-  public static class Story {
-    /** Small label above the title (e.g. "BFSI"). */
-    private String tag;
-
-    @NotBlank private String title;
-    private String body;
-    private String image;
-    private String linkLabel;
-    private String linkUrl;
+  @JsonIgnore
+  @AssertTrue(message = "block ids must be unique")
+  public boolean isBlockIdsUnique() {
+    return blocks == null
+        || blocks.stream().map(IndustryBlock::getId).distinct().count() == blocks.size();
   }
 }

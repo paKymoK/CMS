@@ -1,5 +1,5 @@
 import { defaultSlots } from "../defaults";
-import type { PostArticleSlots, ServicePageData } from "../types";
+import type { PostArticleSlots, ReasonsBlockProps } from "../types";
 import { ReasonsSlider } from "./ReasonsSlider";
 
 /**
@@ -7,14 +7,14 @@ import { ReasonsSlider } from "./ReasonsSlider";
  * component; the images are drawn here with the host's image slot and handed to it, since slots
  * (functions) cannot cross into a client component.
  */
-export function ServiceReasons({ page, slots = defaultSlots }: { page: ServicePageData; slots?: PostArticleSlots }) {
+export function ServiceReasons({ block, slots = defaultSlots }: { block: ReasonsBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const reasons = page.reasons ?? [];
+  const reasons = block.items ?? [];
   if (reasons.length === 0) return null;
   return (
     <ReasonsSlider
-      title={page.reasonsTitle ?? "Reasons to Partner With Us"}
-      subtitle={page.reasonsSubtitle}
+      title={block.title ?? "Reasons to Partner With Us"}
+      subtitle={block.subtitle}
       reasons={reasons.map((r) => ({
         title: r.title,
         body: r.body,

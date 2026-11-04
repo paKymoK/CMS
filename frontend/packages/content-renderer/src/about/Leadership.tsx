@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { defaultSlots } from "../defaults";
 import { Placeholder } from "../Placeholder";
-import type { AboutPageData, PostArticleSlots } from "../types";
+import type { AboutLeadersBlockProps, PostArticleSlots } from "../types";
 
 // Where each card sits on the 1920px artboard: three on the first row, the rest centred below.
 const SLOTS: [number, number][] = [
@@ -17,28 +17,28 @@ const slot = (i: number): [number, number] => SLOTS[i] ?? [358 + (i % 3) * 437, 
  * "Leadership Team" (Figma "Our People"): cut-out portraits on pale-blue cards with name and role
  * underneath, between two ring graphics. Order follows the list.
  */
-export function Leadership({ page, slots = defaultSlots }: { page: AboutPageData; slots?: PostArticleSlots }) {
+export function Leadership({ block, slots = defaultSlots }: { block: AboutLeadersBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const leaders = page.leaders ?? [];
+  const leaders = block.items ?? [];
   if (leaders.length === 0) return null;
   return (
     <section id="leaders" aria-labelledby="leaders-title" className="design-canvas">
       <div className="abt-people">
-        {page.leadersRingImage && (
+        {block.ringImage && (
           <>
             <div className="abt-ring abt-ring--a" aria-hidden>
-              <Image src={page.leadersRingImage} sizes="30vw" className="object-contain" />
+              <Image src={block.ringImage} sizes="30vw" className="object-contain" />
             </div>
             <div className="abt-ring abt-ring--b" aria-hidden>
-              <Image src={page.leadersRingImage} sizes="30vw" className="object-contain" />
+              <Image src={block.ringImage} sizes="30vw" className="object-contain" />
             </div>
           </>
         )}
         <div className="sec-eyebrow-wrap">
-          <div className="cmc-eyebrow">{page.leadersEyebrow ?? "Our People"}</div>
+          <div className="cmc-eyebrow">{block.eyebrow ?? "Our People"}</div>
         </div>
         <h2 id="leaders-title" className="sec-title abt-people-title">
-          {page.leadersTitle ?? "Leadership Team"}
+          {block.title ?? "Leadership Team"}
         </h2>
 
         <ul className="abt-leaders">

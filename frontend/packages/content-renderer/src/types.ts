@@ -110,6 +110,41 @@ export interface ServiceReasonData {
   sideImage?: string;
 }
 
+export interface CapabilitiesBlockProps {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  items?: ServiceCapabilityData[];
+}
+
+export interface ProcessBlockProps {
+  title?: string;
+  subtitle?: string;
+  steps?: ServiceStepData[];
+}
+
+export interface StoriesBlockProps {
+  /** Heading of the left column; the case studies themselves are resolved by the host. */
+  heading?: string;
+  caseStudies?: string[];
+}
+
+export interface ReasonsBlockProps {
+  title?: string;
+  subtitle?: string;
+  items?: ServiceReasonData[];
+}
+
+/** One block of a service page: where it sits in the list is where it is drawn. */
+export type ServiceBlockData = { id: string; hidden?: boolean } & (
+  | { type: "capabilities"; props: CapabilitiesBlockProps }
+  | { type: "process"; props: ProcessBlockProps }
+  | { type: "stories"; props: StoriesBlockProps }
+  | { type: "reasons"; props: ReasonsBlockProps }
+  | { type: "industries"; props: Record<string, never> }
+  | { type: "highlights"; props: Record<string, never> }
+);
+
 /** The content of one service page (content_item "service_page"); the website and the admin preview both fill it. */
 export interface ServicePageData {
   slug: string;
@@ -122,19 +157,8 @@ export interface ServicePageData {
   ctaUrl?: string;
   heroImage?: string;
   heroStats?: ServiceStatData[];
-  capabilitiesEyebrow?: string;
-  capabilitiesTitle?: string;
-  capabilitiesSubtitle?: string;
-  capabilities?: ServiceCapabilityData[];
-  processTitle?: string;
-  processSubtitle?: string;
-  processSteps?: ServiceStepData[];
-  storiesHeading?: string;
-  caseStudies?: string[];
-  reasonsTitle?: string;
-  reasonsSubtitle?: string;
-  reasons?: ServiceReasonData[];
-  hiddenSections?: string[];
+  /** The sections below the hero, in page order. */
+  blocks?: ServiceBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */
@@ -182,6 +206,46 @@ export interface IndustryReasonData {
   image?: string;
 }
 
+export interface SolutionsBlockProps {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  groups?: IndustrySolutionGroupData[];
+}
+
+export interface IndustryReasonsBlockProps {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  items?: IndustryReasonData[];
+}
+
+export interface IndustryStoriesBlockProps {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  /** Heading and figures of the left column; they belong to the block, not to a card. */
+  heading?: string;
+  metrics?: ServiceStatData[];
+  items?: IndustryStoryData[];
+}
+
+export interface InsightsBlockProps {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  linkLabel?: string;
+  linkUrl?: string;
+}
+
+/** One block of an industry page: where it sits in the list is where it is drawn. */
+export type IndustryBlockData = { id: string; hidden?: boolean } & (
+  | { type: "solutions"; props: SolutionsBlockProps }
+  | { type: "reasons"; props: IndustryReasonsBlockProps }
+  | { type: "stories"; props: IndustryStoriesBlockProps }
+  | { type: "insights"; props: InsightsBlockProps }
+);
+
 /** The content of one industry page (content_item "industry_page"); the website and the admin preview both fill it. */
 export interface IndustryPageData {
   slug: string;
@@ -193,26 +257,8 @@ export interface IndustryPageData {
   ctaUrl?: string;
   heroImage?: string;
   heroStats?: ServiceStatData[];
-  solutionsEyebrow?: string;
-  solutionsTitle?: string;
-  solutionsBody?: string;
-  solutionGroups?: IndustrySolutionGroupData[];
-  reasonsEyebrow?: string;
-  reasonsTitle?: string;
-  reasonsBody?: string;
-  reasons?: IndustryReasonData[];
-  storiesEyebrow?: string;
-  storiesTitle?: string;
-  storiesBody?: string;
-  storiesHeading?: string;
-  storiesMetrics?: ServiceStatData[];
-  stories?: IndustryStoryData[];
-  insightsEyebrow?: string;
-  insightsTitle?: string;
-  insightsBody?: string;
-  insightsLinkLabel?: string;
-  insightsLinkUrl?: string;
-  hiddenSections?: string[];
+  /** The sections below the hero, in page order. */
+  blocks?: IndustryBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */
@@ -231,6 +277,52 @@ export interface AboutValueData {
   image?: string;
 }
 
+export interface AboutIntroBlockProps {
+  eyebrow?: string;
+  title?: string;
+  /** Paragraphs separated by blank lines. */
+  body?: string;
+  image?: string;
+  decorImage?: string;
+  growthTitle?: string;
+  growthStats?: ServiceStatData[];
+}
+
+export interface AboutVisionBlockProps {
+  eyebrow?: string;
+  title?: string;
+  image?: string;
+}
+
+export interface AboutMissionBlockProps {
+  eyebrow?: string;
+  body?: string;
+  image?: string;
+}
+
+export interface AboutLeadersBlockProps {
+  eyebrow?: string;
+  title?: string;
+  ringImage?: string;
+  items?: AboutLeaderData[];
+}
+
+export interface AboutValuesBlockProps {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  items?: AboutValueData[];
+}
+
+/** One block of the About page: where it sits in the list is where it is drawn. */
+export type AboutBlockData = { id: string; hidden?: boolean } & (
+  | { type: "intro"; props: AboutIntroBlockProps }
+  | { type: "vision"; props: AboutVisionBlockProps }
+  | { type: "mission"; props: AboutMissionBlockProps }
+  | { type: "leaders"; props: AboutLeadersBlockProps }
+  | { type: "values"; props: AboutValuesBlockProps }
+);
+
 /** The content of the About page (content_item "about_page"); the website and the admin preview both fill it. */
 export interface AboutPageData {
   heroBreadcrumb?: string;
@@ -240,28 +332,8 @@ export interface AboutPageData {
   ctaUrl?: string;
   heroImage?: string;
   heroStats?: ServiceStatData[];
-  introEyebrow?: string;
-  introTitle?: string;
-  introBody?: string;
-  introImage?: string;
-  introDecorImage?: string;
-  growthTitle?: string;
-  growthStats?: ServiceStatData[];
-  visionEyebrow?: string;
-  visionTitle?: string;
-  visionImage?: string;
-  missionEyebrow?: string;
-  missionBody?: string;
-  missionImage?: string;
-  leadersEyebrow?: string;
-  leadersTitle?: string;
-  leadersRingImage?: string;
-  leaders?: AboutLeaderData[];
-  valuesEyebrow?: string;
-  valuesTitle?: string;
-  valuesBody?: string;
-  values?: AboutValueData[];
-  hiddenSections?: string[];
+  /** The sections below the hero, in page order. */
+  blocks?: AboutBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */

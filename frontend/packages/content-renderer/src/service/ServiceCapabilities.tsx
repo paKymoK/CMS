@@ -1,26 +1,26 @@
 import { defaultSlots } from "../defaults";
-import type { PostArticleSlots, ServicePageData } from "../types";
+import type { CapabilitiesBlockProps, PostArticleSlots } from "../types";
 
 /**
  * "Our Capabilities" (Figma "Capabilities"): a heading, a thin tab-style rule and a row of image
  * cards, each with a title and a short description. Two cards render wide, three or more narrow.
  */
-export function ServiceCapabilities({ page, slots = defaultSlots }: { page: ServicePageData; slots?: PostArticleSlots }) {
+export function ServiceCapabilities({ block, slots = defaultSlots }: { block: CapabilitiesBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const items = page.capabilities ?? [];
+  const items = block.items ?? [];
   if (items.length === 0) return null;
   const wide = items.length <= 2;
   return (
     <section id="capabilities" aria-labelledby="svc-cap-title" className="design-canvas">
       <div className={`svc-cap sec${wide ? " svc-cap--wide" : ""}`}>
         <div className="sec-eyebrow-wrap">
-          <div className="cmc-eyebrow">{page.capabilitiesEyebrow ?? "Capabilities"}</div>
+          <div className="cmc-eyebrow">{block.eyebrow ?? "Capabilities"}</div>
         </div>
         <div className="svc-sec-head">
           <h2 id="svc-cap-title" className="sec-title">
-            {page.capabilitiesTitle ?? "Our Capabilities"}
+            {block.title ?? "Our Capabilities"}
           </h2>
-          {page.capabilitiesSubtitle && <p>{page.capabilitiesSubtitle}</p>}
+          {block.subtitle && <p>{block.subtitle}</p>}
         </div>
         <div className="svc-cap-rule" aria-hidden />
         <ul className={`svc-cap-cards${wide ? " svc-cap-cards--wide" : ""}`}>

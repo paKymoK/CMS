@@ -81,6 +81,23 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 - No drag-and-drop to reorder blocks, no "duplicate block".
 - It is a Tiptap text editor, not a block builder.
 
+**Status: on hold, decisions pending (owner is thinking).** Nothing here is blocked by other gaps; every item is an addition to the Tiptap editor, the sanitizer and the shared renderer, with no schema change. Checked against the code:
+
+- The article page already draws an "On this page" list (from H2s, `prepareBody`) and LinkedIn/Facebook share links at fixed places (`PostArticle`), and the editor has an H2-only outline panel. What is missing is a block the editor can place, and H1 to H3 levels (the editor allows H2 to H4; H1 is the post title).
+- Image alt text is hard-coded to `""` on insert (G5); it is the one item with an accessibility cost today.
+- The website's contact form has no submit endpoint that was found, so a real form block needs a backend (endpoint, storage, spam protection).
+- Tiptap has no built-in drag handle for nodes, so drag and duplicate are custom UI work (nested nodes such as columns and accordions need clear rules).
+
+**Decisions needed before building:**
+1. Is Tiptap enough for the Post body (suggested: yes, since pages now have their own block builder, section 13 of `page-model-plan.md`)?
+2. TOC and share buttons: placeable blocks (closer to the BRD) or automatic with a per-post switch?
+3. Form block: reuse the contact form (needs an endpoint), a new simple inquiry form, or keep the iframe embed for now?
+4. Media metadata: alt text only (suggested minimum), or the full BRD set (title, description, file type, size, which needs media-service changes)?
+
+Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, then the form block last.
+
+**Related, done separately:** the page-type editors (Service, Industry, About) now use a block builder; see `page-model-plan.md`, section 13. Contact Us, shared components and templates are still to do.
+
 ### G8. Delete rule and Trash
 - **Delete rule: done (posts).** A published post cannot be deleted, from the API (400: "archive it or move it to draft first") or the list (the Delete button is disabled with a tooltip). Draft and archived posts can be deleted.
 - **Trash with restore: not built.** A deleted post is still recoverable only through the audit trail ("Create new from this version"). Archived is the safe place for content that should leave the site but not be lost.
@@ -122,7 +139,7 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 - Translation engine for G10: which service, who pays, and is the call synchronous or a background job?
 - Does the translated draft keep an optional "translated from" reference, or stay fully independent?
 - Does G10 need permission rules (who may create drafts in other sites)?
-- Is the Tiptap editor acceptable, or does the BRD "block" language require a block builder?
+- Is the Tiptap editor acceptable, or does the BRD "block" language require a block builder? Pages now use a block builder; for the Post body the decision is pending (see G7).
 - Trash: add a real Trash status with restore and a purge job, or keep Archived plus the delete rule? Undecided; skipped for now (see G1, G8).
 - Is "Preview" in the Post status list a stored status, or the preview action? The workflow section lists Draft, Published, Scheduled, Unpublished/Archived and leaves internal review to Marketing's own process, which suggests the action (done), not a status.
 - Search-snippet preview: Google only, or other engines too? Is a computed snippet enough (title, URL, description, image), or must it match the live search result?

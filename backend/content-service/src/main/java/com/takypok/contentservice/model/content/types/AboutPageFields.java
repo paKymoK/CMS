@@ -1,17 +1,21 @@
 package com.takypok.contentservice.model.content.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
+import com.takypok.contentservice.model.content.blocks.AboutBlock;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
- * The About page (/about). There is exactly one per site; every section below is its content. A
- * section with no content (or listed in {@code hiddenSections}) is simply not rendered.
+ * The About page (/about). There is exactly one per site: a hero and SEO fields of its own and a
+ * list of {@link AboutBlock}s for everything in between. A block with no content (or marked hidden)
+ * is simply not rendered.
  */
 @Getter
 @Setter
@@ -26,62 +30,13 @@ public class AboutPageFields implements ContentFields {
   private String heroImage;
   @Valid private List<StatItem> heroStats;
 
-  // ── "Meet CMC Global": photo, story and the growth figures ──
-  private String introEyebrow;
-  private String introTitle;
-
-  /** Paragraphs separated by blank lines. */
-  private String introBody;
-
-  private String introImage;
-
-  /** Decorative artwork behind the block. */
-  private String introDecorImage;
-
-  /** Heading above the growth figures (the first five are shown). */
-  private String growthTitle;
-
   /**
-   * Where the growth figures come from: {@code custom} (the list below, typed into this page) or
-   * {@code library} (the published Stats screen, in display order; the public endpoint swaps them
-   * in before answering). Blank means custom.
+   * The sections below the hero, in page order. Each is one of the types {@link AboutBlock} lists,
+   * and each may appear once.
    */
-  @Pattern(regexp = "^(custom|library)$", message = "must be custom or library")
-  private String growthSource;
-
-  /**
-   * The figures when {@code growthSource} is custom; kept when it is library, so switching back
-   * loses nothing.
-   */
-  @Valid private List<StatItem> growthStats;
-
-  // ── Vision band (dark, one centred headline) ──
-  private String visionEyebrow;
-  private String visionTitle;
-  private String visionImage;
-
-  // ── Mission band (light, paragraphs separated by blank lines) ──
-  private String missionEyebrow;
-  private String missionBody;
-  private String missionImage;
-
-  // ── Leadership team ──
-  private String leadersEyebrow;
-  private String leadersTitle;
-
-  /** Ring graphic behind the portraits. */
-  private String leadersRingImage;
-
-  @Valid private List<Leader> leaders;
-
-  // ── "Our Values 4C" (the first four are shown) ──
-  private String valuesEyebrow;
-  private String valuesTitle;
-  private String valuesBody;
-  @Valid private List<Value> values;
-
-  /** intro | vision | mission | leaders | values */
-  private List<String> hiddenSections;
+  @Valid
+  @Size(max = 20)
+  private List<AboutBlock> blocks;
 
   /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
@@ -94,22 +49,17 @@ public class AboutPageFields implements ContentFields {
   /** Asks search engines not to index the page. */
   private Boolean seoNoindex;
 
-  @Getter
-  @Setter
-  public static class Leader {
-    @NotBlank private String name;
-    private String title;
-
-    /** Cut-out portrait (transparent background). */
-    private String photo;
+  @JsonIgnore
+  @AssertTrue(message = "each section may appear only once")
+  public boolean isEachBlockTypeUnique() {
+    return blocks == null
+        || blocks.stream().map(b -> b.getProps().getClass()).distinct().count() == blocks.size();
   }
 
-  @Getter
-  @Setter
-  public static class Value {
-    /** Use a line break for a two-line label (e.g. "Customer\nCentricity"). */
-    @NotBlank private String title;
-
-    private String image;
+  @JsonIgnore
+  @AssertTrue(message = "block ids must be unique")
+  public boolean isBlockIdsUnique() {
+    return blocks == null
+        || blocks.stream().map(AboutBlock::getId).distinct().count() == blocks.size();
   }
 }

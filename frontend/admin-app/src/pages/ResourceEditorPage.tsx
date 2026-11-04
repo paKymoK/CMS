@@ -202,6 +202,7 @@ function ResourceEditorForm({
   const Preview = RESOURCE_PREVIEWS[resource.key];
   const mainFields = resource.fields.filter((f) => f.area !== "side" && !f.tableOnly);
   const groups = resource.groups ?? [];
+  const hasToggles = groups.some((g) => g.toggleable);
   const plainFields = mainFields.filter((f) => !f.group || !groups.some((g) => g.key === f.group));
   const [openGroups, setOpenGroups] = useState<string[]>(groups.filter((g) => g.defaultOpen).map((g) => g.key));
   const [hiddenSections, setHiddenSections] = useState<string[]>((initial?.hiddenSections as string[] | undefined) ?? []);
@@ -216,13 +217,20 @@ function ResourceEditorForm({
       const fieldValues = await form.validateFields();
       // A loaded row also carries its metadata (siteId, createdAt, ...): only declared fields go into `data`.
       const loaded = { ...form.getFieldsValue(true), ...fieldValues };
+      // A block with no fields of its own (e.g. the industries strip) registers nothing in the form, so
+      // its empty `props` is gone by now; the server needs it to know the block's type.
+      for (const f of resource.fields) {
+        if (f.type === "blocks" && Array.isArray(loaded[f.name])) {
+          loaded[f.name] = (loaded[f.name] as Values[]).map((b) => ({ ...b, props: b.props ?? {} }));
+        }
+      }
       const content: Values = resource.contentType
         ? Object.fromEntries(Object.entries(loaded).filter(([key]) => resource.fields.some((f) => f.name === key)))
         : loaded;
       const values: Values = {
         ...content,
         ...(isNew ? {} : { id: Number(id), version }),
-        ...(groups.length ? { hiddenSections } : {}),
+        ...(hasToggles ? { hiddenSections } : {}),
         slug: slug || undefined,
         displayOrder,
         status: nextStatus,
@@ -308,7 +316,7 @@ function ResourceEditorForm({
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
             {Preview && site && (
-              <button type="button" onClick={() => setPreviewValues({ ...form.getFieldsValue(true), slug, ...(groups.length ? { hiddenSections } : {}) })} style={outlineButton}>
+              <button type="button" onClick={() => setPreviewValues({ ...form.getFieldsValue(true), slug, ...(hasToggles ? { hiddenSections } : {}) })} style={outlineButton}>
                 Preview
               </button>
             )}

@@ -34,11 +34,23 @@ public class AboutPageServiceImpl implements AboutPageService {
   }
 
   /**
-   * The page as stored, except that when its growth figures come from the library they are the
-   * site's published stats (value and label, in display order), so callers never see the mode.
+   * The page as stored, except that when the intro block's growth figures come from the library
+   * they are the site's published stats (value and label, in display order), so callers never see
+   * the mode.
    */
   private Mono<JsonNode> withGrowthStats(Long siteId, JsonNode data) {
-    if (!"library".equals(data.path("growthSource").asText())) return Mono.just(data);
+    int index = -1;
+    JsonNode blocks = data.path("blocks");
+    for (int i = 0; i < blocks.size(); i++) {
+      JsonNode block = blocks.get(i);
+      if ("intro".equals(block.path("type").asText())
+          && "library".equals(block.path("props").path("growthSource").asText())) {
+        index = i;
+        break;
+      }
+    }
+    if (index < 0) return Mono.just(data);
+    int introIndex = index;
     return contentItemRepository
         .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, STAT, "PUBLISHED")
         .map(
@@ -52,7 +64,8 @@ public class AboutPageServiceImpl implements AboutPageService {
         .map(
             figures -> {
               ObjectNode resolved = data.deepCopy();
-              resolved.set("growthStats", figures);
+              ((ObjectNode) resolved.path("blocks").get(introIndex).path("props"))
+                  .set("growthStats", figures);
               return resolved;
             });
   }

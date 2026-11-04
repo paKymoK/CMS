@@ -197,3 +197,16 @@ In rough order of value for effort:
 4. Re-check Case Studies in the browser (editor, preview, website page) once, since the shared pieces changed after phase 1.
 5. Home 5a, if one editor for Home content is wanted.
 6. The generic library machinery, only if a second place needs a library.
+
+## 13. Blocks (page builder)
+
+Service, Industry and About pages now hold their sections as an ordered `blocks` list instead of fixed fields, so an editor can add, duplicate, drag, hide and remove sections. Contact Us and shared components come later.
+
+- **Shape:** `data.blocks = [{ id, type, hidden?, props }]`. The page row keeps the page-level fields: slug, names, category, **hero** and SEO. The hero stays on the page (not a block) because search, SEO fallbacks and menus read `heroTitle` and `heroSubtitle`; it is required and always first. The contact form is always last and is not a block.
+- **Backend:** one block class per page type (`ServiceBlock`, `IndustryBlock`) whose `type` picks the class of `props` through Jackson (`EXTERNAL_PROPERTY`), so Bean Validation cascades and unknown props are dropped like elsewhere. A block type a page does not list is rejected; block ids must be unique; site-wide blocks (service: stories, industries, highlights; industry: insights) may appear once. A block with a type but no `props` is rejected: the editor always sends `props`.
+- **Block types:** Service: `capabilities`, `process`, `stories` (case study slugs), `reasons` (slider), `industries`, `highlights`. Industry: `solutions`, `reasons` (three photo cards), `stories` (typed into the page), `insights`. About: `intro` (with the growth figures), `vision`, `mission`, `leaders`, `values`, each once per page (its layout is fixed), so the editor there can reorder, hide and re-add them but not repeat them. The same word can mean a different block on each page; each page type has its own list.
+- **Editor:** a `blocks` field type (`BlocksInput`) driven by `blockTypes` in `config/resources.ts`; each block's form is drawn by the recursive `FieldInput` with `props` as the base path. The old per-section on/off switch is replaced by the block's own Hide switch (`hiddenSections` is gone from every page type).
+- **Renderer:** `ServicePage` and `IndustryPage` loop over `blocks`; the section components take a block's props. Site-wide slots are host-supplied (`industries`, `highlights`, `contact` for Service; `insights(block)` render function and `contact` for Industry).
+- **Known limits:** a block type that may repeat (e.g. Capabilities) repeats the section's HTML `id` (anchor) when used twice; the drag handle, the phone-width editor and a before/after style-digest comparison were not checked.
+- **Data:** seeds were rewritten as blocks, so recreate the local `content` database.
+- **About growth figures:** the Custom / From-library switch lives in the intro block (`props.growthSource`, `props.growthStats`); the public About endpoint finds the intro block and swaps in the published Stats when it is set to library. The admin preview does the same from the unsaved form.

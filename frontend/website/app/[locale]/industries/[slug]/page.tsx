@@ -47,23 +47,23 @@ export default async function IndustryPage(props: PageProps<"/[locale]/industrie
     <IndustryPageView
       page={page}
       slots={siteSlots}
-      insights={
+      insights={(block) => (
         <InsightsAccordion
           insights={content.insights}
           intro={
-            page.insightsTitle
+            block.title
               ? {
                   section: "industry-insights",
-                  eyebrow: page.insightsEyebrow,
-                  title: page.insightsTitle,
-                  body: page.insightsBody,
-                  linkLabel: page.insightsLinkLabel,
-                  linkUrl: page.insightsLinkUrl,
+                  eyebrow: block.eyebrow,
+                  title: block.title,
+                  body: block.body,
+                  linkLabel: block.linkLabel,
+                  linkUrl: block.linkUrl,
                 }
               : undefined
           }
         />
-      }
+      )}
       contact={<ContactForm intro={sectionIntro(content, "contact")} />}
     />
   );

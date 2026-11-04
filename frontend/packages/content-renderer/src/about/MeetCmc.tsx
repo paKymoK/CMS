@@ -1,33 +1,33 @@
 import { defaultSlots } from "../defaults";
 import { Placeholder } from "../Placeholder";
-import type { AboutPageData, PostArticleSlots } from "../types";
+import type { AboutIntroBlockProps, PostArticleSlots } from "../types";
 
 /**
  * "Meet CMC Global" (Figma "Capabilities"): the team collage beside the company story, then "Our
  * Growth in Numbers" in large gradient figures. The wireframe artwork sits behind, bleeding off the
  * edges.
  */
-export function MeetCmc({ page, slots = defaultSlots }: { page: AboutPageData; slots?: PostArticleSlots }) {
+export function MeetCmc({ block, slots = defaultSlots }: { block: AboutIntroBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const title = page.introTitle ?? "";
-  const paragraphs = (page.introBody ?? "").split(/\n\s*\n/).filter(Boolean);
-  const stats = page.growthStats ?? [];
+  const title = block.title ?? "";
+  const paragraphs = (block.body ?? "").split(/\n\s*\n/).filter(Boolean);
+  const stats = block.growthStats ?? [];
   return (
     <section id="meet" aria-labelledby="meet-title" className="design-canvas">
       <div className="abt-meet">
-        {page.introDecorImage && (
+        {block.decorImage && (
           <>
             <div className="abt-meet-deco" aria-hidden>
-              <Image src={page.introDecorImage} sizes="70vw" className="object-contain" />
+              <Image src={block.decorImage} sizes="70vw" className="object-contain" />
             </div>
             <div className="abt-meet-deco abt-meet-deco--b" aria-hidden>
-              <Image src={page.introDecorImage} sizes="70vw" className="object-contain" />
+              <Image src={block.decorImage} sizes="70vw" className="object-contain" />
             </div>
           </>
         )}
 
         <div className="sec-eyebrow-wrap">
-          <div className="cmc-eyebrow">{page.introEyebrow ?? title}</div>
+          <div className="cmc-eyebrow">{block.eyebrow ?? title}</div>
         </div>
         <h2 id="meet-title" className="sec-title abt-meet-title">
           {title}
@@ -35,9 +35,9 @@ export function MeetCmc({ page, slots = defaultSlots }: { page: AboutPageData; s
 
         <div className="abt-meet-grid">
           <div className="abt-meet-photo">
-            {page.introImage ? (
+            {block.image ? (
               <Image
-                src={page.introImage}
+                src={block.image}
                 alt="CMC Global teammates"
                 sizes="(min-width: 1280px) 38vw, 90vw"
                 className="object-contain"
@@ -55,7 +55,7 @@ export function MeetCmc({ page, slots = defaultSlots }: { page: AboutPageData; s
 
         {stats.length > 0 && (
           <>
-            {page.growthTitle && <h2 className="sec-title abt-stats-title">{page.growthTitle}</h2>}
+            {block.growthTitle && <h2 className="sec-title abt-stats-title">{block.growthTitle}</h2>}
             <dl className="abt-stats">
               {stats.slice(0, 5).map((stat) => (
                 <div key={stat.label} className="abt-stat">

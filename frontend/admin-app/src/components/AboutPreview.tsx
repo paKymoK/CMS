@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { AboutPageData } from "@cms/content-renderer";
+import type { AboutBlockData, AboutPageData } from "@cms/content-renderer";
 import { contentApi } from "../lib/api";
 import { mediaSrc } from "../lib/media";
 import type { PreviewPage } from "../lib/previewProtocol";
@@ -12,8 +12,64 @@ const list = <T,>(v: unknown, map: (item: Record<string, unknown>) => T): T[] | 
   Array.isArray(v) ? v.map((item) => map((item ?? {}) as Record<string, unknown>)) : undefined;
 const stat = (s: Record<string, unknown>) => ({ value: str(s.value) ?? "", label: str(s.label) ?? "" });
 
+/** One stored block as the page component's data (media URLs resolved, blanks dropped); a block of an unknown type is skipped. */
+function toBlock(raw: Record<string, unknown>, library: { value: string; label: string }[] | undefined): AboutBlockData[] {
+  const p = (raw.props ?? {}) as Record<string, unknown>;
+  const base = { id: str(raw.id) ?? "", hidden: raw.hidden === true };
+  switch (raw.type) {
+    case "intro":
+      return [
+        {
+          ...base,
+          type: "intro",
+          props: {
+            eyebrow: str(p.eyebrow),
+            title: str(p.title),
+            body: str(p.body),
+            image: mediaSrc(str(p.image)),
+            decorImage: mediaSrc(str(p.decorImage)),
+            growthTitle: str(p.growthTitle),
+            growthStats: p.growthSource === "library" ? (library ?? []) : list(p.growthStats, stat),
+          },
+        },
+      ];
+    case "vision":
+      return [{ ...base, type: "vision", props: { eyebrow: str(p.eyebrow), title: str(p.title), image: mediaSrc(str(p.image)) } }];
+    case "mission":
+      return [{ ...base, type: "mission", props: { eyebrow: str(p.eyebrow), body: str(p.body), image: mediaSrc(str(p.image)) } }];
+    case "leaders":
+      return [
+        {
+          ...base,
+          type: "leaders",
+          props: {
+            eyebrow: str(p.eyebrow),
+            title: str(p.title),
+            ringImage: mediaSrc(str(p.ringImage)),
+            items: list(p.items, (l) => ({ name: str(l.name) ?? "", title: str(l.title), photo: mediaSrc(str(l.photo)) })),
+          },
+        },
+      ];
+    case "values":
+      return [
+        {
+          ...base,
+          type: "values",
+          props: {
+            eyebrow: str(p.eyebrow),
+            title: str(p.title),
+            body: str(p.body),
+            items: list(p.items, (v) => ({ title: str(v.title) ?? "", image: mediaSrc(str(v.image)) })),
+          },
+        },
+      ];
+    default:
+      return [];
+  }
+}
+
 /** The About page form as the page component's data (media URLs resolved, blanks dropped). */
-function toAboutPageData(values: Record<string, unknown>): AboutPageData {
+function toAboutPageData(values: Record<string, unknown>, library: { value: string; label: string }[] | undefined): AboutPageData {
   return {
     heroBreadcrumb: str(values.heroBreadcrumb),
     heroTitle: str(values.heroTitle) ?? "",
@@ -22,38 +78,14 @@ function toAboutPageData(values: Record<string, unknown>): AboutPageData {
     ctaUrl: str(values.ctaUrl),
     heroImage: mediaSrc(str(values.heroImage)),
     heroStats: list(values.heroStats, stat),
-    introEyebrow: str(values.introEyebrow),
-    introTitle: str(values.introTitle),
-    introBody: str(values.introBody),
-    introImage: mediaSrc(str(values.introImage)),
-    introDecorImage: mediaSrc(str(values.introDecorImage)),
-    growthTitle: str(values.growthTitle),
-    growthStats: list(values.growthStats, stat),
-    visionEyebrow: str(values.visionEyebrow),
-    visionTitle: str(values.visionTitle),
-    visionImage: mediaSrc(str(values.visionImage)),
-    missionEyebrow: str(values.missionEyebrow),
-    missionBody: str(values.missionBody),
-    missionImage: mediaSrc(str(values.missionImage)),
-    leadersEyebrow: str(values.leadersEyebrow),
-    leadersTitle: str(values.leadersTitle),
-    leadersRingImage: mediaSrc(str(values.leadersRingImage)),
-    leaders: list(values.leaders, (l) => ({
-      name: str(l.name) ?? "",
-      title: str(l.title),
-      photo: mediaSrc(str(l.photo)),
-    })),
-    valuesEyebrow: str(values.valuesEyebrow),
-    valuesTitle: str(values.valuesTitle),
-    valuesBody: str(values.valuesBody),
-    values: list(values.values, (v) => ({ title: str(v.title) ?? "", image: mediaSrc(str(v.image)) })),
-    hiddenSections: Array.isArray(values.hiddenSections) ? (values.hiddenSections as string[]) : undefined,
+    blocks: Array.isArray(values.blocks) ? (values.blocks as Record<string, unknown>[]).flatMap((b) => toBlock(b, library)) : undefined,
   };
 }
 
 /** Preview of the About page being edited. Everything it shows is in the form, except the growth figures when they come from the Stats library. */
 export default function AboutPreview({ site, values, onClose }: ResourcePreviewProps) {
-  const library = values.growthSource === "library";
+  // The intro block's growth figures can come from the Stats library.
+  const library = Array.isArray(values.blocks) && (values.blocks as { type?: string; props?: { growthSource?: string } }[]).some((b) => b.type === "intro" && b.props?.growthSource === "library");
   // Growth figures from the Stats library: the published rows, as the public endpoint serves them.
   const statsQuery = useQuery({
     queryKey: ["preview-stats", site],
@@ -66,9 +98,6 @@ export default function AboutPreview({ site, values, onClose }: ResourcePreviewP
     staleTime: 60_000,
     enabled: library,
   });
-  const page = useMemo<PreviewPage>(() => {
-    const data = toAboutPageData(values);
-    return { kind: "about", page: library ? { ...data, growthStats: statsQuery.data ?? [] } : data };
-  }, [values, library, statsQuery.data]);
+  const page = useMemo<PreviewPage>(() => ({ kind: "about", page: toAboutPageData(values, statsQuery.data) }), [values, statsQuery.data]);
   return <PreviewPanel page={page} onClose={onClose} />;
 }

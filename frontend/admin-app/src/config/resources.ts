@@ -15,6 +15,7 @@ export type FieldType =
   | "string-list"
   | "stat-list"
   | "object-list"
+  | "blocks"
   | "multi-select"
   | "content-ref"
   | "richtext"
@@ -25,6 +26,20 @@ export interface FieldOption {
   value: string;
 }
 
+/**
+ * One kind of block in a `blocks` field. A block is stored as `{ id, type, hidden?, props }`; `fields`
+ * describe `props`, and are drawn by the same recursive form as every other field.
+ */
+export interface BlockTypeConfig {
+  type: string;
+  label: string;
+  /** One line under the block's name in the "Add section" menu. */
+  description?: string;
+  /** At most one of this block per page (it shows site-wide content, or the page can only use it once). */
+  single?: boolean;
+  fields: FieldConfig[];
+}
+
 export interface FieldConfig {
   name: string;
   label: string;
@@ -33,6 +48,8 @@ export interface FieldConfig {
   options?: FieldOption[];
   /** object-list: the fields of each entry. Any field type, including another object-list (any depth). */
   itemFields?: FieldConfig[];
+  /** blocks: the kinds of block the page may hold, in the order the "Add section" menu lists them. */
+  blockTypes?: BlockTypeConfig[];
   /** object-list: label of the "add entry" button. */
   addLabel?: string;
   /** content-ref: pick one item of another content type; the stored value is its `valueField`. */
@@ -135,6 +152,12 @@ export function findFieldByPath(fields: FieldConfig[], path: string | number | (
   let list = fields;
   let found: FieldConfig | undefined;
   for (const n of names) {
+    // Below a blocks field the path is [index, "props", field...]; the index is not a name, and which
+    // block type it is is not known from the path, so look in the fields of every type.
+    if (found?.blockTypes && n === "props") {
+      list = found.blockTypes.flatMap((t) => t.fields);
+      continue;
+    }
     found = list.find((f) => f.name === n);
     if (!found) return undefined;
     list = found.itemFields ?? [];
@@ -146,7 +169,7 @@ export function findFieldByPath(fields: FieldConfig[], path: string | number | (
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
 
 const scalarDefault = (type: FieldType) =>
-  !["textarea", "richtext", "json", "string-list", "stat-list", "object-list", "multi-select"].includes(type);
+  !["textarea", "richtext", "json", "string-list", "stat-list", "object-list", "blocks", "multi-select"].includes(type);
 
 function field(config: FieldConfig): FieldConfig {
   return { showInTable: scalarDefault(config.type), ...config };
@@ -476,11 +499,7 @@ export const RESOURCES: ResourceConfig[] = [
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
-      { key: "intro", label: "Meet CMC Global", toggleable: true },
-      { key: "vision", label: "Our Vision", toggleable: true },
-      { key: "mission", label: "Our Mission", toggleable: true },
-      { key: "leaders", label: "Leadership team", toggleable: true },
-      { key: "values", label: "Our Values (4C)", toggleable: true },
+      { key: "blocks", label: "Page sections", defaultOpen: true },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -491,53 +510,98 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "ctaUrl", label: "Button link", type: "text", showInTable: false, group: "hero" }),
       field({ name: "heroImage", label: "Photo", type: "image", showInTable: false, group: "hero" }),
       field({ name: "heroStats", label: "Three figures (value + label)", type: "stat-list", group: "hero" }),
-      field({ name: "introEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "intro" }),
-      field({ name: "introTitle", label: "Heading", type: "text", showInTable: false, group: "intro" }),
-      field({ name: "introBody", label: "Story (separate paragraphs with a blank line)", type: "textarea", showInTable: false, group: "intro" }),
-      field({ name: "introImage", label: "Team photo", type: "image", showInTable: false, group: "intro" }),
-      field({ name: "introDecorImage", label: "Decorative artwork behind the block", type: "image", showInTable: false, group: "intro" }),
-      field({ name: "growthTitle", label: "Heading above the growth figures", type: "text", showInTable: false, group: "intro" }),
-      field({ name: "growthSource", label: "Growth figures source", type: "text", showInTable: false, tableOnly: true }),
       field({
-        name: "growthStats",
-        label: "Growth figures (the first five are shown)",
-        type: "stat-list",
-        group: "intro",
-        library: { contentType: "stat", sourceField: "growthSource", manageLabel: "Stats", managePath: "/content/stats" },
-      }),
-      field({ name: "visionEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "vision" }),
-      field({ name: "visionTitle", label: "Statement (line break allowed)", type: "textarea", showInTable: false, group: "vision" }),
-      field({ name: "visionImage", label: "Background photo", type: "image", showInTable: false, group: "vision" }),
-      field({ name: "missionEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "mission" }),
-      field({ name: "missionBody", label: "Text (separate paragraphs with a blank line)", type: "textarea", showInTable: false, group: "mission" }),
-      field({ name: "missionImage", label: "Artwork", type: "image", showInTable: false, group: "mission" }),
-      field({ name: "leadersEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "leaders" }),
-      field({ name: "leadersTitle", label: "Heading", type: "text", showInTable: false, group: "leaders" }),
-      field({ name: "leadersRingImage", label: "Ring graphic behind the portraits", type: "image", showInTable: false, group: "leaders" }),
-      field({
-        name: "leaders",
-        label: "Leaders (in display order)",
-        type: "object-list",
-        addLabel: "Add leader",
-        group: "leaders",
-        itemFields: [
-          field({ name: "name", label: "Name", type: "text", required: true }),
-          field({ name: "title", label: "Role", type: "text" }),
-          field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
-        ],
-      }),
-      field({ name: "valuesEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "values" }),
-      field({ name: "valuesTitle", label: "Heading", type: "text", showInTable: false, group: "values" }),
-      field({ name: "valuesBody", label: "Description", type: "textarea", showInTable: false, group: "values" }),
-      field({
-        name: "values",
-        label: "Values (the first four are shown)",
-        type: "object-list",
-        addLabel: "Add value",
-        group: "values",
-        itemFields: [
-          field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
-          field({ name: "image", label: "Photo", type: "image" }),
+        name: "blocks",
+        label: "Sections below the hero, in page order",
+        type: "blocks",
+        addLabel: "Add section",
+        group: "blocks",
+        blockTypes: [
+          {
+            type: "intro",
+            label: "Meet CMC Global",
+            description: "The team photo beside the company story, then the growth figures. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Story (separate paragraphs with a blank line)", type: "textarea" }),
+              field({ name: "image", label: "Team photo", type: "image" }),
+              field({ name: "decorImage", label: "Decorative artwork behind the block", type: "image" }),
+              field({ name: "growthTitle", label: "Heading above the growth figures", type: "text" }),
+              field({
+                name: "growthStats",
+                label: "Growth figures (the first five are shown)",
+                type: "stat-list",
+                library: { contentType: "stat", sourceField: "growthSource", manageLabel: "Stats", managePath: "/content/stats" },
+              }),
+            ],
+          },
+          {
+            type: "vision",
+            label: "Our Vision",
+            description: "A dark band with one centred statement over a photo. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Statement (line break allowed)", type: "textarea" }),
+              field({ name: "image", label: "Background photo", type: "image" }),
+            ],
+          },
+          {
+            type: "mission",
+            label: "Our Mission",
+            description: "A light band with artwork and paragraphs. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "body", label: "Text (separate paragraphs with a blank line)", type: "textarea" }),
+              field({ name: "image", label: "Artwork", type: "image" }),
+            ],
+          },
+          {
+            type: "leaders",
+            label: "Leadership team",
+            description: "Cut-out portraits with name and role. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "ringImage", label: "Ring graphic behind the portraits", type: "image" }),
+              field({
+                name: "items",
+                label: "Leaders (in display order)",
+                type: "object-list",
+                addLabel: "Add leader",
+                itemFields: [
+                  field({ name: "name", label: "Name", type: "text", required: true }),
+                  field({ name: "title", label: "Role", type: "text" }),
+                  field({ name: "photo", label: "Portrait (cut-out, transparent background)", type: "image" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "values",
+            label: "Our Values (4C)",
+            description: "Tall photo cards, one per value (the first four show). Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Description", type: "textarea" }),
+              field({
+                name: "items",
+                label: "Values (the first four are shown)",
+                type: "object-list",
+                addLabel: "Add value",
+                itemFields: [
+                  field({ name: "title", label: "Title (line break for two lines)", type: "textarea", required: true }),
+                  field({ name: "image", label: "Photo", type: "image" }),
+                ],
+              }),
+            ],
+          },
         ],
       }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
@@ -564,10 +628,7 @@ export const RESOURCES: ResourceConfig[] = [
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
-      { key: "solutions", label: "Solutions", toggleable: true },
-      { key: "reasons", label: "Reasons to partner", toggleable: true },
-      { key: "stories", label: "Success stories", toggleable: true },
-      { key: "insights", label: "Insights strip", toggleable: true },
+      { key: "blocks", label: "Page sections", defaultOpen: true },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -580,72 +641,107 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "ctaUrl", label: "Button link", type: "text", showInTable: false, group: "hero" }),
       field({ name: "heroImage", label: "Artwork (transparent PNG/WebP)", type: "image", showInTable: false, group: "hero" }),
       field({ name: "heroStats", label: "Two figures (value + label)", type: "stat-list", group: "hero" }),
-      field({ name: "solutionsEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "solutions" }),
-      field({ name: "solutionsTitle", label: "Heading", type: "text", showInTable: false, group: "solutions" }),
-      field({ name: "solutionsBody", label: "Description", type: "textarea", showInTable: false, group: "solutions" }),
       field({
-        name: "solutionGroups",
-        label: "Solution groups (the arrows move between groups)",
-        type: "object-list",
-        addLabel: "Add group",
-        group: "solutions",
-        itemFields: [
-          field({ name: "name", label: "Group name (e.g. Core Banking)", type: "text", required: true }),
-          field({
-            name: "slides",
-            label: "Slides (one tab each)",
-            type: "object-list",
-            addLabel: "Add slide",
-            itemFields: [
-              field({ name: "tabLabel", label: "Tab name", type: "text", required: true }),
-              field({ name: "title", label: "Slide heading", type: "text" }),
-              field({ name: "logo", label: "Partner logo", type: "image" }),
-              field({ name: "image", label: "Photo", type: "image" }),
-              field({ name: "columnA", label: "First column (one bullet per line)", type: "textarea" }),
-              field({ name: "columnB", label: "Second column (one bullet per line)", type: "textarea" }),
+        name: "blocks",
+        label: "Sections below the hero, in page order",
+        type: "blocks",
+        addLabel: "Add section",
+        group: "blocks",
+        blockTypes: [
+          {
+            type: "solutions",
+            label: "Solutions carousel",
+            description: "Groups of tabbed slides; the arrows move between groups.",
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Description", type: "textarea" }),
+              field({
+                name: "groups",
+                label: "Solution groups (the arrows move between groups)",
+                type: "object-list",
+                addLabel: "Add group",
+                itemFields: [
+                  field({ name: "name", label: "Group name (e.g. Core Banking)", type: "text", required: true }),
+                  field({
+                    name: "slides",
+                    label: "Slides (one tab each)",
+                    type: "object-list",
+                    addLabel: "Add slide",
+                    itemFields: [
+                      field({ name: "tabLabel", label: "Tab name", type: "text", required: true }),
+                      field({ name: "title", label: "Slide heading", type: "text" }),
+                      field({ name: "logo", label: "Partner logo", type: "image" }),
+                      field({ name: "image", label: "Photo", type: "image" }),
+                      field({ name: "columnA", label: "First column (one bullet per line)", type: "textarea" }),
+                      field({ name: "columnB", label: "Second column (one bullet per line)", type: "textarea" }),
+                    ],
+                  }),
+                ],
+              }),
             ],
-          }),
+          },
+          {
+            type: "reasons",
+            label: "Reasons to partner",
+            description: "A dark band of tall photo cards with numbered captions (the first three show).",
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Description", type: "textarea" }),
+              field({
+                name: "items",
+                label: "Reasons (the first three are shown)",
+                type: "object-list",
+                addLabel: "Add reason",
+                itemFields: [
+                  field({ name: "title", label: "Title", type: "text", required: true }),
+                  field({ name: "image", label: "Image", type: "image" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "stories",
+            label: "Success stories",
+            description: "Stories typed into the page, with a heading and figures in the left column.",
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Description", type: "textarea" }),
+              field({ name: "heading", label: "Left-column heading", type: "text" }),
+              field({ name: "metrics", label: "Left-column figures (up to four)", type: "stat-list" }),
+              field({
+                name: "items",
+                label: "Stories",
+                type: "object-list",
+                addLabel: "Add story",
+                itemFields: [
+                  field({ name: "tag", label: "Tag", type: "text" }),
+                  field({ name: "title", label: "Title", type: "text", required: true }),
+                  field({ name: "body", label: "Summary", type: "textarea" }),
+                  field({ name: "image", label: "Photo", type: "image" }),
+                  field({ name: "linkLabel", label: "Link label", type: "text" }),
+                  field({ name: "linkUrl", label: "Link", type: "text" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "insights",
+            label: "Insights strip",
+            description: "The latest published insights, with an intro of your own. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "body", label: "Description", type: "textarea" }),
+              field({ name: "linkLabel", label: "Link label", type: "text" }),
+              field({ name: "linkUrl", label: "Link", type: "text" }),
+            ],
+          },
         ],
       }),
-      field({ name: "reasonsEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "reasons" }),
-      field({ name: "reasonsTitle", label: "Heading", type: "text", showInTable: false, group: "reasons" }),
-      field({ name: "reasonsBody", label: "Description", type: "textarea", showInTable: false, group: "reasons" }),
-      field({
-        name: "reasons",
-        label: "Reasons (the first three are shown)",
-        type: "object-list",
-        addLabel: "Add reason",
-        group: "reasons",
-        itemFields: [
-          field({ name: "title", label: "Title", type: "text", required: true }),
-          field({ name: "image", label: "Image", type: "image" }),
-        ],
-      }),
-      field({ name: "storiesEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "stories" }),
-      field({ name: "storiesTitle", label: "Heading", type: "text", showInTable: false, group: "stories" }),
-      field({ name: "storiesBody", label: "Description", type: "textarea", showInTable: false, group: "stories" }),
-      field({ name: "storiesHeading", label: "Left-column heading", type: "text", showInTable: false, group: "stories" }),
-      field({ name: "storiesMetrics", label: "Left-column figures (up to four)", type: "stat-list", group: "stories" }),
-      field({
-        name: "stories",
-        label: "Stories",
-        type: "object-list",
-        addLabel: "Add story",
-        group: "stories",
-        itemFields: [
-          field({ name: "tag", label: "Tag", type: "text" }),
-          field({ name: "title", label: "Title", type: "text", required: true }),
-          field({ name: "body", label: "Summary", type: "textarea" }),
-          field({ name: "image", label: "Photo", type: "image" }),
-          field({ name: "linkLabel", label: "Link label", type: "text" }),
-          field({ name: "linkUrl", label: "Link", type: "text" }),
-        ],
-      }),
-      field({ name: "insightsEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "insights" }),
-      field({ name: "insightsTitle", label: "Heading", type: "text", showInTable: false, group: "insights" }),
-      field({ name: "insightsBody", label: "Description", type: "textarea", showInTable: false, group: "insights" }),
-      field({ name: "insightsLinkLabel", label: "Link label", type: "text", showInTable: false, group: "insights" }),
-      field({ name: "insightsLinkUrl", label: "Link", type: "text", showInTable: false, group: "insights" }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
@@ -670,22 +766,7 @@ export const RESOURCES: ResourceConfig[] = [
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
-      { key: "capabilities", label: "Capabilities", toggleable: true },
-      { key: "process", label: "Process", toggleable: true },
-      { key: "stories", label: "Success stories", toggleable: true },
-      { key: "reasons", label: "Reasons to partner", toggleable: true },
-      {
-        key: "industries",
-        label: "Industries strip",
-        toggleable: true,
-        description: "Shows the site's industries strip. Edit its cards under Service pages → Industries strip.",
-      },
-      {
-        key: "highlights",
-        label: "Latest highlights",
-        toggleable: true,
-        description: "Shows the latest published insights. Nothing to edit here.",
-      },
+      { key: "blocks", label: "Page sections", defaultOpen: true },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -705,54 +786,98 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "ctaUrl", label: "Button link", type: "text", showInTable: false, group: "hero" }),
       field({ name: "heroImage", label: "Artwork", type: "image", showInTable: false, group: "hero" }),
       field({ name: "heroStats", label: "Figures (optional, up to two)", type: "stat-list", group: "hero" }),
-      field({ name: "capabilitiesEyebrow", label: "Eyebrow", type: "text", showInTable: false, group: "capabilities" }),
-      field({ name: "capabilitiesTitle", label: "Heading", type: "text", showInTable: false, group: "capabilities" }),
-      field({ name: "capabilitiesSubtitle", label: "Description", type: "textarea", showInTable: false, group: "capabilities" }),
       field({
-        name: "capabilities",
-        label: "Capabilities (2 show as wide cards, 3+ as narrow ones)",
-        type: "object-list",
-        addLabel: "Add capability",
-        group: "capabilities",
-        itemFields: [
-          field({ name: "title", label: "Title", type: "text", required: true }),
-          field({ name: "body", label: "Description", type: "textarea" }),
-          field({ name: "image", label: "Image", type: "image" }),
-        ],
-      }),
-      field({ name: "processTitle", label: "Heading", type: "text", showInTable: false, group: "process" }),
-      field({ name: "processSubtitle", label: "Description", type: "textarea", showInTable: false, group: "process" }),
-      field({
-        name: "processSteps",
-        label: "Process steps (in order)",
-        type: "object-list",
-        addLabel: "Add step",
-        group: "process",
-        itemFields: [
-          field({ name: "title", label: "Title", type: "text", required: true }),
-          field({ name: "image", label: "Image", type: "image" }),
-        ],
-      }),
-      field({ name: "storiesHeading", label: "Left-column heading", type: "text", showInTable: false, group: "stories" }),
-      field({
-        name: "caseStudies",
-        label: "Case study slugs (first one supplies the figures)",
-        type: "string-list",
-        group: "stories",
-      }),
-      field({ name: "reasonsTitle", label: "Heading", type: "text", showInTable: false, group: "reasons" }),
-      field({ name: "reasonsSubtitle", label: "Description", type: "textarea", showInTable: false, group: "reasons" }),
-      field({
-        name: "reasons",
-        label: "Reasons to partner (shown as a slider)",
-        type: "object-list",
-        addLabel: "Add reason",
-        group: "reasons",
-        itemFields: [
-          field({ name: "title", label: "Title", type: "text", required: true }),
-          field({ name: "body", label: "Text", type: "textarea" }),
-          field({ name: "image", label: "Large image", type: "image" }),
-          field({ name: "sideImage", label: "Small image", type: "image" }),
+        name: "blocks",
+        label: "Sections below the hero, in page order",
+        type: "blocks",
+        addLabel: "Add section",
+        group: "blocks",
+        blockTypes: [
+          {
+            type: "capabilities",
+            label: "Capabilities",
+            description: "A heading and a row of image cards (2 show as wide cards, 3 or more as narrow ones).",
+            fields: [
+              field({ name: "eyebrow", label: "Eyebrow", type: "text" }),
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "subtitle", label: "Description", type: "textarea" }),
+              field({
+                name: "items",
+                label: "Capabilities",
+                type: "object-list",
+                addLabel: "Add capability",
+                itemFields: [
+                  field({ name: "title", label: "Title", type: "text", required: true }),
+                  field({ name: "body", label: "Description", type: "textarea" }),
+                  field({ name: "image", label: "Image", type: "image" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "process",
+            label: "Process",
+            description: "A dark band with a strip of numbered step cards.",
+            fields: [
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "subtitle", label: "Description", type: "textarea" }),
+              field({
+                name: "steps",
+                label: "Process steps (in order)",
+                type: "object-list",
+                addLabel: "Add step",
+                itemFields: [
+                  field({ name: "title", label: "Title", type: "text", required: true }),
+                  field({ name: "image", label: "Image", type: "image" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "stories",
+            label: "Success stories",
+            description: "Case studies, picked by slug. Once per page.",
+            single: true,
+            fields: [
+              field({ name: "heading", label: "Left-column heading", type: "text" }),
+              field({ name: "caseStudies", label: "Case study slugs (first one supplies the figures)", type: "string-list" }),
+            ],
+          },
+          {
+            type: "reasons",
+            label: "Reasons to partner",
+            description: "A slider with a title, a text and two overlapping photos.",
+            fields: [
+              field({ name: "title", label: "Heading", type: "text" }),
+              field({ name: "subtitle", label: "Description", type: "textarea" }),
+              field({
+                name: "items",
+                label: "Reasons to partner (shown as a slider)",
+                type: "object-list",
+                addLabel: "Add reason",
+                itemFields: [
+                  field({ name: "title", label: "Title", type: "text", required: true }),
+                  field({ name: "body", label: "Text", type: "textarea" }),
+                  field({ name: "image", label: "Large image", type: "image" }),
+                  field({ name: "sideImage", label: "Small image", type: "image" }),
+                ],
+              }),
+            ],
+          },
+          {
+            type: "industries",
+            label: "Industries strip",
+            description: "The site's industries strip. Edit its cards under Service pages → Industries strip. Once per page.",
+            single: true,
+            fields: [],
+          },
+          {
+            type: "highlights",
+            label: "Latest highlights",
+            description: "The latest published insights. Nothing to edit here. Once per page.",
+            single: true,
+            fields: [],
+          },
         ],
       }),
       field({ name: "seoTitle", label: "SEO title", type: "text", showInTable: false, group: "seo" }),

@@ -52,8 +52,16 @@ class AboutPageServiceImplTest {
   private ContentItem aboutWith(String growthSource) {
     ContentItem item = new ContentItem();
     var data = objectMapper.createObjectNode().put("heroTitle", "Hello");
-    if (growthSource != null) data.put("growthSource", growthSource);
-    data.putArray("growthStats").addObject().put("value", "1+").put("label", "Embedded");
+    // A block before the intro, so the swap has to find the intro by its type.
+    data.putArray("blocks").addObject().put("id", "v").put("type", "vision").putObject("props");
+    var props =
+        ((com.fasterxml.jackson.databind.node.ArrayNode) data.get("blocks"))
+            .addObject()
+            .put("id", "i")
+            .put("type", "intro")
+            .putObject("props");
+    if (growthSource != null) props.put("growthSource", growthSource);
+    props.putArray("growthStats").addObject().put("value", "1+").put("label", "Embedded");
     item.setData(data);
     return item;
   }
@@ -81,7 +89,7 @@ class AboutPageServiceImplTest {
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
         .assertNext(
             response -> {
-              var figures = response.data().get("growthStats");
+              var figures = response.data().at("/blocks/1/props/growthStats");
               assertEquals(2, figures.size());
               assertEquals("32+", figures.get(0).get("value").asText());
               assertEquals("Employees", figures.get(1).get("label").asText());
@@ -99,7 +107,8 @@ class AboutPageServiceImplTest {
         .assertNext(
             response ->
                 assertEquals(
-                    "Embedded", response.data().get("growthStats").get(0).get("label").asText()))
+                    "Embedded",
+                    response.data().at("/blocks/1/props/growthStats").get(0).get("label").asText()))
         .verifyComplete();
 
     verify(contentItemRepository, never())
@@ -115,7 +124,8 @@ class AboutPageServiceImplTest {
         .assertNext(
             response ->
                 assertEquals(
-                    "Embedded", response.data().get("growthStats").get(0).get("label").asText()))
+                    "Embedded",
+                    response.data().at("/blocks/1/props/growthStats").get(0).get("label").asText()))
         .verifyComplete();
   }
 
@@ -127,7 +137,8 @@ class AboutPageServiceImplTest {
         .thenReturn(Flux.empty());
 
     StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
-        .assertNext(response -> assertEquals(0, response.data().get("growthStats").size()))
+        .assertNext(
+            response -> assertEquals(0, response.data().at("/blocks/1/props/growthStats").size()))
         .verifyComplete();
   }
 }

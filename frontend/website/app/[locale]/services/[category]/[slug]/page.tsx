@@ -52,7 +52,7 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
     image: c.image,
     linkLabel: "Read the case study →",
     linkUrl: `/case-studies/${c.slug}`,
-    ...(i === 0 ? { heading: page.data.storiesHeading, metrics: first?.results } : {}),
+    ...(i === 0 ? { metrics: first?.results } : {}),
   }));
 
   return (

@@ -1,25 +1,25 @@
 import { defaultSlots } from "../defaults";
-import type { AboutPageData, PostArticleSlots } from "../types";
+import type { AboutValuesBlockProps, PostArticleSlots } from "../types";
 
 /**
  * "The DNA of Our Growth" (Figma "About Us" → "Content"): the four values as tall photo cards with
  * the value's name across the bottom.
  */
-export function Values({ page, slots = defaultSlots }: { page: AboutPageData; slots?: PostArticleSlots }) {
+export function Values({ block, slots = defaultSlots }: { block: AboutValuesBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const values = page.values ?? [];
+  const values = block.items ?? [];
   if (values.length === 0) return null;
   return (
     <section id="values" aria-labelledby="values-title" className="design-canvas">
       <div className="abt-values sec">
         <div className="sec-eyebrow-wrap">
-          <div className="cmc-eyebrow">{page.valuesEyebrow ?? "Our Values 4C"}</div>
+          <div className="cmc-eyebrow">{block.eyebrow ?? "Our Values 4C"}</div>
         </div>
         <div className="abt-values-head">
           <h2 id="values-title" className="sec-title">
-            {page.valuesTitle ?? "The DNA of Our Growth"}
+            {block.title ?? "The DNA of Our Growth"}
           </h2>
-          {page.valuesBody && <p>{page.valuesBody}</p>}
+          {block.body && <p>{block.body}</p>}
         </div>
         <ul className="abt-values-cards">
           {values.slice(0, 4).map((v) => (

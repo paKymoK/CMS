@@ -92,9 +92,12 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
                   new ServiceNavResponse.Category(
                       category, text(categoryItem.getData(), "name"), siblings);
 
-              JsonNode slugs = pageItem.getData().get("caseStudies");
+              // The stories block (at most one per page) names the case studies to feature.
               List<String> wanted = new ArrayList<>();
-              if (slugs != null && slugs.isArray()) slugs.forEach(s -> wanted.add(s.asText()));
+              for (JsonNode block : pageItem.getData().path("blocks")) {
+                if (!"stories".equals(block.path("type").asText())) continue;
+                block.path("props").path("caseStudies").forEach(s -> wanted.add(s.asText()));
+              }
 
               return Flux.fromIterable(wanted)
                   .concatMap(

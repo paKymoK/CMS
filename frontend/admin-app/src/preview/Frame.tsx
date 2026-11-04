@@ -56,7 +56,7 @@ export default function Frame() {
     return (
       <IndustryPage
         page={page.page}
-        insights={<SiteSection label="Latest insights (site-wide, not previewed)" />}
+        insights={() => <SiteSection label="Latest insights (site-wide, not previewed)" />}
         contact={<SiteSection label="Contact form (site-wide, not previewed)" />}
       />
     );

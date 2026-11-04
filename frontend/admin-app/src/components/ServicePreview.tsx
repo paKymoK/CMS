@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { IndustryStoryData, SectionIntroData, ServicePageData, ServiceStatData } from "@cms/content-renderer";
+import type { IndustryStoryData, SectionIntroData, ServiceBlockData, ServicePageData, ServiceStatData } from "@cms/content-renderer";
 import { contentApi } from "../lib/api";
 import { mediaSrc } from "../lib/media";
 import type { PreviewPage } from "../lib/previewProtocol";
@@ -10,6 +10,70 @@ import PreviewPanel from "./PreviewPanel";
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v : undefined);
 const list = <T,>(v: unknown, map: (item: Record<string, unknown>) => T): T[] | undefined =>
   Array.isArray(v) ? v.map((item) => map((item ?? {}) as Record<string, unknown>)) : undefined;
+
+/** One stored block as the page component's data (media URLs resolved, blanks dropped); a block of an unknown type is skipped. */
+function toBlock(raw: Record<string, unknown>): ServiceBlockData[] {
+  const props = (raw.props ?? {}) as Record<string, unknown>;
+  const base = { id: str(raw.id) ?? "", hidden: raw.hidden === true };
+  switch (raw.type) {
+    case "capabilities":
+      return [
+        {
+          ...base,
+          type: "capabilities",
+          props: {
+            eyebrow: str(props.eyebrow),
+            title: str(props.title),
+            subtitle: str(props.subtitle),
+            items: list(props.items, (c) => ({ title: str(c.title) ?? "", body: str(c.body), image: mediaSrc(str(c.image)) })),
+          },
+        },
+      ];
+    case "process":
+      return [
+        {
+          ...base,
+          type: "process",
+          props: {
+            title: str(props.title),
+            subtitle: str(props.subtitle),
+            steps: list(props.steps, (s) => ({ title: str(s.title) ?? "", image: mediaSrc(str(s.image)) })),
+          },
+        },
+      ];
+    case "stories":
+      return [
+        {
+          ...base,
+          type: "stories",
+          props: { heading: str(props.heading), caseStudies: Array.isArray(props.caseStudies) ? (props.caseStudies as string[]) : undefined },
+        },
+      ];
+    case "reasons":
+      return [
+        {
+          ...base,
+          type: "reasons",
+          props: {
+            title: str(props.title),
+            subtitle: str(props.subtitle),
+            items: list(props.items, (r) => ({
+              title: str(r.title) ?? "",
+              body: str(r.body),
+              image: mediaSrc(str(r.image)),
+              sideImage: mediaSrc(str(r.sideImage)),
+            })),
+          },
+        },
+      ];
+    case "industries":
+      return [{ ...base, type: "industries", props: {} }];
+    case "highlights":
+      return [{ ...base, type: "highlights", props: {} }];
+    default:
+      return [];
+  }
+}
 
 /** The service page form as the page component's data (media URLs resolved, blanks dropped). */
 function toServicePageData(values: Record<string, unknown>): ServicePageData {
@@ -24,28 +88,7 @@ function toServicePageData(values: Record<string, unknown>): ServicePageData {
     ctaUrl: str(values.ctaUrl),
     heroImage: mediaSrc(str(values.heroImage)),
     heroStats: list(values.heroStats, (s) => ({ value: str(s.value) ?? "", label: str(s.label) ?? "" })),
-    capabilitiesEyebrow: str(values.capabilitiesEyebrow),
-    capabilitiesTitle: str(values.capabilitiesTitle),
-    capabilitiesSubtitle: str(values.capabilitiesSubtitle),
-    capabilities: list(values.capabilities, (c) => ({
-      title: str(c.title) ?? "",
-      body: str(c.body),
-      image: mediaSrc(str(c.image)),
-    })),
-    processTitle: str(values.processTitle),
-    processSubtitle: str(values.processSubtitle),
-    processSteps: list(values.processSteps, (s) => ({ title: str(s.title) ?? "", image: mediaSrc(str(s.image)) })),
-    storiesHeading: str(values.storiesHeading),
-    caseStudies: Array.isArray(values.caseStudies) ? (values.caseStudies as string[]) : undefined,
-    reasonsTitle: str(values.reasonsTitle),
-    reasonsSubtitle: str(values.reasonsSubtitle),
-    reasons: list(values.reasons, (r) => ({
-      title: str(r.title) ?? "",
-      body: str(r.body),
-      image: mediaSrc(str(r.image)),
-      sideImage: mediaSrc(str(r.sideImage)),
-    })),
-    hiddenSections: Array.isArray(values.hiddenSections) ? (values.hiddenSections as string[]) : undefined,
+    blocks: Array.isArray(values.blocks) ? (values.blocks as Record<string, unknown>[]).flatMap(toBlock) : undefined,
   };
 }
 
@@ -89,7 +132,8 @@ export default function ServicePreview({ site, values, onClose }: ResourcePrevie
 
   const page = useMemo<PreviewPage>(() => {
     const data = toServicePageData(values);
-    const featured = (data.caseStudies ?? [])
+    const storiesBlock = data.blocks?.find((b) => b.type === "stories");
+    const featured = (storiesBlock?.type === "stories" ? (storiesBlock.props.caseStudies ?? []) : [])
       .map((slug) => caseStudiesQuery.data?.find((c) => c.slug === slug && c.status === "PUBLISHED"))
       .filter((c): c is FeaturedRow => !!c);
     // The first story supplies the left-column heading and figures, as on the website.
@@ -100,7 +144,7 @@ export default function ServicePreview({ site, values, onClose }: ResourcePrevie
       image: mediaSrc(c.image),
       linkLabel: "Read the case study →",
       linkUrl: `/case-studies/${c.slug}`,
-      ...(i === 0 ? { heading: data.storiesHeading, metrics: featured[0].results ?? undefined } : {}),
+      ...(i === 0 ? { metrics: featured[0].results ?? undefined } : {}),
     }));
     const intro = introQuery.data?.find((s) => s.section === "service-stories");
     return {

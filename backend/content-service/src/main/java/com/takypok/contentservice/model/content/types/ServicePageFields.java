@@ -1,18 +1,26 @@
 package com.takypok.contentservice.model.content.types;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.content.ContentFields;
+import com.takypok.contentservice.model.content.blocks.HighlightsBlock;
+import com.takypok.contentservice.model.content.blocks.IndustriesBlock;
+import com.takypok.contentservice.model.content.blocks.ServiceBlock;
+import com.takypok.contentservice.model.content.blocks.StoriesBlock;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * One page of the Services section (/services/{category}/{slug}), e.g. "Web App Development". Every
- * service page uses the same template; this is its content. A section with no content (or listed in
- * {@code hiddenSections}) is simply not rendered.
+ * service page has a hero and a search/SEO block of its own fields, and a list of {@link
+ * ServiceBlock}s for everything in between. A block with no content (or marked hidden) is simply
+ * not rendered.
  */
 @Getter
 @Setter
@@ -41,28 +49,13 @@ public class ServicePageFields implements ContentFields {
   private String heroImage;
   @Valid private List<StatItem> heroStats;
 
-  // ── Capabilities ──
-  private String capabilitiesEyebrow;
-  private String capabilitiesTitle;
-  private String capabilitiesSubtitle;
-  @Valid private List<Capability> capabilities;
-
-  // ── Process ──
-  private String processTitle;
-  private String processSubtitle;
-  @Valid private List<ProcessStep> processSteps;
-
-  // ── Success stories (case study slugs; figures come from the first one) ──
-  private String storiesHeading;
-  private List<String> caseStudies;
-
-  // ── Reasons to partner ──
-  private String reasonsTitle;
-  private String reasonsSubtitle;
-  @Valid private List<Reason> reasons;
-
-  /** capabilities | process | stories | reasons | industries | highlights */
-  private List<String> hiddenSections;
+  /**
+   * The sections below the hero, in page order. Each is one of the types {@link ServiceBlock}
+   * lists; the stories, industries and highlights sections may appear once.
+   */
+  @Valid
+  @Size(max = 40)
+  private List<ServiceBlock> blocks;
 
   /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
@@ -75,27 +68,20 @@ public class ServicePageFields implements ContentFields {
   /** Asks search engines not to index the page. */
   private Boolean seoNoindex;
 
-  @Getter
-  @Setter
-  public static class Capability {
-    @NotBlank private String title;
-    private String body;
-    private String image;
+  @JsonIgnore
+  @AssertTrue(message = "stories, industries and highlights may each appear only once")
+  public boolean isSingleUseBlocksUnique() {
+    if (blocks == null) return true;
+    long stories = blocks.stream().filter(b -> b.getProps() instanceof StoriesBlock).count();
+    long industries = blocks.stream().filter(b -> b.getProps() instanceof IndustriesBlock).count();
+    long highlights = blocks.stream().filter(b -> b.getProps() instanceof HighlightsBlock).count();
+    return stories <= 1 && industries <= 1 && highlights <= 1;
   }
 
-  @Getter
-  @Setter
-  public static class ProcessStep {
-    @NotBlank private String title;
-    private String image;
-  }
-
-  @Getter
-  @Setter
-  public static class Reason {
-    @NotBlank private String title;
-    private String body;
-    private String image;
-    private String sideImage;
+  @JsonIgnore
+  @AssertTrue(message = "block ids must be unique")
+  public boolean isBlockIdsUnique() {
+    if (blocks == null) return true;
+    return blocks.stream().map(ServiceBlock::getId).distinct().count() == blocks.size();
   }
 }

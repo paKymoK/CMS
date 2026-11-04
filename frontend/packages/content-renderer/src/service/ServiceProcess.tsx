@@ -1,15 +1,15 @@
 import type { CSSProperties } from "react";
 import { defaultSlots } from "../defaults";
-import type { PostArticleSlots, ServicePageData } from "../types";
+import type { PostArticleSlots, ProcessBlockProps } from "../types";
 
 /**
  * "Our Process" (Figma "Content" → "Our Process"): a dark band with a looping strip of numbered
  * step cards (photo with a white caption). The strip scrolls on its own and pauses on hover; with
  * reduced motion it sits still and scrolls by hand.
  */
-export function ServiceProcess({ page, slots = defaultSlots }: { page: ServicePageData; slots?: PostArticleSlots }) {
+export function ServiceProcess({ block, slots = defaultSlots }: { block: ProcessBlockProps; slots?: PostArticleSlots }) {
   const { Image } = slots;
-  const steps = page.processSteps ?? [];
+  const steps = block.steps ?? [];
   if (steps.length === 0) return null;
   const card = (s: (typeof steps)[number], i: number, copy: boolean) => (
     <li key={`${copy ? "b" : "a"}-${i}`} className="svc-step" aria-hidden={copy || undefined}>
@@ -30,9 +30,9 @@ export function ServiceProcess({ page, slots = defaultSlots }: { page: ServicePa
         </div>
         <div className="svc-sec-head svc-sec-head--light">
           <h2 id="svc-process-title" className="svc-light-title">
-            {page.processTitle ?? "Our Process"}
+            {block.title ?? "Our Process"}
           </h2>
-          {page.processSubtitle && <p>{page.processSubtitle}</p>}
+          {block.subtitle && <p>{block.subtitle}</p>}
         </div>
         <div className="svc-strip">
           <ol className="svc-strip-track" style={{ "--n": steps.length } as CSSProperties}>
