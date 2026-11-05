@@ -1,11 +1,31 @@
 # Posts: BRD vs current admin-app
 
-Source BRD: `docs/MKT_Website_Renovation_BRD_Ver_02_211026.docx` (Posts, Categories, Tags sections)
+Source BRD: `docs/MKT Website Renovation_BRD_051126.docx` (5 Nov 2026), which replaces `MKT_Website_Renovation_BRD_Ver_02_211026.docx` (21 Oct). Sections used: Posts, Categories, Tags, Pages, Components, Templates, Users. Section 0 lists what changed between the two versions.
 Compared against: `content_item` table (`content_type = 'post'`), `content-service`, `admin-app`
 
 A Post is a `content_item` row. Type-specific fields live in the `data` jsonb (`PostFields`).
 
 Legend: ✅ covered · 🟡 partly covered · ❌ gap
+
+## 0. What changed in the BRD (Ver_02 → 051126)
+
+The Project Overview, In-Scope list, As-Is / To-Be, NFRs, UI/UX standards and Assumptions are word-for-word unchanged. The change is in "Module-specific Requirements", which went from a short list to numbered requirements:
+
+| Area | New IDs | Summary |
+|---|---|---|
+| Posts | POST-01, POST-02 | Fixed list columns, search / filter / sort, bulk actions (Move to Trash in red), **Trash with 30-day restore**, 20 per page. POST-02 describes editing as components (add, drag, duplicate, undo) |
+| Categories | CAT-01 to CAT-06 | Real entities: parent, description, active/inactive, post count, bulk actions, 30-day Trash, `Uncategorized` default, public `/category/<slug>/` page |
+| Tags | TAG-01 to TAG-06 | Same as categories, without a parent. Public `/tag/<slug>/` page. Page size 20 / 40 / 60 / All |
+| Pages | PAGE-01 to PAGE-08 | Listing with parent page and quick edit, create from template / blank / copy, statuses Draft, Scheduled, Published, Archived, Trash, parent/child, **version history (last 2) with compare and restore** |
+| Components | CMP-01 to CMP-04 | Component library; edit on a page and choose "update everywhere" or "save as new component" |
+| Templates | TMP-01 to TMP-05 | Template list and versioning; an update can apply to all pages using it or only to new pages |
+| Users | USR-01 to USR-07 | List, create, edit, role + website scope, security (SSO, password policy, sessions), read-only audit log with xlsx export, own profile |
+| SEO | (no ID) | Adds canonical URL, follow / no-follow, Open Graph fields and JSON-LD. **No longer lists** the code-injection field or the redirect manager |
+| Menus, Media, Website & Market | (none) | Reduced to "function list is complete, BA builds on it" |
+
+**Removed from the BRD:** the User Stories section, the "Website functions" list (site search, forms, related content, tracking), the whole AI Chatbot block, the testing principles under Responsive, and the closing paragraphs (workflow, business rules, reporting, migration data). The business rules that were there (a live page cannot be deleted directly; a changed live URL needs a redirect or a warning; Editor and Admin may both publish) are no longer in the document. Rows in this doc that cited them are kept, because the app already follows them.
+
+**Open notes inside the BRD:** category URL redirects ("ask Bảo"); the permission matrix ("BA to define and send back"); POST-02 still describes the Post body as a component page, which clashes with the Tiptap editor (G7).
 
 ## 1. Coverage
 
@@ -13,7 +33,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 |---|---|---|---|
 | 1 | Fields: title, slug, excerpt, featured image, author, date, category, tags | `PostFields` has all of them, plus `authorBio`, `authorAvatar`, `layout` | ✅ |
 | 2 | Slug unique per site | `content_slug` table (unique per site, type and scope, primary and old slugs alike, kept by a trigger), auto-resolved by `Slugs.resolve`. A renamed page keeps its old slugs, which 308-redirect to the current one; "Previous URLs" in the editor releases them. Also covers case studies, industry and service pages | ✅ |
-| 3 | Statuses: Draft / Preview / Publish / Schedule / Archive | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server). There is no separate `active` flag any more (G1). Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
+| 3 | Statuses: Draft / Published / Scheduled / Archived (051126 POST-01; Ver_02 also listed Preview) | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server). There is no separate `active` flag any more (G1). Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
 | 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |
 | 6 | Video via URL (YouTube/Vimeo), responsive | `embed` node, allow-listed hosts only | ✅ |
@@ -23,7 +43,7 @@ Legend: ✅ covered · 🟡 partly covered · ❌ gap
 | 10 | Undo / Redo | Toolbar | ✅ |
 | 11 | Preview before publish (desktop/tablet/mobile) | Preview button opens the page in an iframe drawn by the same renderer as the website, from the **unsaved** editor state, with Desktop, Tablet (820 px) and Mobile (390 px) widths (`PreviewPanel`). Works for Posts, Case Studies, Service, Industry and About pages. The site header, footer and contact form are not part of the preview, and Home has none. The earlier token-based preview was removed | ✅ |
 | 12 | Search-snippet preview (BRD: the post as it looks in a search result, mobile and desktop, with an example image) | "Search result preview" button in the SEO checklist opens desktop and mobile results built from the unsaved form (`SearchSnippetModal`); also on Case Studies and the page types | ✅ |
-| 13 | One previous version + restore | Full history in `content_audit` (before/after snapshots), `HistoryDrawer`, RESTORE action | ✅ (exceeds BRD) |
+| 13 | Version history + restore (Ver_02: one previous version; 051126 asks for the last 2 for Pages and Templates, nothing for Posts) | Full history in `content_audit` (before/after snapshots), `HistoryDrawer`, RESTORE action | ✅ (exceeds BRD) |
 | 14 | Audit log | DB trigger records CREATE/UPDATE/PUBLISH/UNPUBLISH/DELETE/RESTORE, including direct SQL | ✅ |
 | 15 | Multi-site, per-site access | `site` table (one row per locale), `CmsAdminGuard.requireSiteAccess` | ✅ |
 | 16 | Featured flag | `featured` | ✅ |
@@ -54,18 +74,42 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 **The `active` flag (folded into status: done).** `content_item.active` is removed. What the public sees is now exactly `status = 'PUBLISHED'`: every public read, the search view and the full-text search dropped their `active` condition. An item that used to be inactive is simply a Draft (a post can also be Scheduled or Archived). In the admin the "Active" switches are gone from the Post, Case Study, page and list drawers; the list's old Active column is now a **Live** switch that flips Draft and Published (disabled for Scheduled and Archived posts, which are changed in the editor). The API no longer accepts or returns `active`; the audit snapshots no longer carry it. Two small behaviour changes: a case study's testimonial now shows only when the testimonial is **Published** (before, only active was checked, which the code comment already described as "unpublished quote omitted"), and restoring a version no longer restores an old active value. The seed data was unaffected (every seeded row is Published). The Banner's own "Active from / until" dates are separate fields in its data and are unchanged. The init SQL changed: recreate the local `content` database.
 
 ### G2. Categories and Tags management
+Now specified in detail in 051126 (CAT-01 to CAT-06, TAG-01 to TAG-06). Current state is unchanged:
 - `category` is a free-text string; `tags` is a string array inside `data`.
 - No Category or Tag tables, no list pages, no parent/child, no active/inactive, no per-category post counts, no bulk actions.
 - Editor category field is a plain text input defaulting to `"insight"`.
 
+What the BRD now requires, as a checklist for the build:
+
+| Requirement | Category | Tag |
+|---|---|---|
+| Table per site; fields name, slug, description, status (Active / Inactive), post count, last updated, updated by | CAT-01 | TAG-01 |
+| Parent category (one parent only); child can be Active only while the parent is Active; activating a parent does not activate its children | CAT-02, CAT-05 | no parent |
+| Slug auto-made from name, editable, unique, normalised (lower case, hyphens) | CAT-02 | TAG-02 |
+| Listing: search by name / slug, filter by status (and parent), sort by name, date, post count; paging (Tag: 20 / 40 / 60 / All) | CAT-01 | TAG-01 |
+| Post count is a link to the list of **Published** posts; a count of 0 is not clickable | CAT-06 | TAG-06 |
+| Create inline from the Post editor; the new item is auto-assigned to the post and kept if the post is cancelled | CAT-02 | TAG-02 |
+| Selected items listed first in the picker, rest alphabetical; at most 15 categories and tags **combined** on one post | CAT-02 | TAG-02 |
+| Default category `Uncategorized`; deleting a category moves its posts there | CAT-02, CAT-03 | n/a |
+| Delete goes to Trash, restorable for 30 days, restore brings back the post links; deleting never deletes posts | CAT-03 | TAG-03 |
+| Quick actions: Delete, Active / Inactive, Remove from all posts | CAT-03 | TAG-03 |
+| Bulk Active, Inactive, Delete with a confirmation and a per-item result; disabled when nothing is selected | CAT-04 | TAG-04 |
+| Inactive: not assignable to new posts, hidden on the site (menu, filters, breadcrumb, labels), old post links kept, posts stay Published | CAT-05 | TAG-05 |
+| Public page per item: `/category/<slug>/` and `/tag/<slug>/`, listing the published posts | CAT-02 | TAG-02 |
+| Public category URL redirect rule when inactive | CAT-05 (BRD note: "ask Bảo") | n/a |
+
+Design notes: the tables should be per site, as slugs and statuses already are (this matches the open question below on scope). The 15-item cap spans two fields, so it needs a server rule, not only a form limit. The public pages need new website routes. The slug-alias mechanism (`content_slug`, 308 redirects) could carry the category URL rule once Bảo answers.
+
 ### G3. Post list view
-- Posts use the generic `ContentPage`: ID, title, a few columns, status, order.
-- No bulk actions, no search, no filter (status/category/site), no sort by updated date or updater, no language column.
+Specified in POST-01. Current state: the generic `ContentPage` shows ID, title, a few columns, status, order.
+- Missing against POST-01: checkbox column, author, shortened slug with copy, category, tags, Updated Date column; default order by Updated Date (newest first).
+- Missing: search by title / slug (partial, case-insensitive), filters (month/year, category, status), sort (updated date, title), bulk actions (publish / unpublish, assign category / tag, Move to Trash, restore), 20 per page.
+- The dedicated list needs Trash (G8) for the bulk action and the restore view.
 
 ### G4. SEO
 - **Done** for Posts, Case Studies, Service, Industry and About pages: meta title (`seoTitle`, the whole page title), meta description, share image (falls back to the cover or main image) and noindex. Each falls back to the title, excerpt or summary and image used before, so nothing changes until a field is filled in. The Posts editor has an SEO card; the other pages have an SEO section. The website's page metadata (title, description, Open Graph and Twitter image, robots) follows the fields.
 - **SEO checklist warning (BRD): done.** An inline panel lists the slug, meta title, meta description and share image as OK, over the usual length, or missing (with the text that will be used instead), plus a noindex notice. Publishing a draft with items missing asks once ("Publish anyway" / "Go back"); updating a live page never asks. Nothing blocks saving or publishing.
-- **Still missing:** redirects when a URL changes (with the warning), the head/body/footer code-injection field (needs sanitising rules), and a social image field beyond the one share image. Roles and per-site rules are unchanged.
+- **Still missing:** the head/body/footer code-injection field, now dropped from the BRD (see G14); the new fields in G14 (canonical, follow, OG text, JSON-LD). Slug-change redirects are done (aliases).
 
 ### G5. Per-media metadata in a post
 - Alt text on inserted images is hard-coded `alt=""`.
@@ -99,8 +143,10 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 **Related, done separately:** the page-type editors (Service, Industry, About) now use a block builder; see `page-model-plan.md`, section 13. Contact Us, shared components and templates are still to do.
 
 ### G8. Delete rule and Trash
-- **Delete rule: done (posts).** A published post cannot be deleted, from the API (400: "archive it or move it to draft first") or the list (the Delete button is disabled with a tooltip). Draft and archived posts can be deleted.
-- **Trash with restore: not built.** A deleted post is still recoverable only through the audit trail ("Create new from this version"). Archived is the safe place for content that should leave the site but not be lost.
+- **Delete rule: done (posts).** A published post cannot be deleted, from the API (400: "archive it or move it to draft first") or the list (the Delete button is disabled with a tooltip). Draft and archived posts can be deleted. The 051126 BRD no longer states this rule, but nothing contradicts it.
+- **Trash with restore: not built, and now a stated requirement.** 051126 asks for Trash on **Posts** (POST-01: separate area, restore returns to Draft, purge after 30 days), **Categories, Tags** (30 days, restore brings back the post links), **Pages** (PAGE-02: 30 days or delete forever; listed as a status) and **Components** (CMP-03: 30 days). Today a deleted post is recoverable only through the audit trail ("Create new from this version").
+- The earlier decision to skip Trash (Archived plus the delete rule) is now in conflict with the BRD; it needs a decision, see section 5.
+- Sketch: a `TRASHED` status (or a `deleted_at` column) plus a purge job beside `publish_scheduled_content()` in pg_cron; the public reads already match `PUBLISHED` exactly, so a trashed row is hidden with no read path changed. The audit trigger already has DELETE and RESTORE actions.
 
 ### G10. Create a translated draft in another site (feature)
 - BRD intent: when an editor drafts a post in EN, they can create a new **DRAFT** of it in another site (e.g. VI) with the content auto-translated, then review and edit it independently.
@@ -111,8 +157,59 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 - A source reference on the new row (optional) would only be for display ("translated from EN post #123"), not required for the feature.
 
 ### G9. Roles
-- Guard checks site access only. No Editor vs Admin separation on post actions found.
-- To verify: `CmsAdminGuard`, auth-service client roles.
+- Guard checks site access only (`CmsAdminGuard`: global or per-site `ADMIN` role). No Editor vs Admin separation on post actions found.
+- 051126 (USR-04) defines three roles with a website scope: **Super Admin** (everything), **Marketing Admin** (users within scope, content, templates, components, menu, config, publishing) and **Editor** (create, edit, publish, manage pages and others' content in scope; no users, roles or configuration). The permission matrix is still to come from the BA.
+- Note: the NFR section still names the roles "Marketing Editor, Marketing Admin and System/Technical Admin", so the two sections disagree on the third role.
+- Auth-service already has project-scoped role assignments (`client_role_assignment`, one role per client, user and project), which fits the website scope. User management is built in auth-service (G13).
+
+### G11. Pages (PAGE-01 to PAGE-08)
+Pages here means the page types (Service, Industry, About, Case Study, Home). Compared with the code and `page-model-plan.md`:
+
+| BRD | Current | Status |
+|---|---|---|
+| Blocks / components on a page: add, remove, duplicate, hide, reorder | Block builder on Service, Industry and About (`page-model-plan.md` section 13). Home and Contact Us are not on it yet | 🟡 |
+| Statuses Draft, Scheduled, Published, Archived, Trash | Non-post types are Draft and Published only; scheduling and archive are posts only (G1) | ❌ |
+| Edit a published page without changing the live version (draft copy) | Not found: a save on a Published row changes the live row. Needs a draft-over-live design (second row or a `draft` jsonb) | ❌ |
+| Parent / child pages, page order, full URL from the parent chain | No page hierarchy found in the page model | ❌ |
+| Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Generic list; no bulk actions, no quick edit, no page password | ❌ |
+| Create from template, blank, or copy an existing page | No page templates; `post_template` exists for posts only | ❌ |
+| Featured image, excerpt (default first 55 words), author with a show/hide flag | Per type; not checked field by field | 🟡 |
+| Slug unique per site and language, warning on change, redirect | Done (`content_slug`, 308 aliases) | ✅ |
+| Save as Template | Posts only | ❌ |
+| Preview Desktop / Tablet / Mobile of unsaved edits | Done for Service, Industry, About, Case Study, Posts; not Home; header, footer shown as stand-ins | 🟡 |
+| Version history: compare and restore, last 2 kept | Full history in `content_audit` with diff and restore | ✅ (exceeds) |
+| Warning when a trashed page is in a menu or has internal links | Not built (needs Trash) | ❌ |
+| Per-page Search & Filter configuration | Not checked; the BRD says "function list complete, BA to expand" | ? |
+
+### G12. Components library and Templates (CMP-01 to CMP-04, TMP-01 to TMP-05)
+- **Not built.** Blocks exist inside each page row, but there is no shared library: no list with previews, no "shared component updates every page" versus "copy that diverges" (CMP-04), no 30-day delete, no template entity with versions, "apply to all pages or only new ones", "cannot delete a template in use".
+- This is the same question as section 3 of `page-model-plan.md` (embedded versus library). That plan chose embedded content with an optional library per field. CMP-04 asks for the library to be a first-class object with two modes, which is a bigger step. A shared component would need its own `content_item` type and a reference from the block (`props.componentId`), with the renderer resolving it.
+- Template TMP-05 asks for a template update to propagate to existing pages. The plan's rule "rows hold content only, layout lives in code" works against that, so a Template would be a stored list of block types rather than a code layout. Decision needed (section 5).
+
+### G13. User management and security (USR-01 to USR-07)
+- **Decision: user management lives in auth-service, not in the admin app.** The Users screens (USR-01 to USR-05) are built there, next to the data they change. The admin app gets no Users module. It shows a link or redirect to auth-service for a user who has permission to manage users, and hides it for everyone else.
+- What auth-service has today: REST endpoints for users, groups, departments, units, clients and project-scoped role assignments (`/v1/users`, `/v1/groups`, `/v1/clients/{clientId}/roles`, and so on). Its pages are only login, consent, profile-complete and error, so the Users UI itself is still to build there.
+- **Done in auth-service (backend, first slice):**
+  - **Management API locked down.** `/v1/**` was open to anyone at `:9000` (and any token holder through the gateway). It is now its own filter chain (`ApiSecurityConfig`): bearer token only, no session, and only an active **Super Admin** gets in. Super Admin = the global (no site) `ADMIN` role on `cms-admin`, held directly or through a group, on an account that is not inactive. It is read from the database on each call, not from the token, so a demotion or deactivation counts at once. The seed gives `admin` the global role at startup (no DB recreate needed).
+  - **Read and status API:** `GET /v1/users` (search by name / email / username, filter by status, role, site; paging, max 100), `GET /v1/users/{sub}` (with cms-admin roles, direct and through groups), `PATCH /v1/users/{sub}/status` (`ACTIVE` / `INACTIVE`).
+  - **Inactive means no login.** The state lives in `userinfo.status` (an existing, previously unused column; a missing value is ACTIVE). It cannot use `users.enabled`: LDAP shadow rows are created with `enabled = false`. The login check runs after the password check, covers LDAP and local accounts, and does not count toward the lockout. Deactivating also deletes the user's `oauth2_authorization` rows so refresh tokens stop working. An access token already issued stays valid for up to 15 minutes.
+  - **Last Super Admin protected** (USR-03): deactivating the user, removing the role assignment, deleting the group, or removing the member is refused if it would leave no active Super Admin.
+  - **MFA (USR-05): seam only, not built.** The BRD names no factor. `MfaPolicy` (default `NoMfaPolicy`, always "no") is called once after a correct password in `DomainAuthenticationManager`. If a policy ever returns true, the login **fails** (no MFA step exists), it never passes. `MfaPolicy`'s javadoc says where the challenge step goes. No schema was reserved, because the factor decides the shape.
+  - **Verified against real Postgres and Redis** (service started, signed in through the OAuth login): 53 API checks, covering the list filters, deactivate and reactivate, refresh-token revocation, and the last-Super-Admin refusals by user, role, group and member. Unit tests: 16 (`ApiSecurityTest`, `UserServiceImplTest`, `DomainAuthenticationManagerTest`). Not run: the gateway path (Eureka was off), and an inactive **LDAP** user (LDAP was off; covered by a unit test only).
+- **Done in auth-service (Users screens, Thymeleaf):** `/admin/users` (list with search and status / role / site filters, paging), `/admin/users/new`, `/admin/users/{sub}` (profile, CMS roles add and remove, deactivate and reactivate). The look follows the admin app (navy sidebar, light page, same tokens and fonts) and works at phone width. Only an active Super Admin gets in: not signed in goes to `/login` and back; signed in without the role sees a 403 page. Forms carry a CSRF token. The screens call the same services as the API, so the same rules hold (last Super Admin, inactive accounts). Checked in a browser: 29 checks at desktop width plus phone-width and access-denied views. `/admin` now redirects to the list (the old forward to a missing file is gone). New setting `auth.admin-app-url` (`CMS_ADMIN_URL`) feeds the "Back to CMS" link.
+  - Limits: a new account gets a password typed by the admin (min 8 characters, no policy beyond that); the only assignable role is `ADMIN`; site codes are free text (lower-case letters, digits, `-`, `_`), not picked from the content-service sites; roles that come from a group are shown but only direct assignments can be removed here.
+- **Done in auth-service (user model, phases 1 and 2):** `userinfo` now has `status` (`NOT NULL`, `ACTIVE` / `INACTIVE`), `account_type` (`LOCAL` or `DIRECTORY`; LDAP staff are `DIRECTORY`), `display_name`, `date_of_birth`, `last_login_at`, `created_at`, `updated_at`, and local emails are unique (case-insensitive). **Delete is a hard delete for `LOCAL` accounts only**, through `DELETE /v1/users/{sub}` and a Delete button on the user page. It is refused for directory accounts, for your own account, for an account that is still active (deactivate first), and when it would leave no active Super Admin. It removes the account, roles, group membership, tokens and authorities in one transaction. The `sub` is written to the `deleted_user` table and can never be created again, because `sub` is the audit identity in content snapshots. This edited `init-schema.sql` and `init-data.sql`: recreate the local `authentication` database. Verified against real Postgres (22 delete checks, 6 browser checks).
+  - **Login and screens (phases 3 and 4):** every sign-in writes `last_login_at` (the one success handler covers local and LDAP logins). A staff account's name and email are refreshed from LDAP at every sign-in; if the directory returns nothing the stored value is kept. The API and screens refuse name and email changes on staff accounts (the fields show read-only); display name and date of birth are editable for everyone (a future date is refused). The list has a Last sign-in column and a Staff tag; the user page shows account type, last sign-in and created date. Verified: 9 more API checks, 10 browser checks (desktop and phone width), 24 unit tests in total. Not run: a real LDAP refresh (LDAP off; unit-tested with a mock). **Time zones:** timestamps are `ZonedDateTime` in UTC end to end (`TIMESTAMPTZ` columns, `hibernate.jdbc.time_zone: UTC`, API values like `2026-11-05T16:22:15Z`), so the server's own zone never matters (checked with the server in Asia/Ho_Chi_Minh and America/Los_Angeles). The screens write UTC with a label and a small script (`local-time.js`) shows each viewer their own zone; without JavaScript the labelled UTC text stays.
+  - **Profile fields are clearable:** the profile save is a merge patch. A field not sent is kept; a field sent as null or blank text is cleared, in the API (`PATCH /v1/users/{sub}/profile`) and on the screen (an empty box clears the field). Email cannot be cleared (it is the sign-in name of a local account), a unit needs a department, and name and email of a staff account stay LDAP's. Note for API callers: an explicit `null` used to mean "no change" and now clears. Verified: 8 API checks, 7 browser checks, 28 unit tests.
+  - Not done: the audit record of deletes and sign-ins has no screen (USR-06).
+- **Still to build in auth-service:** invite email and password reset (needs a mail server decision); last-login time; login and permission history for USR-06 (nothing is recorded today); password policy and session list (USR-05; lockout already exists, SSO beyond LDAP not checked); groups screen if wanted.
+- **To build in the admin app (small):** a "Users" link to `/admin/users` on auth-service, shown only to a Super Admin (global `ADMIN` role in the token); sending the user back afterwards; and the own-profile page (USR-07) if it should stay in the CMS rather than auth-service (display name, avatar, date of birth, change password, logout). Decide where profile lives.
+- **Permission check goes both ways:** content-service checks site access only (`CmsAdminGuard`). The role that opens the redirect must be the same one auth-service accepts for user changes, so the admin hides the link and auth-service still enforces it.
+- **Audit log screen (USR-06):** content changes are in `content_audit` and the activity feed; login history and permission history belong to auth-service. Missing: a filter by user, time range, site and type, and an **xlsx export**. A single screen would need both sources, or two screens (content log in the admin, account log in auth-service). The log stays view-only, which already holds.
+
+### G14. SEO additions in 051126
+- New fields in the BRD: canonical URL, follow / no-follow (beside index / no-index), Open Graph title and description (we have only the share image), and JSON-LD structured data.
+- Dropped from the BRD: the code-injection field and the redirect manager, which G4 listed as open. Slug redirects exist already (aliases). A redirect manager for arbitrary URLs is no longer asked for.
 
 ## 3. Design differences to decide
 
@@ -120,18 +217,25 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 |---|---|---|---|
 | Language model | `site == locale`; content authored independently per site | Manage EN/VI versions of the same content | **Keep as is.** The BRD need is a feature (see G10), not a model change. |
 | `active` vs `status` | Folded: `active` is removed, status alone decides what is public | Status only | **Done** (G1). |
-| Version history | Full history | 1 previous version | Keep the app's approach. |
-| Tag parent field | n/a | Tags section lists "parent category" | Ignore: BRD says Tags are non-hierarchical. |
+| Version history | Full history | 051126: last 2 versions for Pages and Templates (Ver_02: 1 for Posts) | Keep the app's approach; it covers the BRD. |
+| Tag parent field | n/a | Ver_02 listed a parent for Tags; 051126 TAG-01 to TAG-06 has none | Resolved: Tags are flat. |
+| Post body editing | Tiptap rich-text editor | POST-02 describes components (add, drag, duplicate) | Open, see G7. Pages already use blocks. |
+| Published page edits | A save changes the live row | PAGE-03: edits stay a draft until Publish | Needs a draft-over-live design (G11). |
+| Component sharing | Content embedded in each page row | CMP-04: shared component updates every page, or a copy that diverges | Conflicts with `page-model-plan.md` section 3 (G12). |
+| Third role | `ADMIN` only | Marketing Admin / Editor / Super Admin (USR) vs System Admin (NFR) | BRD disagrees with itself (G9). |
 
 ## 4. Suggested order
 
-1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. Also enables the delete rule and Trash (G1, G8). *(Done: archive, the delete rule and scheduling with a pg_cron job; see G1.)*
-2. **Category and Tag tables** per site, with posts referencing them (G2).
-3. ~~**SEO fields** in `PostFields`, DTOs and editor sidebar (G4)~~ done, together with the checklist; redirects and code injection remain.
-4. **Dedicated post list page** with search, filters, bulk actions (G3).
-5. Translated-draft action (G10), after G1 and G2 so the copy carries the right status and taxonomy.
-6. Editor blocks (G5, G7) and the search-snippet preview (G6; the meta fields it needs now exist).
-7. Roles check (G9).
+1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. *(Done for posts: archive, the delete rule, scheduling with a pg_cron job; see G1.)*
+2. **Trash** (G8) for posts first. Categories, Tags, Pages and Components all need it, so build the mechanism once (status or `deleted_at`, 30-day purge job, restore).
+3. **Category and Tag tables** per site, the Post pickers, public `/category` and `/tag` pages (G2). Largest single gap and the BRD now specifies it fully.
+4. **Dedicated post list** with search, filters, bulk actions (G3), built on 2 and 3.
+5. ~~SEO fields and checklist (G4)~~ done; add the G14 fields (canonical, follow, OG text, JSON-LD) when convenient.
+6. **Page statuses and draft-over-live** for the page types (G11), then parent / child pages and the page list upgrades.
+7. **Roles** (G9), **user management in auth-service** with a redirect from the admin (G13), and the audit log export. Wait for the BA's permission matrix before building the matrix itself.
+8. Translated-draft action (G10), after Category / Tag tables so the copy carries the taxonomy.
+9. **Components library and Templates** (G12), after the decision in section 5.
+10. Editor blocks (G5, G7) and the remaining preview gaps (G6).
 
 ## 5. Open questions for the critical review
 
@@ -140,9 +244,19 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 - Does the translated draft keep an optional "translated from" reference, or stay fully independent?
 - Does G10 need permission rules (who may create drafts in other sites)?
 - Is the Tiptap editor acceptable, or does the BRD "block" language require a block builder? Pages now use a block builder; for the Post body the decision is pending (see G7).
-- Trash: add a real Trash status with restore and a purge job, or keep Archived plus the delete rule? Undecided; skipped for now (see G1, G8).
+- Trash: the BRD now requires it for Posts, Categories, Tags, Pages and Components (30-day restore). Build it, or ask the BA whether Archived plus the delete rule is acceptable for Posts? (see G8)
 - Is "Preview" in the Post status list a stored status, or the preview action? The workflow section lists Draft, Published, Scheduled, Unpublished/Archived and leaves internal review to Marketing's own process, which suggests the action (done), not a status.
 - Search-snippet preview: Google only, or other engines too? Is a computed snippet enough (title, URL, description, image), or must it match the live search result?
+- Shared components (CMP-04): is the library a first-class object that blocks reference, or do we keep embedded content with an optional library per field (`page-model-plan.md` section 3)? Template updates that reach existing pages (TMP-05) depend on the same answer.
+- Pages: do Home and Contact Us join the block builder before Templates, so a template can describe every page type?
+- Draft-over-live for pages (PAGE-03): second row, or a pending-changes jsonb on the same row? Posts have the same need (POST-02 "Save Draft keeps the live version"); does it apply to them too?
+- Roles: which third role is right, Marketing Admin (USR) or System/Technical Admin (NFR)? When does the BA's permission matrix arrive?
+- Users and security (USR-05): which of SSO, MFA, lockout and session list does auth-service already provide? Not checked.
+- Audit log (USR-06): one screen merging content and account events, or two screens (admin for content, auth-service for logins and permissions)? Where does the xlsx export live?
+- Own profile (USR-07): in the admin app or in auth-service?
+- Category URL redirect when a category goes Inactive (CAT-05, "ask Bảo"): answer still outstanding.
+- Version caps: the BRD keeps only 2 versions for Pages and Templates. We keep all in `content_audit`; confirm the BRD means a minimum, not a limit to enforce.
+- Chatbot: removed from this BRD. Should `chat-service` and the assistant page be kept, or are they now out of scope?
 
 ## Key files
 
@@ -152,5 +266,8 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 - Sanitizer: `backend/content-service/src/main/java/com/takypok/contentservice/util/RichTextSanitizer.java`
 - Editor page: `admin-app/src/pages/PostEditorPage.tsx`
 - Rich text editor: `admin-app/src/components/RichTextEditor.tsx`, `admin-app/src/components/rte/extensions.ts`
+- Admin routes: `admin-app/src/router/index.tsx` (no Users route, by decision: see G13)
+- User and role endpoints: `backend/auth-service` (`/v1/users`, `/v1/clients/{clientId}/roles`, `/v1/groups`)
+- Role guard: `backend/content-service/src/main/java/com/takypok/contentservice/config/CmsAdminGuard.java`
 - Preview: `admin-app/src/components/PreviewPanel.tsx` (device widths), `admin-app/src/components/resourcePreviews.ts` and `*Preview.tsx` (one per page type), `admin-app/src/preview/Frame.tsx` (the iframe), `frontend/packages/content-renderer` (the shared renderer)
 - List page and resource config: `admin-app/src/pages/ContentPage.tsx`, `admin-app/src/config/resources.ts`
