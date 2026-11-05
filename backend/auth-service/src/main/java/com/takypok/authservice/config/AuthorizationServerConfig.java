@@ -200,6 +200,15 @@ public class AuthorizationServerConfig {
 
     upsertClient(registeredClientRepository, cmsAdmin);
 
+    // Global ADMIN (no project) = Super Admin: may manage users, and reaches every site.
+    seedProjectRole(
+        registeredClientRepository,
+        clientRoleAssignmentRepository,
+        CMS_ADMIN_CLIENT_ID,
+        "admin",
+        null,
+        "ADMIN");
+
     seedProjectRole(
         registeredClientRepository,
         clientRoleAssignmentRepository,

@@ -5,6 +5,7 @@ import com.takypok.authservice.config.auth.DomainAuthenticationManager;
 import com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler;
 import com.takypok.authservice.config.auth.LoginFailureHandler;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.SuperAdminService;
 import java.util.Arrays;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -128,7 +130,8 @@ public class SecurityConfig {
   public SecurityFilterChain defaultSecurityFilterChain(
       HttpSecurity http,
       DomainAuthenticationFilter domainAuthenticationFilter,
-      SecurityContextRepository securityContextRepository)
+      SecurityContextRepository securityContextRepository,
+      SuperAdminService superAdminService)
       throws Exception {
 
     return http.csrf(
@@ -138,7 +141,6 @@ public class SecurityConfig {
                     "/login",
                     "/logout",
                     "/profile/complete",
-                    "/v1/**",
                     "/actuator/**",
                     "/.well-known/**",
                     "/connect/**"))
@@ -156,8 +158,8 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/assets/**",
                         "/login/**",
+                        "/access-denied",
                         "/logout",
-                        "/v1/**",
                         "/actuator/**",
                         "/*.svg",
                         "/*.png",
@@ -165,11 +167,20 @@ public class SecurityConfig {
                         "/*.js",
                         "/*.css")
                     .permitAll()
+                    // The Users screens: a signed-in active Super Admin only. Not signed in goes to
+                    // /login and back; signed in but not allowed goes to /access-denied.
+                    .requestMatchers("/admin/**")
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(
+                                superAdminService.isActiveSuperAdmin(authentication.get())))
                     .anyRequest()
                     .authenticated())
         .addFilterAt(domainAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .exceptionHandling(
-            ex -> ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")))
+            ex ->
+                ex.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+                    .accessDeniedPage("/access-denied"))
         .build();
   }
 

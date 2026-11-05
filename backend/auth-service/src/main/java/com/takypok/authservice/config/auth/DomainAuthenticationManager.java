@@ -1,12 +1,17 @@
 package com.takypok.authservice.config.auth;
 
+import com.takypok.authservice.model.entity.UserStatus;
+import com.takypok.authservice.model.entity.Userinfo;
+import com.takypok.authservice.repository.UserinfoRepository;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
@@ -36,6 +41,8 @@ public class DomainAuthenticationManager implements AuthenticationManager {
   private final DaoAuthenticationProvider jdbcAuthenticationProvider;
   private final JdbcUserDetailsManager jdbcUserDetailsManager;
   private final StringRedisTemplate redisTemplate;
+  private final UserinfoRepository userinfoRepository;
+  private final MfaPolicy mfaPolicy;
 
   @Override
   public Authentication authenticate(Authentication authentication) {
@@ -61,12 +68,30 @@ public class DomainAuthenticationManager implements AuthenticationManager {
       throw ex;
     }
 
+    // Checked after the credentials, so a wrong password never reveals whether an account is
+    // inactive. This is where an LDAP account is blocked too: the directory knows nothing of it.
+    rejectIfInactive(username);
+
+    // MFA seam: nothing runs today (NoMfaPolicy). See MfaPolicy for how to build the second step.
+    if (mfaPolicy.isSecondFactorRequired(result)) {
+      throw new AuthenticationServiceException(
+          "A second factor is required but no MFA step is implemented");
+    }
+
     clearFailures(username, remoteAddress);
 
     if (result instanceof AbstractAuthenticationToken aat) {
       aat.setDetails(token.getDomain());
     }
     return result;
+  }
+
+  private void rejectIfInactive(String username) {
+    // No row yet = an LDAP user's first login, provisioned only after this succeeds.
+    Userinfo userinfo = userinfoRepository.getBySub(username);
+    if (userinfo != null && UserStatus.INACTIVE.name().equals(userinfo.getStatus())) {
+      throw new DisabledException("Account is inactive");
+    }
   }
 
   private void checkLocked(String username, String remoteAddress) {

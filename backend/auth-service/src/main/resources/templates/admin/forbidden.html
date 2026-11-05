@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head('No access')}"></head>
+<body>
+<div class="center-page">
+    <div class="card center-card">
+        <span class="eyebrow">403</span>
+        <h1>You cannot manage users</h1>
+        <p class="sub" style="margin:10px 0 22px">Only a Super Admin can open this area. Ask one to change your role if you need it.</p>
+        <div class="actions" style="justify-content:center">
+            <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn" type="submit">Sign out</button></form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -16,5 +16,5 @@ INSERT INTO authorities (username, authority)
 VALUES ('admin', 'ROLE_ADMIN'),
        ('admin', 'ROLE_USER');
 
-INSERT INTO userinfo (sub, name, email)
-VALUES ('admin', 'Admin', 'admin@gmail.com');
+INSERT INTO userinfo (sub, name, email, account_type)
+VALUES ('admin', 'Admin', 'admin@gmail.com', 'LOCAL');

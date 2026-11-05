@@ -8,6 +8,12 @@ public class AdminController {
 
   @GetMapping(value = {"/admin", "/admin/"})
   public String admin() {
-    return "forward:/admin/index.html";
+    return "redirect:/admin/users";
+  }
+
+  /** Shown to a signed-in user who may not manage users (see SecurityConfig). */
+  @GetMapping("/access-denied")
+  public String accessDenied() {
+    return "admin/forbidden";
   }
 }

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head('Users')}"></head>
+<body>
+<div class="shell">
+    <aside th:replace="~{admin/layout :: sidebar('users')}"></aside>
+    <main class="main"><div class="wrap">
+
+        <div class="page-head">
+            <div>
+                <span class="eyebrow">Access</span>
+                <h1>Users</h1>
+                <p class="sub"><span th:text="${result.totalElements}">0</span> accounts. Roles are for the CMS only.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/admin/users/new}">New user</a>
+        </div>
+
+        <div class="alert alert-ok" role="status" th:if="${flash}" th:text="${flash}"></div>
+        <div class="alert alert-err" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <form class="filters" method="get" th:action="@{/admin/users}">
+            <div class="field">
+                <label for="q">Search</label>
+                <input type="text" id="q" name="q" th:value="${q}" placeholder="Name, email or username">
+            </div>
+            <div class="field">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="" th:selected="${status == ''}">All</option>
+                    <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Active</option>
+                    <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Inactive</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="role">Role</label>
+                <select id="role" name="role">
+                    <option value="" th:selected="${role == ''}">Any</option>
+                    <option th:each="r : ${roleOptions}" th:value="${r}" th:text="${r}" th:selected="${role == r}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="project">Site</label>
+                <input type="text" id="project" name="project" th:value="${project}" placeholder="en, vi …">
+            </div>
+            <button class="btn" type="submit">Filter</button>
+        </form>
+
+        <div class="card table-card">
+            <table th:if="${!result.content.isEmpty()}">
+                <thead>
+                <tr><th scope="col">User</th><th scope="col">Access</th><th scope="col">Status</th><th scope="col">Last sign-in</th><th scope="col"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${result.content}">
+                    <td class="cell-first" data-label="User">
+                        <div class="who">
+                            <span><span th:text="${u.name != null and !u.name.isBlank()} ? ${u.name} : ${u.sub}">Name</span>
+                                <span class="chip" th:if="${u.accountType == 'DIRECTORY'}" style="margin-left:6px">Staff</span></span>
+                            <small th:text="${(u.email != null and !u.email.isBlank() and u.email != u.sub) ? u.email + ' · ' + u.sub : u.sub}">email</small>
+                        </div>
+                    </td>
+                    <td data-label="Access"><div class="chips">
+                        <span th:each="r : ${u.roles}"
+                              class="chip" th:classappend="${r.projectId == null and r.role == 'ADMIN'} ? 'chip-super'"
+                              th:text="${r.projectId == null and r.role == 'ADMIN'} ? 'Super Admin' : ${r.role + ' · ' + r.projectId}"></span>
+                        <span class="mono" th:if="${u.roles.isEmpty()}">no CMS role</span>
+                    </div></td>
+                    <td data-label="Status"><span class="status" th:classappend="${'status-' + u.status}" th:text="${u.status == 'ACTIVE'} ? 'Active' : 'Inactive'"></span></td>
+                    <td data-label="Last sign-in"><time class="mono ts" th:if="${u.lastLoginAt != null}" th:datetime="${#strings.replace(#temporals.formatISO(u.lastLoginAt), '+0000', 'Z')}" th:text="${#temporals.format(u.lastLoginAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time>
+                        <span class="mono" th:if="${u.lastLoginAt == null}">Never</span></td>
+                    <td data-label=""><a class="btn btn-sm" th:href="@{/admin/users/{sub}(sub=${u.sub})}">Manage</a></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="empty" th:if="${result.content.isEmpty()}">No users match.</div>
+
+            <div class="pager" th:if="${result.totalPages > 1}">
+                <span>Page <span th:text="${result.page + 1}">1</span> of <span th:text="${result.totalPages}">1</span></span>
+                <span class="btns">
+                    <a class="btn btn-sm" th:if="${result.page > 0}"
+                       th:href="@{/admin/users(q=${q},status=${status},role=${role},project=${project},page=${result.page - 1})}">Previous</a>
+                    <a class="btn btn-sm" th:if="${result.page + 1 < result.totalPages}"
+                       th:href="@{/admin/users(q=${q},status=${status},role=${role},project=${project},page=${result.page + 1})}">Next</a>
+                </span>
+            </div>
+        </div>
+
+    </div></main>
+</div>
+</body>
+</html>

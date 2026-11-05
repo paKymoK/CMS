@@ -4,6 +4,8 @@ server:
 auth:
   issuer-uri: ${AUTH_ISSUER_URI:http://127.0.0.1:9000}
   internal-domain: ${AUTH_INTERNAL_DOMAIN:mycompany.local}
+  # Where the "Back to CMS" link of the Users screens points.
+  admin-app-url: ${CMS_ADMIN_URL:http://localhost:5173}
   cms-admin-client:
     redirect-uris: ${CMS_ADMIN_REDIRECT_URIS:http://localhost:5173/callback}
     post-logout-redirect-uris: ${CMS_ADMIN_POST_LOGOUT_REDIRECT_URIS:http://localhost:5173/login}
@@ -41,6 +43,9 @@ spring:
     hibernate:
       ddl-auto: none
     database: postgresql
+    properties:
+      # timestamps are read back in UTC, not the server's zone
+      hibernate.jdbc.time_zone: UTC
     show-sql: true
   config:
     import: 'classpath:management.yml'

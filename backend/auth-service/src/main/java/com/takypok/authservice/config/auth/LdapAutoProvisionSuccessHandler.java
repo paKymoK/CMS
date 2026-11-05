@@ -1,5 +1,6 @@
 package com.takypok.authservice.config.auth;
 
+import com.takypok.authservice.model.entity.AccountType;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
 import jakarta.servlet.ServletException;
@@ -7,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import javax.naming.NamingException;
@@ -54,6 +57,7 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
       throws IOException, ServletException {
 
     String username = authentication.getName();
+    boolean provisioned = false;
     if (!userDetailsManager.userExists(username)) {
       // The password is a random bcrypt hash — it can never be used for JDBC login.
       var user =
@@ -67,15 +71,26 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
       log.info("Auto-provisioned local account for LDAP user: {}", username);
 
       String[] displayNameAndMail = lookupLdapDisplayNameAndMail(username);
-      Userinfo userinfo = new Userinfo();
-      userinfo.setSub(username);
-      userinfo.setName(displayNameAndMail[0]);
-      userinfo.setEmail(displayNameAndMail[1]);
+      Userinfo created = new Userinfo();
+      created.setSub(username);
+      created.setName(displayNameAndMail[0]);
+      created.setEmail(displayNameAndMail[1]);
+      created.setAccountType(AccountType.DIRECTORY.name());
+      userinfoRepository.save(created);
+      provisioned = true;
+    }
+
+    Userinfo userinfo = userinfoRepository.getBySub(username);
+    if (userinfo != null) {
+      // The directory owns a staff member's name and email, so keep them current on every login.
+      if (!provisioned && AccountType.DIRECTORY.name().equals(userinfo.getAccountType())) {
+        refreshFromDirectory(userinfo);
+      }
+      userinfo.setLastLoginAt(ZonedDateTime.now(ZoneOffset.UTC));
       userinfoRepository.save(userinfo);
     }
 
     if (authentication.getDetails() instanceof String domain && "GUEST".equals(domain)) {
-      Userinfo userinfo = userinfoRepository.getBySub(username);
       if (userinfo == null || userinfo.getName() == null || userinfo.getName().isBlank()) {
         response.sendRedirect("/profile/complete");
         return;
@@ -83,6 +98,17 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
     }
 
     super.onAuthenticationSuccess(request, response, authentication);
+  }
+
+  /** A value the directory did not return leaves the stored one as it was. */
+  private void refreshFromDirectory(Userinfo userinfo) {
+    String[] displayNameAndMail = lookupLdapDisplayNameAndMail(userinfo.getSub());
+    if (displayNameAndMail[0] != null && !displayNameAndMail[0].isBlank()) {
+      userinfo.setName(displayNameAndMail[0]);
+    }
+    if (displayNameAndMail[1] != null && !displayNameAndMail[1].isBlank()) {
+      userinfo.setEmail(displayNameAndMail[1]);
+    }
   }
 
   /** Returns {@code [displayName, mail]}, either element possibly null if not found/unset. */

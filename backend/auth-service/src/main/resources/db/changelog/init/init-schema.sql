@@ -135,13 +135,36 @@ CREATE TABLE IF NOT EXISTS userinfo
     joined_date   DATE,
     shift         VARCHAR(50),
     shift_hours   VARCHAR(100),
-    status        VARCHAR(20),
+    status        VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
     avatar_url    VARCHAR(500),
+    account_type  VARCHAR(20)  NOT NULL DEFAULT 'LOCAL',
+    display_name  VARCHAR(200),
+    date_of_birth DATE,
+    last_login_at TIMESTAMPTZ,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT userinfo_pkey PRIMARY KEY (sub),
+    CONSTRAINT ck_userinfo_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    CONSTRAINT ck_userinfo_account_type CHECK (account_type IN ('LOCAL', 'DIRECTORY')),
     CONSTRAINT fk_userinfo_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE,
     CONSTRAINT fk_userinfo_department FOREIGN KEY (department_id) REFERENCES department (id),
     CONSTRAINT fk_userinfo_unit FOREIGN KEY (unit_id) REFERENCES unit (id),
     CONSTRAINT fk_userinfo_manager_sub FOREIGN KEY (manager_sub) REFERENCES userinfo (sub)
+);
+
+-- Email is the sign-in name of a LOCAL account, so it must be unique among them. DIRECTORY emails
+-- come from LDAP and are left unconstrained so a clash can never block a staff login.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_userinfo_local_email
+    ON userinfo (lower(email)) WHERE account_type = 'LOCAL' AND email IS NOT NULL;
+
+-- Hard-deleting a LOCAL account removes its rows, but its `sub` stays reserved here: `sub` is the
+-- audit identity stored in content-service snapshots, so it must never be handed to someone else.
+CREATE TABLE IF NOT EXISTS deleted_user
+(
+    sub        VARCHAR(50)  NOT NULL,
+    deleted_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    deleted_by VARCHAR(50),
+    CONSTRAINT deleted_user_pkey PRIMARY KEY (sub)
 );
 
 CREATE INDEX IF NOT EXISTS ix_userinfo_manager_sub ON userinfo (manager_sub);

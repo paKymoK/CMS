@@ -9,6 +9,7 @@ import com.takypok.authservice.repository.UserGroupMemberRepository;
 import com.takypok.authservice.repository.UserGroupRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.GroupService;
+import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.List;
@@ -24,6 +25,7 @@ public class GroupServiceImpl implements GroupService {
   private final UserGroupRepository groupRepository;
   private final UserGroupMemberRepository memberRepository;
   private final UserinfoRepository userinfoRepository;
+  private final SuperAdminService superAdminService;
 
   @Override
   public List<UserGroupResponse> getAll() {
@@ -59,7 +61,7 @@ public class GroupServiceImpl implements GroupService {
   @Transactional
   public void delete(String id) {
     findOrThrow(id);
-    groupRepository.deleteById(id);
+    superAdminService.guardLastSuperAdmin(() -> groupRepository.deleteById(id));
   }
 
   @Override
@@ -88,7 +90,8 @@ public class GroupServiceImpl implements GroupService {
   @Transactional
   public void removeMember(String groupId, String userSub) {
     findOrThrow(groupId);
-    memberRepository.deleteByGroupIdAndUserSub(groupId, userSub);
+    superAdminService.guardLastSuperAdmin(
+        () -> memberRepository.deleteByGroupIdAndUserSub(groupId, userSub));
   }
 
   private UserGroup findOrThrow(String id) {

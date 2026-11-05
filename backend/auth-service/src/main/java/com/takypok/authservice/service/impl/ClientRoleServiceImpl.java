@@ -8,12 +8,14 @@ import com.takypok.authservice.repository.ClientRoleAssignmentRepository;
 import com.takypok.authservice.repository.UserGroupRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.ClientRoleService;
+import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
   private final ClientRoleAssignmentRepository assignmentRepository;
   private final UserinfoRepository userinfoRepository;
   private final UserGroupRepository groupRepository;
+  private final SuperAdminService superAdminService;
 
   @Override
   public List<ClientRoleAssignmentResponse> getAssignments(String registeredClientId) {
@@ -70,6 +73,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
   }
 
   @Override
+  @Transactional
   public void remove(String registeredClientId, String assignmentId) {
     ClientRoleAssignment assignment =
         assignmentRepository
@@ -79,7 +83,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
     if (!assignment.getRegisteredClientId().equals(registeredClientId)) {
       throw new ApplicationException(Message.Application.ERROR, "Assignment not found");
     }
-    assignmentRepository.deleteById(assignmentId);
+    superAdminService.guardLastSuperAdmin(() -> assignmentRepository.deleteById(assignmentId));
   }
 
   private ClientRoleAssignmentResponse toResponse(ClientRoleAssignment a) {
