@@ -1,5 +1,6 @@
 package com.takypok.authservice.service.impl;
 
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.UserGroup;
 import com.takypok.authservice.model.entity.UserGroupMember;
 import com.takypok.authservice.model.request.UserGroupRequest;
@@ -8,6 +9,7 @@ import com.takypok.authservice.model.response.UserGroupResponse;
 import com.takypok.authservice.repository.UserGroupMemberRepository;
 import com.takypok.authservice.repository.UserGroupRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.GroupService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.core.exception.ApplicationException;
@@ -26,6 +28,7 @@ public class GroupServiceImpl implements GroupService {
   private final UserGroupMemberRepository memberRepository;
   private final UserinfoRepository userinfoRepository;
   private final SuperAdminService superAdminService;
+  private final AuditService auditService;
 
   @Override
   public List<UserGroupResponse> getAll() {
@@ -41,10 +44,12 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional
   public UserGroupResponse create(UserGroupRequest request) {
     UserGroup group =
         new UserGroup(UUID.randomUUID().toString(), request.getName(), request.getDescription());
     groupRepository.save(group);
+    auditService.record(AuditAction.GROUP_CREATED, group.getName(), null);
     return toResponse(group, List.of());
   }
 
@@ -60,8 +65,12 @@ public class GroupServiceImpl implements GroupService {
   @Override
   @Transactional
   public void delete(String id) {
-    findOrThrow(id);
-    superAdminService.guardLastSuperAdmin(() -> groupRepository.deleteById(id));
+    UserGroup group = findOrThrow(id);
+    superAdminService.guardLastSuperAdmin(
+        () -> {
+          groupRepository.deleteById(id);
+          auditService.record(AuditAction.GROUP_DELETED, group.getName(), null);
+        });
   }
 
   @Override
@@ -80,18 +89,24 @@ public class GroupServiceImpl implements GroupService {
   }
 
   @Override
+  @Transactional
   public void addMember(String groupId, String userSub) {
-    findOrThrow(groupId);
+    UserGroup group = findOrThrow(groupId);
     if (memberRepository.existsByGroupIdAndUserSub(groupId, userSub)) return;
     memberRepository.save(new UserGroupMember(groupId, userSub));
+    auditService.record(AuditAction.GROUP_MEMBER_ADDED, userSub, "group " + group.getName());
   }
 
   @Override
   @Transactional
   public void removeMember(String groupId, String userSub) {
-    findOrThrow(groupId);
+    UserGroup group = findOrThrow(groupId);
     superAdminService.guardLastSuperAdmin(
-        () -> memberRepository.deleteByGroupIdAndUserSub(groupId, userSub));
+        () -> {
+          memberRepository.deleteByGroupIdAndUserSub(groupId, userSub);
+          auditService.record(
+              AuditAction.GROUP_MEMBER_REMOVED, userSub, "group " + group.getName());
+        });
   }
 
   private UserGroup findOrThrow(String id) {

@@ -19,6 +19,7 @@
     </div>
     <nav class="nav" aria-label="Sections">
         <a th:href="@{/admin/users}" th:classappend="${active == 'users'} ? 'is-active'">Users</a>
+        <a th:href="@{/admin/audit}" th:classappend="${active == 'audit'} ? 'is-active'">Audit log</a>
     </nav>
     <div class="sider-foot">
         <div>Signed in as<br><span class="me" th:text="${me}">admin</span></div>

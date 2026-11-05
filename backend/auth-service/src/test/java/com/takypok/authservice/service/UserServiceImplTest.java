@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.UserStatus;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserDirectoryRepository;
@@ -33,6 +34,7 @@ class UserServiceImplTest {
   @Mock UserinfoRepository userinfoRepository;
   @Mock UserDirectoryRepository userDirectory;
   @Mock SuperAdminService superAdminService;
+  @Mock AuditService auditService;
 
   @InjectMocks UserServiceImpl service;
 
@@ -65,6 +67,7 @@ class UserServiceImplTest {
     assertThat(john.getStatus()).isEqualTo("INACTIVE");
     verify(userinfoRepository).saveAndFlush(john);
     verify(userDirectory).revokeAuthorizations("john");
+    verify(auditService).record(AuditAction.STATUS_CHANGED, "john", "INACTIVE");
   }
 
   @Test
@@ -135,6 +138,7 @@ class UserServiceImplTest {
     service.delete("john", "admin");
 
     verify(userDirectory).purge("john", "admin");
+    verify(auditService).record(AuditAction.USER_DELETED, "john", "sub stays reserved");
   }
 
   @Test
@@ -163,6 +167,7 @@ class UserServiceImplTest {
 
     assertThatThrownBy(() -> service.delete("john", "admin"))
         .isInstanceOf(ApplicationException.class);
+    verify(auditService, never()).record(any(), any(), any());
   }
 
   @Test
@@ -194,6 +199,8 @@ class UserServiceImplTest {
     ok.setDateOfBirth(java.time.LocalDate.of(1990, 1, 2));
     service.updateProfile("john", ok);
 
+    verify(auditService)
+        .record(AuditAction.PROFILE_UPDATED, "john", "fields: dateOfBirth, displayName");
     assertThat(john.getDisplayName()).isEqualTo("Johnny");
     assertThat(john.getDateOfBirth()).isEqualTo(java.time.LocalDate.of(1990, 1, 2));
   }

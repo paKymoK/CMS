@@ -9,8 +9,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler;
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,13 +29,14 @@ class LoginSuccessHandlerTest {
   JdbcUserDetailsManager users = mock(JdbcUserDetailsManager.class);
   UserinfoRepository repo = mock(UserinfoRepository.class);
   LdapTemplate ldap = mock(LdapTemplate.class);
+  AuditService audit = mock(AuditService.class);
   LdapAutoProvisionSuccessHandler handler;
 
   @BeforeEach
   void setUp() {
     handler =
         new LdapAutoProvisionSuccessHandler(
-            users, mock(PasswordEncoder.class), repo, ldap, "ou=people", "(uid={0})");
+            users, mock(PasswordEncoder.class), repo, ldap, "ou=people", "(uid={0})", audit);
     when(users.userExists(anyString())).thenReturn(true);
   }
 
@@ -99,6 +102,7 @@ class LoginSuccessHandlerTest {
     signIn("g@x.com");
 
     assertThat(guest.getLastLoginAt()).isNotNull();
+    verify(audit).recordQuietly("g@x.com", AuditAction.LOGIN_SUCCESS, "g@x.com", null, "127.0.0.1");
     verify(ldap, never()).search(anyString(), anyString(), any(AttributesMapper.class));
   }
 }

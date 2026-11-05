@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head('Audit log')}"></head>
+<body>
+<div class="shell">
+    <aside th:replace="~{admin/layout :: sidebar('audit')}"></aside>
+    <main class="main"><div class="wrap">
+
+        <div class="page-head">
+            <div>
+                <span class="eyebrow">Access</span>
+                <h1>Audit log</h1>
+                <p class="sub"><span th:text="${total}">0</span> entries: sign-ins and changes to accounts, roles and groups. Content changes are in the CMS history. Times are shown in your zone.</p>
+            </div>
+        </div>
+
+        <div class="alert alert-err" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <form class="filters" method="get" th:action="@{/admin/audit}">
+            <div class="field">
+                <label for="q">Search</label>
+                <input type="text" id="q" name="q" th:value="${q}" placeholder="Actor or account">
+            </div>
+            <div class="field">
+                <label for="action">Action</label>
+                <select id="action" name="action">
+                    <option value="" th:selected="${action == ''}">All</option>
+                    <option th:each="a : ${actions}" th:value="${a.name()}" th:text="${a.label()}" th:selected="${action == a.name()}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="from">From</label>
+                <input type="date" id="from" name="from" th:value="${from}">
+            </div>
+            <div class="field">
+                <label for="to">To</label>
+                <input type="date" id="to" name="to" th:value="${to}">
+            </div>
+            <button class="btn" type="submit">Filter</button>
+        </form>
+
+        <div class="card table-card">
+            <table th:if="${!rows.isEmpty()}">
+                <thead>
+                <tr><th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Account</th><th scope="col">Detail</th><th scope="col">IP</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${rows}">
+                    <td class="cell-first nowrap" data-label="When">
+                        <time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(r.at), '+0000', 'Z')}" th:text="${#temporals.format(r.at, 'dd MMM yyyy HH:mm:ss') + ' UTC'}"></time>
+                    </td>
+                    <td data-label="Actor"><span class="mono" th:text="${r.actor != null} ? ${r.actor} : '—'"></span></td>
+                    <td data-label="Action"><span class="chip" th:classappend="${r.action.startsWith('LOGIN_') and r.action != 'LOGIN_SUCCESS'} ? 'chip-super'" th:text="${r.actionLabel}"></span></td>
+                    <td data-label="Account"><span class="mono" th:text="${r.target != null} ? ${r.target} : '—'"></span></td>
+                    <td data-label="Detail"><span th:text="${r.detail != null} ? ${r.detail} : ''"></span></td>
+                    <td data-label="IP"><span class="mono" th:text="${r.ip != null} ? ${r.ip} : ''"></span></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="empty" th:if="${rows.isEmpty()}">No entries match.</div>
+
+            <div class="pager" th:if="${totalPages > 1}">
+                <span>Page <span th:text="${page + 1}">1</span> of <span th:text="${totalPages}">1</span></span>
+                <span class="btns">
+                    <a class="btn btn-sm" th:if="${page > 0}"
+                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},page=${page - 1})}">Previous</a>
+                    <a class="btn btn-sm" th:if="${page + 1 < totalPages}"
+                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},page=${page + 1})}">Next</a>
+                </span>
+            </div>
+        </div>
+
+    </div></main>
+</div>
+</body>
+</html>

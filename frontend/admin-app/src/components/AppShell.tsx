@@ -9,6 +9,7 @@ import AdminSearchBox from "./AdminSearchBox";
 import { NAVIGATION, type NavItem } from "../config/navigation";
 import { RESOURCES } from "../config/resources";
 import { SITES } from "../config/sites";
+import { AUTH_SERVER } from "../auth/pkce";
 
 // Under an "About Page" group, "About · Hero" repeats its own heading — drop the redundant prefix
 // in the sidebar (the page title in the topbar keeps the full label).
@@ -92,6 +93,9 @@ function useIsMobile(): boolean {
   }, []);
   return mobile;
 }
+
+const USERS_GLYPH =
+  "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75";
 
 function NavGlyph({ d }: { d?: string }) {
   return (
@@ -245,6 +249,19 @@ export default function AppShell() {
               </div>
             );
           })}
+          {/* User management lives on auth-service (next to the data it changes). Only a Super Admin
+              gets the link, and auth-service still enforces the same check on every request. */}
+          {isGlobalAdmin && (
+            <a
+              href={`${AUTH_SERVER}/admin/users`}
+              title="Users & access"
+              className="cms-nav-head cms-nav-link"
+              onClick={() => setNavOpen(false)}
+            >
+              <NavGlyph d={USERS_GLYPH} />
+              <span className="cms-nav-text">Users &amp; access</span>
+            </a>
+          )}
         </nav>
 
         <div className="cms-user">

@@ -11,8 +11,10 @@ import static org.mockito.Mockito.when;
 import com.takypok.authservice.config.auth.DomainAuthenticationManager;
 import com.takypok.authservice.config.auth.DomainAuthenticationToken;
 import com.takypok.authservice.config.auth.MfaPolicy;
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -37,6 +39,7 @@ class DomainAuthenticationManagerTest {
 
   UserinfoRepository userinfo = mock(UserinfoRepository.class);
   MfaPolicy mfa = mock(MfaPolicy.class);
+  AuditService audit = mock(AuditService.class);
 
   DomainAuthenticationManager manager;
   DomainAuthenticationToken login;
@@ -45,7 +48,7 @@ class DomainAuthenticationManagerTest {
   @BeforeEach
   void setUp() {
     when(redis.opsForValue()).thenReturn(ops);
-    manager = new DomainAuthenticationManager(ldap, jdbc, users, redis, userinfo, mfa);
+    manager = new DomainAuthenticationManager(ldap, jdbc, users, redis, userinfo, mfa, audit);
     login = new DomainAuthenticationToken("sam@x.com", "pw", "GUEST", "10.0.0.1");
     verified =
         UsernamePasswordAuthenticationToken.authenticated("sam@x.com", null, java.util.List.of());
@@ -79,6 +82,34 @@ class DomainAuthenticationManagerTest {
     assertThatThrownBy(() -> manager.authenticate(login)).isInstanceOf(DisabledException.class);
     // An inactive account is not a bad password: it must not count toward the lockout.
     verify(ops, never()).increment(any());
+    verify(audit)
+        .recordQuietly("sam@x.com", AuditAction.LOGIN_BLOCKED, "sam@x.com", "GUEST", "10.0.0.1");
+  }
+
+  @Test
+  void aWrongPasswordIsAuditedAsAFailure() {
+    when(jdbc.authenticate(login))
+        .thenThrow(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+    assertThatThrownBy(() -> manager.authenticate(login))
+        .isInstanceOf(org.springframework.security.authentication.BadCredentialsException.class);
+    verify(audit)
+        .recordQuietly("sam@x.com", AuditAction.LOGIN_FAILED, "sam@x.com", "GUEST", "10.0.0.1");
+  }
+
+  @Test
+  void aLockedAccountIsAuditedAsRefused() {
+    when(ops.get("login-fail:sam@x.com")).thenReturn("5");
+
+    assertThatThrownBy(() -> manager.authenticate(login))
+        .isInstanceOf(org.springframework.security.authentication.LockedException.class);
+    verify(audit)
+        .recordQuietly(
+            org.mockito.ArgumentMatchers.eq("sam@x.com"),
+            org.mockito.ArgumentMatchers.eq(AuditAction.LOGIN_LOCKED),
+            org.mockito.ArgumentMatchers.eq("sam@x.com"),
+            any(),
+            org.mockito.ArgumentMatchers.eq("10.0.0.1"));
   }
 
   @Test

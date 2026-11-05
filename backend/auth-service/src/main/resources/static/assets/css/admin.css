@@ -136,6 +136,7 @@ tbody tr:hover { background: #f6f9ff; }
 .pager .btns { display: flex; gap: 8px; }
 
 .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nowrap { white-space: nowrap; }
 .mono { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
 .status-block { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 

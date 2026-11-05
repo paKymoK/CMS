@@ -5,6 +5,7 @@ import com.takypok.authservice.config.auth.DomainAuthenticationManager;
 import com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler;
 import com.takypok.authservice.config.auth.LoginFailureHandler;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.SuperAdminService;
 import java.util.Arrays;
 import java.util.Collections;
@@ -109,7 +110,8 @@ public class SecurityConfig {
       PasswordEncoder passwordEncoder,
       LoginFailureHandler loginFailureHandler,
       UserinfoRepository userinfoRepository,
-      LdapTemplate ldapTemplate) {
+      LdapTemplate ldapTemplate,
+      AuditService auditService) {
     DomainAuthenticationFilter filter = new DomainAuthenticationFilter(domainAuthenticationManager);
     filter.setFilterProcessesUrl("/login");
     filter.setSecurityContextRepository(securityContextRepository);
@@ -121,7 +123,8 @@ public class SecurityConfig {
             userinfoRepository,
             ldapTemplate,
             userSearchBase,
-            userSearchFilter));
+            userSearchFilter,
+            auditService));
     filter.setAuthenticationFailureHandler(loginFailureHandler);
     return filter;
   }

@@ -1,8 +1,10 @@
 package com.takypok.authservice.config.auth;
 
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.UserStatus;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ public class DomainAuthenticationManager implements AuthenticationManager {
   private final StringRedisTemplate redisTemplate;
   private final UserinfoRepository userinfoRepository;
   private final MfaPolicy mfaPolicy;
+  private final AuditService auditService;
 
   @Override
   public Authentication authenticate(Authentication authentication) {
@@ -50,7 +53,13 @@ public class DomainAuthenticationManager implements AuthenticationManager {
     String username = token.getName();
     String remoteAddress = token.getRemoteAddress();
 
-    checkLocked(username, remoteAddress);
+    try {
+      checkLocked(username, remoteAddress);
+    } catch (LockedException ex) {
+      auditService.recordQuietly(
+          username, AuditAction.LOGIN_LOCKED, username, ex.getMessage(), remoteAddress);
+      throw ex;
+    }
 
     Authentication result;
     try {
@@ -65,12 +74,20 @@ public class DomainAuthenticationManager implements AuthenticationManager {
           };
     } catch (AuthenticationException ex) {
       recordFailure(username, remoteAddress);
+      auditService.recordQuietly(
+          username, AuditAction.LOGIN_FAILED, username, token.getDomain(), remoteAddress);
       throw ex;
     }
 
     // Checked after the credentials, so a wrong password never reveals whether an account is
     // inactive. This is where an LDAP account is blocked too: the directory knows nothing of it.
-    rejectIfInactive(username);
+    try {
+      rejectIfInactive(username);
+    } catch (DisabledException ex) {
+      auditService.recordQuietly(
+          username, AuditAction.LOGIN_BLOCKED, username, token.getDomain(), remoteAddress);
+      throw ex;
+    }
 
     // MFA seam: nothing runs today (NoMfaPolicy). See MfaPolicy for how to build the second step.
     if (mfaPolicy.isSecondFactorRequired(result)) {

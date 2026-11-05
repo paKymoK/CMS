@@ -1,8 +1,10 @@
 package com.takypok.authservice.config.auth;
 
 import com.takypok.authservice.model.entity.AccountType;
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,6 +52,7 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
   private final LdapTemplate ldapTemplate;
   private final String userSearchBase;
   private final String userSearchFilter;
+  private final AuditService auditService;
 
   @Override
   public void onAuthenticationSuccess(
@@ -89,6 +92,13 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
       userinfo.setLastLoginAt(ZonedDateTime.now(ZoneOffset.UTC));
       userinfoRepository.save(userinfo);
     }
+
+    auditService.recordQuietly(
+        username,
+        AuditAction.LOGIN_SUCCESS,
+        username,
+        authentication.getDetails() instanceof String domain ? domain : null,
+        request.getRemoteAddr());
 
     if (authentication.getDetails() instanceof String domain && "GUEST".equals(domain)) {
       if (userinfo == null || userinfo.getName() == null || userinfo.getName().isBlank()) {

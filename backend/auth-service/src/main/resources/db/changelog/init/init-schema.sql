@@ -232,3 +232,24 @@ CREATE TABLE IF NOT EXISTS client_session_policy
     CONSTRAINT client_session_policy_pkey PRIMARY KEY (registered_client_id),
     CONSTRAINT fk_csp_client FOREIGN KEY (registered_client_id) REFERENCES oauth2_registered_client (id) ON DELETE CASCADE
 );
+
+-- ── Account audit trail ────────────────────────────────────────────────────────────────────────
+-- Who did what to which account, plus sign-in history. No foreign keys: rows must outlive the
+-- accounts they describe (a deleted user's history stays). Never holds passwords or profile values,
+-- only which fields changed. Append-only: nothing in the service updates or deletes a row.
+CREATE TABLE IF NOT EXISTS account_audit
+(
+    id     BIGSERIAL    NOT NULL,
+    at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    actor  VARCHAR(100),
+    action VARCHAR(40)  NOT NULL,
+    target VARCHAR(100),
+    detail VARCHAR(500),
+    ip     VARCHAR(64),
+    CONSTRAINT account_audit_pkey PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_audit_at ON account_audit (at DESC);
+CREATE INDEX IF NOT EXISTS ix_account_audit_actor ON account_audit (actor, at DESC);
+CREATE INDEX IF NOT EXISTS ix_account_audit_target ON account_audit (target, at DESC);
+CREATE INDEX IF NOT EXISTS ix_account_audit_action ON account_audit (action, at DESC);

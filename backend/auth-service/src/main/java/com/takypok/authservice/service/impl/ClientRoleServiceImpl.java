@@ -1,5 +1,6 @@
 package com.takypok.authservice.service.impl;
 
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.ClientRoleAssignment;
 import com.takypok.authservice.model.entity.UserGroup;
 import com.takypok.authservice.model.request.ClientRoleAssignmentRequest;
@@ -7,6 +8,7 @@ import com.takypok.authservice.model.response.ClientRoleAssignmentResponse;
 import com.takypok.authservice.repository.ClientRoleAssignmentRepository;
 import com.takypok.authservice.repository.UserGroupRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.ClientRoleService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.core.exception.ApplicationException;
@@ -25,6 +27,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
   private final UserinfoRepository userinfoRepository;
   private final UserGroupRepository groupRepository;
   private final SuperAdminService superAdminService;
+  private final AuditService auditService;
 
   @Override
   public List<ClientRoleAssignmentResponse> getAssignments(String registeredClientId) {
@@ -34,6 +37,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
   }
 
   @Override
+  @Transactional
   public ClientRoleAssignmentResponse assign(
       String registeredClientId, ClientRoleAssignmentRequest request) {
 
@@ -69,6 +73,7 @@ public class ClientRoleServiceImpl implements ClientRoleService {
             .build();
 
     assignmentRepository.save(assignment);
+    auditService.record(AuditAction.ROLE_ASSIGNED, subjectOf(assignment), roleText(assignment));
     return toResponse(assignment);
   }
 
@@ -83,7 +88,23 @@ public class ClientRoleServiceImpl implements ClientRoleService {
     if (!assignment.getRegisteredClientId().equals(registeredClientId)) {
       throw new ApplicationException(Message.Application.ERROR, "Assignment not found");
     }
-    superAdminService.guardLastSuperAdmin(() -> assignmentRepository.deleteById(assignmentId));
+    superAdminService.guardLastSuperAdmin(
+        () -> {
+          assignmentRepository.deleteById(assignmentId);
+          auditService.record(
+              AuditAction.ROLE_REMOVED, subjectOf(assignment), roleText(assignment));
+        });
+  }
+
+  /** The user's sub, or "group:" plus the group's name for a group assignment. */
+  private String subjectOf(ClientRoleAssignment a) {
+    if (a.getUserSub() != null) return a.getUserSub();
+    return "group:"
+        + groupRepository.findById(a.getGroupId()).map(g -> g.getName()).orElse(a.getGroupId());
+  }
+
+  private static String roleText(ClientRoleAssignment a) {
+    return a.getRole() + " · " + (a.getProjectId() == null ? "all sites" : a.getProjectId());
   }
 
   private ClientRoleAssignmentResponse toResponse(ClientRoleAssignment a) {

@@ -1,6 +1,7 @@
 package com.takypok.authservice.service.impl;
 
 import com.takypok.authservice.model.entity.AccountType;
+import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.UserStatus;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.model.request.CreateUserRequest;
@@ -8,6 +9,7 @@ import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.repository.UserDirectoryRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
+import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
@@ -32,6 +34,7 @@ public class UserServiceImpl implements UserService {
   private final UserinfoRepository userinfoRepository;
   private final UserDirectoryRepository userDirectory;
   private final SuperAdminService superAdminService;
+  private final AuditService auditService;
 
   private static final int MAX_PAGE_SIZE = 100;
 
@@ -63,6 +66,7 @@ public class UserServiceImpl implements UserService {
     userinfo.setEmail(request.getUsername());
     userinfo.setAccountType(AccountType.LOCAL.name());
     userinfoRepository.save(userinfo);
+    auditService.record(AuditAction.USER_CREATED, request.getUsername(), "local account");
   }
 
   @Override
@@ -105,6 +109,8 @@ public class UserServiceImpl implements UserService {
       userinfo.setDateOfBirth(request.getDateOfBirth());
     }
     userinfoRepository.save(userinfo);
+    auditService.record(
+        AuditAction.PROFILE_UPDATED, sub, "fields: " + String.join(", ", request.sentFields()));
   }
 
   @Override
@@ -151,6 +157,7 @@ public class UserServiceImpl implements UserService {
     } else {
       saveStatus(userinfo, status);
     }
+    auditService.record(AuditAction.STATUS_CHANGED, sub, status.name());
   }
 
   @Override
@@ -173,7 +180,11 @@ public class UserServiceImpl implements UserService {
       throw new ApplicationException(
           Message.Application.ERROR, "Deactivate the account before deleting it");
     }
-    superAdminService.guardLastSuperAdmin(() -> userDirectory.purge(sub, actor));
+    superAdminService.guardLastSuperAdmin(
+        () -> {
+          userDirectory.purge(sub, actor);
+          auditService.record(AuditAction.USER_DELETED, sub, "sub stays reserved");
+        });
   }
 
   private void saveStatus(Userinfo userinfo, UserStatus status) {

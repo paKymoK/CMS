@@ -55,6 +55,12 @@ public class UpdateUserProfileRequest {
     sent.add("dateOfBirth");
   }
 
+  /** Names of the fields that were sent, sorted, for the audit record (never their values). */
+  @JsonIgnore
+  public java.util.List<String> sentFields() {
+    return sent.stream().sorted().toList();
+  }
+
   @JsonIgnore
   public boolean isSent(String field) {
     return sent.contains(field);
