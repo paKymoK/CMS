@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
@@ -35,6 +36,7 @@ public class AuditService {
   private static final int MAX_FIELD = 100;
   private static final int MAX_DETAIL = 500;
   private static final int MAX_PAGE_SIZE = 200;
+  private static final int EXPORT_BATCH = 1000;
 
   public record Entry(
       long id,
@@ -47,6 +49,9 @@ public class AuditService {
       String ip) {}
 
   public record Result(List<Entry> rows, long total) {}
+
+  /** The screen's filters. Any field may be null. */
+  public record Filter(String q, String action, LocalDate from, LocalDate to) {}
 
   private static final RowMapper<Entry> ROW_MAPPER =
       (rs, n) -> {
@@ -92,24 +97,8 @@ public class AuditService {
    */
   public Result search(String q, String action, LocalDate from, LocalDate to, int page, int size) {
     int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
-    StringBuilder where = new StringBuilder(" WHERE 1 = 1");
     MapSqlParameterSource p = new MapSqlParameterSource();
-    if (q != null && !q.isBlank()) {
-      where.append(" AND (actor ILIKE :like OR target ILIKE :like)");
-      p.addValue("like", "%" + escapeLike(q.trim()) + "%");
-    }
-    if (action != null && !action.isBlank()) {
-      where.append(" AND action = :action");
-      p.addValue("action", AuditAction.valueOf(action.trim().toUpperCase()).name());
-    }
-    if (from != null) {
-      where.append(" AND at >= :from");
-      p.addValue("from", from.atStartOfDay().atOffset(ZoneOffset.UTC));
-    }
-    if (to != null) {
-      where.append(" AND at < :to");
-      p.addValue("to", to.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC));
-    }
+    String where = where(new Filter(q, action, from, to), p);
     Long total = jdbc.queryForObject("SELECT COUNT(*) FROM account_audit" + where, p, Long.class);
     p.addValue("limit", safeSize).addValue("offset", (long) Math.max(page, 0) * safeSize);
     List<Entry> rows =
@@ -120,6 +109,70 @@ public class AuditService {
             p,
             ROW_MAPPER);
     return new Result(rows, total == null ? 0 : total);
+  }
+
+  /**
+   * Hands every matching entry to {@code sink}, newest first, at most {@code max}. Reads in short
+   * keyset batches (no OFFSET, no cursor), so no connection stays open while a slow consumer
+   * writes, and entries added meanwhile cannot shift the pages.
+   *
+   * @return how many entries were handed over
+   */
+  public int stream(Filter filter, int max, Consumer<Entry> sink) {
+    int sent = 0;
+    OffsetDateTime lastAt = null;
+    long lastId = 0;
+    while (sent < max) {
+      MapSqlParameterSource p = new MapSqlParameterSource();
+      StringBuilder where = new StringBuilder(where(filter, p));
+      if (lastAt != null) {
+        where.append(" AND (at, id) < (:lastAt, :lastId)");
+        p.addValue("lastAt", lastAt).addValue("lastId", lastId);
+      }
+      p.addValue("limit", Math.min(EXPORT_BATCH, max - sent));
+      List<Entry> batch =
+          jdbc.query(
+              "SELECT id, at, actor, action, target, detail, ip FROM account_audit"
+                  + where
+                  + " ORDER BY at DESC, id DESC LIMIT :limit",
+              p,
+              ROW_MAPPER);
+      if (batch.isEmpty()) break;
+      batch.forEach(sink);
+      sent += batch.size();
+      Entry last = batch.get(batch.size() - 1);
+      lastAt = last.at().toOffsetDateTime();
+      lastId = last.id();
+      if (batch.size() < EXPORT_BATCH) break;
+    }
+    return sent;
+  }
+
+  /** Throws IllegalArgumentException for an unknown action, before anything is written. */
+  public void validate(Filter f) {
+    where(f, new MapSqlParameterSource());
+  }
+
+  /** Builds the WHERE clause (starting with " WHERE 1 = 1") and fills its parameters. */
+  private static String where(Filter f, MapSqlParameterSource p) {
+    StringBuilder where = new StringBuilder(" WHERE 1 = 1");
+    if (f.q() != null && !f.q().isBlank()) {
+      where.append(" AND (actor ILIKE :like OR target ILIKE :like)");
+      p.addValue("like", "%" + escapeLike(f.q().trim()) + "%");
+    }
+    if (f.action() != null && !f.action().isBlank()) {
+      where.append(" AND action = :action");
+      p.addValue("action", AuditAction.valueOf(f.action().trim().toUpperCase()).name());
+    }
+    if (f.from() != null) {
+      where.append(" AND at >= :from");
+      p.addValue("from", f.from().atStartOfDay().atOffset(ZoneOffset.UTC));
+    }
+    if (f.to() != null) {
+      where.append(" AND at < :to");
+      p.addValue("to", f.to().plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC));
+    }
+    return where.toString();
   }
 
   private void insert(String actor, AuditAction action, String target, String detail, String ip) {

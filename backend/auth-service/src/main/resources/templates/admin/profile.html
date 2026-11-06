@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head('My profile')}"></head>
+<body>
+<div class="shell">
+    <aside th:replace="~{admin/layout :: sidebar('profile')}"></aside>
+    <main class="main"><div class="wrap" style="max-width:860px">
+
+        <div class="page-head">
+            <div>
+                <span class="eyebrow">Account</span>
+                <h1>My profile</h1>
+                <p class="sub" th:if="${user != null}"
+                   th:text="${(directory ? 'Staff account' : 'Local account') + ' · ' + user.sub}"></p>
+            </div>
+        </div>
+
+        <div class="alert alert-ok" role="status" th:if="${flash}" th:text="${flash}"></div>
+        <div class="alert alert-err" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <th:block th:if="${user != null}">
+
+        <!-- Picture -->
+        <section class="card">
+            <h2>Profile picture</h2>
+            <div class="avatar-row" style="margin-top:12px">
+                <img class="avatar" th:if="${avatarVersion != null}"
+                     th:src="@{/avatar/{sub}(sub=${user.sub},v=${avatarVersion})}" alt="Your profile picture">
+                <div class="avatar avatar-initials" th:if="${avatarVersion == null}" aria-hidden="true"
+                     th:text="${#strings.toUpperCase(#strings.substring((user.name != null and !user.name.isBlank()) ? user.name : user.sub, 0, 1))}">A</div>
+                <div>
+                    <form method="post" enctype="multipart/form-data" class="avatar-actions"
+                          th:action="@{/profile/avatar(_csrf=${_csrf.token})}">
+                        <input type="file" id="avatarFile" name="file" accept="image/png,image/jpeg,image/webp" required>
+                        <button class="btn btn-sm btn-primary" type="submit">Upload</button>
+                    </form>
+                    <form method="post" th:action="@{/profile/avatar/remove}" th:if="${avatarVersion != null}" style="margin-top:8px">
+                        <button class="btn btn-sm btn-danger" type="submit">Remove picture</button>
+                    </form>
+                    <p class="hint" id="avatarHint">PNG, JPEG or WebP, up to 512 KB.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Details -->
+        <form class="card" method="post" th:action="@{/profile}">
+            <h2>Details</h2>
+            <p class="sub" style="margin-bottom:16px" th:if="${directory}">Your full name and email come from the staff directory and cannot be changed here.</p>
+            <div class="grid2">
+                <div class="field"><label for="name">Full name</label>
+                    <input type="text" id="name" name="name" th:value="${user.name}" th:readonly="${directory}" maxlength="200"></div>
+                <div class="field"><label for="email">Email</label>
+                    <input type="email" id="email" th:value="${user.email}" readonly></div>
+                <div class="field"><label for="displayName">Display name</label>
+                    <input type="text" id="displayName" name="displayName" th:value="${user.displayName}" maxlength="200">
+                    <p class="hint">The name shown publicly as the author, where a page supports an author.</p></div>
+                <div class="field"><label for="dateOfBirth">Date of birth</label>
+                    <input type="date" id="dateOfBirth" name="dateOfBirth" th:value="${user.dateOfBirth}"></div>
+            </div>
+            <div class="actions"><button class="btn btn-primary" type="submit">Save</button></div>
+            <p class="hint">Roles and site access are set by a Super Admin and cannot be changed here.</p>
+        </form>
+
+        <!-- Password -->
+        <form class="card" method="post" th:action="@{/profile/password}" th:if="${!directory}">
+            <h2>Change password</h2>
+            <p class="sub" style="margin-bottom:16px">At least 8 characters. Changing it signs you out of other sessions.</p>
+            <div class="field"><label for="current">Current password</label>
+                <input type="password" id="current" name="current" autocomplete="current-password" required></div>
+            <div class="grid2">
+                <div class="field"><label for="new">New password</label>
+                    <input type="password" id="new" name="new" autocomplete="new-password" minlength="8" required></div>
+                <div class="field"><label for="confirm">Confirm new password</label>
+                    <input type="password" id="confirm" name="confirm" autocomplete="new-password" minlength="8" required></div>
+            </div>
+            <div class="actions"><button class="btn" type="submit">Change password</button></div>
+        </form>
+        <section class="card" th:if="${directory}">
+            <h2>Password</h2>
+            <p class="sub">Your password is your organisation's directory password. Change it there.</p>
+        </section>
+
+        <!-- Sign out -->
+        <section class="card">
+            <div class="status-block">
+                <div><h2>Sign out</h2><p class="sub">End your session on this device.</p></div>
+                <form th:action="@{/logout}" method="post"><button class="btn" type="submit">Sign out</button></form>
+            </div>
+        </section>
+
+        </th:block>
+
+    </div></main>
+</div>
+<script>
+    var f = document.getElementById('avatarFile');
+    if (f) f.addEventListener('change', function () {
+        var hint = document.getElementById('avatarHint');
+        if (f.files[0] && f.files[0].size > 512 * 1024) {
+            hint.textContent = 'That file is larger than 512 KB. Choose a smaller picture.';
+            hint.style.color = 'var(--danger)'; f.value = '';
+        } else { hint.textContent = 'PNG, JPEG or WebP, up to 512 KB.'; hint.style.color = ''; }
+    });
+</script>
+</body>
+</html>

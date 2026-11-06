@@ -38,6 +38,10 @@
             </div>
             <button class="btn" type="submit">Filter</button>
         </form>
+        <p class="hint" style="margin:-6px 0 14px">
+            <a th:href="@{/admin/audit/export.xlsx(q=${q},action=${action},from=${from},to=${to})}">Download these filters as .xlsx</a>
+            (UTC times, up to 100,000 rows; the download is itself logged)
+        </p>
 
         <div class="card table-card">
             <table th:if="${!rows.isEmpty()}">

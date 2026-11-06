@@ -15,7 +15,11 @@ public enum AuditAction {
   GROUP_CREATED("Group created"),
   GROUP_DELETED("Group deleted"),
   GROUP_MEMBER_ADDED("Group member added"),
-  GROUP_MEMBER_REMOVED("Group member removed");
+  GROUP_MEMBER_REMOVED("Group member removed"),
+  EMAIL_CONFLICT("Directory email already in use"),
+  PASSWORD_CHANGED("Password changed"),
+  PASSWORD_CHANGE_FAILED("Password change refused"),
+  AUDIT_EXPORTED("Audit log exported");
 
   private final String label;
 

@@ -1,8 +1,11 @@
 package com.takypok.authservice.api;
 
+import com.takypok.authservice.service.AuditExportService;
 import com.takypok.authservice.service.AuditService;
 import com.takypok.core.model.PageResponse;
 import com.takypok.core.model.ResultMessage;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/audit")
 public class AuditController {
   private final AuditService auditService;
+  private final AuditExportService exportService;
 
   @GetMapping
   public ResponseEntity<ResultMessage<PageResponse<AuditService.Entry>>> search(
@@ -39,5 +43,16 @@ public class AuditController {
                 .totalElements(result.total())
                 .totalPages((result.total() + safeSize - 1) / safeSize)
                 .build()));
+  }
+
+  @GetMapping("/export")
+  public void export(
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) String action,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      HttpServletResponse response)
+      throws IOException {
+    exportService.download(new AuditService.Filter(q, action, from, to), response);
   }
 }

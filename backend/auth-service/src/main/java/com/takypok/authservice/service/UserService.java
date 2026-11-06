@@ -16,6 +16,14 @@ public interface UserService {
 
   UserResponse get(String sub);
 
+  /**
+   * Changes the password of a LOCAL account after checking the current one. A wrong current
+   * password is audited and returns false (it throws nothing, so the audit row is kept); other
+   * problems throw. A change also drops the user's refresh tokens, so other sessions must sign in
+   * again.
+   */
+  boolean changePassword(String sub, String currentPassword, String newPassword);
+
   /** Deactivating also revokes the user's refresh tokens. The last active Super Admin is kept. */
   void setStatus(String sub, UserStatus status);
 

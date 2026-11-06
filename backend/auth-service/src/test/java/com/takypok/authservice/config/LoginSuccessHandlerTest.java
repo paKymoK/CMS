@@ -30,14 +30,16 @@ class LoginSuccessHandlerTest {
   UserinfoRepository repo = mock(UserinfoRepository.class);
   LdapTemplate ldap = mock(LdapTemplate.class);
   AuditService audit = mock(AuditService.class);
+  PasswordEncoder encoder = mock(PasswordEncoder.class);
   LdapAutoProvisionSuccessHandler handler;
 
   @BeforeEach
   void setUp() {
     handler =
         new LdapAutoProvisionSuccessHandler(
-            users, mock(PasswordEncoder.class), repo, ldap, "ou=people", "(uid={0})", audit);
+            users, encoder, repo, ldap, "ou=people", "(uid={0})", audit);
     when(users.userExists(anyString())).thenReturn(true);
+    when(encoder.encode(anyString())).thenReturn("{noop}x");
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -89,6 +91,44 @@ class LoginSuccessHandlerTest {
 
     assertThat(staff.getName()).isEqualTo("Old");
     assertThat(staff.getLastLoginAt()).isNotNull();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void aStaffEmailAnotherAccountUsesIsNotTakenAndTheSignInStillWorks() throws Exception {
+    Userinfo staff = new Userinfo();
+    staff.setSub("lan");
+    staff.setAccountType("DIRECTORY");
+    staff.setEmail("old@corp");
+    when(repo.getBySub("lan")).thenReturn(staff);
+    when(repo.existsByEmailIgnoreCaseAndSubNot("clash@corp", "lan")).thenReturn(true);
+    when(ldap.search(anyString(), anyString(), any(AttributesMapper.class)))
+        .thenReturn(one(new String[] {"Lan Nguyen", "clash@corp"}));
+
+    signIn("lan");
+
+    assertThat(staff.getEmail()).isEqualTo("old@corp"); // kept
+    assertThat(staff.getName()).isEqualTo("Lan Nguyen"); // the rest still refreshed
+    assertThat(staff.getLastLoginAt()).isNotNull();
+    verify(audit)
+        .recordQuietly(
+            "lan", AuditAction.EMAIL_CONFLICT, "lan", "directory email: clash@corp", null);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void aBlankDirectoryEmailAtFirstSignInIsStoredAsNoEmail() throws Exception {
+    when(users.userExists("new.staff")).thenReturn(false);
+    when(repo.getBySub("new.staff")).thenReturn(null);
+    when(ldap.search(anyString(), anyString(), any(AttributesMapper.class)))
+        .thenReturn(one(new String[] {"New Staff", "  "}));
+    var saved = org.mockito.ArgumentCaptor.forClass(Userinfo.class);
+
+    signIn("new.staff");
+
+    verify(repo).save(saved.capture());
+    assertThat(saved.getAllValues().get(0).getEmail()).isNull();
+    assertThat(saved.getAllValues().get(0).getAccountType()).isEqualTo("DIRECTORY");
   }
 
   @Test

@@ -3,7 +3,10 @@ server:
 
 auth:
   issuer-uri: ${AUTH_ISSUER_URI:http://127.0.0.1:9000}
-  internal-domain: ${AUTH_INTERNAL_DOMAIN:mycompany.local}
+  # The company's email domain(s), comma-separated. Only staff (directory) accounts use them: a guest
+  # account cannot take an address there, so email stays unique without special cases. Set the real
+  # domain per environment; example.com is the local-development value.
+  internal-domain: ${AUTH_INTERNAL_DOMAIN:example.com}
   # Where the "Back to CMS" link of the Users screens points.
   admin-app-url: ${CMS_ADMIN_URL:http://localhost:5173}
   cms-admin-client:

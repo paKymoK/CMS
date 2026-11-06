@@ -14,8 +14,6 @@ import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.PageResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -185,13 +183,13 @@ public class UserAdminController {
       // email are LDAP's, so the screen leaves them out of the update.
       UpdateUserProfileRequest request = new UpdateUserProfileRequest();
       if (!directory) {
-        request.setName(blankToNull(name));
-        request.setEmail(blankToNull(email));
+        request.setName(Forms.blankToNull(name));
+        request.setEmail(Forms.blankToNull(email));
       }
       request.setDepartmentId(departmentId);
       request.setUnitId(unitId);
-      request.setDisplayName(blankToNull(displayName));
-      request.setDateOfBirth(parseDate(dateOfBirth));
+      request.setDisplayName(Forms.blankToNull(displayName));
+      request.setDateOfBirth(Forms.parseBirthDate(dateOfBirth));
       userService.updateProfile(sub, request);
       redirect.addFlashAttribute("flash", "Profile saved.");
     } catch (RuntimeException ex) {
@@ -240,7 +238,7 @@ public class UserAdminController {
       if (!ROLES.contains(role)) {
         throw new IllegalArgumentException("Unknown role.");
       }
-      String site = blankToNull(project);
+      String site = Forms.blankToNull(project);
       if (site != null && !SITE_CODE.matcher(site).matches()) {
         throw new IllegalArgumentException(
             "A site code is lower-case letters, digits, - or _ (for example en).");
@@ -285,24 +283,6 @@ public class UserAdminController {
       throw new IllegalStateException("The cms-admin client is not registered.");
     }
     return client.getId();
-  }
-
-  private static LocalDate parseDate(String s) {
-    String v = blankToNull(s);
-    if (v == null) return null;
-    try {
-      LocalDate d = LocalDate.parse(v);
-      if (d.isAfter(LocalDate.now())) {
-        throw new IllegalArgumentException("Date of birth cannot be in the future.");
-      }
-      return d;
-    } catch (DateTimeParseException ex) {
-      throw new IllegalArgumentException("Date of birth is not a valid date.");
-    }
-  }
-
-  private static String blankToNull(String s) {
-    return s == null || s.isBlank() ? null : s.trim();
   }
 
   /** The sentence to show: ApplicationException keeps it in its first argument. */

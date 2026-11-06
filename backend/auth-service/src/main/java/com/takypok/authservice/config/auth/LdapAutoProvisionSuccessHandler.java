@@ -77,7 +77,7 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
       Userinfo created = new Userinfo();
       created.setSub(username);
       created.setName(displayNameAndMail[0]);
-      created.setEmail(displayNameAndMail[1]);
+      created.setEmail(freeDirectoryEmail(username, displayNameAndMail[1], null));
       created.setAccountType(AccountType.DIRECTORY.name());
       userinfoRepository.save(created);
       provisioned = true;
@@ -110,15 +110,37 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
     super.onAuthenticationSuccess(request, response, authentication);
   }
 
-  /** A value the directory did not return leaves the stored one as it was. */
+  /**
+   * A value the directory did not return leaves the stored one as it was. An email another account
+   * already uses is not taken either: a sign-in must never fail on it, so the old email stays and
+   * the clash is written to the audit log for a Super Admin to sort out.
+   */
   private void refreshFromDirectory(Userinfo userinfo) {
     String[] displayNameAndMail = lookupLdapDisplayNameAndMail(userinfo.getSub());
     if (displayNameAndMail[0] != null && !displayNameAndMail[0].isBlank()) {
       userinfo.setName(displayNameAndMail[0]);
     }
-    if (displayNameAndMail[1] != null && !displayNameAndMail[1].isBlank()) {
-      userinfo.setEmail(displayNameAndMail[1]);
+    userinfo.setEmail(
+        freeDirectoryEmail(userinfo.getSub(), displayNameAndMail[1], userinfo.getEmail()));
+  }
+
+  /** The directory's email if it is set and free, otherwise {@code fallback}. */
+  private String freeDirectoryEmail(String sub, String fromDirectory, String fallback) {
+    if (fromDirectory == null || fromDirectory.isBlank()) {
+      return fallback;
     }
+    String mail = fromDirectory.trim();
+    if (mail.equalsIgnoreCase(fallback)) {
+      return fallback;
+    }
+    if (userinfoRepository.existsByEmailIgnoreCaseAndSubNot(mail, sub)) {
+      log.warn(
+          "Directory email for {} is already used by another account; keeping the old one", sub);
+      auditService.recordQuietly(
+          sub, AuditAction.EMAIL_CONFLICT, sub, "directory email: " + mail, null);
+      return fallback;
+    }
+    return mail;
   }
 
   /** Returns {@code [displayName, mail]}, either element possibly null if not found/unset. */

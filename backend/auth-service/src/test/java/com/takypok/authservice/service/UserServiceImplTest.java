@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 
@@ -35,6 +36,7 @@ class UserServiceImplTest {
   @Mock UserDirectoryRepository userDirectory;
   @Mock SuperAdminService superAdminService;
   @Mock AuditService auditService;
+  @Spy EmailDomainPolicy emailDomainPolicy = new EmailDomainPolicy("corp.local");
 
   @InjectMocks UserServiceImpl service;
 
@@ -172,8 +174,6 @@ class UserServiceImplTest {
 
   @Test
   void creatingARetiredUsernameIsRefused() {
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        service, "internalDomain", "corp.local");
     when(userDirectory.isTombstoned("old@x.com")).thenReturn(true);
 
     assertThatThrownBy(
@@ -262,6 +262,135 @@ class UserServiceImplTest {
     assertThatThrownBy(() -> service.updateProfile("john", json("{\"departmentId\":null}")))
         .isInstanceOf(ApplicationException.class);
     verify(userinfoRepository, never()).save(any());
+  }
+
+  private void localJohn(String encodedPassword) {
+    john.setAccountType("LOCAL");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+    when(userDetailsManager.loadUserByUsername("john"))
+        .thenReturn(
+            org.springframework.security.core.userdetails.User.withUsername("john")
+                .password(encodedPassword)
+                .authorities("ROLE_USER")
+                .build());
+  }
+
+  private static String encoded(String raw) {
+    return org.springframework.security.crypto.factory.PasswordEncoderFactories
+        .createDelegatingPasswordEncoder()
+        .encode(raw);
+  }
+
+  @Test
+  void changingPasswordStoresAnEncodedOneDropsTokensAndAudits() {
+    localJohn(encoded("old-password"));
+
+    boolean changed = service.changePassword("john", "old-password", "new-password-1");
+
+    assertThat(changed).isTrue();
+    var stored = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(userDirectory).setPassword(eq("john"), stored.capture());
+    assertThat(stored.getValue()).startsWith("{bcrypt}").doesNotContain("new-password-1");
+    verify(userDirectory).revokeAuthorizations("john");
+    verify(auditService).record(AuditAction.PASSWORD_CHANGED, "john", null);
+  }
+
+  @Test
+  void aWrongCurrentPasswordChangesNothingAndIsAudited() {
+    localJohn(encoded("old-password"));
+
+    boolean changed = service.changePassword("john", "guess", "new-password-1");
+
+    assertThat(changed).isFalse();
+    verify(userDirectory, never()).setPassword(any(), any());
+    verify(userDirectory, never()).revokeAuthorizations(any());
+    verify(auditService)
+        .record(AuditAction.PASSWORD_CHANGE_FAILED, "john", "wrong current password");
+  }
+
+  @Test
+  void passwordRulesAreEnforced() {
+    localJohn(encoded("old-password"));
+
+    assertThatThrownBy(() -> service.changePassword("john", "old-password", "short"))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.changePassword("john", "old-password", "old-password"))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(userDirectory, never()).setPassword(any(), any());
+  }
+
+  @Test
+  void aDirectoryAccountCannotChangeItsPasswordHere() {
+    john.setAccountType("DIRECTORY");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+
+    assertThatThrownBy(() -> service.changePassword("john", "x", "new-password-1"))
+        .isInstanceOf(ApplicationException.class);
+    verify(userDirectory, never()).setPassword(any(), any());
+  }
+
+  @Test
+  void changingToAnEmailAnotherAccountUsesIsRefused() throws Exception {
+    john.setEmail("j@x.com");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+    when(userinfoRepository.existsByEmailIgnoreCaseAndSubNot("taken@x.com", "john"))
+        .thenReturn(true);
+
+    assertThatThrownBy(() -> service.updateProfile("john", json("{\"email\":\"taken@x.com\"}")))
+        .isInstanceOf(ApplicationException.class)
+        .hasMessageContaining("");
+    assertThat(john.getEmail()).isEqualTo("j@x.com");
+    verify(userinfoRepository, never()).save(any());
+  }
+
+  @Test
+  void aFreeEmailIsAcceptedAndTheSubStaysTheSame() throws Exception {
+    john.setEmail("j@x.com");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+
+    service.updateProfile("john", json("{\"email\":\" New@X.com \"}"));
+
+    assertThat(john.getEmail()).isEqualTo("New@X.com");
+    assertThat(john.getSub()).isEqualTo("john");
+    verify(userinfoRepository).existsByEmailIgnoreCaseAndSubNot("New@X.com", "john");
+  }
+
+  @Test
+  void creatingAnAccountWhoseEmailIsTakenIsRefused() {
+    when(userinfoRepository.existsByEmailIgnoreCaseAndSubNot("dup@x.com", "dup@x.com"))
+        .thenReturn(true);
+
+    assertThatThrownBy(
+            () ->
+                service.create(
+                    new com.takypok.authservice.model.request.CreateUserRequest(
+                        "dup@x.com", "password1")))
+        .isInstanceOf(ApplicationException.class);
+    verify(userDetailsManager, never()).createUser(any());
+  }
+
+  @Test
+  void aGuestCannotTakeACompanyAddressAsItsEmail() throws Exception {
+    john.setEmail("j@x.com");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+
+    assertThatThrownBy(
+            () -> service.updateProfile("john", json("{\"email\":\"someone@corp.local\"}")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("@corp.local");
+    assertThat(john.getEmail()).isEqualTo("j@x.com");
+    verify(userinfoRepository, never()).save(any());
+  }
+
+  @Test
+  void aGuestCannotBeCreatedAtACompanyAddress() {
+    assertThatThrownBy(
+            () ->
+                service.create(
+                    new com.takypok.authservice.model.request.CreateUserRequest(
+                        "Boss@Corp.Local", "password1")))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(userDetailsManager, never()).createUser(any());
   }
 
   @Test

@@ -46,7 +46,9 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'org.springframework.security:spring-security-ldap'
     implementation 'org.springframework.ldap:spring-ldap-core'
+    implementation 'org.dhatim:fastexcel:0.15.7'
 
+    testImplementation 'org.dhatim:fastexcel-reader:0.15.7'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

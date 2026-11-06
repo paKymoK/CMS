@@ -152,10 +152,24 @@ CREATE TABLE IF NOT EXISTS userinfo
     CONSTRAINT fk_userinfo_manager_sub FOREIGN KEY (manager_sub) REFERENCES userinfo (sub)
 );
 
--- Email is the sign-in name of a LOCAL account, so it must be unique among them. DIRECTORY emails
--- come from LDAP and are left unconstrained so a clash can never block a staff login.
-CREATE UNIQUE INDEX IF NOT EXISTS ux_userinfo_local_email
-    ON userinfo (lower(email)) WHERE account_type = 'LOCAL' AND email IS NOT NULL;
+-- Email is unique across all accounts (case-insensitive): it is a recovery address and a candidate
+-- MFA factor, so it must name exactly one person. The services check first and give a clear
+-- message; this index is the backstop for a race. A staff login never fails on it: the LDAP
+-- handler keeps the old email and logs EMAIL_CONFLICT instead (see LdapAutoProvisionSuccessHandler).
+CREATE UNIQUE INDEX IF NOT EXISTS ux_userinfo_email
+    ON userinfo (lower(email)) WHERE email IS NOT NULL;
+
+-- A profile picture, stored here so auth-service needs no other service for it. Deleting the user
+-- deletes it. Size and type are checked before it is stored (see AvatarService).
+CREATE TABLE IF NOT EXISTS user_avatar
+(
+    sub          VARCHAR(50)  NOT NULL,
+    content_type VARCHAR(50)  NOT NULL,
+    data         BYTEA        NOT NULL,
+    updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT user_avatar_pkey PRIMARY KEY (sub),
+    CONSTRAINT fk_user_avatar_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE
+);
 
 -- Hard-deleting a LOCAL account removes its rows, but its `sub` stays reserved here: `sub` is the
 -- audit identity stored in content-service snapshots, so it must never be handed to someone else.

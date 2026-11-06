@@ -1,7 +1,10 @@
 package com.takypok.authservice.web;
 
 import com.takypok.authservice.model.entity.AuditAction;
+import com.takypok.authservice.service.AuditExportService;
 import com.takypok.authservice.service.AuditService;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ public class AuditAdminController {
   private static final int PAGE_SIZE = 50;
 
   private final AuditService auditService;
+  private final AuditExportService exportService;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -65,5 +69,17 @@ public class AuditAdminController {
     model.addAttribute("actions", AuditAction.values());
     model.addAttribute("active", "audit");
     return "admin/audit";
+  }
+
+  /** The same filters as the list, as an .xlsx download. */
+  @GetMapping("/export.xlsx")
+  public void export(
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) String action,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      HttpServletResponse response)
+      throws IOException {
+    exportService.download(new AuditService.Filter(q, action, from, to), response);
   }
 }

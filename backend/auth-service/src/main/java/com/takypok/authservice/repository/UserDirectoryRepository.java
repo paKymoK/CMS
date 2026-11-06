@@ -157,6 +157,13 @@ public class UserDirectoryRepository {
         new MapSqlParameterSource("sub", sub));
   }
 
+  /** Stores an already-encoded password for a user. */
+  public void setPassword(String sub, String encodedPassword) {
+    jdbc.update(
+        "UPDATE users SET password = :password WHERE username = :sub",
+        new MapSqlParameterSource("sub", sub).addValue("password", encodedPassword));
+  }
+
   /** True when a deleted account once held this sub (compared case-insensitively). */
   public boolean isTombstoned(String sub) {
     Integer n =

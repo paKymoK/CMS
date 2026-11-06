@@ -18,8 +18,9 @@
         <span class="pill-brand">ACCOUNTS</span>
     </div>
     <nav class="nav" aria-label="Sections">
-        <a th:href="@{/admin/users}" th:classappend="${active == 'users'} ? 'is-active'">Users</a>
-        <a th:href="@{/admin/audit}" th:classappend="${active == 'audit'} ? 'is-active'">Audit log</a>
+        <a th:if="${showAdminNav != false}" th:href="@{/admin/users}" th:classappend="${active == 'users'} ? 'is-active'">Users</a>
+        <a th:if="${showAdminNav != false}" th:href="@{/admin/audit}" th:classappend="${active == 'audit'} ? 'is-active'">Audit log</a>
+        <a th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'is-active'">My profile</a>
     </nav>
     <div class="sider-foot">
         <div>Signed in as<br><span class="me" th:text="${me}">admin</span></div>

@@ -7,6 +7,9 @@ import org.springframework.security.core.Authentication;
  * factor (authenticator app, security key, e-mail code), so none is built yet and {@link
  * NoMfaPolicy} never asks for one.
  *
+ * <p>Email is unique per account (decision: a recovery address and a possible MFA factor), so an
+ * e-mail code can safely name exactly one person if it is chosen.
+ *
  * <p>{@link DomainAuthenticationManager} calls this once, right after a correct password and before
  * the login completes. To add MFA: decide the factor, return true here for the users who need it,
  * and replace the "not implemented" refusal in the manager with a pending state (keep the

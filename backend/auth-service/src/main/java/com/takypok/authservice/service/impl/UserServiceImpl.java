@@ -10,6 +10,7 @@ import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.repository.UserDirectoryRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.AuditService;
+import com.takypok.authservice.service.EmailDomainPolicy;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
@@ -18,7 +19,6 @@ import com.takypok.core.model.PageResponse;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -35,16 +35,16 @@ public class UserServiceImpl implements UserService {
   private final UserDirectoryRepository userDirectory;
   private final SuperAdminService superAdminService;
   private final AuditService auditService;
+  private final EmailDomainPolicy emailDomainPolicy;
 
   private static final int MAX_PAGE_SIZE = 100;
-
-  @Value("${auth.internal-domain}")
-  private String internalDomain;
+  static final int MIN_PASSWORD_LENGTH = 8;
 
   @Override
   @Transactional
   public void create(CreateUserRequest request) {
-    validateUsername(request.getUsername());
+    emailDomainPolicy.requireGuestAddress(request.getUsername(), "Username");
+    requireFreeEmail(request.getUsername(), request.getUsername());
     if (userDirectory.isTombstoned(request.getUsername())) {
       throw new ApplicationException(
           Message.Application.ERROR, "That username belonged to a deleted account and is reserved");
@@ -90,6 +90,9 @@ public class UserServiceImpl implements UserService {
       if (email == null) {
         throw new ApplicationException(Message.Application.ERROR, "Email cannot be cleared");
       }
+      // Only LOCAL accounts get here (a directory account's email is refused above).
+      emailDomainPolicy.requireGuestAddress(email, "Email");
+      requireFreeEmail(email, sub);
       userinfo.setEmail(email);
     }
     if (request.isSent("departmentId")) {
@@ -162,6 +165,37 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
+  public boolean changePassword(String sub, String currentPassword, String newPassword) {
+    Userinfo userinfo =
+        userinfoRepository
+            .findById(sub)
+            .orElseThrow(
+                () -> new ApplicationException(Message.Application.ERROR, "User not found"));
+    if (!AccountType.LOCAL.name().equals(userinfo.getAccountType())) {
+      throw new ApplicationException(
+          Message.Application.ERROR, "This password is managed by your organisation");
+    }
+    if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
+      throw new IllegalArgumentException(
+          "The new password needs at least " + MIN_PASSWORD_LENGTH + " characters.");
+    }
+    UserDetails current = userDetailsManager.loadUserByUsername(sub);
+    PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    if (currentPassword == null || !encoder.matches(currentPassword, current.getPassword())) {
+      auditService.record(AuditAction.PASSWORD_CHANGE_FAILED, sub, "wrong current password");
+      return false;
+    }
+    if (encoder.matches(newPassword, current.getPassword())) {
+      throw new IllegalArgumentException("Choose a password different from the current one.");
+    }
+    userDirectory.setPassword(sub, encoder.encode(newPassword));
+    userDirectory.revokeAuthorizations(sub);
+    auditService.record(AuditAction.PASSWORD_CHANGED, sub, null);
+    return true;
+  }
+
+  @Override
+  @Transactional
   public void delete(String sub, String actor) {
     if (sub.equals(actor)) {
       throw new ApplicationException(
@@ -201,6 +235,14 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  /** Email is unique across accounts; the sign-in name (sub) is not affected by a change. */
+  private void requireFreeEmail(String email, String sub) {
+    if (userinfoRepository.existsByEmailIgnoreCaseAndSubNot(email.trim(), sub)) {
+      throw new ApplicationException(
+          Message.Application.ERROR, "That email is already used by another account");
+    }
+  }
+
   private static String blankToNull(String s) {
     return s == null || s.isBlank() ? null : s.trim();
   }
@@ -230,18 +272,5 @@ public class UserServiceImpl implements UserService {
                                 .build())
                     .toList())
         .build();
-  }
-
-  private void validateUsername(String username) {
-    int atIndex = username.indexOf('@');
-    if (atIndex < 1) {
-      throw new IllegalArgumentException(
-          "Username must be an email address (e.g. john@example.com)");
-    }
-    String domain = username.substring(atIndex + 1);
-    if (domain.equalsIgnoreCase(internalDomain)) {
-      throw new IllegalArgumentException(
-          "Domain @" + internalDomain + " is reserved for internal accounts");
-    }
   }
 }
