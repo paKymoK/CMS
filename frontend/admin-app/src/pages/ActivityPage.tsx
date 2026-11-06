@@ -207,7 +207,7 @@ export default function ActivityPage() {
         </div>
       ),
     },
-    { title: "By", dataIndex: "actorName", width: 160, render: (name: string | null) => name ?? "Unknown" },
+    { title: "By", dataIndex: "actorName", width: 240, render: (name: string | null) => name ?? "Unknown" },
   ];
 
   return (
