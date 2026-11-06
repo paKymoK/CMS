@@ -11,6 +11,7 @@ import com.takypok.authservice.repository.UserDirectoryRepository;
 import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.EmailDomainPolicy;
+import com.takypok.authservice.service.PasswordPolicy;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
@@ -38,17 +39,11 @@ public class UserServiceImpl implements UserService {
   private final EmailDomainPolicy emailDomainPolicy;
 
   private static final int MAX_PAGE_SIZE = 100;
-  static final int MIN_PASSWORD_LENGTH = 8;
 
   @Override
   @Transactional
   public void create(CreateUserRequest request) {
-    emailDomainPolicy.requireGuestAddress(request.getUsername(), "Username");
-    requireFreeEmail(request.getUsername(), request.getUsername());
-    if (userDirectory.isTombstoned(request.getUsername())) {
-      throw new ApplicationException(
-          Message.Application.ERROR, "That username belonged to a deleted account and is reserved");
-    }
+    requireNewLocalAccount(request.getUsername());
     PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
     UserDetails user =
         User.builder()
@@ -67,6 +62,26 @@ public class UserServiceImpl implements UserService {
     userinfo.setAccountType(AccountType.LOCAL.name());
     userinfoRepository.save(userinfo);
     auditService.record(AuditAction.USER_CREATED, request.getUsername(), "local account");
+  }
+
+  @Override
+  @Transactional
+  public void createInvited(String username, String name) {
+    requireNewLocalAccount(username);
+    PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    // Nobody knows this password, so the account cannot sign in until the person sets their own.
+    String unusable =
+        encoder.encode(java.util.UUID.randomUUID() + java.util.UUID.randomUUID().toString());
+    userDetailsManager.createUser(
+        User.builder().username(username).password(unusable).roles("USER").build());
+    Userinfo userinfo = new Userinfo();
+    userinfo.setSub(username);
+    userinfo.setEmail(username);
+    userinfo.setName(blankToNull(name));
+    userinfo.setAccountType(AccountType.LOCAL.name());
+    userinfo.setStatus(UserStatus.INVITED.name());
+    userinfoRepository.save(userinfo);
+    auditService.record(AuditAction.USER_CREATED, username, "invited by email");
   }
 
   @Override
@@ -154,6 +169,13 @@ public class UserServiceImpl implements UserService {
             .findById(sub)
             .orElseThrow(
                 () -> new ApplicationException(Message.Application.ERROR, "User not found"));
+    if (status == UserStatus.INVITED) {
+      throw new IllegalArgumentException("An account becomes invited only by invitation.");
+    }
+    if (status == UserStatus.ACTIVE && UserStatus.INVITED.name().equals(userinfo.getStatus())) {
+      throw new IllegalArgumentException(
+          "This account is waiting for the person to activate it: resend the invitation.");
+    }
     if (status == UserStatus.INACTIVE) {
       superAdminService.guardLastSuperAdmin(() -> saveStatus(userinfo, status));
       userDirectory.revokeAuthorizations(sub);
@@ -175,10 +197,7 @@ public class UserServiceImpl implements UserService {
       throw new ApplicationException(
           Message.Application.ERROR, "This password is managed by your organisation");
     }
-    if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
-      throw new IllegalArgumentException(
-          "The new password needs at least " + MIN_PASSWORD_LENGTH + " characters.");
-    }
+    PasswordPolicy.require(newPassword);
     UserDetails current = userDetailsManager.loadUserByUsername(sub);
     PasswordEncoder encoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
     if (currentPassword == null || !encoder.matches(currentPassword, current.getPassword())) {
@@ -233,6 +252,16 @@ public class UserServiceImpl implements UserService {
     } catch (IllegalArgumentException ex) {
       throw new ApplicationException(Message.Application.ERROR, "Unknown status: " + status);
     }
+  }
+
+  /** The rules for a new local account: a non-company address, not a retired sub, a free email. */
+  private void requireNewLocalAccount(String username) {
+    emailDomainPolicy.requireGuestAddress(username, "Username");
+    if (userDirectory.isTombstoned(username)) {
+      throw new ApplicationException(
+          Message.Application.ERROR, "That username belonged to a deleted account and is reserved");
+    }
+    requireFreeEmail(username, username);
   }
 
   /** Email is unique across accounts; the sign-in name (sub) is not affected by a change. */

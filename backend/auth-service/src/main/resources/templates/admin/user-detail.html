@@ -12,7 +12,7 @@
                 <span class="eyebrow">User</span>
                 <div class="title-row">
                     <h1 th:text="${user.name != null and !user.name.isBlank()} ? ${user.name} : ${user.sub}">Name</h1>
-                    <span class="status" th:classappend="${'status-' + user.status}" th:text="${user.status == 'ACTIVE'} ? 'Active' : 'Inactive'"></span>
+                    <span class="status" th:classappend="${'status-' + user.status}" th:text="${user.status == 'ACTIVE'} ? 'Active' : (${user.status == 'INVITED'} ? 'Invited' : 'Inactive')"></span>
                     <span class="chip chip-super" th:if="${superAdmin}">Super Admin</span>
                 </div>
                 <p class="mono" th:text="${user.sub}">sub</p>
@@ -105,19 +105,43 @@
                 <div>
                     <h2>Account status</h2>
                     <p class="sub" th:if="${user.status == 'ACTIVE'}">Active. Deactivating blocks sign-in at once and ends the person's CMS session when it next refreshes (up to 15 minutes).</p>
-                    <p class="sub" th:if="${user.status != 'ACTIVE'}">Inactive. This account cannot sign in.</p>
+                    <p class="sub" th:if="${user.status == 'INACTIVE'}">Inactive. This account cannot sign in.</p>
+                    <p class="sub" th:if="${user.status == 'INVITED'}">Invited. The person has not set a password yet, so the account cannot sign in. Deactivate it to cancel the invitation.</p>
                 </div>
                 <form method="post" th:action="@{/admin/users/{sub}/status(sub=${user.sub})}"
                       th:if="${user.status == 'ACTIVE'}" onsubmit="return confirm('Deactivate this account?')">
                     <input type="hidden" name="status" value="INACTIVE">
                     <button class="btn btn-danger" type="submit">Deactivate</button>
                 </form>
-                <form method="post" th:action="@{/admin/users/{sub}/status(sub=${user.sub})}" th:if="${user.status != 'ACTIVE'}">
+                <form method="post" th:action="@{/admin/users/{sub}/status(sub=${user.sub})}" th:if="${user.status == 'INACTIVE'}">
                     <input type="hidden" name="status" value="ACTIVE">
                     <button class="btn btn-primary" type="submit">Reactivate</button>
                 </form>
+                <div style="display:flex;gap:8px;flex-wrap:wrap" th:if="${user.status == 'INVITED'}">
+                    <form method="post" th:action="@{/admin/users/{sub}/invitation(sub=${user.sub})}" th:if="${mailEnabled}">
+                        <button class="btn btn-primary" type="submit">Resend invitation</button>
+                    </form>
+                    <form method="post" th:action="@{/admin/users/{sub}/status(sub=${user.sub})}" onsubmit="return confirm('Cancel this invitation and deactivate the account?')">
+                        <input type="hidden" name="status" value="INACTIVE">
+                        <button class="btn btn-danger" type="submit">Deactivate</button>
+                    </form>
+                </div>
             </div>
             <p class="hint">The last active Super Admin cannot be deactivated or lose the role.</p>
+        </section>
+
+        <!-- Password reset link: active local accounts, when email is set up -->
+        <section class="card" th:if="${user.accountType == 'LOCAL' and user.status == 'ACTIVE' and mailEnabled}">
+            <div class="status-block">
+                <div>
+                    <h2>Password</h2>
+                    <p class="sub">Email the person a one-time link to choose a new password. Their password stays as it is until they use it.</p>
+                </div>
+                <form method="post" th:action="@{/admin/users/{sub}/password-reset(sub=${user.sub})}"
+                      onsubmit="return confirm('Email a password reset link to this person?')">
+                    <button class="btn" type="submit">Send reset link</button>
+                </form>
+            </div>
         </section>
 
         <!-- Delete: local accounts only -->
@@ -125,11 +149,11 @@
             <div class="status-block">
                 <div>
                     <h2>Delete account</h2>
-                    <p class="sub" th:if="${user.status == 'ACTIVE'}">Deactivate the account first, then it can be deleted.</p>
-                    <p class="sub" th:if="${user.status != 'ACTIVE'}">Permanently removes the account, its roles and group memberships. This cannot be undone. The username stays reserved and cannot be created again.</p>
+                    <p class="sub" th:if="${user.status != 'INACTIVE'}">Deactivate the account first, then it can be deleted.</p>
+                    <p class="sub" th:if="${user.status == 'INACTIVE'}">Permanently removes the account, its roles and group memberships. This cannot be undone. The username stays reserved and cannot be created again.</p>
                 </div>
                 <form method="post" th:action="@{/admin/users/{sub}/delete(sub=${user.sub})}"
-                      th:if="${user.status != 'ACTIVE'}" onsubmit="return confirm('Permanently delete this account?')">
+                      th:if="${user.status == 'INACTIVE'}" onsubmit="return confirm('Permanently delete this account?')">
                     <button class="btn btn-danger" type="submit">Delete</button>
                 </form>
             </div>

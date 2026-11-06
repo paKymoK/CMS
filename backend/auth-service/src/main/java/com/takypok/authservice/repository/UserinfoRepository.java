@@ -11,6 +11,8 @@ public interface UserinfoRepository extends JpaRepository<Userinfo, String> {
   /** True when another account (not {@code sub}) already uses this email, ignoring case. */
   boolean existsByEmailIgnoreCaseAndSubNot(String email, String sub);
 
+  java.util.Optional<Userinfo> findFirstByEmailIgnoreCase(String email);
+
   @Query(value = "SELECT * FROM userinfo WHERE sub = :sub", nativeQuery = true)
   Userinfo getBySub(String sub);
 }

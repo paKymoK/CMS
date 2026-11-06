@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -391,6 +392,47 @@ class UserServiceImplTest {
                         "Boss@Corp.Local", "password1")))
         .isInstanceOf(IllegalArgumentException.class);
     verify(userDetailsManager, never()).createUser(any());
+  }
+
+  @Test
+  void anInvitedAccountIsCreatedWithAnUnusablePasswordAndWaitsForActivation() {
+    ArgumentCaptor<org.springframework.security.core.userdetails.UserDetails> user =
+        ArgumentCaptor.forClass(org.springframework.security.core.userdetails.UserDetails.class);
+    ArgumentCaptor<Userinfo> info = ArgumentCaptor.forClass(Userinfo.class);
+
+    service.createInvited("new@guest.test", " New Person ");
+
+    verify(userDetailsManager).createUser(user.capture());
+    assertThat(user.getValue().getPassword()).startsWith("{bcrypt}");
+    verify(userinfoRepository).save(info.capture());
+    assertThat(info.getValue().getStatus()).isEqualTo("INVITED");
+    assertThat(info.getValue().getAccountType()).isEqualTo("LOCAL");
+    assertThat(info.getValue().getName()).isEqualTo("New Person");
+    assertThat(info.getValue().getEmail()).isEqualTo("new@guest.test");
+    verify(auditService).record(AuditAction.USER_CREATED, "new@guest.test", "invited by email");
+  }
+
+  @Test
+  void aCompanyAddressCannotBeInvited() {
+    assertThatThrownBy(() -> service.createInvited("boss@corp.local", null))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(userDetailsManager, never()).createUser(any());
+  }
+
+  @Test
+  void anInvitedAccountCannotBeActivatedByHandOnlyDeactivated() {
+    john.setStatus("INVITED");
+    when(userinfoRepository.findById("john")).thenReturn(Optional.of(john));
+
+    assertThatThrownBy(() -> service.setStatus("john", UserStatus.ACTIVE))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> service.setStatus("john", UserStatus.INVITED))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(userinfoRepository, never()).saveAndFlush(any());
+
+    guardRunsChange();
+    service.setStatus("john", UserStatus.INACTIVE); // cancelling the invitation is fine
+    assertThat(john.getStatus()).isEqualTo("INACTIVE");
   }
 
   @Test

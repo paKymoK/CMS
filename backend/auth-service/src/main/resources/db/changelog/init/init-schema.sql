@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS userinfo
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT userinfo_pkey PRIMARY KEY (sub),
-    CONSTRAINT ck_userinfo_status CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    CONSTRAINT ck_userinfo_status CHECK (status IN ('ACTIVE', 'INACTIVE', 'INVITED')),
     CONSTRAINT ck_userinfo_account_type CHECK (account_type IN ('LOCAL', 'DIRECTORY')),
     CONSTRAINT fk_userinfo_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE,
     CONSTRAINT fk_userinfo_department FOREIGN KEY (department_id) REFERENCES department (id),
@@ -267,3 +267,22 @@ CREATE INDEX IF NOT EXISTS ix_account_audit_at ON account_audit (at DESC);
 CREATE INDEX IF NOT EXISTS ix_account_audit_actor ON account_audit (actor, at DESC);
 CREATE INDEX IF NOT EXISTS ix_account_audit_target ON account_audit (target, at DESC);
 CREATE INDEX IF NOT EXISTS ix_account_audit_action ON account_audit (action, at DESC);
+
+-- ── Account links (invitation / password reset) ────────────────────────────────────────────────
+-- One-time links sent by email. Only the SHA-256 of the token is stored, so a copy of this table
+-- cannot be used to take over an account. A new link for the same account and purpose replaces the
+-- old one; a used or expired one is refused. Deleting the user deletes the links.
+CREATE TABLE IF NOT EXISTS account_token
+(
+    token_hash CHAR(64)     NOT NULL,
+    sub        VARCHAR(50)  NOT NULL,
+    purpose    VARCHAR(20)  NOT NULL,
+    expires_at TIMESTAMPTZ  NOT NULL,
+    used_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT account_token_pkey PRIMARY KEY (token_hash),
+    CONSTRAINT ck_account_token_purpose CHECK (purpose IN ('ACTIVATE', 'RESET')),
+    CONSTRAINT fk_account_token_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_account_token_sub ON account_token (sub, purpose);

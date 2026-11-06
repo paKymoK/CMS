@@ -113,6 +113,15 @@ class DomainAuthenticationManagerTest {
   }
 
   @Test
+  void anInvitedAccountCannotSignInEvenWithTheRightPassword() {
+    when(userinfo.getBySub("sam@x.com")).thenReturn(withStatus("INVITED"));
+
+    assertThatThrownBy(() -> manager.authenticate(login)).isInstanceOf(DisabledException.class);
+    verify(audit)
+        .recordQuietly("sam@x.com", AuditAction.LOGIN_BLOCKED, "sam@x.com", "GUEST", "10.0.0.1");
+  }
+
+  @Test
   void aSecondFactorRequirementFailsClosedBecauseNoStepExistsYet() {
     when(userinfo.getBySub("sam@x.com")).thenReturn(withStatus("ACTIVE"));
     when(mfa.isSecondFactorRequired(verified)).thenReturn(true);

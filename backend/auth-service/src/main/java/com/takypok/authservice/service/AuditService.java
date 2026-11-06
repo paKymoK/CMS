@@ -80,6 +80,11 @@ public class AuditService {
     insert(actor, action, target, detail, ip);
   }
 
+  /** Like {@link #record} but never throws: for a side effect that must not undo the main work. */
+  public void recordQuietly(AuditAction action, String target, String detail) {
+    recordQuietly(currentActor(), action, target, detail, currentIp());
+  }
+
   public void recordQuietly(
       String actor, AuditAction action, String target, String detail, String ip) {
     try {

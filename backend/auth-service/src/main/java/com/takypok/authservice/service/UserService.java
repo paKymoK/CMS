@@ -9,6 +9,12 @@ import com.takypok.core.model.PageResponse;
 public interface UserService {
   void create(CreateUserRequest request);
 
+  /**
+   * Creates a local account with no usable password, waiting for the person to activate it through
+   * an emailed link (see AccountMailService). It cannot sign in until then.
+   */
+  void createInvited(String username, String name);
+
   void updateProfile(String sub, UpdateUserProfileRequest request);
 
   PageResponse<UserResponse> search(

@@ -1,0 +1,17 @@
+# A local mail catcher for development: it accepts any message on SMTP and shows it in a web inbox,
+# nothing is delivered anywhere. Point auth-service at it with
+#   AUTH_MAIL_HOST=localhost AUTH_MAIL_PORT=1025
+# and read the mail at http://localhost:8025 (also an API: GET /api/v1/messages).
+# For a real server set AUTH_MAIL_HOST / PORT / USERNAME / PASSWORD / AUTH / STARTTLS instead.
+name: takypok-mailpit
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_MAX_MESSAGES: "500"
+    restart: unless-stopped

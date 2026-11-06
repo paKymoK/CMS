@@ -1,13 +1,16 @@
 package com.takypok.authservice.api;
 
 import com.takypok.authservice.model.request.CreateUserRequest;
+import com.takypok.authservice.model.request.InviteUserRequest;
 import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.request.UpdateUserStatusRequest;
 import com.takypok.authservice.model.response.UserResponse;
+import com.takypok.authservice.service.AccountMailService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.model.PageResponse;
 import com.takypok.core.model.ResultMessage;
 import jakarta.validation.Valid;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/users")
 public class UserController {
   private final UserService userService;
+  private final AccountMailService accountMail;
 
   @GetMapping
   public ResponseEntity<ResultMessage<PageResponse<UserResponse>>> search(
@@ -56,6 +60,38 @@ public class UserController {
       @PathVariable String sub, Authentication authentication) {
     userService.delete(sub, authentication.getName());
     return ResponseEntity.ok(ResultMessage.success(null));
+  }
+
+  /** Creates an account waiting for activation and emails the invitation. */
+  @PostMapping("/invitations")
+  public ResponseEntity<ResultMessage<Map<String, Boolean>>> invite(
+      @RequestBody @Valid InviteUserRequest request) {
+    requireMail();
+    userService.createInvited(request.getUsername().trim(), request.getName());
+    boolean sent = accountMail.sendInvitation(request.getUsername().trim());
+    return ResponseEntity.ok(ResultMessage.success(Map.of("emailSent", sent)));
+  }
+
+  @PostMapping("/{sub}/invitation")
+  public ResponseEntity<ResultMessage<Map<String, Boolean>>> resendInvitation(
+      @PathVariable String sub) {
+    requireMail();
+    return ResponseEntity.ok(
+        ResultMessage.success(Map.of("emailSent", accountMail.sendInvitation(sub))));
+  }
+
+  @PostMapping("/{sub}/password-reset")
+  public ResponseEntity<ResultMessage<Map<String, Boolean>>> sendPasswordReset(
+      @PathVariable String sub) {
+    requireMail();
+    return ResponseEntity.ok(
+        ResultMessage.success(Map.of("emailSent", accountMail.sendPasswordReset(sub))));
+  }
+
+  private void requireMail() {
+    if (!accountMail.isEnabled()) {
+      throw new IllegalStateException("Email is not set up on this server.");
+    }
   }
 
   @PostMapping

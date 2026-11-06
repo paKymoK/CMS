@@ -131,6 +131,7 @@ tbody tr:hover { background: #f6f9ff; }
 .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .status-ACTIVE { background: var(--ok-bg); color: var(--ok); }
 .status-INACTIVE { background: var(--off-bg); color: var(--off); }
+.status-INVITED { background: #fff4dc; color: #8a5a00; }
 
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--border-soft); color: var(--muted); font-size: 13px; }
 .pager .btns { display: flex; gap: 8px; }

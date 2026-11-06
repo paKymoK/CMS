@@ -1,5 +1,6 @@
 package com.takypok.authservice.web;
 
+import com.takypok.authservice.service.AccountMailService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -7,6 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class LoginController {
+
+  private final AccountMailService accountMail;
+
+  public LoginController(AccountMailService accountMail) {
+    this.accountMail = accountMail;
+  }
 
   @GetMapping("/login")
   public String login(HttpSession session, Model model) {
@@ -16,6 +23,7 @@ public class LoginController {
     session.removeAttribute("loginAttemptsLeft");
     if (locked != null) model.addAttribute("locked", locked);
     if (attemptsLeft != null) model.addAttribute("attemptsLeft", attemptsLeft);
+    model.addAttribute("mailEnabled", accountMail.isEnabled());
     return "login";
   }
 }

@@ -11,7 +11,7 @@
             <div>
                 <span class="eyebrow">Access</span>
                 <h1>New user</h1>
-                <p class="sub">A local account that signs in with an email and a password. Give it a CMS role on the next page.</p>
+                <p class="sub">A local account that signs in with its email address and a password. Give it a CMS role on the next page.</p>
             </div>
         </div>
 
@@ -27,17 +27,36 @@
                 <label for="name">Full name</label>
                 <input type="text" id="name" name="name" th:value="${name}">
             </div>
-            <div class="grid2">
-                <div class="field">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" minlength="8" required autocomplete="new-password">
-                </div>
-                <div class="field">
-                    <label for="confirm">Repeat password</label>
-                    <input type="password" id="confirm" name="confirm" minlength="8" required autocomplete="new-password">
+            <div class="field">
+                <label>How does the person get access?</label>
+                <div style="display:grid;gap:8px">
+                    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:500;color:inherit">
+                        <input type="radio" name="mode" value="invite" id="mode-invite" th:checked="${mode == 'invite'}" th:disabled="${!mailEnabled}" style="margin-top:3px">
+                        <span>Send an invitation email: they choose their own password with a one-time link.
+                            <span class="hint" th:if="${!mailEnabled}" style="display:block">Email is not set up (no SMTP server configured).</span></span>
+                    </label>
+                    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:500;color:inherit">
+                        <input type="radio" name="mode" value="password" id="mode-password" th:checked="${mode != 'invite'}" style="margin-top:3px">
+                        <span>Set a password now: you tell the person the password yourself.</span>
+                    </label>
                 </div>
             </div>
-            <p class="hint" style="margin:-4px 0 16px">At least 8 characters. There is no invitation email yet, so tell the person their password yourself.</p>
+            <div id="password-fields">
+                <div class="grid2">
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="field">
+                        <label for="confirm">Repeat password</label>
+                        <input type="password" id="confirm" name="confirm" minlength="8" autocomplete="new-password">
+                    </div>
+                </div>
+                <p class="hint" style="margin:-4px 0 16px">At least 8 characters.</p>
+                <label style="display:flex;gap:8px;align-items:center;font-weight:500;color:inherit;margin-bottom:16px" th:if="${mailEnabled}">
+                    <input type="checkbox" name="notify" value="1" checked> Email them that the account exists (the email never contains the password)
+                </label>
+            </div>
             <div class="actions">
                 <button class="btn btn-primary" type="submit">Create user</button>
                 <a class="btn" th:href="@{/admin/users}">Cancel</a>
@@ -46,5 +65,17 @@
 
     </div></main>
 </div>
+<script>
+    (function () {
+        var invite = document.getElementById('mode-invite'), pw = document.getElementById('mode-password');
+        var box = document.getElementById('password-fields');
+        function sync() {
+            var show = !invite.checked;
+            box.style.display = show ? '' : 'none';
+            box.querySelectorAll('input[type=password]').forEach(function (i) { i.required = show; });
+        }
+        invite.addEventListener('change', sync); pw.addEventListener('change', sync); sync();
+    })();
+</script>
 </body>
 </html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{public-layout :: head('Activate your account')}"></head>
+<body>
+<div class="card">
+    <div class="heading"><div class="orb"></div>
+        <h1>Activate your <span>account</span></h1>
+        <p th:if="${account != null}">Welcome<strong th:if="${account.name != null}" th:text="' ' + ${account.name}"></strong>. Choose a password to finish.</p></div>
+    <form class="panel" method="post" th:action="@{/activate}" th:if="${account != null}" autocomplete="off">
+        <input type="hidden" name="token" th:value="${token}">
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+        <p>Signing in as <strong th:text="${account.sub}"></strong></p>
+        <label class="field"><span class="eyebrow">New password</span>
+            <input class="field-input" type="password" name="password" minlength="8" required autofocus autocomplete="new-password"></label>
+        <label class="field"><span class="eyebrow">Repeat password</span>
+            <input class="field-input" type="password" name="confirm" minlength="8" required autocomplete="new-password"></label>
+        <p class="hint">At least 8 characters.</p>
+        <button class="submit-btn" type="submit"><span class="label">Activate</span><span class="icon"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+    </form>
+    <div class="panel" th:if="${account == null}">
+        <p><strong>This link is not valid any more.</strong> It may have been used already or it has expired. Ask your administrator to send a new invitation.</p>
+    </div>
+    <p class="links"><a th:href="@{/login}">Go to sign in</a></p>
+</div>
+</body>
+</html>

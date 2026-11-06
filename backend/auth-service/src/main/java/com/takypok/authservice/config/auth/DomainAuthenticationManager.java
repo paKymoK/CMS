@@ -106,8 +106,10 @@ public class DomainAuthenticationManager implements AuthenticationManager {
   private void rejectIfInactive(String username) {
     // No row yet = an LDAP user's first login, provisioned only after this succeeds.
     Userinfo userinfo = userinfoRepository.getBySub(username);
-    if (userinfo != null && UserStatus.INACTIVE.name().equals(userinfo.getStatus())) {
-      throw new DisabledException("Account is inactive");
+    if (userinfo != null
+        && (UserStatus.INACTIVE.name().equals(userinfo.getStatus())
+            || UserStatus.INVITED.name().equals(userinfo.getStatus()))) {
+      throw new DisabledException("Account is not active");
     }
   }
 

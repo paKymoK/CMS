@@ -6,6 +6,7 @@ import com.takypok.authservice.model.request.CreateUserRequest;
 import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.response.ClientRoleAssignmentResponse;
 import com.takypok.authservice.model.response.UserResponse;
+import com.takypok.authservice.service.AccountMailService;
 import com.takypok.authservice.service.ClientRoleService;
 import com.takypok.authservice.service.DepartmentService;
 import com.takypok.authservice.service.SuperAdminService;
@@ -59,6 +60,7 @@ public class UserAdminController {
   private final DepartmentService departmentService;
   private final UnitService unitService;
   private final RegisteredClientRepository registeredClientRepository;
+  private final AccountMailService accountMail;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -66,6 +68,12 @@ public class UserAdminController {
   @ModelAttribute("cmsUrl")
   String cmsUrl() {
     return adminAppUrl;
+  }
+
+  /** Whether an SMTP server is configured: the screens only offer email features when it is. */
+  @ModelAttribute("mailEnabled")
+  boolean mailEnabled() {
+    return accountMail.isEnabled();
   }
 
   @ModelAttribute("me")
@@ -108,26 +116,47 @@ public class UserAdminController {
   public String create(
       @RequestParam String username,
       @RequestParam(required = false) String name,
-      @RequestParam String password,
-      @RequestParam String confirm,
+      @RequestParam(defaultValue = "password") String mode,
+      @RequestParam(required = false) String password,
+      @RequestParam(required = false) String confirm,
+      @RequestParam(required = false) String notify,
       Model model,
       RedirectAttributes redirect) {
     String login = username.trim();
+    boolean invite = "invite".equals(mode);
     String error = null;
-    if (!password.equals(confirm)) {
-      error = "The two passwords do not match.";
-    } else if (password.length() < MIN_PASSWORD_LENGTH) {
-      error = "The password needs at least " + MIN_PASSWORD_LENGTH + " characters.";
+    if (invite && !accountMail.isEnabled()) {
+      error = "Email is not set up, so an invitation cannot be sent.";
+    } else if (!invite) {
+      if (password == null || !password.equals(confirm)) {
+        error = "The two passwords do not match.";
+      } else if (password.length() < MIN_PASSWORD_LENGTH) {
+        error = "The password needs at least " + MIN_PASSWORD_LENGTH + " characters.";
+      }
     }
     if (error == null) {
       try {
-        userService.create(new CreateUserRequest(login, password));
-        if (name != null && !name.isBlank()) {
-          UpdateUserProfileRequest profile = new UpdateUserProfileRequest();
-          profile.setName(name.trim());
-          userService.updateProfile(login, profile);
+        if (invite) {
+          userService.createInvited(login, Forms.blankToNull(name));
+          if (accountMail.sendInvitation(login)) {
+            redirect.addFlashAttribute("flash", "User created and invitation sent.");
+          } else {
+            redirect.addFlashAttribute("flash", "User created.");
+            redirect.addFlashAttribute(
+                "error", "The invitation email could not be sent. Use Resend invitation below.");
+          }
+        } else {
+          userService.create(new CreateUserRequest(login, password));
+          if (name != null && !name.isBlank()) {
+            UpdateUserProfileRequest profile = new UpdateUserProfileRequest();
+            profile.setName(name.trim());
+            userService.updateProfile(login, profile);
+          }
+          redirect.addFlashAttribute("flash", "User created.");
+          if (notify != null && accountMail.isEnabled() && !accountMail.sendCreatedNotice(login)) {
+            redirect.addFlashAttribute("error", "The notification email could not be sent.");
+          }
         }
-        redirect.addFlashAttribute("flash", "User created.");
         return "redirect:/admin/users/" + UriUtils.encodePathSegment(login, StandardCharsets.UTF_8);
       } catch (RuntimeException ex) {
         error = message(ex);
@@ -136,6 +165,7 @@ public class UserAdminController {
     model.addAttribute("error", error);
     model.addAttribute("username", login);
     model.addAttribute("name", name == null ? "" : name);
+    model.addAttribute("mode", invite ? "invite" : "password");
     model.addAttribute("active", "users");
     return "admin/user-new";
   }
@@ -226,6 +256,41 @@ public class UserAdminController {
       redirect.addFlashAttribute("error", message(ex));
       return "redirect:/admin/users/{sub}";
     }
+  }
+
+  @PostMapping("/{sub}/invitation")
+  public String resendInvitation(@PathVariable String sub, RedirectAttributes redirect) {
+    try {
+      if (!accountMail.isEnabled()) {
+        throw new IllegalArgumentException("Email is not set up.");
+      }
+      if (accountMail.sendInvitation(sub)) {
+        redirect.addFlashAttribute("flash", "Invitation sent.");
+      } else {
+        redirect.addFlashAttribute("error", "The invitation email could not be sent.");
+      }
+    } catch (RuntimeException ex) {
+      redirect.addFlashAttribute("error", message(ex));
+    }
+    return "redirect:/admin/users/{sub}";
+  }
+
+  @PostMapping("/{sub}/password-reset")
+  public String sendPasswordReset(@PathVariable String sub, RedirectAttributes redirect) {
+    try {
+      if (!accountMail.isEnabled()) {
+        throw new IllegalArgumentException("Email is not set up.");
+      }
+      if (accountMail.sendPasswordReset(sub)) {
+        redirect.addFlashAttribute(
+            "flash", "Reset link sent. The password stays as it is until the person uses it.");
+      } else {
+        redirect.addFlashAttribute("error", "The reset email could not be sent.");
+      }
+    } catch (RuntimeException ex) {
+      redirect.addFlashAttribute("error", message(ex));
+    }
+    return "redirect:/admin/users/{sub}";
   }
 
   @PostMapping("/{sub}/roles")

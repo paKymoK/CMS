@@ -7,6 +7,18 @@ auth:
   # account cannot take an address there, so email stays unique without special cases. Set the real
   # domain per environment; example.com is the local-development value.
   internal-domain: ${AUTH_INTERNAL_DOMAIN:example.com}
+  # The address people reach this service at: the links in emails are built from it.
+  public-url: ${AUTH_PUBLIC_URL:http://localhost:9000}
+  mail:
+    from: ${AUTH_MAIL_FROM:CMS Accounts <no-reply@localhost>}
+    # How long an activation link and a password reset link stay valid.
+    activation-ttl-hours: ${AUTH_ACTIVATION_TTL_HOURS:48}
+    reset-ttl-minutes: ${AUTH_RESET_TTL_MINUTES:60}
+    # Only for a server whose certificate Java does not trust (self-signed, or an internal CA): the host
+    # name to accept without checking its certificate. Better: add the CA to the JVM truststore and
+    # leave this empty. Applied in MailService; it must not be set to an empty value in the Spring
+    # mail properties, because an empty trust list rejects every server.
+    ssl-trust: ${AUTH_MAIL_SSL_TRUST:}
   # Where the "Back to CMS" link of the Users screens points.
   admin-app-url: ${CMS_ADMIN_URL:http://localhost:5173}
   cms-admin-client:
@@ -28,6 +40,28 @@ spring:
       port: ${REDIS_PORT:6379}
       repositories:
         enabled: false
+  # Outgoing mail (invitations, password reset). Empty host = mail is off and the screens say so.
+  # Local development: Mailpit (backend/infrastructure/mailpit) with HOST=localhost PORT=1025.
+  # A real server: set HOST, PORT, USERNAME, PASSWORD, AUTH=true and STARTTLS=true (port 587) or
+  # SSL=true (port 465) as it requires.
+  mail:
+    host: ${AUTH_MAIL_HOST:}
+    port: ${AUTH_MAIL_PORT:25}
+    username: ${AUTH_MAIL_USERNAME:}
+    password: ${AUTH_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${AUTH_MAIL_AUTH:false}
+      # Port 587 style: connect in the clear, then upgrade. "required" makes the connection fail if the
+      # server does not offer the upgrade, so a login is never sent unencrypted.
+      mail.smtp.starttls.enable: ${AUTH_MAIL_STARTTLS:false}
+      mail.smtp.starttls.required: ${AUTH_MAIL_STARTTLS:false}
+      # Port 465 style: encrypted from the first byte.
+      mail.smtp.ssl.enable: ${AUTH_MAIL_SSL:false}
+      # The certificate must be for the host named in AUTH_MAIL_HOST.
+      mail.smtp.ssl.checkserveridentity: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   datasource:
     url: jdbc:postgresql://${DB_HOST:127.0.0.1}:${DB_PORT:5432}/${DB_SCHEMA:authentication}
     username: ${DB_USER:postgres}
@@ -79,6 +113,10 @@ management:
     redis:
       enabled: true
     ldap:
+      enabled: false
+    # An unreachable SMTP server must not mark the whole service as down (it would be taken out of
+    # rotation); a failed send is reported to the admin and audited instead.
+    mail:
       enabled: false
 
 logging:

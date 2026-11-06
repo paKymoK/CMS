@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your CMS account has been created</title></head>
+<body style="margin:0;padding:0;background:#f4f7fc;font-family:Arial,Helvetica,sans-serif;color:#0a2540">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fc;padding:24px 12px">
+<tr><td align="center">
+  <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:#ffffff;border-radius:12px;padding:28px">
+    <tr><td style="font-size:20px;font-weight:bold;color:#001449;padding-bottom:12px">CMC Global CMS</td></tr>
+    <tr><td style="font-size:15px;line-height:1.55;padding-bottom:18px">
+      <span th:if="${name != null}">Hello <strong th:text="${name}">there</strong>,<br><br></span>
+      An account has been created for you on the CMS. Your administrator will give you the password, or you can choose your own with <strong>Forgot password</strong> on the sign-in page.
+    </td></tr>
+    <tr><td style="padding-bottom:6px"><a th:href="${link}" style="display:inline-block;background:#0083ff;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:8px">Open the CMS</a></td></tr>
+    <tr><td style="font-size:13px;line-height:1.5;color:#5b6b82;padding-top:22px">If you were not expecting this, ignore this email.</td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>

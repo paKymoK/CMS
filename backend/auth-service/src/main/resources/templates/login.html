@@ -126,6 +126,12 @@
         <div th:if="${param.logout}" class="alert alert-success" role="alert">
             You have been signed out.
         </div>
+        <div th:if="${param.activated}" class="alert alert-success" role="alert">
+            Your account is active. Sign in with your new password.
+        </div>
+        <div th:if="${param.reset}" class="alert alert-success" role="alert">
+            Your password has been changed. Sign in with it.
+        </div>
 
         <div class="field">
             <span class="eyebrow">Account type</span>
@@ -153,6 +159,10 @@
                 <button type="button" class="pw-toggle" id="pw-toggle">SHOW</button>
             </div>
         </label>
+
+        <p th:if="${mailEnabled}" style="margin:-6px 0 0;font-size:12.5px;text-align:right">
+            <a th:href="@{/forgot-password}">Forgot your password?</a>
+        </p>
 
         <button class="submit-btn" type="submit" th:disabled="${locked}">
             <span class="label" th:text="${locked} ? 'Access locked' : 'Sign in'"></span>

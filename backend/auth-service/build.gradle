@@ -47,6 +47,7 @@ dependencies {
     implementation 'org.springframework.security:spring-security-ldap'
     implementation 'org.springframework.ldap:spring-ldap-core'
     implementation 'org.dhatim:fastexcel:0.15.7'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     testImplementation 'org.dhatim:fastexcel-reader:0.15.7'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

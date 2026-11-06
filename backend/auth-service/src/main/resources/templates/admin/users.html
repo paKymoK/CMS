@@ -29,6 +29,7 @@
                     <option value="" th:selected="${status == ''}">All</option>
                     <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">Active</option>
                     <option value="INACTIVE" th:selected="${status == 'INACTIVE'}">Inactive</option>
+                    <option value="INVITED" th:selected="${status == 'INVITED'}">Invited</option>
                 </select>
             </div>
             <div class="field">
@@ -65,7 +66,7 @@
                               th:text="${r.projectId == null and r.role == 'ADMIN'} ? 'Super Admin' : ${r.role + ' · ' + r.projectId}"></span>
                         <span class="mono" th:if="${u.roles.isEmpty()}">no CMS role</span>
                     </div></td>
-                    <td data-label="Status"><span class="status" th:classappend="${'status-' + u.status}" th:text="${u.status == 'ACTIVE'} ? 'Active' : 'Inactive'"></span></td>
+                    <td data-label="Status"><span class="status" th:classappend="${'status-' + u.status}" th:text="${u.status == 'ACTIVE'} ? 'Active' : (${u.status == 'INVITED'} ? 'Invited' : 'Inactive')"></span></td>
                     <td class="nowrap" data-label="Last sign-in"><time class="mono ts" th:if="${u.lastLoginAt != null}" th:datetime="${#strings.replace(#temporals.formatISO(u.lastLoginAt), '+0000', 'Z')}" th:text="${#temporals.format(u.lastLoginAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time>
                         <span class="mono" th:if="${u.lastLoginAt == null}">Never</span></td>
                     <td data-label=""><a class="btn btn-sm" th:href="@{/admin/users/{sub}(sub=${u.sub})}">Manage</a></td>
