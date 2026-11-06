@@ -265,11 +265,14 @@ export default function AppShell() {
         </nav>
 
         <div className="cms-user">
-          <div className="cms-user-avatar">{initialsOf(displayName)}</div>
-          <div className="cms-user-text">
-            <span className="cms-user-name">{displayName}</span>
-            <span className="cms-user-role">{roleLine}</span>
-          </div>
+          {/* Everyone has a profile page, on auth-service (name, picture, password). */}
+          <a className="cms-user-link" href={`${AUTH_SERVER}/profile`} title="My profile">
+            <div className="cms-user-avatar">{initialsOf(displayName)}</div>
+            <div className="cms-user-text">
+              <span className="cms-user-name">{displayName}</span>
+              <span className="cms-user-role">{roleLine}</span>
+            </div>
+          </a>
           <Button
             type="text"
             size="small"
