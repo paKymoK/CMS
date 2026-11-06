@@ -40,3 +40,6 @@ frontend/**/yarn.lock
 frontend/**/npm-shrinkwrap.json
 frontend/**/bun.lock
 frontend/**/bun.lockb
+
+# JVM heap dumps (written when a process runs out of memory; can hold secrets)
+*.hprof
