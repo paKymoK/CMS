@@ -19,7 +19,7 @@
         <form class="filters" method="get" th:action="@{/admin/audit}">
             <div class="field">
                 <label for="q">Search</label>
-                <input type="text" id="q" name="q" th:value="${q}" placeholder="Actor or account">
+                <input type="text" id="q" name="q" th:value="${q}" placeholder="Name or sign-in name">
             </div>
             <div class="field">
                 <label for="action">Action</label>
@@ -53,9 +53,9 @@
                     <td class="cell-first nowrap" data-label="When">
                         <time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(r.at), '+0000', 'Z')}" th:text="${#temporals.format(r.at, 'dd MMM yyyy HH:mm:ss') + ' UTC'}"></time>
                     </td>
-                    <td data-label="Actor"><span class="mono" th:text="${r.actor != null} ? ${r.actor} : '—'"></span></td>
+                    <td data-label="Actor"><span class="mono" th:title="${r.actor}" th:text="${r.actorLabel != null} ? ${r.actorLabel} : '—'"></span></td>
                     <td data-label="Action"><span class="chip" th:classappend="${r.action.startsWith('LOGIN_') and r.action != 'LOGIN_SUCCESS'} ? 'chip-super'" th:text="${r.actionLabel}"></span></td>
-                    <td data-label="Account"><span class="mono" th:text="${r.target != null} ? ${r.target} : '—'"></span></td>
+                    <td data-label="Account"><span class="mono" th:title="${r.target}" th:text="${r.targetLabel != null} ? ${r.targetLabel} : '—'"></span></td>
                     <td data-label="Detail"><span th:text="${r.detail != null} ? ${r.detail} : ''"></span></td>
                     <td data-label="IP"><span class="mono" th:text="${r.ip != null} ? ${r.ip} : ''"></span></td>
                 </tr>

@@ -215,7 +215,7 @@ CREATE TABLE IF NOT EXISTS content_audit
         CHECK (action IN ('CREATE', 'UPDATE', 'SCHEDULE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE')),
     title        text,
     actor        jsonb,                   -- the signed-in user, as stored in created_by/modified_by
-    actor_name   character varying,       -- the user's display name, for filtering
+    actor_name   character varying,       -- how to show the user: "Display Name (sub)", or just the sub; also what the actor filter searches
     occurred_at  timestamp with time zone NOT NULL DEFAULT now(),
     changed      jsonb                    NOT NULL DEFAULT '[]',
     before_data  jsonb,
@@ -312,6 +312,20 @@ FROM (SELECT k.key AS name, 0 AS grp
           OR before_snap -> e.name IS DISTINCT FROM after_snap -> e.name)) c
 $$ LANGUAGE sql IMMUTABLE;
 
+-- How a person is shown in the history: "Display Name (sub)". The sub is the sign-in name and never
+-- changes, so two people who share a display name stay apart; when there is no name, or it equals the
+-- sub, just the sub. The name is the one the person had when they made the change.
+CREATE OR REPLACE FUNCTION audit_actor_label(who jsonb) RETURNS text AS
+$$
+SELECT CASE
+           WHEN nullif(who ->> 'name', '') IS NULL THEN who ->> 'sub'
+           -- the built-in automation account (scheduled publishing) is not a person: "System"
+           WHEN who ->> 'sub' IS NULL OR who ->> 'sub' = 'system' OR who ->> 'name' = who ->> 'sub'
+               THEN who ->> 'name'
+           ELSE (who ->> 'name') || ' (' || (who ->> 'sub') || ')'
+           END
+$$ LANGUAGE sql IMMUTABLE;
+
 CREATE OR REPLACE FUNCTION content_audit_record() RETURNS trigger AS
 $$
 DECLARE
@@ -365,7 +379,7 @@ BEGIN
     INSERT INTO content_audit (site_id, item_id, content_type, action, title, actor, actor_name,
                                occurred_at, changed, before_data, after_data)
     VALUES (item.site_id, item.id, item.content_type, act, audit_title(coalesce(a, b) -> 'data'), who,
-            coalesce(who ->> 'name', who ->> 'sub'), clock_timestamp(), audit_changed(b, a), b, a);
+            audit_actor_label(who), clock_timestamp(), audit_changed(b, a), b, a);
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;

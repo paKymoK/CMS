@@ -39,7 +39,9 @@ class AuditExportServiceTest {
                     "Signed in",
                     "=cmd|' /C calc'!A0", // must stay text, never a formula
                     "a & b <c> \u0001 end",
-                    "10.0.0.1"));
+                    "10.0.0.1",
+                    "Admin (admin)",
+                    "=cmd|' /C calc'!A0"));
           }
           return n;
         })
@@ -75,6 +77,8 @@ class AuditExportServiceTest {
     assertThat(rows.get(0).getCellText(0)).isEqualTo("When (UTC)");
     assertThat(rows.get(0).getCellText(5)).isEqualTo("IP");
     assertThat(rows.get(2500).getCellText(2)).isEqualTo("Signed in");
+    assertThat(rows.get(1).getCellText(1))
+        .isEqualTo("Admin (admin)"); // the label, not the bare sub
     verify(audit).record(AuditAction.AUDIT_EXPORTED, null, "filters: none");
   }
 

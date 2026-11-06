@@ -24,6 +24,32 @@ public class CustomOAuth2TokenCustomizer implements OAuth2TokenCustomizer<JwtEnc
   private final ClientSessionPolicyRepository clientSessionPolicyRepository;
   private final UserinfoRepository userinfoRepository;
 
+  /** The sign-in name always, and the name to show when there is one. */
+  static Map<String, Object> infoClaim(String sub, Userinfo userinfo) {
+    Map<String, Object> info = new LinkedHashMap<>();
+    info.put("sub", sub);
+    String name = shownName(userinfo);
+    if (name != null) {
+      info.put("name", name);
+    }
+    return info;
+  }
+
+  /**
+   * The display name if the person set one, otherwise their full name, otherwise null (then only
+   * the sign-in name identifies them). The display name can change; the sub never does.
+   */
+  static String shownName(Userinfo userinfo) {
+    if (userinfo == null) return null;
+    if (userinfo.getDisplayName() != null && !userinfo.getDisplayName().isBlank()) {
+      return userinfo.getDisplayName().trim();
+    }
+    if (userinfo.getName() != null && !userinfo.getName().isBlank()) {
+      return userinfo.getName().trim();
+    }
+    return null;
+  }
+
   @Override
   public void customize(JwtEncodingContext context) {
     if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) return;
@@ -45,6 +71,11 @@ public class CustomOAuth2TokenCustomizer implements OAuth2TokenCustomizer<JwtEnc
         context.getClaims().claim("email", userinfo.getEmail());
       }
     }
+
+    // The "info" claim is what resource services stamp on what a person changes (core-v1 reads it
+    // as
+    // User): the sign-in name, and the name to show. Deliberately nothing else personal.
+    context.getClaims().claim("info", infoClaim(subject, userinfo));
 
     // Resolve all role assignments for this user on the requesting client (direct + group).
     // Split them into global roles (no project) and per-project roles so the resource service

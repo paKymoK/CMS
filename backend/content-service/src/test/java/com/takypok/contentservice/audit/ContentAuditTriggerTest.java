@@ -150,6 +150,65 @@ class ContentAuditTriggerTest {
         trail(id));
   }
 
+  /** Inserts a row stamped with a signed-in person who has a display name. */
+  private long insertAsPerson(String sub, String name) throws SQLException {
+    return insertReturningId(
+        "INSERT INTO content_item (site_id, content_type, data, modified_by, modified_at)"
+            + " VALUES (1, 'post', '{\"title\":\"T\"}', jsonb_build_object('sub', '"
+            + sub
+            + "', 'name', '"
+            + name
+            + "'), now()) RETURNING id");
+  }
+
+  @Test
+  void aPersonIsShownAsDisplayNameAndSignInNameSoTwoWithTheSameNameAreToldApart() throws Exception {
+    long first = insertAsPerson("alex1@x.test", "Alex Tran");
+    long second = insertAsPerson("alex2@x.test", "Alex Tran");
+
+    assertEquals("Alex Tran (alex1@x.test)", scalar(actorOf(first)));
+    assertEquals("Alex Tran (alex2@x.test)", scalar(actorOf(second)));
+  }
+
+  @Test
+  void theLabelIsJustTheSignInNameWhenThereIsNoNameOrItIsTheSameOrItIsTheSystemAccount()
+      throws Exception {
+    assertEquals("nttha5", scalar("SELECT audit_actor_label('{\"sub\":\"nttha5\"}')"));
+    assertEquals(
+        "nttha5", scalar("SELECT audit_actor_label('{\"sub\":\"nttha5\",\"name\":\"\"}')"));
+    assertEquals(
+        "nttha5", scalar("SELECT audit_actor_label('{\"sub\":\"nttha5\",\"name\":\"nttha5\"}')"));
+    assertEquals(
+        "System", scalar("SELECT audit_actor_label('{\"sub\":\"system\",\"name\":\"System\"}')"));
+    assertEquals(
+        "Ha (Marketing) (nttha5)",
+        scalar("SELECT audit_actor_label('{\"sub\":\"nttha5\",\"name\":\"Ha (Marketing)\"}')"));
+  }
+
+  @Test
+  void theActorFilterCanFindAPersonByEitherPartOfTheLabel() throws Exception {
+    long id = insertAsPerson("lan.nguyen", "Lan Nguyen");
+
+    assertEquals(
+        "1",
+        scalar(
+            "SELECT count(*) FROM content_audit WHERE item_id = "
+                + id
+                + " AND actor_name ILIKE '%lan.nguyen%'"));
+    assertEquals(
+        "1",
+        scalar(
+            "SELECT count(*) FROM content_audit WHERE item_id = "
+                + id
+                + " AND actor_name ILIKE '%Lan Nguyen%'"));
+  }
+
+  private static String actorOf(long id) {
+    return "SELECT actor_name FROM content_audit WHERE item_id = "
+        + id
+        + " ORDER BY id DESC LIMIT 1";
+  }
+
   @Test
   void anUpdateRecordsTheEditorAndOnlyTheFieldsThatChanged() throws Exception {
     long id = insertAsApp("post", "{\"title\":\"Old\",\"body\":\"same\"}", "admin");

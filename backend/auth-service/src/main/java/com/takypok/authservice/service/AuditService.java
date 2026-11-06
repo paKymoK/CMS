@@ -46,7 +46,10 @@ public class AuditService {
       String actionLabel,
       String target,
       String detail,
-      String ip) {}
+      String ip,
+      /** "Display Name (sub)", or just the sub when the person has no name or no longer exists. */
+      String actorLabel,
+      String targetLabel) {}
 
   public record Result(List<Entry> rows, long total) {}
 
@@ -65,8 +68,49 @@ public class AuditService {
             labelOf(action),
             rs.getString("target"),
             rs.getString("detail"),
-            rs.getString("ip"));
+            rs.getString("ip"),
+            rs.getString("actor_label"),
+            rs.getString("target_label"));
       };
+
+  /**
+   * The columns and joins every read uses. A person is shown as "Display Name (sub)": the sub is
+   * the sign-in name and never changes, so two people with the same name stay apart. The name is
+   * the current one (it is not stored in the audit row); someone since deleted has none and shows
+   * as the sub. Targets that are not accounts (a group, a site) join nothing and stay as they are.
+   */
+  private static final String SELECT =
+      "SELECT a.id, a.at, a.actor, a.action, a.target, a.detail, a.ip, "
+          + label("ua", "a.actor")
+          + " AS actor_label, "
+          + label("ut", "a.target")
+          + " AS target_label";
+
+  private static final String FROM =
+      " FROM account_audit a LEFT JOIN userinfo ua ON ua.sub = a.actor"
+          + " LEFT JOIN userinfo ut ON ut.sub = a.target";
+
+  private static String label(String alias, String sub) {
+    String shown =
+        "COALESCE(NULLIF(BTRIM("
+            + alias
+            + ".display_name), ''), NULLIF(BTRIM("
+            + alias
+            + ".name), ''))";
+    return "CASE WHEN "
+        + shown
+        + " IS NULL OR "
+        + shown
+        + " = "
+        + sub
+        + " THEN "
+        + sub
+        + " ELSE "
+        + shown
+        + " || ' (' || "
+        + sub
+        + " || ')' END";
+  }
 
   private final NamedParameterJdbcTemplate jdbc;
 
@@ -95,7 +139,8 @@ public class AuditService {
   }
 
   /**
-   * @param q matches actor or target, case-insensitively, anywhere in the text
+   * @param q matches an actor or target by sign-in name or by name, case-insensitively, anywhere in
+   *     the text
    * @param action an {@link AuditAction} name, or null for all
    * @param from first day to include (UTC), or null
    * @param to last day to include (UTC), or null
@@ -104,13 +149,11 @@ public class AuditService {
     int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
     MapSqlParameterSource p = new MapSqlParameterSource();
     String where = where(new Filter(q, action, from, to), p);
-    Long total = jdbc.queryForObject("SELECT COUNT(*) FROM account_audit" + where, p, Long.class);
+    Long total = jdbc.queryForObject("SELECT COUNT(*)" + FROM + where, p, Long.class);
     p.addValue("limit", safeSize).addValue("offset", (long) Math.max(page, 0) * safeSize);
     List<Entry> rows =
         jdbc.query(
-            "SELECT id, at, actor, action, target, detail, ip FROM account_audit"
-                + where
-                + " ORDER BY at DESC, id DESC LIMIT :limit OFFSET :offset",
+            SELECT + FROM + where + " ORDER BY a.at DESC, a.id DESC LIMIT :limit OFFSET :offset",
             p,
             ROW_MAPPER);
     return new Result(rows, total == null ? 0 : total);
@@ -131,17 +174,13 @@ public class AuditService {
       MapSqlParameterSource p = new MapSqlParameterSource();
       StringBuilder where = new StringBuilder(where(filter, p));
       if (lastAt != null) {
-        where.append(" AND (at, id) < (:lastAt, :lastId)");
+        where.append(" AND (a.at, a.id) < (:lastAt, :lastId)");
         p.addValue("lastAt", lastAt).addValue("lastId", lastId);
       }
       p.addValue("limit", Math.min(EXPORT_BATCH, max - sent));
       List<Entry> batch =
           jdbc.query(
-              "SELECT id, at, actor, action, target, detail, ip FROM account_audit"
-                  + where
-                  + " ORDER BY at DESC, id DESC LIMIT :limit",
-              p,
-              ROW_MAPPER);
+              SELECT + FROM + where + " ORDER BY a.at DESC, a.id DESC LIMIT :limit", p, ROW_MAPPER);
       if (batch.isEmpty()) break;
       batch.forEach(sink);
       sent += batch.size();
@@ -162,19 +201,22 @@ public class AuditService {
   private static String where(Filter f, MapSqlParameterSource p) {
     StringBuilder where = new StringBuilder(" WHERE 1 = 1");
     if (f.q() != null && !f.q().isBlank()) {
-      where.append(" AND (actor ILIKE :like OR target ILIKE :like)");
+      where.append(
+          " AND (a.actor ILIKE :like OR a.target ILIKE :like"
+              + " OR ua.display_name ILIKE :like OR ua.name ILIKE :like"
+              + " OR ut.display_name ILIKE :like OR ut.name ILIKE :like)");
       p.addValue("like", "%" + escapeLike(f.q().trim()) + "%");
     }
     if (f.action() != null && !f.action().isBlank()) {
-      where.append(" AND action = :action");
+      where.append(" AND a.action = :action");
       p.addValue("action", AuditAction.valueOf(f.action().trim().toUpperCase()).name());
     }
     if (f.from() != null) {
-      where.append(" AND at >= :from");
+      where.append(" AND a.at >= :from");
       p.addValue("from", f.from().atStartOfDay().atOffset(ZoneOffset.UTC));
     }
     if (f.to() != null) {
-      where.append(" AND at < :to");
+      where.append(" AND a.at < :to");
       p.addValue("to", f.to().plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC));
     }
     return where.toString();

@@ -81,9 +81,9 @@ public class AuditExportService {
                   e.at() == null
                       ? null
                       : e.at().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
-              ws.value(r, 1, e.actor());
+              ws.value(r, 1, e.actorLabel());
               ws.value(r, 2, e.actionLabel());
-              ws.value(r, 3, e.target());
+              ws.value(r, 3, e.targetLabel());
               ws.value(r, 4, e.detail());
               ws.value(r, 5, e.ip());
               if (row[0] - batchStart[0] >= FLUSH_EVERY) {
