@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, DatePicker, Empty, Input, Modal, Popconfirm, Select, Spin, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ContentDiff from "../components/ContentDiff";
 import { useSite } from "../lib/useSite";
 import { editorPathFor, newItemPathFor, typeLabel } from "../lib/adminSearch";
@@ -133,7 +133,9 @@ export default function ActivityPage() {
   const [page, setPage] = useState(1);
   const [action, setAction] = useState<AuditAction | undefined>();
   const [type, setType] = useState<string | undefined>();
-  const [actor, setActor] = useState("");
+  // ?person=<sign-in name> opens the feed already filtered to one person (the link from the user's page).
+  const [searchParams] = useSearchParams();
+  const [actor, setActor] = useState(() => searchParams.get("person") ?? "");
   const [range, setRange] = useState<[string, string] | null>(null);
   const [selected, setSelected] = useState<AuditEntry | null>(null);
 
@@ -242,6 +244,7 @@ export default function ActivityPage() {
           allowClear
           placeholder="Person"
           style={{ width: 180 }}
+          defaultValue={actor}
           onSearch={filter(setActor)}
         />
         <RangePicker
