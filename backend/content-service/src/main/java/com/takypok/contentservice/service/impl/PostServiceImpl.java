@@ -9,6 +9,7 @@ import com.takypok.contentservice.model.mapper.ContentItemMapper;
 import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.model.response.PostDetailResponse;
+import com.takypok.contentservice.model.response.PostListResponses;
 import com.takypok.contentservice.model.response.PostResponse;
 import com.takypok.contentservice.model.response.PostSummaryResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
@@ -328,6 +329,92 @@ public class PostServiceImpl implements PostService {
       return publishAt.atZone(ZoneOffset.UTC).toLocalDate().format(DISPLAY_DATE);
     }
     return "PUBLISHED".equals(status) ? LocalDate.now().format(DISPLAY_DATE) : date;
+  }
+
+  @Override
+  public Mono<PostListResponses.BulkResult> bulkStatus(Long siteId, List<Long> ids, String action) {
+    // deferred so a bad action is an error signal (a clean message), not an exception thrown here
+    return Mono.defer(
+            () -> {
+              String target = bulkTarget(action);
+              List<Long> unique = ids.stream().distinct().toList();
+              // One at a time: each is a normal save (audit trail, version, validation), and a
+              // failure
+              // of one must not stop the rest.
+              return Flux.fromIterable(unique)
+                  .concatMap(id -> changeStatus(siteId, id, target))
+                  .collectList();
+            })
+        .map(
+            outcomes ->
+                new PostListResponses.BulkResult(
+                    outcomes.stream().filter(o -> o.failure() == null).map(Outcome::id).toList(),
+                    outcomes.stream()
+                        .map(Outcome::failure)
+                        .filter(java.util.Objects::nonNull)
+                        .toList()));
+  }
+
+  private record Outcome(Long id, PostListResponses.Failure failure) {}
+
+  private static String bulkTarget(String action) {
+    if (action == null) {
+      throw new ApplicationException(Message.Application.ERROR, "Choose an action");
+    }
+    return switch (action.trim().toUpperCase()) {
+      case "PUBLISH" -> "PUBLISHED";
+      case "UNPUBLISH" -> "DRAFT";
+      case "ARCHIVE" -> "ARCHIVED";
+      default ->
+          throw new ApplicationException(Message.Application.ERROR, "Unknown action: " + action);
+    };
+  }
+
+  private Mono<Outcome> changeStatus(Long siteId, Long id, String status) {
+    return findItem(id, siteId)
+        .flatMap(
+            item -> {
+              String title = toFields(item).getTitle();
+              if (status.equals(item.getStatus())) {
+                return Mono.just(new Outcome(id, null)); // already there
+              }
+              return Mono.defer(
+                      () -> {
+                        StatusRules.requireAllowed(TYPE, status);
+                        PostFields fields = toFields(item);
+                        ScheduleRules.Times times =
+                            ScheduleRules.resolve(
+                                status,
+                                null,
+                                null,
+                                item.getStatus(),
+                                item.getPublishAt(),
+                                item.getUnpublishAt(),
+                                Instant.now());
+                        fields.setDate(dateOrToday(fields.getDate(), status, times.publishAt()));
+                        return save(siteId, item, fields.getSlug(), fields, null, status, times);
+                      })
+                  .map(saved -> new Outcome(id, null))
+                  .onErrorResume(
+                      ex ->
+                          Mono.just(
+                              new Outcome(
+                                  id, new PostListResponses.Failure(id, title, reasonOf(ex)))));
+            })
+        .onErrorResume(
+            ex ->
+                Mono.just(new Outcome(id, new PostListResponses.Failure(id, null, reasonOf(ex)))));
+  }
+
+  /** The sentence to show for a failed item; anything unexpected is not leaked. */
+  private static String reasonOf(Throwable ex) {
+    if (ex instanceof ApplicationException app
+        && app.getArgs() != null
+        && app.getArgs().length > 0
+        && app.getArgs()[0] != null) {
+      return app.getArgs()[0];
+    }
+    return "It could not be changed";
   }
 
   @Override

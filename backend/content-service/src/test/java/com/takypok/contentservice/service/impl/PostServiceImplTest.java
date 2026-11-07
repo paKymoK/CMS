@@ -477,4 +477,135 @@ class PostServiceImplTest {
         .expectError(ApplicationException.class)
         .verify();
   }
+
+  // ---- bulk status changes ----------------------------------------------------------------------
+
+  private void siteOnesPost(long id, String status) throws Exception {
+    ContentItem item = post(id, 1L, "{\"slug\":\"post-" + id + "\",\"title\":\"Post " + id + "\"}");
+    item.setStatus(status);
+    when(contentItemRepository.findByIdAndSiteId(id, 1L)).thenReturn(Mono.just(item));
+    // every save checks the slug is not another post's: nobody else has it
+    lenient()
+        .when(contentItemRepository.findBySlug(eq(1L), eq("post"), any()))
+        .thenReturn(Mono.empty());
+  }
+
+  @Test
+  void bulkPublishPublishesDraftsKeepsTheirSlugAndDatesThem() throws Exception {
+    siteOnesPost(1L, "DRAFT");
+    siteOnesPost(2L, "ARCHIVED");
+    saveEchoesItem();
+    var saved = org.mockito.ArgumentCaptor.forClass(ContentItem.class);
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L, 2L), "publish"))
+        .assertNext(
+            result -> {
+              assertEquals(java.util.List.of(1L, 2L), result.updated());
+              assertEquals(0, result.failed().size());
+            })
+        .verifyComplete();
+
+    verify(contentItemWriter, org.mockito.Mockito.times(2)).save(saved.capture());
+    saved.getAllValues().forEach(item -> assertEquals("PUBLISHED", item.getStatus()));
+    assertEquals(
+        "post-1", saved.getAllValues().get(0).getData().path("slug").asText()); // slug kept
+    assertEquals(
+        false, saved.getAllValues().get(0).getData().path("date").asText("").isBlank()); // dated
+  }
+
+  @Test
+  void bulkUnpublishMovesPublishedPostsBackToDraftAndArchiveArchivesThem() throws Exception {
+    siteOnesPost(1L, "PUBLISHED");
+    siteOnesPost(2L, "PUBLISHED");
+    saveEchoesItem();
+    var saved = org.mockito.ArgumentCaptor.forClass(ContentItem.class);
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L), "UNPUBLISH"))
+        .expectNextCount(1)
+        .verifyComplete();
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(2L), "ARCHIVE"))
+        .expectNextCount(1)
+        .verifyComplete();
+
+    verify(contentItemWriter, org.mockito.Mockito.times(2)).save(saved.capture());
+    assertEquals("DRAFT", saved.getAllValues().get(0).getStatus());
+    assertEquals("ARCHIVED", saved.getAllValues().get(1).getStatus());
+  }
+
+  @Test
+  void aPostAlreadyInTheStatusIsLeftAloneAndCountsAsDone() throws Exception {
+    siteOnesPost(1L, "PUBLISHED");
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L), "PUBLISH"))
+        .assertNext(result -> assertEquals(java.util.List.of(1L), result.updated()))
+        .verifyComplete();
+
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void aPostThatFailsIsReportedAndTheOthersStillGoAhead() throws Exception {
+    siteOnesPost(1L, "DRAFT");
+    siteOnesPost(2L, "DRAFT");
+    saveEchoesItem();
+    // the second post's data does not pass validation
+    when(contentItemMapper.resolveAndValidate(eq("post"), any(JsonNode.class)))
+        .thenAnswer(
+            invocation -> {
+              JsonNode data = invocation.getArgument(1);
+              return "post-2".equals(data.path("slug").asText())
+                  ? Mono.error(
+                      new ApplicationException(
+                          com.takypok.core.model.Message.Application.ERROR, "title: is required"))
+                  : Mono.just(data);
+            });
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L, 2L), "PUBLISH"))
+        .assertNext(
+            result -> {
+              assertEquals(java.util.List.of(1L), result.updated());
+              assertEquals(1, result.failed().size());
+              assertEquals(2L, result.failed().get(0).id());
+              assertEquals("Post 2", result.failed().get(0).title());
+              assertEquals("title: is required", result.failed().get(0).reason());
+            })
+        .verifyComplete();
+  }
+
+  @Test
+  void bulkNeverTouchesAnotherSitesPost() throws Exception {
+    // post 7 exists, but on site 2: asking for it through site 1 finds nothing
+    when(contentItemRepository.findByIdAndSiteId(7L, 1L)).thenReturn(Mono.empty());
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(7L), "PUBLISH"))
+        .assertNext(
+            result -> {
+              assertEquals(0, result.updated().size());
+              assertEquals("Post not found", result.failed().get(0).reason());
+            })
+        .verifyComplete();
+
+    verify(contentItemRepository, never()).findByIdAndSiteId(7L, 2L);
+    verify(contentItemWriter, never()).save(any(ContentItem.class));
+  }
+
+  @Test
+  void anUnknownActionIsRefusedBeforeAnythingIsLoaded() {
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L), "DELETE"))
+        .expectError(ApplicationException.class)
+        .verify();
+    verify(contentItemRepository, never()).findByIdAndSiteId(any(), any());
+  }
+
+  @Test
+  void duplicateIdsAreChangedOnce() throws Exception {
+    siteOnesPost(1L, "DRAFT");
+    saveEchoesItem();
+
+    StepVerifier.create(service.bulkStatus(1L, java.util.List.of(1L, 1L, 1L), "PUBLISH"))
+        .assertNext(result -> assertEquals(java.util.List.of(1L), result.updated()))
+        .verifyComplete();
+
+    verify(contentItemWriter, org.mockito.Mockito.times(1)).save(any(ContentItem.class));
+  }
 }

@@ -3,6 +3,7 @@ package com.takypok.contentservice.service;
 import com.takypok.contentservice.model.request.PostCreateRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.model.response.PostDetailResponse;
+import com.takypok.contentservice.model.response.PostListResponses;
 import com.takypok.contentservice.model.response.PostResponse;
 import com.takypok.contentservice.model.response.PostSummaryResponse;
 import java.util.List;
@@ -19,6 +20,15 @@ public interface PostService {
   Mono<PostResponse> update(Long siteId, PostUpdateRequest request);
 
   Mono<Void> delete(Long id, Long siteId);
+
+  /**
+   * Changes the status of several posts at once with the same rules as saving one: PUBLISH,
+   * UNPUBLISH (back to draft) or ARCHIVE. A post that cannot be changed (it fails validation, say)
+   * is reported and the others still go ahead; one that is already in the status is left as it is
+   * and counts as done. Only posts of this site are ever touched.
+   */
+  Mono<PostListResponses.BulkResult> bulkStatus(
+      Long siteId, java.util.List<Long> ids, String action);
 
   Flux<PostResponse> getPublished(Long siteId);
 
