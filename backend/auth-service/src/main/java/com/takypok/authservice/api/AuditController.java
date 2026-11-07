@@ -29,9 +29,11 @@ public class AuditController {
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) String account,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
-    AuditService.Result result = auditService.search(q, action, from, to, page, size);
+    AuditService.Result result =
+        auditService.search(new AuditService.Filter(q, action, from, to, account), page, size);
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(size, 1), 200);
     return ResponseEntity.ok(
@@ -51,8 +53,9 @@ public class AuditController {
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) String account,
       HttpServletResponse response)
       throws IOException {
-    exportService.download(new AuditService.Filter(q, action, from, to), response);
+    exportService.download(new AuditService.Filter(q, action, from, to, account), response);
   }
 }

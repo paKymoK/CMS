@@ -53,8 +53,11 @@ public class AuditService {
 
   public record Result(List<Entry> rows, long total) {}
 
-  /** The screen's filters. Any field may be null. */
-  public record Filter(String q, String action, LocalDate from, LocalDate to) {}
+  /**
+   * The screen's filters. Any field may be null. {@code account} is exactly one sign-in name: the
+   * rows where that person is the actor or the target (the "history of this account" link).
+   */
+  public record Filter(String q, String action, LocalDate from, LocalDate to, String account) {}
 
   private static final RowMapper<Entry> ROW_MAPPER =
       (rs, n) -> {
@@ -145,10 +148,10 @@ public class AuditService {
    * @param from first day to include (UTC), or null
    * @param to last day to include (UTC), or null
    */
-  public Result search(String q, String action, LocalDate from, LocalDate to, int page, int size) {
+  public Result search(Filter filter, int page, int size) {
     int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
     MapSqlParameterSource p = new MapSqlParameterSource();
-    String where = where(new Filter(q, action, from, to), p);
+    String where = where(filter, p);
     Long total = jdbc.queryForObject("SELECT COUNT(*)" + FROM + where, p, Long.class);
     p.addValue("limit", safeSize).addValue("offset", (long) Math.max(page, 0) * safeSize);
     List<Entry> rows =
@@ -206,6 +209,10 @@ public class AuditService {
               + " OR ua.display_name ILIKE :like OR ua.name ILIKE :like"
               + " OR ut.display_name ILIKE :like OR ut.name ILIKE :like)");
       p.addValue("like", "%" + escapeLike(f.q().trim()) + "%");
+    }
+    if (f.account() != null && !f.account().isBlank()) {
+      where.append(" AND (a.actor = :account OR a.target = :account)");
+      p.addValue("account", f.account().trim());
     }
     if (f.action() != null && !f.action().isBlank()) {
       where.append(" AND a.action = :action");

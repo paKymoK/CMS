@@ -48,12 +48,15 @@ public class AuditAdminController {
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) String account,
       @RequestParam(defaultValue = "0") int page,
       Model model) {
     int safePage = Math.max(page, 0);
     AuditService.Result result;
     try {
-      result = auditService.search(q, action, from, to, safePage, PAGE_SIZE);
+      result =
+          auditService.search(
+              new AuditService.Filter(q, action, from, to, account), safePage, PAGE_SIZE);
     } catch (IllegalArgumentException ex) {
       model.addAttribute("error", "Unknown action filter.");
       result = new AuditService.Result(List.of(), 0);
@@ -66,6 +69,7 @@ public class AuditAdminController {
     model.addAttribute("action", action == null ? "" : action);
     model.addAttribute("from", from == null ? "" : from.toString());
     model.addAttribute("to", to == null ? "" : to.toString());
+    model.addAttribute("account", account == null ? "" : account.trim());
     model.addAttribute("actions", AuditAction.values());
     model.addAttribute("active", "audit");
     return "admin/audit";
@@ -78,8 +82,9 @@ public class AuditAdminController {
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) String account,
       HttpServletResponse response)
       throws IOException {
-    exportService.download(new AuditService.Filter(q, action, from, to), response);
+    exportService.download(new AuditService.Filter(q, action, from, to, account), response);
   }
 }

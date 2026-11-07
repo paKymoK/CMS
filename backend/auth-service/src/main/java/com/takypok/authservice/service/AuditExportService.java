@@ -122,6 +122,10 @@ public class AuditExportService {
       sb.append(" action=").append(f.action().trim());
       any = true;
     }
+    if (f.account() != null && !f.account().isBlank()) {
+      sb.append(" account=").append(f.account().trim());
+      any = true;
+    }
     if (f.from() != null) {
       sb.append(" from=").append(f.from());
       any = true;

@@ -21,7 +21,7 @@ class AuditExportServiceTest {
 
   AuditService audit = mock(AuditService.class);
   AuditExportService service = new AuditExportService(audit);
-  AuditService.Filter none = new AuditService.Filter(null, null, null, null);
+  AuditService.Filter none = new AuditService.Filter(null, null, null, null, null);
 
   /** Feeds {@code n} entries to the sink, as AuditService.stream would. */
   @SuppressWarnings("unchecked")
@@ -116,12 +116,15 @@ class AuditExportServiceTest {
     feed(0);
 
     service.export(
-        new AuditService.Filter("lan", "LOGIN_FAILED", java.time.LocalDate.of(2026, 1, 2), null),
+        new AuditService.Filter(
+            "lan", "LOGIN_FAILED", java.time.LocalDate.of(2026, 1, 2), null, "lan.nguyen"),
         new ByteArrayOutputStream());
 
     verify(audit)
         .record(
-            AuditAction.AUDIT_EXPORTED, null, "filters: q=lan action=LOGIN_FAILED from=2026-01-02");
+            AuditAction.AUDIT_EXPORTED,
+            null,
+            "filters: q=lan action=LOGIN_FAILED account=lan.nguyen from=2026-01-02");
   }
 
   @Test

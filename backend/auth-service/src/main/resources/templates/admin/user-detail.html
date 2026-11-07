@@ -130,6 +130,20 @@
             <p class="hint">The last active Super Admin cannot be deactivated or lose the role.</p>
         </section>
 
+        <!-- Activity history -->
+        <section class="card">
+            <div class="status-block">
+                <div>
+                    <h2>Activity history</h2>
+                    <p class="sub">Sign-ins, changes made to this account and what this person did here, and the content they changed in the CMS.</p>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <a class="btn" th:href="@{/admin/audit(account=${user.sub})}">Account history</a>
+                    <a class="btn" th:href="${cmsUrl + '/activity?person=' + #uris.escapeQueryParam(user.sub)}">Content changes in the CMS</a>
+                </div>
+            </div>
+        </section>
+
         <!-- Sessions -->
         <section class="card table-card">
             <div style="padding:22px 22px 6px">

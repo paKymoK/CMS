@@ -16,7 +16,13 @@
 
         <div class="alert alert-err" role="alert" th:if="${error}" th:text="${error}"></div>
 
+        <div class="alert alert-ok" role="status" th:if="${!account.isEmpty()}" style="display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+            <span>Showing the history of <strong class="mono" th:text="${account}"></strong>: what happened to this account and what this person did.</span>
+            <a class="btn btn-sm" th:href="@{/admin/audit}">Show everything</a>
+        </div>
+
         <form class="filters" method="get" th:action="@{/admin/audit}">
+            <input type="hidden" name="account" th:value="${account}" th:if="${!account.isEmpty()}">
             <div class="field">
                 <label for="q">Search</label>
                 <input type="text" id="q" name="q" th:value="${q}" placeholder="Name or sign-in name">
@@ -39,7 +45,7 @@
             <button class="btn" type="submit">Filter</button>
         </form>
         <p class="hint" style="margin:-6px 0 14px">
-            <a th:href="@{/admin/audit/export.xlsx(q=${q},action=${action},from=${from},to=${to})}">Download these filters as .xlsx</a>
+            <a th:href="@{/admin/audit/export.xlsx(q=${q},action=${action},from=${from},to=${to},account=${account})}">Download these filters as .xlsx</a>
             (UTC times, up to 100,000 rows; the download is itself logged)
         </p>
 
@@ -67,9 +73,9 @@
                 <span>Page <span th:text="${page + 1}">1</span> of <span th:text="${totalPages}">1</span></span>
                 <span class="btns">
                     <a class="btn btn-sm" th:if="${page > 0}"
-                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},page=${page - 1})}">Previous</a>
+                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},account=${account},page=${page - 1})}">Previous</a>
                     <a class="btn btn-sm" th:if="${page + 1 < totalPages}"
-                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},page=${page + 1})}">Next</a>
+                       th:href="@{/admin/audit(q=${q},action=${action},from=${from},to=${to},account=${account},page=${page + 1})}">Next</a>
                 </span>
             </div>
         </div>
