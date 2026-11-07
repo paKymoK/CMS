@@ -12,6 +12,7 @@ import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.AuditService;
 import com.takypok.authservice.service.EmailDomainPolicy;
 import com.takypok.authservice.service.PasswordPolicy;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
@@ -37,6 +38,7 @@ public class UserServiceImpl implements UserService {
   private final SuperAdminService superAdminService;
   private final AuditService auditService;
   private final EmailDomainPolicy emailDomainPolicy;
+  private final SessionService sessionService;
 
   private static final int MAX_PAGE_SIZE = 100;
 
@@ -178,7 +180,7 @@ public class UserServiceImpl implements UserService {
     }
     if (status == UserStatus.INACTIVE) {
       superAdminService.guardLastSuperAdmin(() -> saveStatus(userinfo, status));
-      userDirectory.revokeAuthorizations(sub);
+      sessionService.endAll(sub, null, "account deactivated");
     } else {
       saveStatus(userinfo, status);
     }
@@ -208,7 +210,8 @@ public class UserServiceImpl implements UserService {
       throw new IllegalArgumentException("Choose a password different from the current one.");
     }
     userDirectory.setPassword(sub, encoder.encode(newPassword));
-    userDirectory.revokeAuthorizations(sub);
+    // The browser that changed it stays signed in; every other device must sign in again.
+    sessionService.endAll(sub, sessionService.currentWebHash(), "password changed");
     auditService.record(AuditAction.PASSWORD_CHANGED, sub, null);
     return true;
   }
@@ -235,6 +238,7 @@ public class UserServiceImpl implements UserService {
     }
     superAdminService.guardLastSuperAdmin(
         () -> {
+          sessionService.endAll(sub, null, "account deleted");
           userDirectory.purge(sub, actor);
           auditService.record(AuditAction.USER_DELETED, sub, "sub stays reserved");
         });

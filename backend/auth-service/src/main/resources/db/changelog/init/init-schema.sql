@@ -286,3 +286,26 @@ CREATE TABLE IF NOT EXISTS account_token
 );
 
 CREATE INDEX IF NOT EXISTS ix_account_token_sub ON account_token (sub, purpose);
+
+-- ── Signed-in devices ──────────────────────────────────────────────────────────────────────────
+-- What oauth2_authorization does not keep about a sign-in: where it came from and when it was last
+-- used, and which auth-service browser session (hashed) it belongs to, so that ending a device also
+-- ends that browser's session and it cannot sign back in silently. One row per authorization; it
+-- goes when the authorization goes (logout, expiry clean-up, ending it from the screen).
+CREATE TABLE IF NOT EXISTS auth_session
+(
+    authorization_id VARCHAR(100) NOT NULL,
+    sub              VARCHAR(200) NOT NULL,
+    web_session_hash VARCHAR(64),
+    ip               VARCHAR(64),
+    last_ip          VARCHAR(64),
+    user_agent       VARCHAR(300),
+    created_at       TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    last_seen_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT auth_session_pkey PRIMARY KEY (authorization_id),
+    CONSTRAINT fk_auth_session_authorization FOREIGN KEY (authorization_id)
+        REFERENCES oauth2_authorization (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_auth_session_sub ON auth_session (sub, last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS ix_auth_session_web ON auth_session (web_session_hash);

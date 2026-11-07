@@ -5,9 +5,11 @@ import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.takypok.authservice.config.auth.SessionEndingLogoutProvider;
 import com.takypok.authservice.model.entity.ClientRoleAssignment;
 import com.takypok.authservice.repository.ClientRoleAssignmentRepository;
 import com.takypok.authservice.repository.ClientSessionPolicyRepository;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.util.jose.Jwks;
 import java.time.Duration;
 import java.time.Instant;
@@ -28,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -45,6 +48,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcLogoutAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -60,6 +64,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -87,7 +92,8 @@ public class AuthorizationServerConfig {
       HttpSecurity http,
       CorsConfigurationSource corsConfigurationSource,
       SecurityContextRepository securityContextRepository,
-      RegisteredClientRepository registeredClientRepository)
+      RegisteredClientRepository registeredClientRepository,
+      SessionService sessionService)
       throws Exception {
     Function<OidcUserInfoAuthenticationContext, OidcUserInfo> userInfoMapper =
         (context) -> {
@@ -117,7 +123,38 @@ public class AuthorizationServerConfig {
                     .oidc(
                         (oidc) ->
                             oidc.userInfoEndpoint(
-                                (userInfo) -> userInfo.userInfoMapper(userInfoMapper)))
+                                    (userInfo) -> userInfo.userInfoMapper(userInfoMapper))
+                                // Logging out of the CMS must end the device, not only the browser
+                                // session, and must not dead-end when it was already ended
+                                // elsewhere.
+                                .logoutEndpoint(
+                                    (logout) ->
+                                        logout
+                                            .authenticationProviders(
+                                                providers ->
+                                                    providers.replaceAll(
+                                                        p ->
+                                                            p
+                                                                    instanceof
+                                                                    OidcLogoutAuthenticationProvider
+                                                                ? new SessionEndingLogoutProvider(
+                                                                    p, sessionService)
+                                                                : p))
+                                            .errorResponseHandler(
+                                                (request, response, exception) -> {
+                                                  // The ID token no longer matches a device (its
+                                                  // session was ended elsewhere): still sign out of
+                                                  // this browser, and land on our own sign-in page
+                                                  // rather than an error or a redirect we cannot
+                                                  // trust.
+                                                  new SecurityContextLogoutHandler()
+                                                      .logout(
+                                                          request,
+                                                          response,
+                                                          SecurityContextHolder.getContext()
+                                                              .getAuthentication());
+                                                  response.sendRedirect("/login?logout");
+                                                })))
                     // cms-admin is PKCE-only (ClientAuthenticationMethod.NONE, no secret) — the
                     // built-in public-client converter/provider pair only ever authenticates the
                     // authorization_code+PKCE exchange, so without this, its refresh_token grant
@@ -264,11 +301,12 @@ public class AuthorizationServerConfig {
       RegisteredClientRepository registeredClientRepository,
       ClientSessionPolicyRepository policyRepository,
       StringRedisTemplate redisTemplate,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      SessionService sessionService) {
     JdbcOAuth2AuthorizationService jdbcService =
         new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
     return new SingleTabOAuth2AuthorizationService(
-        jdbcService, policyRepository, jdbcTemplate, redisTemplate, objectMapper);
+        jdbcService, policyRepository, jdbcTemplate, redisTemplate, objectMapper, sessionService);
   }
 
   @Bean

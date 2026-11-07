@@ -25,7 +25,9 @@ class PasswordSetupServiceTest {
   UserinfoRepository users = mock(UserinfoRepository.class);
   UserDirectoryRepository directory = mock(UserDirectoryRepository.class);
   AuditService audit = mock(AuditService.class);
-  PasswordSetupService service = new PasswordSetupService(tokens, users, directory, audit);
+  SessionService sessions = mock(SessionService.class);
+  PasswordSetupService service =
+      new PasswordSetupService(tokens, users, directory, audit, sessions);
 
   Userinfo ann;
 
@@ -49,7 +51,7 @@ class PasswordSetupServiceTest {
     assertThat(stored.getValue()).startsWith("{bcrypt}").doesNotContain("a-good-password");
     assertThat(ann.getStatus()).isEqualTo("ACTIVE");
     verify(users).save(ann);
-    verify(directory).revokeAuthorizations("ann");
+    verify(sessions).endAll("ann", null, "account activated");
     verify(audit).recordAs("ann", AuditAction.ACCOUNT_ACTIVATED, "ann", null, "10.0.0.1");
   }
 
@@ -88,7 +90,7 @@ class PasswordSetupServiceTest {
     service.reset("tok", "another-password", "10.0.0.2");
 
     verify(directory).setPassword(org.mockito.ArgumentMatchers.eq("ann"), anyString());
-    verify(directory).revokeAuthorizations("ann");
+    verify(sessions).endAll("ann", null, "password reset");
     verify(audit).recordAs("ann", AuditAction.PASSWORD_RESET_DONE, "ann", null, "10.0.0.2");
   }
 

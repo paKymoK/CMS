@@ -34,6 +34,7 @@ public class PasswordSetupService {
   private final UserinfoRepository users;
   private final UserDirectoryRepository directory;
   private final AuditService audit;
+  private final SessionService sessions;
 
   /** The invited account behind an activation link, to greet by name. Does not use the link up. */
   public Optional<Userinfo> peekActivation(String rawToken) {
@@ -64,7 +65,7 @@ public class PasswordSetupService {
     directory.setPassword(sub, encode(newPassword));
     user.setStatus(UserStatus.ACTIVE.name());
     users.save(user);
-    directory.revokeAuthorizations(sub);
+    sessions.endAll(sub, null, "account activated");
     audit.recordAs(sub, AuditAction.ACCOUNT_ACTIVATED, sub, null, ip);
   }
 
@@ -78,7 +79,7 @@ public class PasswordSetupService {
       throw new InvalidLinkException();
     }
     directory.setPassword(sub, encode(newPassword));
-    directory.revokeAuthorizations(sub);
+    sessions.endAll(sub, null, "password reset");
     audit.recordAs(sub, AuditAction.PASSWORD_RESET_DONE, sub, null, ip);
   }
 

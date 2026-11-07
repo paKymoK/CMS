@@ -9,6 +9,7 @@ import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.service.AccountMailService;
 import com.takypok.authservice.service.ClientRoleService;
 import com.takypok.authservice.service.DepartmentService;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UnitService;
 import com.takypok.authservice.service.UserService;
@@ -61,6 +62,7 @@ public class UserAdminController {
   private final UnitService unitService;
   private final RegisteredClientRepository registeredClientRepository;
   private final AccountMailService accountMail;
+  private final SessionService sessionService;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -185,6 +187,7 @@ public class UserAdminController {
         user.getRoles().stream()
             .anyMatch(r -> r.getProjectId() == null && SuperAdminService.ROLE.equals(r.getRole())));
     model.addAttribute("direct", directAssignments(sub));
+    model.addAttribute("sessions", sessionService.list(sub));
     model.addAttribute("departments", departmentService.get());
     model.addAttribute("units", unitService.get(null));
     model.addAttribute("roleOptions", ROLES);
@@ -256,6 +259,25 @@ public class UserAdminController {
       redirect.addFlashAttribute("error", message(ex));
       return "redirect:/admin/users/{sub}";
     }
+  }
+
+  @PostMapping("/{sub}/sessions/{id}/end")
+  public String endSession(
+      @PathVariable String sub, @PathVariable String id, RedirectAttributes redirect) {
+    try {
+      sessionService.end(sub, id);
+      redirect.addFlashAttribute("flash", "Session ended.");
+    } catch (RuntimeException ex) {
+      redirect.addFlashAttribute("error", message(ex));
+    }
+    return "redirect:/admin/users/{sub}";
+  }
+
+  @PostMapping("/{sub}/sessions/end-all")
+  public String endAllSessions(@PathVariable String sub, RedirectAttributes redirect) {
+    sessionService.endAll(sub, null, "ended by an administrator");
+    redirect.addFlashAttribute("flash", "Every session of this person was ended.");
+    return "redirect:/admin/users/{sub}";
   }
 
   @PostMapping("/{sub}/invitation")

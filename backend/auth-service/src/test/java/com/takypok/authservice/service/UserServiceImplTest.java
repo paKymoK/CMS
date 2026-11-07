@@ -37,6 +37,7 @@ class UserServiceImplTest {
   @Mock UserDirectoryRepository userDirectory;
   @Mock SuperAdminService superAdminService;
   @Mock AuditService auditService;
+  @Mock SessionService sessionService;
   @Spy EmailDomainPolicy emailDomainPolicy = new EmailDomainPolicy("corp.local");
 
   @InjectMocks UserServiceImpl service;
@@ -69,7 +70,7 @@ class UserServiceImplTest {
 
     assertThat(john.getStatus()).isEqualTo("INACTIVE");
     verify(userinfoRepository).saveAndFlush(john);
-    verify(userDirectory).revokeAuthorizations("john");
+    verify(sessionService).endAll("john", null, "account deactivated");
     verify(auditService).record(AuditAction.STATUS_CHANGED, "john", "INACTIVE");
   }
 
@@ -83,7 +84,7 @@ class UserServiceImplTest {
     assertThatThrownBy(() -> service.setStatus("john", UserStatus.INACTIVE))
         .isInstanceOf(ApplicationException.class);
 
-    verify(userDirectory, never()).revokeAuthorizations(any());
+    verify(sessionService, never()).endAll(any(), any(), any());
   }
 
   @Test
@@ -96,7 +97,7 @@ class UserServiceImplTest {
     assertThat(john.getStatus()).isEqualTo("ACTIVE");
     verify(userinfoRepository).saveAndFlush(john);
     verify(superAdminService, never()).guardLastSuperAdmin(any());
-    verify(userDirectory, never()).revokeAuthorizations(any());
+    verify(sessionService, never()).endAll(any(), any(), any());
   }
 
   @Test
@@ -140,6 +141,7 @@ class UserServiceImplTest {
 
     service.delete("john", "admin");
 
+    verify(sessionService).endAll("john", null, "account deleted");
     verify(userDirectory).purge("john", "admin");
     verify(auditService).record(AuditAction.USER_DELETED, "john", "sub stays reserved");
   }
@@ -292,7 +294,8 @@ class UserServiceImplTest {
     var stored = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(userDirectory).setPassword(eq("john"), stored.capture());
     assertThat(stored.getValue()).startsWith("{bcrypt}").doesNotContain("new-password-1");
-    verify(userDirectory).revokeAuthorizations("john");
+    // the browser that changed it stays signed in (its hash is passed); the others end
+    verify(sessionService).endAll(eq("john"), any(), eq("password changed"));
     verify(auditService).record(AuditAction.PASSWORD_CHANGED, "john", null);
   }
 
@@ -304,7 +307,7 @@ class UserServiceImplTest {
 
     assertThat(changed).isFalse();
     verify(userDirectory, never()).setPassword(any(), any());
-    verify(userDirectory, never()).revokeAuthorizations(any());
+    verify(sessionService, never()).endAll(any(), any(), any());
     verify(auditService)
         .record(AuditAction.PASSWORD_CHANGE_FAILED, "john", "wrong current password");
   }

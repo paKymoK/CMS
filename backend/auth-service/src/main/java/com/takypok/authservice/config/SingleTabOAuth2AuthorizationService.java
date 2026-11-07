@@ -39,6 +39,7 @@ public class SingleTabOAuth2AuthorizationService implements OAuth2AuthorizationS
   private final JdbcTemplate jdbcTemplate;
   private final StringRedisTemplate redisTemplate;
   private final ObjectMapper objectMapper;
+  private final com.takypok.authservice.service.SessionService sessionService;
 
   @Override
   public void save(OAuth2Authorization authorization) {
@@ -85,6 +86,8 @@ public class SingleTabOAuth2AuthorizationService implements OAuth2AuthorizationS
               });
     }
     delegate.save(authorization);
+    // Where and with what this sign-in is used: shown to the person as "where you are signed in".
+    sessionService.touch(authorization.getId(), authorization.getPrincipalName());
   }
 
   private void blacklistAndCleanup(OAuth2Authorization authorization, ClientSessionPolicy policy) {

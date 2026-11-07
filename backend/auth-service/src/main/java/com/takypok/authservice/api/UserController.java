@@ -6,6 +6,7 @@ import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.request.UpdateUserStatusRequest;
 import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.service.AccountMailService;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.model.PageResponse;
 import com.takypok.core.model.ResultMessage;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
   private final UserService userService;
   private final AccountMailService accountMail;
+  private final SessionService sessionService;
 
   @GetMapping
   public ResponseEntity<ResultMessage<PageResponse<UserResponse>>> search(
@@ -70,6 +72,28 @@ public class UserController {
     userService.createInvited(request.getUsername().trim(), request.getName());
     boolean sent = accountMail.sendInvitation(request.getUsername().trim());
     return ResponseEntity.ok(ResultMessage.success(Map.of("emailSent", sent)));
+  }
+
+  /** The devices the person is signed in on. */
+  @GetMapping("/{sub}/sessions")
+  public ResponseEntity<ResultMessage<java.util.List<SessionService.SessionView>>> sessions(
+      @PathVariable String sub) {
+    return ResponseEntity.ok(ResultMessage.success(sessionService.list(sub)));
+  }
+
+  /** Ends one device (its refresh token and its browser session). */
+  @DeleteMapping("/{sub}/sessions/{id}")
+  public ResponseEntity<ResultMessage<Void>> endSession(
+      @PathVariable String sub, @PathVariable String id) {
+    sessionService.end(sub, id);
+    return ResponseEntity.ok(ResultMessage.success(null));
+  }
+
+  /** Ends every device of the person. */
+  @DeleteMapping("/{sub}/sessions")
+  public ResponseEntity<ResultMessage<Void>> endAllSessions(@PathVariable String sub) {
+    sessionService.endAll(sub, null, "ended by an administrator");
+    return ResponseEntity.ok(ResultMessage.success(null));
   }
 
   @PostMapping("/{sub}/invitation")

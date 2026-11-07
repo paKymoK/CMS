@@ -36,6 +36,7 @@ class ApiSecurityTest {
   @MockitoBean SuperAdminService superAdminService;
   @MockitoBean UserService userService;
   @MockitoBean com.takypok.authservice.service.AccountMailService accountMail;
+  @MockitoBean com.takypok.authservice.service.SessionService sessionService;
 
   private static Authentication namedAdmin() {
     return argThat(a -> a != null && "admin".equals(a.getName()));

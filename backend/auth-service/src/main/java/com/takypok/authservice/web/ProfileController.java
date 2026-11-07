@@ -3,6 +3,7 @@ package com.takypok.authservice.web;
 import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.service.AvatarService;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
 import com.takypok.core.exception.ApplicationException;
@@ -39,6 +40,7 @@ public class ProfileController {
   private final UserService userService;
   private final AvatarService avatarService;
   private final SuperAdminService superAdminService;
+  private final SessionService sessionService;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -74,6 +76,7 @@ public class ProfileController {
         "avatarVersion",
         avatarService.find(sub).map(a -> a.updatedAt().toInstant().toEpochMilli()).orElse(null));
     model.addAttribute("showAdminNav", superAdminService.isActiveSuperAdmin(authentication));
+    model.addAttribute("sessions", sessionService.list(sub));
     model.addAttribute("active", "profile");
     if ("size".equals(avatarError)) {
       model.addAttribute("error", "The picture must be 512 KB or smaller.");
@@ -153,6 +156,27 @@ public class ProfileController {
     } catch (RuntimeException ex) {
       redirect.addFlashAttribute("error", message(ex));
     }
+    return "redirect:/profile";
+  }
+
+  /** Signs out of one device ("where you are signed in"). The current browser has no button. */
+  @PostMapping("/profile/sessions/{id}/end")
+  public String endSession(
+      Authentication authentication, @PathVariable String id, RedirectAttributes redirect) {
+    try {
+      sessionService.end(authentication.getName(), id);
+      redirect.addFlashAttribute("flash", "Signed out of that device.");
+    } catch (RuntimeException ex) {
+      redirect.addFlashAttribute("error", message(ex));
+    }
+    return "redirect:/profile";
+  }
+
+  @PostMapping("/profile/sessions/end-others")
+  public String endOtherSessions(Authentication authentication, RedirectAttributes redirect) {
+    sessionService.endAll(
+        authentication.getName(), sessionService.currentWebHash(), "signed out of other devices");
+    redirect.addFlashAttribute("flash", "Signed out of every other device.");
     return "redirect:/profile";
   }
 

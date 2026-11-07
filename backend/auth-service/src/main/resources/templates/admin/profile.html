@@ -80,6 +80,38 @@
             <p class="sub">Your password is your organisation's directory password. Change it there.</p>
         </section>
 
+        <!-- Where you are signed in -->
+        <section class="card table-card" id="sessions">
+            <div style="padding:22px 22px 6px">
+                <h2>Where you are signed in</h2>
+                <p class="sub">Each browser or device that is signed in to the CMS with your account. Signing out of one ends it for good: it has to sign in again.</p>
+            </div>
+            <table th:if="${!sessions.isEmpty()}">
+                <thead><tr><th scope="col">Device</th><th scope="col">Where from</th><th scope="col">Signed in</th><th scope="col">Last active</th><th scope="col"></th></tr></thead>
+                <tbody>
+                <tr th:each="s : ${sessions}">
+                    <td class="cell-first" data-label="Device"><span th:text="${s.device}"></span>
+                        <span class="chip chip-super" th:if="${s.current}" style="margin-left:6px">This browser</span></td>
+                    <td data-label="Where from"><span class="mono" th:text="${s.lastIp != null} ? ${s.lastIp} : '—'"></span></td>
+                    <td class="nowrap" data-label="Signed in"><time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(s.signedInAt), '+0000', 'Z')}" th:text="${#temporals.format(s.signedInAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time></td>
+                    <td class="nowrap" data-label="Last active"><time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(s.lastSeenAt), '+0000', 'Z')}" th:text="${#temporals.format(s.lastSeenAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time></td>
+                    <td data-label="">
+                        <form method="post" th:action="@{/profile/sessions/{id}/end(id=${s.id})}" th:if="${!s.current}"
+                              onsubmit="return confirm('Sign out of this device?')">
+                            <button class="btn btn-sm btn-danger" type="submit">Sign out</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="empty" th:if="${sessions.isEmpty()}">No active sessions.</div>
+            <div style="padding:14px 22px 20px" th:if="${sessions.size() > 1}">
+                <form method="post" th:action="@{/profile/sessions/end-others}" onsubmit="return confirm('Sign out of every other device?')">
+                    <button class="btn" type="submit">Sign out of every other device</button>
+                </form>
+            </div>
+        </section>
+
         <!-- Sign out -->
         <section class="card">
             <div class="status-block">

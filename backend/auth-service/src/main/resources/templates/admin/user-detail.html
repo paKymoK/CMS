@@ -130,6 +130,39 @@
             <p class="hint">The last active Super Admin cannot be deactivated or lose the role.</p>
         </section>
 
+        <!-- Sessions -->
+        <section class="card table-card">
+            <div style="padding:22px 22px 6px">
+                <h2>Sessions</h2>
+                <p class="sub">The devices this person is signed in on. Ending one signs that device out; it has to sign in again.
+                    Anything it already fetched keeps working for up to 15 minutes.</p>
+            </div>
+            <table th:if="${!sessions.isEmpty()}">
+                <thead><tr><th scope="col">Device</th><th scope="col">Where from</th><th scope="col">Signed in</th><th scope="col">Last active</th><th scope="col"></th></tr></thead>
+                <tbody>
+                <tr th:each="s : ${sessions}">
+                    <td class="cell-first" data-label="Device"><span th:text="${s.device}"></span></td>
+                    <td data-label="Where from"><span class="mono" th:text="${s.lastIp != null} ? ${s.lastIp} : '—'"></span></td>
+                    <td class="nowrap" data-label="Signed in"><time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(s.signedInAt), '+0000', 'Z')}" th:text="${#temporals.format(s.signedInAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time></td>
+                    <td class="nowrap" data-label="Last active"><time class="mono ts" th:datetime="${#strings.replace(#temporals.formatISO(s.lastSeenAt), '+0000', 'Z')}" th:text="${#temporals.format(s.lastSeenAt, 'dd MMM yyyy HH:mm') + ' UTC'}"></time></td>
+                    <td data-label="">
+                        <form method="post" th:action="@{/admin/users/{sub}/sessions/{id}/end(sub=${user.sub},id=${s.id})}"
+                              onsubmit="return confirm('End this session?')">
+                            <button class="btn btn-sm btn-danger" type="submit">End</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="empty" th:if="${sessions.isEmpty()}">Not signed in anywhere.</div>
+            <div style="padding:14px 22px 20px" th:if="${!sessions.isEmpty()}">
+                <form method="post" th:action="@{/admin/users/{sub}/sessions/end-all(sub=${user.sub})}"
+                      onsubmit="return confirm('End every session of this person?')">
+                    <button class="btn btn-danger" type="submit">End all sessions</button>
+                </form>
+            </div>
+        </section>
+
         <!-- Password reset link: active local accounts, when email is set up -->
         <section class="card" th:if="${user.accountType == 'LOCAL' and user.status == 'ACTIVE' and mailEnabled}">
             <div class="status-block">

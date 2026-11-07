@@ -6,6 +6,7 @@ import com.takypok.authservice.config.auth.LdapAutoProvisionSuccessHandler;
 import com.takypok.authservice.config.auth.LoginFailureHandler;
 import com.takypok.authservice.repository.UserinfoRepository;
 import com.takypok.authservice.service.AuditService;
+import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,7 +135,8 @@ public class SecurityConfig {
       HttpSecurity http,
       DomainAuthenticationFilter domainAuthenticationFilter,
       SecurityContextRepository securityContextRepository,
-      SuperAdminService superAdminService)
+      SuperAdminService superAdminService,
+      SessionService sessionService)
       throws Exception {
 
     return http.csrf(
@@ -182,6 +184,16 @@ public class SecurityConfig {
                                 superAdminService.isActiveSuperAdmin(authentication.get())))
                     .anyRequest()
                     .authenticated())
+        // Signing out on the account pages also ends what that browser had signed in. The
+        // container's
+        // own logout handler (which invalidates the session) runs after this one, so the session id
+        // is still there to find the device.
+        .logout(
+            logout ->
+                logout.addLogoutHandler(
+                    (request, response, authentication) ->
+                        sessionService.onWebLogout(
+                            request, authentication == null ? null : authentication.getName())))
         .addFilterAt(domainAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .exceptionHandling(
             ex ->
