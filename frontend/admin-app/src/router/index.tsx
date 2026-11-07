@@ -6,6 +6,7 @@ import AppShell from "../components/AppShell";
 import Login from "../pages/Login";
 import Callback from "../pages/Callback";
 import ContentPage from "../pages/ContentPage";
+import PostsPage from "../pages/PostsPage";
 import MediaLibraryPage from "../pages/MediaLibraryPage";
 import AssistantPage from "../pages/AssistantPage";
 import PostEditorPage from "../pages/PostEditorPage";
@@ -31,6 +32,8 @@ export default function AppRouter() {
               }
             >
               <Route index element={<Navigate to={`/content/${RESOURCES[0].key}`} replace />} />
+              {/* The posts list has its own page (BRD POST-01); the generic one serves the rest. */}
+              <Route path="/content/posts" element={<PostsPage />} />
               <Route path="/content/:resourceKey" element={<ContentPage />} />
               <Route path="/posts/:id" element={<PostEditorPage />} />
               <Route path="/case-studies/:id" element={<ResourceEditorPage resourceKey="case-studies" />} />

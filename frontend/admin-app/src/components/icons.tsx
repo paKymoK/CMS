@@ -44,4 +44,6 @@ export const InboxIcon = make(<path d="M3 11l2-6.5h10L17 11M3 11v5h14v-5M3 11h4.
 export const CloseIcon = make(<path d="M5 5l10 10M15 5L5 15" />);
 export const ChevronRightIcon = make(<path d="M7.5 4.5L13 10l-5.5 5.5" />);
 export const ChevronsLeftIcon = make(<path d="M9.5 5L4.5 10l5 5M15.5 5l-5 5 5 5" />);
+export const CopyIcon = make(<path d="M7.5 7.5h8v9h-8zM4.5 12.5v-9h8" />);
+export const MoreIcon = make(<path d="M4.5 10h.01M10 10h.01M15.5 10h.01" strokeWidth={2.4} />);
 export const ClockIcon = make(<path d="M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM10 6v4l2.5 1.5" />);
