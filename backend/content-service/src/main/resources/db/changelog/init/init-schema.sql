@@ -212,7 +212,8 @@ CREATE TABLE IF NOT EXISTS content_audit
     item_id      bigint                   NOT NULL,
     content_type character varying        NOT NULL,
     action       character varying        NOT NULL
-        CHECK (action IN ('CREATE', 'UPDATE', 'SCHEDULE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE')),
+        CHECK (action IN ('CREATE', 'UPDATE', 'SCHEDULE', 'PUBLISH', 'UNPUBLISH', 'ARCHIVE', 'DELETE', 'RESTORE',
+                          'TRASH', 'UNTRASH')),
     title        text,
     actor        jsonb,                   -- the signed-in user, as stored in created_by/modified_by
     actor_name   character varying,       -- how to show the user: "Display Name (sub)", or just the sub; also what the actor filter searches
@@ -236,8 +237,10 @@ CREATE INDEX IF NOT EXISTS idx_content_audit_item ON content_audit (item_id, occ
 --     as the current user just before deleting it, in the same transaction; the trigger knows that
 --     happened when the row version it is looking at was written by the current transaction (xmin).
 --     A delete without that step is recorded as a direct database change.
--- The application can also name the action: setting cms.audit_action to RESTORE in the transaction
--- (set_config(..., true)) records the write as a RESTORE instead of a CREATE/UPDATE.
+-- The application can also name the action: setting cms.audit_action in the transaction
+-- (set_config(..., true)) to RESTORE (an old version put back), TRASH (the delete that moves an item
+-- into content_trash) or UNTRASH (the insert that brings it back) records the write as that action
+-- instead of a CREATE, UPDATE or DELETE.
 -- Saves that change nothing an editor can see (re-saving, the version counter, the search text) are
 -- not recorded. The seed script switches the trigger off while it loads (see init-data.sql).
 
@@ -366,8 +369,8 @@ BEGIN
         direct := OLD.xmin::text <> (txid_current() % 4294967296)::text;
     END IF;
 
-    IF TG_OP <> 'DELETE' AND nullif(current_setting('cms.audit_action', true), '') = 'RESTORE' THEN
-        act := 'RESTORE';
+    IF nullif(current_setting('cms.audit_action', true), '') IN ('RESTORE', 'TRASH', 'UNTRASH') THEN
+        act := current_setting('cms.audit_action', true);
     END IF;
 
     who := CASE
@@ -460,10 +463,144 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- The job: every minute, in the database named by cron.database_name (see the postgres image's
+-- ---- Trash -----------------------------------------------------------------------------------------
+-- An item moved to the Trash leaves content_item altogether and waits here for 30 days, so nothing that
+-- reads content_item (public pages, lists, search, counts, today's queries and tomorrow's) ever has to
+-- know the Trash exists. It is generic: any content type can use it; the application decides which do.
+--   * trash_content_item   moves one item here: the whole row as a snapshot, its slug rows (aliases
+--                          included) beside it. Its slug is free again while it is here.
+--   * restore_trashed_item puts it back as a DRAFT with the same id (so its audit history stays one
+--                          thread), no schedule times, and its old addresses where they are still free.
+--                          Its own address must be free: otherwise unique_violation, and the caller can
+--                          pass another slug.
+--   * delete_trashed_items removes items for good and records it; purge_trashed_content() does that for
+--                          everything trashed more than 30 days ago, credited to System.
+-- The audit trail sees the move as TRASH (a DELETE of the row, named by cms.audit_action) and the return
+-- as UNTRASH (an INSERT), with the same item_id, so one item's history reads as one thread.
+-- The snapshot is the row as JSON; restore_trashed_item lists the columns it puts back, so a column added
+-- to content_item must be added there too (the Trash test fails until it is).
+CREATE TABLE IF NOT EXISTS content_trash
+(
+    id           bigint PRIMARY KEY,                          -- the item's id, kept for its whole life
+    site_id      bigint                   NOT NULL REFERENCES site (id),
+    content_type character varying        NOT NULL,
+    title        text,
+    snapshot     jsonb                    NOT NULL,           -- the content_item row, minus the generated search_vec
+    slugs        jsonb                    NOT NULL DEFAULT '[]', -- its content_slug rows
+    trashed_at   timestamp with time zone NOT NULL DEFAULT now(),
+    trashed_by   jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_content_trash_site_type ON content_trash (site_id, content_type, trashed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_content_trash_trashed_at ON content_trash (trashed_at);
+
+-- Moves one item of the site to the Trash, credited to p_actor ({sub, name}). False when there is no such
+-- item. The row is re-saved as the actor first so the trigger credits the delete to them (see above).
+CREATE OR REPLACE FUNCTION trash_content_item(p_id bigint, p_site bigint, p_actor jsonb) RETURNS boolean AS
+$$
+DECLARE
+    ci content_item;
+BEGIN
+    SELECT * INTO ci FROM content_item WHERE id = p_id AND site_id = p_site FOR UPDATE;
+    IF NOT FOUND THEN
+        RETURN false;
+    END IF;
+    INSERT INTO content_trash (id, site_id, content_type, title, snapshot, slugs, trashed_by)
+    VALUES (ci.id, ci.site_id, ci.content_type, audit_title(ci.data), to_jsonb(ci) - 'search_vec',
+            (SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY s.id), '[]') FROM content_slug s WHERE s.item_id = ci.id),
+            p_actor);
+    UPDATE content_item SET modified_by = p_actor, modified_at = now() WHERE id = p_id;
+    PERFORM set_config('cms.audit_action', 'TRASH', true);
+    DELETE FROM content_item WHERE id = p_id;
+    PERFORM set_config('cms.audit_action', '', true);
+    RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Brings one item back as a DRAFT, credited to p_actor. Null when it is not in this site's Trash. With
+-- p_slug the item comes back under that slug instead of its own. Returns {id, slug, skippedAliases}.
+CREATE OR REPLACE FUNCTION restore_trashed_item(p_id bigint, p_site bigint, p_actor jsonb, p_slug text DEFAULT NULL)
+    RETURNS jsonb AS
+$$
+DECLARE
+    t       content_trash;
+    r       content_item;
+    d       jsonb;
+    aliases integer;
+    added   integer;
+BEGIN
+    SELECT * INTO t FROM content_trash WHERE id = p_id AND site_id = p_site FOR UPDATE;
+    IF NOT FOUND THEN
+        RETURN NULL;
+    END IF;
+    r := jsonb_populate_record(NULL::content_item, t.snapshot);
+    d := r.data;
+    IF nullif(btrim(p_slug), '') IS NOT NULL THEN
+        d := jsonb_set(d, '{slug}', to_jsonb(btrim(p_slug)));
+    END IF;
+    PERFORM set_config('cms.audit_action', 'UNTRASH', true);
+    INSERT INTO content_item (id, site_id, content_type, data, display_order, status, version, publish_at,
+                              unpublish_at, search_title, search_meta, search_body, created_at, created_by,
+                              modified_at, modified_by)
+    VALUES (r.id, r.site_id, r.content_type, d, r.display_order, 'DRAFT', coalesce(r.version, 0) + 1, NULL, NULL,
+            r.search_title, r.search_meta, r.search_body, r.created_at, r.created_by, now(), p_actor);
+    PERFORM set_config('cms.audit_action', '', true);
+    -- the content_item_slug trigger has just made its primary address; the old ones come back if still free
+    SELECT count(*) INTO aliases FROM jsonb_array_elements(t.slugs) e WHERE NOT (e ->> 'is_primary')::boolean;
+    INSERT INTO content_slug (site_id, content_type, scope, slug, item_id, is_primary, created_at)
+    SELECT (e ->> 'site_id')::bigint, e ->> 'content_type', e ->> 'scope', e ->> 'slug', r.id, false,
+           (e ->> 'created_at')::timestamptz
+    FROM jsonb_array_elements(t.slugs) e
+    WHERE NOT (e ->> 'is_primary')::boolean
+    ON CONFLICT ON CONSTRAINT uq_content_slug DO NOTHING;
+    GET DIAGNOSTICS added = ROW_COUNT;
+    DELETE FROM content_trash WHERE id = p_id;
+    RETURN jsonb_build_object('id', r.id, 'slug', d ->> 'slug', 'skippedAliases', aliases - added);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Deletes trashed items for good and writes a DELETE row to the audit trail for each. p_site null means
+-- any site (the purge). Returns how many were deleted.
+CREATE OR REPLACE FUNCTION delete_trashed_items(p_ids bigint[], p_site bigint, p_actor jsonb) RETURNS integer AS
+$$
+DECLARE
+    n integer;
+BEGIN
+    WITH gone AS (DELETE FROM content_trash t
+        WHERE t.id = ANY (p_ids) AND (p_site IS NULL OR t.site_id = p_site)
+        RETURNING t.*)
+    INSERT
+    INTO content_audit (site_id, item_id, content_type, action, title, actor, actor_name, occurred_at, changed,
+                        before_data, after_data)
+    SELECT g.site_id, g.id, g.content_type, 'DELETE', g.title, p_actor, audit_actor_label(p_actor),
+           clock_timestamp(), audit_changed(x.b, NULL), x.b, NULL
+    FROM gone g
+             CROSS JOIN LATERAL (SELECT audit_snapshot(jsonb_populate_record(NULL::content_item, g.snapshot)) AS b) x;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    RETURN n;
+END;
+$$ LANGUAGE plpgsql;
+
+-- What the hourly job runs: everything trashed more than 30 days ago is deleted for good, as System.
+-- Catch-up by construction (it takes everything overdue) and SKIP LOCKED, like publish_scheduled_content().
+CREATE OR REPLACE FUNCTION purge_trashed_content() RETURNS integer AS
+$$
+DECLARE
+    due bigint[];
+BEGIN
+    SELECT coalesce(array_agg(id), '{}')
+    INTO due
+    FROM (SELECT id
+          FROM content_trash
+          WHERE trashed_at < now() - interval '30 days'
+          FOR UPDATE SKIP LOCKED) x;
+    RETURN delete_trashed_items(due, NULL, jsonb_build_object('sub', 'system', 'name', 'System'));
+END;
+$$ LANGUAGE plpgsql;
+
+-- The jobs (publishing every minute, the Trash purge hourly), in the database named by cron.database_name (see the postgres image's
 -- postgresql.conf). It is created only where pg_cron is there, so a database without it (a test
 -- database, a managed Postgres without the extension) still loads; scheduled items then wait until
--- publish_scheduled_content() is run some other way.
+-- publish_scheduled_content() (and purge_trashed_content(), hourly) is run some other way.
 DO
 $$
 BEGIN
@@ -471,8 +608,9 @@ BEGIN
         AND EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'pg_cron') THEN
         CREATE EXTENSION IF NOT EXISTS pg_cron;
         PERFORM cron.schedule('publish-scheduled-content', '* * * * *', 'SELECT publish_scheduled_content()');
+        PERFORM cron.schedule('purge-trashed-content', '7 * * * *', 'SELECT purge_trashed_content()');
     ELSE
-        RAISE WARNING 'pg_cron is not available in database %: scheduled content will not be published automatically', current_database();
+        RAISE WARNING 'pg_cron is not available in database %: scheduled content will not be published, and the Trash not emptied, automatically', current_database();
     END IF;
 END
 $$;

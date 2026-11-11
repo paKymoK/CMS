@@ -19,8 +19,6 @@ public interface PostService {
 
   Mono<PostResponse> update(Long siteId, PostUpdateRequest request);
 
-  Mono<Void> delete(Long id, Long siteId);
-
   /**
    * Changes the status of several posts at once with the same rules as saving one: PUBLISH,
    * UNPUBLISH (back to draft) or ARCHIVE. A post that cannot be changed (it fails validation, say)

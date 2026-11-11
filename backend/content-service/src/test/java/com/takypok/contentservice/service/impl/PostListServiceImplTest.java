@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.repository.PostListRepository;
+import com.takypok.contentservice.repository.TrashRepository;
 import com.takypok.core.exception.ApplicationException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -29,11 +30,12 @@ import reactor.test.StepVerifier;
 class PostListServiceImplTest {
 
   @Mock private PostListRepository repository;
+  @Mock private TrashRepository trashRepository;
   private PostListServiceImpl service;
 
   @BeforeEach
   void setUp() {
-    service = new PostListServiceImpl(repository, new ObjectMapper());
+    service = new PostListServiceImpl(repository, trashRepository, new ObjectMapper());
   }
 
   private void repositoryReturns(long total, PostListRepository.Row... rows) {
@@ -160,6 +162,7 @@ class PostListServiceImplTest {
     when(repository.categories(1L))
         .thenReturn(Mono.just(List.of(new PostListRepository.CategoryCount("insight", 7))));
     when(repository.years(1L)).thenReturn(Mono.just(List.of(2026, 2025)));
+    when(trashRepository.count(1L, "post")).thenReturn(Mono.just(3L));
 
     StepVerifier.create(service.facets(1L))
         .assertNext(
@@ -167,6 +170,7 @@ class PostListServiceImplTest {
               assertEquals(
                   Map.of("DRAFT", 4L, "PUBLISHED", 9L, "SCHEDULED", 0L, "ARCHIVED", 0L),
                   f.statusCounts());
+              assertEquals(3L, f.trashCount());
               assertEquals("insight", f.categories().get(0).name());
               assertEquals(List.of(2026, 2025), f.years());
             })

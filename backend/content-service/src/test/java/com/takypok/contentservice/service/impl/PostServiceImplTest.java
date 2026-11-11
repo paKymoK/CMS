@@ -443,32 +443,6 @@ class PostServiceImplTest {
   }
 
   @Test
-  void aPublishedPostCannotBeDeleted() throws Exception {
-    when(contentItemRepository.findByIdAndSiteId(5L, 1L))
-        .thenReturn(Mono.just(postWithStatus(5L, "PUBLISHED")));
-
-    StepVerifier.create(service.delete(5L, 1L))
-        .expectErrorMatches(
-            e -> e instanceof ApplicationException && e.getMessage().contains("archive it"))
-        .verify();
-    verify(contentItemWriter, never()).delete(any(ContentItem.class));
-  }
-
-  @Test
-  void aDraftOrArchivedPostCanBeDeleted() throws Exception {
-    ContentItem draft = postWithStatus(5L, "DRAFT");
-    ContentItem archived = postWithStatus(6L, "ARCHIVED");
-    when(contentItemRepository.findByIdAndSiteId(5L, 1L)).thenReturn(Mono.just(draft));
-    when(contentItemRepository.findByIdAndSiteId(6L, 1L)).thenReturn(Mono.just(archived));
-    when(contentItemWriter.delete(any(ContentItem.class))).thenReturn(Mono.empty());
-
-    StepVerifier.create(service.delete(5L, 1L)).verifyComplete();
-    StepVerifier.create(service.delete(6L, 1L)).verifyComplete();
-    verify(contentItemWriter).delete(draft);
-    verify(contentItemWriter).delete(archived);
-  }
-
-  @Test
   void anArchivedPostIsNotServedPublicly() throws Exception {
     when(contentItemRepository.findBySlug(1L, "post", "a-post"))
         .thenReturn(Mono.just(postWithStatus(5L, "ARCHIVED")));

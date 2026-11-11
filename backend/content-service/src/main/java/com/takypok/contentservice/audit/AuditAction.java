@@ -16,6 +16,10 @@ public enum AuditAction {
   /** Its status became ARCHIVED: taken off the site but kept. */
   ARCHIVE,
   DELETE,
+  /** Moved to the Trash (it leaves the content table and waits there for 30 days). */
+  TRASH,
+  /** Brought back from the Trash, as a draft. */
+  UNTRASH,
   /** Its content was put back to what an earlier audit entry recorded. */
   RESTORE
 }

@@ -418,20 +418,6 @@ public class PostServiceImpl implements PostService {
   }
 
   @Override
-  public Mono<Void> delete(Long id, Long siteId) {
-    return findItem(id, siteId)
-        .flatMap(
-            item ->
-                "PUBLISHED".equals(item.getStatus())
-                    ? Mono.<Void>error(
-                        new ApplicationException(
-                            Message.Application.ERROR,
-                            "A published post cannot be deleted: archive it or move it to draft"
-                                + " first"))
-                    : contentItemWriter.delete(item));
-  }
-
-  @Override
   public Flux<PostResponse> getPublished(Long siteId) {
     return contentItemRepository
         .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, TYPE, "PUBLISHED")

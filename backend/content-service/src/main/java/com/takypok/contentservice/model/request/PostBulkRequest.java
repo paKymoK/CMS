@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +16,12 @@ public class PostBulkRequest {
   @Size(max = 100)
   private List<Long> ids;
 
-  /** PUBLISH, UNPUBLISH (back to draft) or ARCHIVE. */
+  /**
+   * PUBLISH, UNPUBLISH (back to draft), ARCHIVE, or for the Trash: TRASH, RESTORE (back to draft)
+   * and DELETE_FOREVER (of items already in the Trash).
+   */
   @NotBlank private String action;
+
+  /** RESTORE only: the address to restore a post under instead of its own, by post id. */
+  private Map<Long, String> slugs;
 }

@@ -4,12 +4,17 @@ import com.takypok.contentservice.config.CmsAdminGuard;
 import com.takypok.contentservice.model.entity.Site;
 import com.takypok.contentservice.model.request.PostBulkRequest;
 import com.takypok.contentservice.model.request.PostCreateRequest;
+import com.takypok.contentservice.model.request.PostIdsRequest;
 import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.model.response.PostListResponses;
 import com.takypok.contentservice.model.response.PostResponse;
+import com.takypok.contentservice.model.response.TrashResponses;
 import com.takypok.contentservice.service.PostListService;
 import com.takypok.contentservice.service.PostService;
+import com.takypok.contentservice.service.PostTrashService;
 import com.takypok.contentservice.service.SiteService;
+import com.takypok.core.exception.ApplicationException;
+import com.takypok.core.model.Message;
 import com.takypok.core.model.ResultMessage;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,6 +29,7 @@ import reactor.core.publisher.Mono;
 public class PostController {
   private final PostService postService;
   private final PostListService postListService;
+  private final PostTrashService postTrashService;
   private final SiteService siteService;
   private final CmsAdminGuard cmsAdminGuard;
 
@@ -68,7 +74,10 @@ public class PostController {
         .map(ResultMessage::success);
   }
 
-  /** Publish, unpublish or archive several posts at once. */
+  /**
+   * Change several posts at once: publish, unpublish (back to draft) or archive; or for the Trash,
+   * trash, restore (as drafts, optionally under other addresses) or delete for good.
+   */
   @PostMapping("/bulk")
   public Mono<ResultMessage<PostListResponses.BulkResult>> bulk(
       @RequestParam String site,
@@ -76,8 +85,54 @@ public class PostController {
       Authentication authentication) {
     return authorizedSite(site, authentication)
         .flatMap(
-            resolved ->
-                postService.bulkStatus(resolved.getId(), request.getIds(), request.getAction()))
+            resolved -> {
+              String action = request.getAction() == null ? "" : request.getAction().trim();
+              return switch (action.toUpperCase()) {
+                case "TRASH" -> postTrashService.trash(resolved.getId(), request.getIds());
+                case "RESTORE" ->
+                    postTrashService.restore(
+                        resolved.getId(), request.getIds(), request.getSlugs());
+                case "DELETE_FOREVER" ->
+                    postTrashService.deleteForever(resolved.getId(), request.getIds());
+                default ->
+                    postService.bulkStatus(resolved.getId(), request.getIds(), request.getAction());
+              };
+            })
+        .map(ResultMessage::success);
+  }
+
+  /** The Trash: the site's trashed posts, newest first. */
+  @GetMapping("/trash")
+  public Mono<ResultMessage<TrashResponses.Page>> trash(
+      @RequestParam String site,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) Integer page,
+      @RequestParam(required = false) Integer size,
+      Authentication authentication) {
+    return authorizedSite(site, authentication)
+        .flatMap(resolved -> postTrashService.list(resolved.getId(), q, page, size))
+        .map(ResultMessage::success);
+  }
+
+  /** Before trashing: which of these posts other items link to. Empty means nothing to warn of. */
+  @PostMapping("/trash/links")
+  public Mono<ResultMessage<List<TrashResponses.LinkCheck>>> trashLinks(
+      @RequestParam String site,
+      @Valid @RequestBody PostIdsRequest request,
+      Authentication authentication) {
+    return authorizedSite(site, authentication)
+        .flatMap(resolved -> postTrashService.linkCheck(resolved.getId(), request.getIds()))
+        .map(ResultMessage::success);
+  }
+
+  /** Before restoring: whether each trashed post's address is free, and what to offer if not. */
+  @PostMapping("/trash/restore-check")
+  public Mono<ResultMessage<List<TrashResponses.RestoreCheck>>> restoreCheck(
+      @RequestParam String site,
+      @Valid @RequestBody PostIdsRequest request,
+      Authentication authentication) {
+    return authorizedSite(site, authentication)
+        .flatMap(resolved -> postTrashService.restoreCheck(resolved.getId(), request.getIds()))
         .map(ResultMessage::success);
   }
 
@@ -109,12 +164,19 @@ public class PostController {
         .map(ResultMessage::success);
   }
 
+  /** Moves the post to the Trash (the same as the bulk TRASH action, for one post). */
   @DeleteMapping("/{id}")
   public Mono<ResultMessage<Void>> delete(
       @PathVariable Long id, @RequestParam String site, Authentication authentication) {
     return authorizedSite(site, authentication)
-        .flatMap(resolved -> postService.delete(id, resolved.getId()))
-        .then(Mono.just(ResultMessage.success(null)));
+        .flatMap(resolved -> postTrashService.trash(resolved.getId(), List.of(id)))
+        .flatMap(
+            result ->
+                result.failed().isEmpty()
+                    ? Mono.just(ResultMessage.<Void>success(null))
+                    : Mono.error(
+                        new ApplicationException(
+                            Message.Application.ERROR, result.failed().get(0).reason())));
   }
 
   private Mono<Site> authorizedSite(String code, Authentication authentication) {

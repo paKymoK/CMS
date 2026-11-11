@@ -28,9 +28,15 @@ public final class PostListResponses {
   /** One page of rows. {@code page} counts from 1. */
   public record Page(List<Row> items, int page, int size, long totalItems, int totalPages) {}
 
-  /** What the filters can offer for a site: counts per status, the categories in use, the years. */
+  /**
+   * What the filters can offer for a site: counts per status, how many are in the Trash, the
+   * categories in use, the years.
+   */
   public record Facets(
-      Map<String, Long> statusCounts, List<CategoryCount> categories, List<Integer> years) {}
+      Map<String, Long> statusCounts,
+      long trashCount,
+      List<CategoryCount> categories,
+      List<Integer> years) {}
 
   public record CategoryCount(String name, long count) {}
 

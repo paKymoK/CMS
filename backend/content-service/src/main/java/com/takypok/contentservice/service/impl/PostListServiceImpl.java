@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.model.response.PostListResponses;
 import com.takypok.contentservice.repository.PostListRepository;
+import com.takypok.contentservice.repository.TrashRepository;
 import com.takypok.contentservice.service.PostListService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
@@ -26,6 +27,7 @@ public class PostListServiceImpl implements PostListService {
       List.of("DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED");
 
   private final PostListRepository repository;
+  private final TrashRepository trashRepository;
   private final ObjectMapper objectMapper;
 
   @Override
@@ -80,13 +82,15 @@ public class PostListServiceImpl implements PostListService {
     return Mono.zip(
             repository.statusCounts(siteId),
             repository.categories(siteId),
-            repository.years(siteId))
+            repository.years(siteId),
+            trashRepository.count(siteId, "post"))
         .map(
             t -> {
               Map<String, Long> counts = new LinkedHashMap<>();
               STATUSES.forEach(s -> counts.put(s, t.getT1().getOrDefault(s, 0L)));
               return new PostListResponses.Facets(
                   counts,
+                  t.getT4(),
                   t.getT2().stream()
                       .map(c -> new PostListResponses.CategoryCount(c.name(), c.count()))
                       .toList(),
