@@ -4,20 +4,24 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { Button, DatePicker, Dropdown, Empty, Input, Modal, Popconfirm, Select, Table, Tag, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
 import { CopyIcon, MoreIcon, PlusIcon } from "../components/icons";
+import { showBulkResult } from "../components/bulkResult";
+import PostsTrash from "./PostsTrash";
 import {
   BULK_LIMIT,
   PAGE_SIZE,
   SORT_LABELS,
   STATUS_LABELS,
+  TRASH_DAYS,
   bulkPosts,
   listPosts,
   postFacets,
   postUrl,
+  trashLinks,
   type BulkAction,
+  type LinkCheck,
   type PostQuery,
   type PostRow,
   type PostSort,
@@ -27,7 +31,8 @@ import {
 const STATUSES: PostStatus[] = ["DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED"];
 const SORTS = Object.keys(SORT_LABELS) as PostSort[];
 
-const ACTION_VERB: Record<BulkAction, string> = {
+type StatusAction = "PUBLISH" | "UNPUBLISH" | "ARCHIVE";
+const ACTION_VERB: Record<StatusAction, string> = {
   PUBLISH: "Publish",
   UNPUBLISH: "Move to draft",
   ARCHIVE: "Archive",
@@ -36,6 +41,9 @@ const ACTION_DONE: Record<BulkAction, string> = {
   PUBLISH: "Published",
   UNPUBLISH: "Moved to draft",
   ARCHIVE: "Archived",
+  TRASH: "Moved to Trash:",
+  RESTORE: "Restored",
+  DELETE_FOREVER: "Deleted",
 };
 
 function ColHeader({ children }: { children: string }) {
@@ -78,8 +86,8 @@ async function copyText(text: string): Promise<boolean> {
  * 20 per page, and bulk publish / move to draft / archive. Searching, filtering and sorting happen
  * on the server, so it stays fast however many posts a site has.
  *
- * Not here yet: the Trash and the bulk "assign category / tag" (they need the Trash and the
- * Category and Tag tables). Delete stays what it was: one post at a time, never a published one.
+ * The Trash tab (PostsTrash) holds what was moved there; a published post cannot be trashed.
+ * Not here yet: the bulk "assign category / tag" (it needs the Category and Tag tables).
  */
 export default function PostsPage() {
   const { site } = useSite();
@@ -87,6 +95,7 @@ export default function PostsPage() {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const query = useMemo(() => readQuery(params), [params]);
+  const inTrash = params.get("status") === "TRASH";
   const [search, setSearch] = useState(query.q ?? "");
   // The selection belongs to one site's list: on another site it starts empty again.
   const [selection, setSelection] = useState<{ site?: string | null; ids: number[] }>({ ids: [] });
@@ -124,7 +133,7 @@ export default function PostsPage() {
   const list = useQuery({
     queryKey: ["posts-list", site, query],
     queryFn: () => listPosts(site!, query),
-    enabled: !!site,
+    enabled: !!site && !inTrash,
     placeholderData: keepPreviousData,
     refetchOnMount: "always",
   });
@@ -145,34 +154,52 @@ export default function PostsPage() {
     onSuccess: (result, { action }) => {
       refresh();
       setSelected((prev) => prev.filter((id) => !result.updated.includes(id)));
-      if (result.failed.length === 0) {
-        message.success(`${ACTION_DONE[action]} ${result.updated.length} post${result.updated.length === 1 ? "" : "s"}`);
-        return;
-      }
-      Modal.warning({
-        title: `${result.updated.length} changed, ${result.failed.length} could not be`,
-        content: (
-          <ul style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-            {result.failed.map((f) => (
-              <li key={f.id}>
-                <b>{f.title || `Post ${f.id}`}</b>: {f.reason}
-              </li>
-            ))}
-          </ul>
-        ),
-      });
+      showBulkResult(result, ACTION_DONE[action]);
     },
     onError: () => message.error("The change could not be made. Nothing was changed."),
   });
 
-  const remove = useMutation({
-    mutationFn: (id: number) => contentApi.delete(`/v1/admin/posts/${id}`, { params: { site } }),
-    onSuccess: () => {
-      refresh();
-      message.success("Post deleted");
-    },
-    onError: () => message.error("The post could not be deleted"),
-  });
+  /**
+   * Moves posts to the Trash after asking. When other items link to them (an address typed into
+   * their text) the question says so, since those links will break; it is a warning, not a block.
+   */
+  const moveToTrash = async (ids: number[]) => {
+    let links: LinkCheck[] = [];
+    try {
+      links = await trashLinks(site!, ids);
+    } catch {
+      message.error("Could not check for links to these posts. Nothing was changed.");
+      return;
+    }
+    const many = ids.length > 1;
+    Modal.confirm({
+      title: `Move ${many ? `${ids.length} posts` : "this post"} to the Trash?`,
+      width: links.length ? 560 : 416,
+      content: (
+        <div>
+          {links.length > 0 && (
+            <div style={{ marginBottom: 10 }}>
+              <b style={{ color: "#b42318" }}>Other items link to {many ? "some of these posts" : "this post"}.</b> Those
+              links will stop working:
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                {links.map((l) => (
+                  <li key={l.id}>
+                    <b>{l.title || `Post ${l.id}`}</b> is linked from{" "}
+                    {l.referrers.map((r) => r.title || `item ${r.id}`).join(", ")}
+                    {l.referrerCount > l.referrers.length ? ` and ${l.referrerCount - l.referrers.length} more` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          It can be restored for {TRASH_DAYS} days, then it is deleted for good.
+        </div>
+      ),
+      okText: links.length ? "Move to Trash anyway" : "Move to Trash",
+      okButtonProps: { danger: links.length > 0 },
+      onOk: () => bulk.mutateAsync({ ids, action: "TRASH" }),
+    });
+  };
 
   const siteSub = SITES.find((s) => s.code === site)?.subdomain;
   const counts = facets.data?.statusCounts;
@@ -312,7 +339,7 @@ export default function PostsPage() {
       key: "actions",
       width: 48,
       render: (_: unknown, row) => {
-        const one = (action: BulkAction) => bulk.mutate({ ids: [row.id], action });
+        const one = (action: StatusAction) => bulk.mutate({ ids: [row.id], action });
         return (
           <Dropdown
             trigger={["click"]}
@@ -333,15 +360,8 @@ export default function PostsPage() {
                   key: "del",
                   danger: true,
                   disabled: row.status === "PUBLISHED",
-                  label: row.status === "PUBLISHED" ? "Delete (archive it first)" : "Delete",
-                  onClick: () =>
-                    Modal.confirm({
-                      title: "Delete this post?",
-                      content: "This cannot be undone.",
-                      okText: "Delete",
-                      okButtonProps: { danger: true },
-                      onOk: () => remove.mutateAsync(row.id),
-                    }),
+                  label: row.status === "PUBLISHED" ? "Move to Trash (archive it first)" : "Move to Trash",
+                  onClick: () => moveToTrash([row.id]),
                 },
               ],
             }}
@@ -354,7 +374,7 @@ export default function PostsPage() {
   ];
 
   const overLimit = selected.length > BULK_LIMIT;
-  const bulkButton = (action: BulkAction, primary = false) => (
+  const bulkButton = (action: StatusAction, primary = false) => (
     <Popconfirm
       key={action}
       title={`${ACTION_VERB[action]} ${selected.length} post${selected.length === 1 ? "" : "s"}?`}
@@ -389,17 +409,21 @@ export default function PostsPage() {
         </Button>
       </div>
 
-      {/* Five tabs are wider than a phone: the strip scrolls by itself instead of the page. */}
+      {/* Six tabs are wider than a phone: the strip scrolls by itself instead of the page. */}
       <div className="mb-4" style={{ overflowX: "auto", maxWidth: "100%" }}>
         <div className="cms-segmented" role="tablist" aria-label="Status" style={{ whiteSpace: "nowrap" }}>
-          {[{ label: "All", value: undefined as PostStatus | undefined, n: total }, ...STATUSES.map((s) => ({ label: STATUS_LABELS[s], value: s, n: counts?.[s] }))].map(
+          {[
+            { label: "All", value: undefined as string | undefined, n: total },
+            ...STATUSES.map((s) => ({ label: STATUS_LABELS[s], value: s as string, n: counts?.[s] })),
+            { label: "Trash", value: "TRASH", n: facets.data?.trashCount },
+          ].map(
             (o) => (
               <button
                 key={o.label}
                 type="button"
                 role="tab"
-                className={query.status === o.value ? "is-on" : undefined}
-                aria-selected={query.status === o.value}
+                className={(inTrash ? "TRASH" : query.status) === o.value ? "is-on" : undefined}
+                aria-selected={(inTrash ? "TRASH" : query.status) === o.value}
                 onClick={() => update({ status: o.value })}
               >
                 {o.label}
@@ -410,102 +434,111 @@ export default function PostsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Input.Search
-          allowClear
-          placeholder="Search title or slug"
-          style={{ width: 260 }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onSearch={(v) => update({ q: v.trim() || undefined })}
-        />
-        <Select
-          allowClear
-          placeholder="Any category"
-          style={{ width: 190 }}
-          value={query.category}
-          onChange={(v) => update({ category: v })}
-          options={(facets.data?.categories ?? []).map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))}
-        />
-        <DatePicker
-          picker="month"
-          allowClear
-          placeholder="Updated month"
-          value={monthValue}
-          onChange={(d) => update({ month: d ? d.format("YYYY-MM") : undefined })}
-        />
-        <Select
-          style={{ width: 210 }}
-          value={query.sort ?? "updated_desc"}
-          onChange={(v) => update({ sort: v === "updated_desc" ? undefined : v })}
-          options={SORTS.map((s) => ({ value: s, label: SORT_LABELS[s] }))}
-        />
-        {filtersOn && (
-          <Button type="link" onClick={clearAll}>
-            Clear filters
-          </Button>
-        )}
-      </div>
-
-      {selected.length > 0 && (
-        <div
-          className="flex flex-wrap items-center gap-3 mb-4"
-          style={{ padding: "10px 14px", borderRadius: 12, background: "#eaf2ff", border: "1px solid #bcd9fb" }}
-        >
-          <b style={{ color: "#0b1b3a" }}>{selected.length} selected</b>
-          {overLimit && <span style={{ color: "#b42318" }}>Select at most {BULK_LIMIT} at a time</span>}
-          {bulkButton("PUBLISH", true)}
-          {bulkButton("UNPUBLISH")}
-          {bulkButton("ARCHIVE")}
-          <Button type="link" onClick={() => setSelected([])}>
-            Clear selection
-          </Button>
+      {inTrash && site ? (
+        <PostsTrash site={site} onChanged={refresh} />
+      ) : (
+        <>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <Input.Search
+            allowClear
+            placeholder="Search title or slug"
+            style={{ width: 260 }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={(v) => update({ q: v.trim() || undefined })}
+          />
+          <Select
+            allowClear
+            placeholder="Any category"
+            style={{ width: 190 }}
+            value={query.category}
+            onChange={(v) => update({ category: v })}
+            options={(facets.data?.categories ?? []).map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))}
+          />
+          <DatePicker
+            picker="month"
+            allowClear
+            placeholder="Updated month"
+            value={monthValue}
+            onChange={(d) => update({ month: d ? d.format("YYYY-MM") : undefined })}
+          />
+          <Select
+            style={{ width: 210 }}
+            value={query.sort ?? "updated_desc"}
+            onChange={(v) => update({ sort: v === "updated_desc" ? undefined : v })}
+            options={SORTS.map((s) => ({ value: s, label: SORT_LABELS[s] }))}
+          />
+          {filtersOn && (
+            <Button type="link" onClick={clearAll}>
+              Clear filters
+            </Button>
+          )}
         </div>
-      )}
 
-      <Table<PostRow>
-        className="cms-table"
-        rowKey="id"
-        columns={columns}
-        dataSource={rows}
-        loading={list.isFetching}
-        tableLayout="fixed"
-        scroll={{ x: 980 }}
-        rowSelection={{
-          selectedRowKeys: selected,
-          preserveSelectedRowKeys: true,
-          onChange: (keys) => setSelected(keys as number[]),
-        }}
-        pagination={{
-          current: list.data?.page ?? query.page ?? 1,
-          pageSize: PAGE_SIZE,
-          total: list.data?.totalItems ?? 0,
-          showSizeChanger: false,
-          hideOnSinglePage: true,
-          showTotal: (n, range) => `${range[0]}–${range[1]} of ${n.toLocaleString()}`,
-          onChange: (p) => update({ page: p > 1 ? String(p) : "" }),
-        }}
-        locale={{
-          emptyText: list.isError ? (
-            <Empty description="The posts could not be loaded" />
-          ) : filtersOn ? (
-            <div className="py-14 text-center">
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#0b1b3a" }}>No posts match</div>
-              <p className="mt-2 mb-3" style={{ fontSize: 14, color: "#5b6b86" }}>
-                Nothing fits those filters.
-              </p>
-              <Button onClick={clearAll}>Clear filters</Button>
-            </div>
-          ) : (
-            <div className="py-14 text-center">
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#0b1b3a" }}>Nothing here yet</div>
-              <p className="mt-2 mb-0" style={{ fontSize: 14, color: "#5b6b86" }}>
-                No posts for this site. Create the first one.
-              </p>
-            </div>
-          ),
-        }}
-      />
+        {selected.length > 0 && (
+          <div
+            className="flex flex-wrap items-center gap-3 mb-4"
+            style={{ padding: "10px 14px", borderRadius: 12, background: "#eaf2ff", border: "1px solid #bcd9fb" }}
+          >
+            <b style={{ color: "#0b1b3a" }}>{selected.length} selected</b>
+            {overLimit && <span style={{ color: "#b42318" }}>Select at most {BULK_LIMIT} at a time</span>}
+            {bulkButton("PUBLISH", true)}
+            {bulkButton("UNPUBLISH")}
+            {bulkButton("ARCHIVE")}
+          <Button danger disabled={overLimit} loading={bulk.isPending} onClick={() => moveToTrash(selected)}>
+            Move to Trash
+          </Button>
+            <Button type="link" onClick={() => setSelected([])}>
+              Clear selection
+            </Button>
+          </div>
+        )}
+
+        <Table<PostRow>
+          className="cms-table"
+          rowKey="id"
+          columns={columns}
+          dataSource={rows}
+          loading={list.isFetching}
+          tableLayout="fixed"
+          scroll={{ x: 980 }}
+          rowSelection={{
+            selectedRowKeys: selected,
+            preserveSelectedRowKeys: true,
+            onChange: (keys) => setSelected(keys as number[]),
+          }}
+          pagination={{
+            current: list.data?.page ?? query.page ?? 1,
+            pageSize: PAGE_SIZE,
+            total: list.data?.totalItems ?? 0,
+            showSizeChanger: false,
+            hideOnSinglePage: true,
+            showTotal: (n, range) => `${range[0]}–${range[1]} of ${n.toLocaleString()}`,
+            onChange: (p) => update({ page: p > 1 ? String(p) : "" }),
+          }}
+          locale={{
+            emptyText: list.isError ? (
+              <Empty description="The posts could not be loaded" />
+            ) : filtersOn ? (
+              <div className="py-14 text-center">
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#0b1b3a" }}>No posts match</div>
+                <p className="mt-2 mb-3" style={{ fontSize: 14, color: "#5b6b86" }}>
+                  Nothing fits those filters.
+                </p>
+                <Button onClick={clearAll}>Clear filters</Button>
+              </div>
+            ) : (
+              <div className="py-14 text-center">
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#0b1b3a" }}>Nothing here yet</div>
+                <p className="mt-2 mb-0" style={{ fontSize: 14, color: "#5b6b86" }}>
+                  No posts for this site. Create the first one.
+                </p>
+              </div>
+            ),
+          }}
+        />
+        </>
+      )}
     </div>
   );
 }

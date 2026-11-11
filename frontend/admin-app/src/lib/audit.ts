@@ -1,7 +1,7 @@
 import { contentApi } from "./api";
 import { RESOURCES } from "../config/resources";
 
-export type AuditAction = "CREATE" | "UPDATE" | "SCHEDULE" | "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "DELETE" | "RESTORE";
+export type AuditAction = "CREATE" | "UPDATE" | "SCHEDULE" | "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "DELETE" | "RESTORE" | "TRASH" | "UNTRASH";
 
 /** One line of an item's history or of the site's activity feed. */
 export interface AuditEntry {
@@ -99,6 +99,8 @@ export const ACTION_LABELS: Record<AuditAction, string> = {
   ARCHIVE: "Archived",
   DELETE: "Deleted",
   RESTORE: "Restored",
+  TRASH: "Moved to Trash",
+  UNTRASH: "Restored from Trash",
 };
 
 /** antd Tag colours, one per kind of change. */
@@ -111,6 +113,8 @@ export const ACTION_COLORS: Record<AuditAction, string> = {
   ARCHIVE: "gold",
   DELETE: "red",
   RESTORE: "purple",
+  TRASH: "volcano",
+  UNTRASH: "lime",
 };
 
 /** The content type behind a resource screen: posts and case studies have their own type keys. */
