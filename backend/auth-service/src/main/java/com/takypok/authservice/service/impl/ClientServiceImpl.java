@@ -101,7 +101,13 @@ public class ClientServiceImpl implements ClientService {
   }
 
   private void savePolicy(String registeredClientId, boolean singleTab, boolean failOpen) {
-    policyRepository.save(new ClientSessionPolicy(registeredClientId, singleTab, failOpen));
+    // Load the row so the settings this call does not carry (the session cap) are kept.
+    ClientSessionPolicy policy =
+        policyRepository.findById(registeredClientId).orElseGet(ClientSessionPolicy::new);
+    policy.setRegisteredClientId(registeredClientId);
+    policy.setSingleTab(singleTab);
+    policy.setFailOpen(failOpen);
+    policyRepository.save(policy);
   }
 
   private RegisteredClient buildClient(

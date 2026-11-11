@@ -10,9 +10,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Wraps the standard OIDC logout check. The standard logout only ends the browser session; it
- * leaves the device's refresh token valid for its full day. After the request is verified (so only
- * a valid ID token can trigger this), this ends the device too: refresh token deleted, access token
- * blacklisted, and the logout written to the audit log.
+ * leaves the device's refresh token valid for its full lifetime. After the request is verified (so
+ * only a valid ID token can trigger this), this ends the device too: refresh token deleted, access
+ * token blacklisted, and the logout written to the audit log.
  */
 public class SessionEndingLogoutProvider implements AuthenticationProvider {
 

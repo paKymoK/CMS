@@ -243,6 +243,10 @@ CREATE TABLE IF NOT EXISTS client_session_policy
     registered_client_id VARCHAR(100) NOT NULL,
     single_tab           BOOLEAN      NOT NULL DEFAULT FALSE,
     fail_open            BOOLEAN      NOT NULL DEFAULT TRUE,
+    -- Days a sign-in may last in total, counted from the login however often it is refreshed.
+    -- NULL = no limit. A client with no row here gets 30 (SessionService.DEFAULT_MAX_SESSION_DAYS).
+    max_session_days     INTEGER      DEFAULT 30,
+    CONSTRAINT ck_csp_max_session_days CHECK (max_session_days IS NULL OR max_session_days > 0),
     CONSTRAINT client_session_policy_pkey PRIMARY KEY (registered_client_id),
     CONSTRAINT fk_csp_client FOREIGN KEY (registered_client_id) REFERENCES oauth2_registered_client (id) ON DELETE CASCADE
 );

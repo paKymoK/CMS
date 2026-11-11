@@ -3,6 +3,7 @@ package com.takypok.authservice.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.authservice.model.entity.AuditAction;
+import com.takypok.authservice.model.entity.ClientSessionPolicy;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -58,6 +59,45 @@ public class SessionService {
   private final AuditService audit;
   private final StringRedisTemplate redis;
   private final ObjectMapper objectMapper;
+
+  // ── lifetime ──
+
+  /**
+   * The latest moment the refresh token of this sign-in may still work: {@code expiresAt} (now plus
+   * the token lifetime), cut short by the client's session cap counted from the login. A client
+   * with no cap ({@code max_session_days} NULL) keeps {@code expiresAt}; one with no policy row
+   * gets {@link ClientSessionPolicy#DEFAULT_MAX_SESSION_DAYS}. Never throws: if the cap cannot be
+   * read the token keeps its normal lifetime and the failure is logged.
+   */
+  public Instant refreshExpiry(
+      String registeredClientId, String authorizationId, Instant expiresAt) {
+    try {
+      List<Instant> caps =
+          jdbc.query(
+              "SELECT CASE WHEN p.registered_client_id IS NULL THEN :default"
+                  + " ELSE p.max_session_days END AS days, s.created_at"
+                  + " FROM (SELECT 1) one"
+                  + " LEFT JOIN client_session_policy p ON p.registered_client_id = :client"
+                  + " LEFT JOIN auth_session s ON s.authorization_id = :auth",
+              new MapSqlParameterSource("client", registeredClientId)
+                  .addValue("auth", authorizationId)
+                  .addValue("default", ClientSessionPolicy.DEFAULT_MAX_SESSION_DAYS),
+              (rs, i) -> {
+                int days = rs.getInt("days");
+                if (rs.wasNull()) return null; // no limit
+                OffsetDateTime started = rs.getObject("created_at", OffsetDateTime.class);
+                // No row yet means this very login is only now being recorded.
+                Instant from = started == null ? Instant.now() : started.toInstant();
+                return from.plus(Duration.ofDays(days));
+              });
+      Instant cap = caps.isEmpty() ? null : caps.get(0);
+      return cap != null && cap.isBefore(expiresAt) ? cap : expiresAt;
+    } catch (RuntimeException ex) {
+      log.warn(
+          "Could not read the session cap of client {}: {}", registeredClientId, ex.getMessage());
+      return expiresAt;
+    }
+  }
 
   // ── recording ──
 

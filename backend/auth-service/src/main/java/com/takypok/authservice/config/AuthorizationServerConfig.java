@@ -33,6 +33,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.core.OAuth2Token;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -209,7 +212,7 @@ public class AuthorizationServerConfig {
     TokenSettings tokenSettings =
         TokenSettings.builder()
             .accessTokenTimeToLive(Duration.ofMinutes(15))
-            .refreshTokenTimeToLive(Duration.ofDays(1))
+            .refreshTokenTimeToLive(Duration.ofDays(7))
             .reuseRefreshTokens(false)
             .build();
 
@@ -319,7 +322,8 @@ public class AuthorizationServerConfig {
   @Bean
   public OAuth2TokenGenerator<OAuth2Token> tokenGenerator(
       JWKSource<SecurityContext> jwkSource,
-      OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer) {
+      OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer,
+      SessionService sessionService) {
     JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource));
     jwtGenerator.setJwtCustomizer(tokenCustomizer);
 
@@ -334,6 +338,21 @@ public class AuthorizationServerConfig {
           Instant expiresAt =
               now.plus(
                   context.getRegisteredClient().getTokenSettings().getRefreshTokenTimeToLive());
+          // The client's session cap counts from the login, so a refresh never pushes a sign-in
+          // past it; once it is reached the refresh is refused and the person signs in again.
+          if (context.getAuthorization() != null) {
+            expiresAt =
+                sessionService.refreshExpiry(
+                    context.getRegisteredClient().getId(),
+                    context.getAuthorization().getId(),
+                    expiresAt);
+            if (!expiresAt.isAfter(now)
+                && AuthorizationGrantType.REFRESH_TOKEN.equals(
+                    context.getAuthorizationGrantType())) {
+              throw new OAuth2AuthenticationException(
+                  new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT));
+            }
+          }
           return new OAuth2RefreshToken(UUID.randomUUID().toString(), now, expiresAt);
         };
 
