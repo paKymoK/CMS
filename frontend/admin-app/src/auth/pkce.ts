@@ -67,6 +67,11 @@ export async function exchangeCodeForToken(
   return data;
 }
 
+/** The server could not be asked (network down, 5xx, 429): the refresh token may still be good. */
+export class RefreshUnavailableError extends Error {}
+/** The server refused the refresh token (invalid_grant, expired, revoked): the sign-in is over. */
+export class RefreshRejectedError extends Error {}
+
 // cms-admin is a PUBLIC client (ClientAuthenticationMethod.NONE, PKCE-only, no secret) —
 // unlike a confidential client, the refresh_token grant authenticates with client_id in the
 // body alone, never a Basic auth header (there's no secret to put in one).
@@ -77,14 +82,27 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenRes
     client_id: CLIENT_ID,
   });
 
-  const response = await fetch(`${AUTH_SERVER}/oauth2/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-  const data = (await response.json()) as TokenResponse;
-  if (!data.access_token) {
-    throw new Error(`Token refresh failed: ${JSON.stringify(data)}`);
+  let response: Response;
+  try {
+    response = await fetch(`${AUTH_SERVER}/oauth2/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
+  } catch {
+    throw new RefreshUnavailableError("Could not reach the sign-in server");
+  }
+  if (response.status >= 500 || response.status === 429) {
+    throw new RefreshUnavailableError(`Sign-in server answered ${response.status}`);
+  }
+  let data: TokenResponse | undefined;
+  try {
+    data = (await response.json()) as TokenResponse;
+  } catch {
+    throw new RefreshUnavailableError("Unreadable answer from the sign-in server");
+  }
+  if (!response.ok || !data?.access_token) {
+    throw new RefreshRejectedError(`Token refresh refused: ${JSON.stringify(data)}`);
   }
   return data;
 }

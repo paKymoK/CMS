@@ -1,7 +1,8 @@
 import axios, { type AxiosInstance } from "axios";
 import { message } from "antd";
 import { notifyLogout } from "./tokenSync";
-import { refreshTokenIfPossible } from "./refreshSingleton";
+import { tokenStore } from "../auth/tokenStore";
+import { refreshTokenIfPossible, RefreshUnavailableError } from "./refreshSingleton";
 
 let isLoggingOut = false;
 
@@ -35,7 +36,7 @@ function createApi(servicePath: string): AxiosInstance {
   const api = axios.create({ baseURL: serviceUrl(servicePath) });
 
   api.interceptors.request.use((config) => {
-    const token = sessionStorage.getItem("access_token");
+    const token = tokenStore.getAccess();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   });
@@ -47,7 +48,21 @@ function createApi(servicePath: string): AxiosInstance {
 
       if (status === 401 && isRetriableConfig(error.config) && !error.config._retry) {
         error.config._retry = true;
-        const newAccessToken = await refreshTokenIfPossible();
+        const sent = toPlainHeaders(error.config.headers).Authorization;
+        let newAccessToken: string | null;
+        try {
+          newAccessToken = await refreshTokenIfPossible(sent?.replace(/^Bearer /, ""));
+        } catch (refreshError) {
+          if (refreshError instanceof RefreshUnavailableError) {
+            // The sign-in server cannot be reached: the sign-in may still be good, so keep it.
+            message.warning({
+              content: "Could not renew your session. Check your connection and try again.",
+              key: "session-unavailable",
+            });
+            return Promise.reject(error);
+          }
+          throw refreshError;
+        }
         if (newAccessToken) {
           isLoggingOut = false;
           const headers = toPlainHeaders(error.config.headers);

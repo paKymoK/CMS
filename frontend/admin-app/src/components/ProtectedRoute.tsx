@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { Spin } from "antd";
 import { useAuth } from "../auth/useAuth";
+import { tokenStore } from "../auth/tokenStore";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -13,7 +14,7 @@ export default function ProtectedRoute() {
     );
   }
 
-  if (!isAuthenticated && !sessionStorage.getItem("access_token")) {
+  if (!isAuthenticated && !tokenStore.getAccess()) {
     return <Navigate to="/login" replace />;
   }
 

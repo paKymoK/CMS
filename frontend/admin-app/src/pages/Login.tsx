@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { ArrowRightIcon, CloseIcon } from "../components/icons";
 import { useAuth } from "../auth/useAuth";
 import { SITES } from "../config/sites";
@@ -12,13 +13,18 @@ const PERKS = [
 // Split-screen sign-in: a brand panel on the left (hidden-ish on narrow screens by wrapping), the
 // SSO action on the right. The only way in is CMC SSO (OAuth2 + PKCE), so there is no password form.
 export default function Login() {
-  const { login, authError, clearAuthError } = useAuth();
+  const { login, authError, clearAuthError, isAuthenticated, isLoading } = useAuth();
   const [busy, setBusy] = useState(false);
 
   const handleLogin = () => {
     setBusy(true);
     login();
   };
+
+  // Already signed in, or signed in again from the saved refresh token (AuthProvider does that
+  // while isLoading): nothing to press, go straight to the app.
+  if (isLoading) return null;
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   return (
     <div className="cms-login">
