@@ -1,5 +1,8 @@
 import type {
   AboutPageData,
+  FooterNavColumn,
+  SiteFooterData,
+  SiteHeaderBarItem,
   CaseStudyArticleData,
   CaseStudyArticleLabels,
   IndustryPageData,
@@ -27,10 +30,27 @@ export type PreviewPage =
   | { kind: "industry"; page: IndustryPageData }
   | { kind: "service"; page: ServicePageData; categoryName: string; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData };
 
+/** The site-wide footer content the frame draws around the page (the admin fetches it; the frame has no access to the API). */
+export interface PreviewChrome {
+  footerNav: FooterNavColumn[];
+  footer?: SiteFooterData;
+}
+
 export interface PreviewMessage {
   type: typeof MSG_RENDER;
   page: PreviewPage;
+  chrome?: PreviewChrome;
 }
+
+/** The labels of the website's header, in its order (website/content/nav.ts HEADER_NAV): the preview draws them as a still picture. */
+export const HEADER_ITEMS: SiteHeaderBarItem[] = [
+  { label: "About Us" },
+  { label: "Services", hasDropdown: true },
+  { label: "Industries", hasDropdown: true },
+  { label: "Insights" },
+  { label: "Career" },
+  { label: "Contact" },
+];
 
 /** The public pages are English-only today, so the preview uses the site's English strings. */
 export const POST_LABELS: PostArticleLabels = {

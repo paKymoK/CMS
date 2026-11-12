@@ -175,6 +175,18 @@ function field(config: FieldConfig): FieldConfig {
   return { showInTable: scalarDefault(config.type), ...config };
 }
 
+/** The SEO fields added by the 051126 BRD (canonical, follow, share text, structured data), appended after the original four. */
+function seoMoreFields(group?: string): FieldConfig[] {
+  const g = group ? { group } : {};
+  return [
+    field({ name: "seoCanonical", label: "Canonical URL (https only; blank means this page's own address)", type: "text", showInTable: false, ...g }),
+    field({ name: "seoNofollow", label: "Ask search engines not to follow links on this page", type: "boolean", showInTable: false, ...g }),
+    field({ name: "seoOgTitle", label: "Share title (Open Graph; falls back to the meta title)", type: "text", showInTable: false, ...g }),
+    field({ name: "seoOgDescription", label: "Share description (Open Graph; falls back to the meta description)", type: "textarea", showInTable: false, ...g }),
+    field({ name: "seoJsonLd", label: "Structured data (JSON-LD: one JSON object, or a list of objects)", type: "textarea", showInTable: false, ...g }),
+  ];
+}
+
 export const RESOURCES: ResourceConfig[] = [
   {
     key: "stats",
@@ -237,6 +249,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "Meta description (falls back to the summary)", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the cover image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...seoMoreFields("seo"),
       field({ name: "title", label: "Title", type: "text", required: true }),
       field({ name: "summary", label: "Summary (shown on cards and under the title)", type: "textarea", showInTable: false }),
       field({ name: "image", label: "Cover image", type: "image" }),
@@ -283,6 +296,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "Meta description", type: "textarea", showInTable: false }),
       field({ name: "seoImage", label: "Share image", type: "image", showInTable: false }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false }),
+      ...seoMoreFields(),
     ],
   },
   {
@@ -608,6 +622,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...seoMoreFields("seo"),
     ],
   },
   {
@@ -746,6 +761,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...seoMoreFields("seo"),
     ],
   },
   {
@@ -884,6 +900,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...seoMoreFields("seo"),
     ],
   },
   {

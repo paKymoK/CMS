@@ -25,5 +25,10 @@ public class CaseStudyUpdateRequest {
   private String seoDescription;
   private String seoImage;
   private Boolean seoNoindex;
+  private String seoCanonical;
+  private Boolean seoNofollow;
+  private String seoOgTitle;
+  private String seoOgDescription;
+  private String seoJsonLd;
   private Integer version;
 }

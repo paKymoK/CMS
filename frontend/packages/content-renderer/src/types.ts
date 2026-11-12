@@ -164,6 +164,14 @@ export interface ServicePageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Canonical address override (https); blank means the page's own address. */
+  seoCanonical?: string | null;
+  seoNofollow?: boolean;
+  /** Open Graph text; each falls back to the search-engine title / description. */
+  seoOgTitle?: string | null;
+  seoOgDescription?: string | null;
+  /** Structured data (JSON-LD) text, validated by the server. */
+  seoJsonLd?: string | null;
 }
 
 /** One card of the success-stories stack; the first card carries the left-column heading and figures. */
@@ -264,6 +272,14 @@ export interface IndustryPageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Canonical address override (https); blank means the page's own address. */
+  seoCanonical?: string | null;
+  seoNofollow?: boolean;
+  /** Open Graph text; each falls back to the search-engine title / description. */
+  seoOgTitle?: string | null;
+  seoOgDescription?: string | null;
+  /** Structured data (JSON-LD) text, validated by the server. */
+  seoJsonLd?: string | null;
 }
 
 export interface AboutLeaderData {
@@ -339,4 +355,12 @@ export interface AboutPageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Canonical address override (https); blank means the page's own address. */
+  seoCanonical?: string | null;
+  seoNofollow?: boolean;
+  /** Open Graph text; each falls back to the search-engine title / description. */
+  seoOgTitle?: string | null;
+  seoOgDescription?: string | null;
+  /** Structured data (JSON-LD) text, validated by the server. */
+  seoJsonLd?: string | null;
 }

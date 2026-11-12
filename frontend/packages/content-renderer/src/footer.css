@@ -1,0 +1,155 @@
+/*
+ * The site footer (Figma "Footer"), shared by the website and the admin's preview. Inside a
+ * `.design-canvas` every length is an artboard pixel × --u from 900px up.
+ */
+.ftr {
+  position: relative;
+  padding: 56px 24px 32px;
+  background: linear-gradient(115deg, #010101, #171f31);
+  color: #fff;
+}
+.ftr-lead {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.ftr-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  transition: color 0.2s ease;
+}
+.ftr-cta:hover {
+  color: #00bbff;
+}
+.ftr-social {
+  display: flex;
+  gap: 14px;
+  margin-top: 28px;
+}
+.ftr-social a {
+  display: block;
+  width: 33px;
+  height: 33px;
+  transition: opacity 0.2s ease;
+}
+.ftr-social a:hover {
+  opacity: 0.7;
+}
+.ftr-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 24px;
+  margin-top: 40px;
+}
+.ftr-col-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+.ftr-col ul {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+.ftr-col li {
+  line-height: 1.15;
+}
+.ftr-col a {
+  display: block;
+  font-size: 16px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  transition: color 0.2s ease;
+}
+.ftr-col a:hover {
+  color: #00bbff;
+}
+.ftr-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #fff;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.ftr-legal {
+  display: flex;
+  gap: 32px;
+}
+.ftr-bar a:hover {
+  color: #00bbff;
+}
+@media (min-width: 900px) {
+  .ftr-cols {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .ftr {
+    height: calc(480 * var(--u));
+    padding: 0;
+  }
+  .ftr-lead {
+    position: absolute;
+    left: calc(246 * var(--u));
+    top: calc(71 * var(--u));
+    font-size: max(26px, calc(36 * var(--u)));
+  }
+  .ftr-cta {
+    position: absolute;
+    left: calc(246 * var(--u));
+    top: calc(120 * var(--u));
+    margin: 0;
+    font-size: max(20px, calc(26 * var(--u)));
+  }
+  .ftr-social {
+    position: absolute;
+    left: calc(246 * var(--u));
+    top: calc(239 * var(--u));
+    margin: 0;
+    gap: calc(14 * var(--u));
+  }
+  .ftr-social a {
+    width: max(28px, calc(33 * var(--u)));
+    height: max(28px, calc(33 * var(--u)));
+  }
+  .ftr-cols {
+    position: absolute;
+    left: calc(938 * var(--u));
+    top: calc(71 * var(--u));
+    display: grid;
+    grid-template-columns: calc(198 * var(--u)) calc(178 * var(--u)) calc(144 * var(--u)) calc(198 * var(--u));
+    gap: 0 calc(20 * var(--u));
+    margin: 0;
+  }
+  .ftr-col-title {
+    font-size: max(17px, calc(20 * var(--u)));
+  }
+  .ftr-col ul {
+    margin-top: calc(18 * var(--u));
+    gap: calc(18 * var(--u));
+  }
+  .ftr-col a {
+    font-size: max(13px, calc(16 * var(--u)));
+  }
+  .ftr-bar {
+    position: absolute;
+    left: calc(29 * var(--u));
+    right: calc(29 * var(--u));
+    top: calc(379 * var(--u));
+    margin: 0;
+    padding: calc(29 * var(--u)) calc(217 * var(--u)) 0 calc(217 * var(--u));
+    font-size: max(13px, calc(16 * var(--u)));
+  }
+}

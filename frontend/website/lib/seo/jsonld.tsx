@@ -29,3 +29,23 @@ export function JsonLd({ data }: { data: Record<string, unknown> }) {
   // JSON, so this stays safe even if this ever gets fed non-static content.
   return <script type="application/ld+json">{JSON.stringify(data)}</script>;
 }
+
+/**
+ * The structured data an editor typed for a page (server-checked JSON). Parsed and written back out
+ * with "<" escaped, so nothing in it can close the script tag, and skipped if it is not JSON.
+ */
+export function CustomJsonLd({ text }: { text?: string | null }) {
+  if (!text?.trim()) return null;
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
+    />
+  );
+}

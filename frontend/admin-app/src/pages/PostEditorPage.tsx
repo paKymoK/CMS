@@ -52,6 +52,11 @@ interface PostRecord {
   seoDescription: string | null;
   seoImage: string | null;
   seoNoindex: boolean | null;
+  seoCanonical: string | null;
+  seoNofollow: boolean | null;
+  seoOgTitle: string | null;
+  seoOgDescription: string | null;
+  seoJsonLd: string | null;
 }
 
 const LAYOUTS = [
@@ -173,6 +178,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [seoDescription, setSeoDescription] = useState(initial?.seoDescription ?? "");
   const [seoImage, setSeoImage] = useState(initial?.seoImage ?? "");
   const [seoNoindex, setSeoNoindex] = useState(initial?.seoNoindex ?? false);
+  const [seoNofollow, setSeoNofollow] = useState(initial?.seoNofollow ?? false);
+  const [seoCanonical, setSeoCanonical] = useState(initial?.seoCanonical ?? "");
+  const [seoOgTitle, setSeoOgTitle] = useState(initial?.seoOgTitle ?? "");
+  const [seoOgDescription, setSeoOgDescription] = useState(initial?.seoOgDescription ?? "");
+  const [seoJsonLd, setSeoJsonLd] = useState(initial?.seoJsonLd ?? "");
   const initialScan = wordsAndOutline(initial?.body ?? seed?.body ?? "");
   const [words, setWords] = useState(initialScan.words);
   const [outline, setOutline] = useState<{ n: string; text: string }[]>(initialScan.outline);
@@ -198,6 +208,9 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     fallbackDescription: excerpt.trim() || body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(),
     fallbackImage: image ?? "",
     noindex: seoNoindex,
+    canonical: seoCanonical,
+    nofollow: seoNofollow,
+    jsonLd: seoJsonLd,
   };
   const seoCheckList = seoChecks({ ...seoValues, slug: { value: slug, url: `/insights/${slug || "…"}` }, body });
   const [snippetOpen, setSnippetOpen] = useState(false);
@@ -226,6 +239,11 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         seoDescription,
         seoImage,
         seoNoindex,
+        seoCanonical,
+        seoNofollow,
+        seoOgTitle,
+        seoOgDescription,
+        seoJsonLd,
       };
       if (isNew) return contentApi.post(API_PATH, payload, { params: { site } });
       return contentApi.put(API_PATH, payload, { params: { site } });
@@ -871,6 +889,74 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                 />
                 <span style={cardLabelStyle}>Hide from search engines</span>
               </label>
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={seoNofollow}
+                  onChange={(e) => {
+                    setSeoNofollow(e.target.checked);
+                    setDirty(true);
+                  }}
+                />
+                <span style={cardLabelStyle}>Don't follow links on this page</span>
+              </label>
+              <details style={{ borderTop: "1px solid #eef2f9", paddingTop: 10 }} open={!!(seoCanonical || seoOgTitle || seoOgDescription || seoJsonLd)}>
+                <summary style={{ ...cardLabelStyle, cursor: "pointer" }}>More SEO options</summary>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={cardLabelStyle}>Canonical URL</span>
+                    <input
+                      value={seoCanonical}
+                      onChange={(e) => {
+                        setSeoCanonical(e.target.value);
+                        setDirty(true);
+                      }}
+                      placeholder="https://… (blank: this page's own address)"
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={cardLabelStyle}>Share title (Open Graph)</span>
+                    <input
+                      value={seoOgTitle}
+                      onChange={(e) => {
+                        setSeoOgTitle(e.target.value);
+                        setDirty(true);
+                      }}
+                      placeholder="Left blank, the meta title is used"
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={cardLabelStyle}>Share description (Open Graph)</span>
+                    <textarea
+                      rows={2}
+                      value={seoOgDescription}
+                      onChange={(e) => {
+                        setSeoOgDescription(e.target.value);
+                        setDirty(true);
+                      }}
+                      placeholder="Left blank, the meta description is used"
+                      style={{ border: "1px solid #dde4f0", padding: "10px 12px", resize: "vertical", fontFamily: "inherit", fontSize: 14, lineHeight: 1.5, color: "#0b1b3a", outline: "none" }}
+                    />
+                  </label>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={cardLabelStyle}>Structured data (JSON-LD)</span>
+                    <textarea
+                      rows={5}
+                      value={seoJsonLd}
+                      onChange={(e) => {
+                        setSeoJsonLd(e.target.value);
+                        setDirty(true);
+                      }}
+                      spellCheck={false}
+                      placeholder='{"@context": "https://schema.org", "@type": "Article", …}'
+                      style={{ border: "1px solid #dde4f0", padding: "10px 12px", resize: "vertical", fontFamily: "var(--font-mono)", fontSize: 12, lineHeight: 1.5, color: "#0b1b3a", outline: "none" }}
+                    />
+                    <span style={{ fontSize: 12, color: "#7b8aa5" }}>One JSON object, or a list of objects. Added to the page as is.</span>
+                  </label>
+                </div>
+              </details>
               <SeoChecklist checks={seoCheckList} onPreview={() => setSnippetOpen(true)} />
             </div>
           </div>

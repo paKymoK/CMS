@@ -2,11 +2,13 @@ package com.takypok.contentservice.model.content.types;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
+import com.takypok.contentservice.model.annotation.JsonLd;
 import com.takypok.contentservice.model.content.ContentFields;
 import com.takypok.contentservice.model.content.blocks.AboutBlock;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.Getter;
@@ -48,6 +50,25 @@ public class AboutPageFields implements ContentFields {
 
   /** Asks search engines not to index the page. */
   private Boolean seoNoindex;
+
+  /** Canonical address (https only); blank means the page's own address. */
+  @Pattern(regexp = "^$|^https://\\S+$", message = "must be an https:// address")
+  @Size(max = 2000)
+  private String seoCanonical;
+
+  /** Asks search engines not to follow the page's links (independent of noindex). */
+  private Boolean seoNofollow;
+
+  /** Open Graph title: when blank the search-engine title is used. */
+  @Size(max = 255)
+  private String seoOgTitle;
+
+  /** Open Graph description: when blank the search-engine description is used. */
+  @Size(max = 500)
+  private String seoOgDescription;
+
+  /** Structured data (JSON-LD) added to the page: one JSON object, or a list of them. */
+  @JsonLd private String seoJsonLd;
 
   @JsonIgnore
   @AssertTrue(message = "each section may appear only once")

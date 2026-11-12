@@ -19,6 +19,10 @@ export interface SeoValues {
   fallbackDescription: string;
   fallbackImage: string;
   noindex: boolean;
+  /** Added by the 051126 BRD; all optional, and only the checklist reads them. */
+  canonical?: string;
+  nofollow?: boolean;
+  jsonLd?: string;
 }
 
 export interface SeoCheckInput extends SeoValues {
@@ -85,6 +89,25 @@ export function seoSnippet(input: SnippetInput, device: SnippetDevice): Snippet 
     descriptionCut: description.cut,
     hidden: input.noindex,
   };
+}
+
+const JSON_LD_MAX = 10_000;
+
+/** Why a structured-data text would be refused (the server applies the same rule), or null when it is fine or empty. */
+export function jsonLdProblem(text: string): string | null {
+  const t = text.trim();
+  if (!t) return null;
+  if (t.length > JSON_LD_MAX) return `It is over ${JSON_LD_MAX} characters.`;
+  let data: unknown;
+  try {
+    data = JSON.parse(t);
+  } catch {
+    return "It is not valid JSON.";
+  }
+  const isObject = (v: unknown) => typeof v === "object" && v !== null && !Array.isArray(v);
+  if (isObject(data)) return null;
+  if (Array.isArray(data) && data.length > 0 && data.every(isObject)) return null;
+  return "It must be one JSON object, or a list of objects.";
 }
 
 /** Search engines show about this many characters before cutting a title or description off. */
@@ -174,6 +197,34 @@ export function seoChecks(input: SeoCheckInput): SeoCheck[] {
         detail: "Select the image in the editor and describe it. Screen readers and search engines rely on it.",
       });
     }
+  }
+
+  const canonical = input.canonical?.trim();
+  if (canonical) {
+    checks.push(
+      /^https:\/\/\S+$/.test(canonical)
+        ? { key: "canonical", level: "ok", label: "Canonical URL", detail: canonical }
+        : { key: "canonical", level: "warn", label: "Canonical URL is not an https:// address", detail: "The server will refuse to save it." },
+    );
+  }
+
+  const jsonLd = input.jsonLd?.trim();
+  if (jsonLd) {
+    const problem = jsonLdProblem(jsonLd);
+    checks.push(
+      problem
+        ? { key: "jsonld", level: "warn", label: "Structured data is not valid", detail: `${problem} The server will refuse to save it.` }
+        : { key: "jsonld", level: "ok", label: "Structured data", detail: "Added to the page as JSON-LD." },
+    );
+  }
+
+  if (input.nofollow) {
+    checks.push({
+      key: "nofollow",
+      level: "warn",
+      label: "Links are not followed",
+      detail: "Search engines are asked not to follow the links on this page.",
+    });
   }
 
   if (input.noindex) {

@@ -45,6 +45,9 @@ function seoValuesFor(resource: ResourceConfig, values: Values): SeoValues {
     fallbackDescription: resource.seo?.fallbackDescription?.(values) ?? "",
     fallbackImage: resource.seo?.fallbackImage?.(values) ?? "",
     noindex: values.seoNoindex === true,
+    canonical: text(values.seoCanonical),
+    nofollow: values.seoNofollow === true,
+    jsonLd: text(values.seoJsonLd),
   };
 }
 

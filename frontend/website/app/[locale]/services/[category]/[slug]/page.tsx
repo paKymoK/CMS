@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { ServicePage as ServicePageView } from "@cms/content-renderer";
+import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getServicePage } from "@/lib/cms/services";
 import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
@@ -29,6 +30,7 @@ export async function generateMetadata(
     description: d.seoDescription || d.heroSubtitle || "",
     ogImage: d.seoImage || d.heroImage,
     noIndex: d.seoNoindex,
+    seo: d,
   });
 }
 
@@ -56,20 +58,23 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
   }));
 
   return (
-    <ServicePageView
-      page={page.data}
-      categoryName={page.category.name}
-      stories={stories}
-      storiesIntro={sectionIntro(content, "service-stories")}
-      slots={siteSlots}
-      industries={
-        <ServiceIndustries
-          cards={content.sections?.industry_card ?? []}
-          intro={sectionIntro(content, "service-industries")}
-        />
-      }
-      highlights={<ServiceHighlights insights={content.insights} intro={sectionIntro(content, "service-highlights")} />}
-      contact={<ContactForm intro={sectionIntro(content, "contact")} />}
-    />
+    <>
+      <CustomJsonLd text={page.data.seoJsonLd} />
+      <ServicePageView
+        page={page.data}
+        categoryName={page.category.name}
+        stories={stories}
+        storiesIntro={sectionIntro(content, "service-stories")}
+        slots={siteSlots}
+        industries={
+          <ServiceIndustries
+            cards={content.sections?.industry_card ?? []}
+            intro={sectionIntro(content, "service-industries")}
+          />
+        }
+        highlights={<ServiceHighlights insights={content.insights} intro={sectionIntro(content, "service-highlights")} />}
+        contact={<ContactForm intro={sectionIntro(content, "contact")} />}
+      />
+    </>
   );
 }

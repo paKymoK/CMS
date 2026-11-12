@@ -22,6 +22,11 @@ public record PostDetailResponse(
     String seoDescription,
     String seoImage,
     Boolean seoNoindex,
+    String seoCanonical,
+    Boolean seoNofollow,
+    String seoOgTitle,
+    String seoOgDescription,
+    String seoJsonLd,
     int readMinutes,
     List<PostSummaryResponse> related) {
 
@@ -45,6 +50,11 @@ public record PostDetailResponse(
         post.seoDescription(),
         post.seoImage(),
         Boolean.TRUE.equals(post.seoNoindex()),
+        post.seoCanonical(),
+        Boolean.TRUE.equals(post.seoNofollow()),
+        post.seoOgTitle(),
+        post.seoOgDescription(),
+        post.seoJsonLd(),
         ReadTimeCalculator.minutesFor(post.body()),
         related);
   }

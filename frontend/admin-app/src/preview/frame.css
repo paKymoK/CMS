@@ -5,6 +5,7 @@
 @import "../../../packages/content-renderer/src/about.css";
 @import "../../../packages/content-renderer/src/industry.css";
 @import "../../../packages/content-renderer/src/service.css";
+@import "../../../packages/content-renderer/src/footer.css";
 @source "../../../packages/content-renderer/src";
 
 /* The website gets these from next/font; the preview frame loads the same families from Google Fonts. */

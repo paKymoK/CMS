@@ -18,6 +18,11 @@ public record CaseStudyDetailResponse(
     String seoDescription,
     String seoImage,
     Boolean seoNoindex,
+    String seoCanonical,
+    Boolean seoNofollow,
+    String seoOgTitle,
+    String seoOgDescription,
+    String seoJsonLd,
     TestimonialSummary testimonial,
     List<CaseStudySummaryResponse> related) {
 
@@ -51,6 +56,11 @@ public record CaseStudyDetailResponse(
         caseStudy.seoDescription(),
         caseStudy.seoImage(),
         Boolean.TRUE.equals(caseStudy.seoNoindex()),
+        caseStudy.seoCanonical(),
+        Boolean.TRUE.equals(caseStudy.seoNofollow()),
+        caseStudy.seoOgTitle(),
+        caseStudy.seoOgDescription(),
+        caseStudy.seoJsonLd(),
         testimonial,
         related);
   }

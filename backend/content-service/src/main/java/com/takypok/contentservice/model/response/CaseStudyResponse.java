@@ -23,6 +23,11 @@ public record CaseStudyResponse(
     String seoDescription,
     String seoImage,
     Boolean seoNoindex,
+    String seoCanonical,
+    Boolean seoNofollow,
+    String seoOgTitle,
+    String seoOgDescription,
+    String seoJsonLd,
     Integer displayOrder,
     String status,
     Integer version) {
@@ -43,6 +48,11 @@ public record CaseStudyResponse(
         fields.getSeoDescription(),
         fields.getSeoImage(),
         fields.getSeoNoindex(),
+        fields.getSeoCanonical(),
+        fields.getSeoNofollow(),
+        fields.getSeoOgTitle(),
+        fields.getSeoOgDescription(),
+        fields.getSeoJsonLd(),
         item.getDisplayOrder(),
         item.getStatus(),
         item.getVersion());

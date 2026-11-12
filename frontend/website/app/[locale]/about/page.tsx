@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { AboutPage as AboutPageView } from "@cms/content-renderer";
+import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getAboutPage } from "@/lib/cms/about";
 import { siteSlots } from "@/components/content/siteSlots";
@@ -19,6 +20,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/about">): Pro
     description: page.seoDescription || page.heroSubtitle || "",
     ogImage: page.seoImage || page.heroImage,
     noIndex: page.seoNoindex,
+    seo: page,
   });
 }
 
@@ -30,5 +32,10 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
   const page = await getAboutPage();
   if (!page) notFound();
 
-  return <AboutPageView page={page} slots={siteSlots} />;
+  return (
+    <>
+      <CustomJsonLd text={page.seoJsonLd} />
+      <AboutPageView page={page} slots={siteSlots} />
+    </>
+  );
 }

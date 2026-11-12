@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { IndustryPage as IndustryPageView } from "@cms/content-renderer";
+import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getIndustryPage } from "@/lib/cms/industries";
 import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
@@ -27,6 +28,7 @@ export async function generateMetadata(
     description: page.seoDescription || page.heroSubtitle || "",
     ogImage: page.seoImage || page.heroImage,
     noIndex: page.seoNoindex,
+    seo: page,
   });
 }
 
@@ -44,27 +46,30 @@ export default async function IndustryPage(props: PageProps<"/[locale]/industrie
   const content = await getHomeContent();
 
   return (
-    <IndustryPageView
-      page={page}
-      slots={siteSlots}
-      insights={(block) => (
-        <InsightsAccordion
-          insights={content.insights}
-          intro={
-            block.title
-              ? {
-                  section: "industry-insights",
-                  eyebrow: block.eyebrow,
-                  title: block.title,
-                  body: block.body,
-                  linkLabel: block.linkLabel,
-                  linkUrl: block.linkUrl,
-                }
-              : undefined
-          }
-        />
-      )}
-      contact={<ContactForm intro={sectionIntro(content, "contact")} />}
-    />
+    <>
+      <CustomJsonLd text={page.seoJsonLd} />
+      <IndustryPageView
+        page={page}
+        slots={siteSlots}
+        insights={(block) => (
+          <InsightsAccordion
+            insights={content.insights}
+            intro={
+              block.title
+                ? {
+                    section: "industry-insights",
+                    eyebrow: block.eyebrow,
+                    title: block.title,
+                    body: block.body,
+                    linkLabel: block.linkLabel,
+                    linkUrl: block.linkUrl,
+                  }
+                : undefined
+            }
+          />
+        )}
+        contact={<ContactForm intro={sectionIntro(content, "contact")} />}
+      />
+    </>
   );
 }

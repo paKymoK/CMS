@@ -41,7 +41,7 @@ The Project Overview, In-Scope list, As-Is / To-Be, NFRs, UI/UX standards and As
 | 8 | Blockquote, table, divider | All present; table has row/col/merge/header controls | ✅ |
 | 9 | Table of contents (H1→H3) | Outline panel built from H2 only; no TOC block | 🟡 |
 | 10 | Undo / Redo | Toolbar | ✅ |
-| 11 | Preview before publish (desktop/tablet/mobile) | Preview button opens the page in an iframe drawn by the same renderer as the website, from the **unsaved** editor state, with Desktop, Tablet (820 px) and Mobile (390 px) widths (`PreviewPanel`). Works for Posts, Case Studies, Service, Industry and About pages. The site header, footer and contact form are not part of the preview, and Home has none. The earlier token-based preview was removed | ✅ |
+| 11 | Preview before publish (desktop/tablet/mobile) | Preview button opens the page in an iframe drawn by the same renderer as the website, from the **unsaved** editor state, with Desktop, Tablet (820 px) and Mobile (390 px) widths (`PreviewPanel`). Works for Posts, Case Studies, Service, Industry and About pages. The site header and footer are drawn around the page (G6); the contact form is not part of the preview, and Home has none. The earlier token-based preview was removed | ✅ |
 | 12 | Search-snippet preview (BRD: the post as it looks in a search result, mobile and desktop, with an example image) | "Search result preview" button in the SEO checklist opens desktop and mobile results built from the unsaved form (`SearchSnippetModal`); also on Case Studies and the page types | ✅ |
 | 13 | Version history + restore (Ver_02: one previous version; 051126 asks for the last 2 for Pages and Templates, nothing for Posts) | Full history in `content_audit` (before/after snapshots), `HistoryDrawer`, RESTORE action | ✅ (exceeds BRD) |
 | 14 | Audit log | DB trigger records CREATE/UPDATE/PUBLISH/UNPUBLISH/DELETE/RESTORE, including direct SQL | ✅ |
@@ -112,7 +112,7 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 ### G4. SEO
 - **Done** for Posts, Case Studies, Service, Industry and About pages: meta title (`seoTitle`, the whole page title), meta description, share image (falls back to the cover or main image) and noindex. Each falls back to the title, excerpt or summary and image used before, so nothing changes until a field is filled in. The Posts editor has an SEO card; the other pages have an SEO section. The website's page metadata (title, description, Open Graph and Twitter image, robots) follows the fields.
 - **SEO checklist warning (BRD): done.** An inline panel lists the slug, meta title, meta description and share image as OK, over the usual length, or missing (with the text that will be used instead), plus a noindex notice. Publishing a draft with items missing asks once ("Publish anyway" / "Go back"); updating a live page never asks. Nothing blocks saving or publishing.
-- **Still missing:** the head/body/footer code-injection field, now dropped from the BRD (see G14); the new fields in G14 (canonical, follow, OG text, JSON-LD). Slug-change redirects are done (aliases).
+- **Still missing:** the head/body/footer code-injection field, now dropped from the BRD (see G14). The G14 fields are done. Slug-change redirects are done (aliases).
 
 ### G5. Per-media metadata in a post
 **Done.**
@@ -126,7 +126,9 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 ### G6. Preview
 - **Done:** the Desktop / Tablet / Mobile preview of unsaved edits (row 11).
 - **Done:** the search-result preview (row 12), desktop and mobile, from the unsaved form.
-- **Limits of what exists:** the preview draws the article or page only, without the site header, footer or contact form; the site-wide sections of Service and Industry pages show a labelled stand-in; Home (not on the page model) has no preview.
+- **Header and footer: done (option A).** The preview now draws the website's header around the page as a still picture (`SiteHeaderBar`: same size and colours, menus closed, nothing to click) and its real footer (`SiteFooterView`, filled from the site's footer content and footer link columns). The footer markup and its CSS moved from the website into the shared renderer (`footer.css`, `SiteFooterView`, `SocialIcons`), so the website and the preview use one copy; the website's `SiteFooter` is a thin wrapper. The header is a replica kept beside the live one (the live header is interactive and reads Next.js routing), so the two must be kept looking alike by hand; its labels are in `previewProtocol.ts` (`HEADER_ITEMS`).
+- **Still not previewed:** the contact form, the industries strip and the latest-highlights/insights sections of Service and Industry pages (labelled stand-ins), the mobile bottom bar, the open Services menu, and Home (not on the page model).
+- **Verified:** in Chrome the About page preview showed the header and the real footer at desktop and mobile width (the nav hides, the footer stacks), and the live website footer still renders with its CSS. Not run: `next build` (a build would overwrite the running dev server's `.next`).
 
 ### G7. Editor blocks missing
 - Share buttons block, table of contents block, form block (only a raw iframe embed), spacer block.
@@ -250,8 +252,12 @@ Pages here means the page types (Service, Industry, About, Case Study, Home). Co
 - **Audit log screen (USR-06):** content changes are in `content_audit` and the activity feed; login history and permission history belong to auth-service. Missing: a filter by user, time range, site and type, and an **xlsx export**. A single screen would need both sources, or two screens (content log in the admin, account log in auth-service). The log stays view-only, which already holds.
 
 ### G14. SEO additions in 051126
-- New fields in the BRD: canonical URL, follow / no-follow (beside index / no-index), Open Graph title and description (we have only the share image), and JSON-LD structured data.
-- Dropped from the BRD: the code-injection field and the redirect manager, which G4 listed as open. Slug redirects exist already (aliases). A redirect manager for arbitrary URLs is no longer asked for.
+**Done** for Posts, Case Studies, and the Service, Industry and About pages (the types that already had SEO fields).
+- **New fields:** canonical URL (`seoCanonical`, https only, up to 2000 characters, blank means the page's own address), "don't follow links" (`seoNofollow`), Open Graph title and description (`seoOgTitle`, `seoOgDescription`, each falling back to the meta title and description) and structured data (`seoJsonLd`: one JSON object or a list of objects, up to 10,000 characters). The server refuses a bad canonical or invalid JSON-LD. They are JSON in `data`, so there is no database change.
+- **Follow is independent of noindex (decision).** Before, "Hide from search engines" also asked search engines not to follow links; now noindex and nofollow are separate switches, so a hidden page's links are followed unless nofollow is on too.
+- **Website:** `buildPageMetadata` takes them (canonical link, robots, Open Graph and Twitter text); the five page types render the JSON-LD in a script tag (`CustomJsonLd`: parsed again and written with `<` escaped, so it cannot close the tag).
+- **Admin:** the post editor has a Don't-follow switch and a "More SEO options" section; the other types get the fields in their SEO section. The SEO checklist shows the canonical, structured-data validity and a nofollow notice.
+- **Verified:** 191 content-service tests pass; in Chrome a post and the About page were saved and published with all five fields, and the live pages showed the canonical link, `index, nofollow`, the Open Graph and Twitter titles and the JSON-LD (a `</script>` inside it came out escaped); the server refused an `http://` canonical, `[1,2]` and an oversized JSON-LD, and an update that left the fields out kept them. No unit tests were added (decision). Dropped from the BRD, still not built: the code-injection field and a redirect manager (slug aliases exist).
 
 ## 3. Design differences to decide
 
@@ -272,7 +278,7 @@ Pages here means the page types (Service, Industry, About, Case Study, Home). Co
 2. ~~Trash (G8)~~ **done for posts** (separate `content_trash` table, 30-day purge job, restore); Categories, Tags, Pages and Components switch it on when they are built.
 3. **Category and Tag tables** per site, the Post pickers, public `/category` and `/tag` pages (G2). Largest single gap and the BRD now specifies it fully.
 4. ~~Dedicated post list~~ **done** (G3), without Trash and the taxonomy: the Trash view and "Move to Trash" are done; bulk assign category / tag waits for 3.
-5. ~~SEO fields and checklist (G4)~~ done; add the G14 fields (canonical, follow, OG text, JSON-LD) when convenient.
+5. ~~SEO fields and checklist (G4)~~ done; ~~the G14 fields (canonical, follow, OG text, JSON-LD)~~ done.
 6. **Page statuses and draft-over-live** for the page types (G11), then parent / child pages and the page list upgrades.
 7. **Roles** (G9) and **user management in auth-service** (G13): *built, except what is parked until the environment and BA confirmation (see the parked list at the end of G13: permission matrix, password policy, MFA factor, SSO, real SMTP).*
 8. Translated-draft action (G10), after Category / Tag tables so the copy carries the taxonomy.

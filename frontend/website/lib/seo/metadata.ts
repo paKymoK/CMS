@@ -17,6 +17,13 @@ type BuildPageMetadataInput = {
   /** null/undefined → DEFAULT_OG_IMAGE (CMS rows without a cover image come back as null). */
   ogImage?: string | null;
   noIndex?: boolean;
+  /** The page's own SEO fields beyond title / description / image / noindex (all optional). */
+  seo?: {
+    seoCanonical?: string | null;
+    seoNofollow?: boolean;
+    seoOgTitle?: string | null;
+    seoOgDescription?: string | null;
+  };
 };
 
 function localizedUrl(locale: string, path: string): string {
@@ -36,8 +43,13 @@ export function buildPageMetadata({
   description,
   ogImage: ogImageInput,
   noIndex = false,
+  seo,
 }: BuildPageMetadataInput): Metadata {
-  const url = localizedUrl(locale, path);
+  const ownUrl = localizedUrl(locale, path);
+  const url = seo?.seoCanonical || ownUrl;
+  const ogTitle = seo?.seoOgTitle || title;
+  const ogDescription = seo?.seoOgDescription || description;
+  const follow = !seo?.seoNofollow;
   const ogImage = ogImageInput || DEFAULT_OG_IMAGE;
   const ogImageUrl = ogImage.startsWith("http") ? ogImage : `${SITE_URL}${ogImage}`;
 
@@ -58,8 +70,8 @@ export function buildPageMetadata({
     },
     openGraph: {
       type: "website",
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url,
       siteName: SITE_NAME,
       locale: OG_LOCALE_MAP[locale] ?? OG_LOCALE_MAP.en,
@@ -67,15 +79,15 @@ export function buildPageMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       images: [ogImageUrl],
     },
     robots: noIndex
-      ? { index: false, follow: false }
+      ? { index: false, follow }
       : {
           index: true,
-          follow: true,
+          follow,
           "max-image-preview": "large",
           "max-snippet": -1,
           "max-video-preview": -1,

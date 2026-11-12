@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
+import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getCaseStudy } from "@/lib/cms/caseStudies";
 import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
@@ -29,6 +30,7 @@ export async function generateMetadata(
     description: caseStudy.seoDescription || caseStudy.summary,
     ogImage: caseStudy.seoImage || caseStudy.image,
     noIndex: caseStudy.seoNoindex,
+    seo: caseStudy,
   });
 }
 
@@ -50,18 +52,21 @@ export default async function CaseStudyDetailPage(
   }
 
   return (
-    <CaseStudyArticle
-      caseStudy={caseStudy}
-      slots={siteSlots}
-      labels={{
-        home: t("home"),
-        eyebrow: t("eyebrow"),
-        discussProject: t("discussProject"),
-        eventPhotography: t("eventPhotography"),
-        results: t("results"),
-        moreWork: t("moreWork"),
-        relatedCaseStudies: t("relatedCaseStudies"),
-      }}
-    />
+    <>
+      <CustomJsonLd text={caseStudy.seoJsonLd} />
+      <CaseStudyArticle
+        caseStudy={caseStudy}
+        slots={siteSlots}
+        labels={{
+          home: t("home"),
+          eyebrow: t("eyebrow"),
+          discussProject: t("discussProject"),
+          eventPhotography: t("eventPhotography"),
+          results: t("results"),
+          moreWork: t("moreWork"),
+          relatedCaseStudies: t("relatedCaseStudies"),
+        }}
+      />
+    </>
   );
 }

@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { contentApi } from "../lib/api";
+import { useSite } from "../lib/useSite";
 import {
   MSG_HEIGHT,
   MSG_READY,
   MSG_RENDER,
   PREVIEW_FRAME_URL,
+  type PreviewChrome,
   type PreviewMessage,
   type PreviewPage,
 } from "../lib/previewProtocol";
@@ -33,6 +37,27 @@ export default function PreviewPanel({
   const [frameReady, setFrameReady] = useState(false);
   const [frameHeight, setFrameHeight] = useState<number | null>(null);
   const [device, setDevice] = useState<DeviceKey>("desktop");
+  const { site } = useSite();
+
+  // The site-wide footer the page sits above on the website. A failed fetch only leaves the footer out.
+  const chromeQuery = useQuery({
+    queryKey: ["preview-chrome", site],
+    enabled: !!site,
+    staleTime: 60_000,
+    queryFn: async (): Promise<PreviewChrome> => {
+      type Row<T> = { data: T; status?: string };
+      const list = async <T,>(type: string) => {
+        const { data } = await contentApi.get("/v1/admin/content-items", { params: { site, type } });
+        return (data.data as Row<T>[]).filter((r) => !r.status || r.status === "PUBLISHED").map((r) => r.data);
+      };
+      const [nav, footers] = await Promise.all([
+        list<{ label: string; links?: string[] | null }>("footer_nav_category"),
+        list<NonNullable<PreviewChrome["footer"]>>("site_footer"),
+      ]);
+      return { footerNav: nav.map((c) => ({ label: c.label, links: c.links ?? [] })), footer: footers[0] };
+    },
+  });
+  const chrome = chromeQuery.data;
 
   useEffect(() => {
     const onReady = (e: MessageEvent) => {
@@ -56,12 +81,12 @@ export default function PreviewPanel({
 
   useEffect(() => {
     if (!frameReady) return;
-    const message: PreviewMessage = { type: MSG_RENDER, page };
+    const message: PreviewMessage = { type: MSG_RENDER, page, chrome };
     frameRef.current?.contentWindow?.postMessage(
       message,
       window.location.origin,
     );
-  }, [frameReady, page]);
+  }, [frameReady, page, chrome]);
 
   const width = DEVICES.find((d) => d.key === device)!.width;
 

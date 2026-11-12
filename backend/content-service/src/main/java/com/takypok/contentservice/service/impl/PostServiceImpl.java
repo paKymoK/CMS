@@ -103,7 +103,12 @@ public class PostServiceImpl implements PostService {
               request.getSeoTitle(),
               request.getSeoDescription(),
               request.getSeoImage(),
-              request.getSeoNoindex());
+              request.getSeoNoindex(),
+              request.getSeoCanonical(),
+              request.getSeoNofollow(),
+              request.getSeoOgTitle(),
+              request.getSeoOgDescription(),
+              request.getSeoJsonLd());
           copyShared(
               fields,
               status,
@@ -188,7 +193,12 @@ public class PostServiceImpl implements PostService {
                           request.getSeoTitle(),
                           request.getSeoDescription(),
                           request.getSeoImage(),
-                          request.getSeoNoindex());
+                          request.getSeoNoindex(),
+                          request.getSeoCanonical(),
+                          request.getSeoNofollow(),
+                          request.getSeoOgTitle(),
+                          request.getSeoOgDescription(),
+                          request.getSeoJsonLd());
                       return save(
                           siteId,
                           item,
@@ -210,7 +220,12 @@ public class PostServiceImpl implements PostService {
       String seoTitle,
       String seoDescription,
       String seoImage,
-      Boolean seoNoindex) {
+      Boolean seoNoindex,
+      String seoCanonical,
+      Boolean seoNofollow,
+      String seoOgTitle,
+      String seoOgDescription,
+      String seoJsonLd) {
     fields.setSeoTitle(
         FieldRules.keepOrClear(seoTitle, existing == null ? null : existing.getSeoTitle()));
     fields.setSeoDescription(
@@ -222,6 +237,19 @@ public class PostServiceImpl implements PostService {
         seoNoindex != null
             ? seoNoindex
             : existing != null && Boolean.TRUE.equals(existing.getSeoNoindex()));
+    fields.setSeoCanonical(
+        FieldRules.keepOrClear(seoCanonical, existing == null ? null : existing.getSeoCanonical()));
+    fields.setSeoNofollow(
+        seoNofollow != null
+            ? seoNofollow
+            : existing != null && Boolean.TRUE.equals(existing.getSeoNofollow()));
+    fields.setSeoOgTitle(
+        FieldRules.keepOrClear(seoOgTitle, existing == null ? null : existing.getSeoOgTitle()));
+    fields.setSeoOgDescription(
+        FieldRules.keepOrClear(
+            seoOgDescription, existing == null ? null : existing.getSeoOgDescription()));
+    fields.setSeoJsonLd(
+        FieldRules.keepOrClear(seoJsonLd, existing == null ? null : existing.getSeoJsonLd()));
   }
 
   /** The fields create and update treat identically: replaced wholesale from the request. */

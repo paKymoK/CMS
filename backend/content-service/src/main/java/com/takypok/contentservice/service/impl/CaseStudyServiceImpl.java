@@ -266,6 +266,11 @@ public class CaseStudyServiceImpl implements CaseStudyService {
     f.setSeoDescription(FieldRules.keepOrClear(r.getSeoDescription(), null));
     f.setSeoImage(FieldRules.keepOrClear(r.getSeoImage(), null));
     f.setSeoNoindex(Boolean.TRUE.equals(r.getSeoNoindex()));
+    f.setSeoCanonical(FieldRules.keepOrClear(r.getSeoCanonical(), null));
+    f.setSeoNofollow(Boolean.TRUE.equals(r.getSeoNofollow()));
+    f.setSeoOgTitle(FieldRules.keepOrClear(r.getSeoOgTitle(), null));
+    f.setSeoOgDescription(FieldRules.keepOrClear(r.getSeoOgDescription(), null));
+    f.setSeoJsonLd(FieldRules.keepOrClear(r.getSeoJsonLd(), null));
     return f;
   }
 
@@ -297,6 +302,15 @@ public class CaseStudyServiceImpl implements CaseStudyService {
         r.getSeoNoindex() != null
             ? r.getSeoNoindex()
             : Boolean.TRUE.equals(stored.getSeoNoindex()));
+    fields.setSeoCanonical(FieldRules.keepOrClear(r.getSeoCanonical(), stored.getSeoCanonical()));
+    fields.setSeoNofollow(
+        r.getSeoNofollow() != null
+            ? r.getSeoNofollow()
+            : Boolean.TRUE.equals(stored.getSeoNofollow()));
+    fields.setSeoOgTitle(FieldRules.keepOrClear(r.getSeoOgTitle(), stored.getSeoOgTitle()));
+    fields.setSeoOgDescription(
+        FieldRules.keepOrClear(r.getSeoOgDescription(), stored.getSeoOgDescription()));
+    fields.setSeoJsonLd(FieldRules.keepOrClear(r.getSeoJsonLd(), stored.getSeoJsonLd()));
     return fields;
   }
 

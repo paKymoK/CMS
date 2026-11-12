@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { AboutPage, CaseStudyArticle, IndustryPage, PostArticle, ServicePage } from "@cms/content-renderer";
-import { CASE_STUDY_LABELS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
+import { AboutPage, CaseStudyArticle, IndustryPage, PostArticle, ServicePage, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
+import { CASE_STUDY_LABELS, HEADER_ITEMS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewChrome, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 /** Stand-in for a section that reads site-wide content rather than the page being edited. */
 function SiteSection({ label }: { label: string }) {
@@ -19,11 +19,15 @@ function SiteSection({ label }: { label: string }) {
  */
 export default function Frame() {
   const [page, setPage] = useState<PreviewPage | null>(null);
+  const [chrome, setChrome] = useState<PreviewChrome | undefined>(undefined);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
-      if ((e.data as PreviewMessage | undefined)?.type === MSG_RENDER) setPage((e.data as PreviewMessage).page);
+      if ((e.data as PreviewMessage | undefined)?.type === MSG_RENDER) {
+        setPage((e.data as PreviewMessage).page);
+        setChrome((e.data as PreviewMessage).chrome);
+      }
     };
     // Links in the preview must not navigate this frame away (a related-article link would load the admin SPA in it).
     const onClick = (e: MouseEvent) => {
@@ -51,6 +55,17 @@ export default function Frame() {
   }, []);
 
   if (!page) return null;
+  // The website's header sits over the top of the page and its footer closes it; the page itself is the part being edited.
+  return (
+    <div className="relative">
+      <SiteHeaderBar items={HEADER_ITEMS} logoSrc="/preview-logo.svg" contactLabel="Contact Us" />
+      <Page page={page} />
+      {chrome && <SiteFooterView footerNav={chrome.footerNav} footer={chrome.footer} defaultCopyright={`Copyright ©${new Date().getFullYear()} CMC Global. All rights reserved.`} />}
+    </div>
+  );
+}
+
+function Page({ page }: { page: PreviewPage }) {
   if (page.kind === "about") return <AboutPage page={page.page} />;
   if (page.kind === "industry") {
     return (

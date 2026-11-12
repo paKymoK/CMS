@@ -24,6 +24,14 @@ export type PostDetail = Omit<PostSummary, "featured"> & {
   seoDescription?: string | null;
   seoImage?: string | null;
   seoNoindex?: boolean;
+  /** Canonical address override (https); blank means the page's own address. */
+  seoCanonical?: string | null;
+  seoNofollow?: boolean;
+  /** Open Graph text; each falls back to the search-engine title / description. */
+  seoOgTitle?: string | null;
+  seoOgDescription?: string | null;
+  /** Structured data (JSON-LD) text, validated by the server. */
+  seoJsonLd?: string | null;
   related: PostSummary[];
 };
 
@@ -64,6 +72,14 @@ export type CaseStudyDetail = {
   seoDescription?: string | null;
   seoImage?: string | null;
   seoNoindex?: boolean;
+  /** Canonical address override (https); blank means the page's own address. */
+  seoCanonical?: string | null;
+  seoNofollow?: boolean;
+  /** Open Graph text; each falls back to the search-engine title / description. */
+  seoOgTitle?: string | null;
+  seoOgDescription?: string | null;
+  /** Structured data (JSON-LD) text, validated by the server. */
+  seoJsonLd?: string | null;
   testimonial: CaseStudyTestimonial | null;
   related: RelatedCaseStudy[];
 };

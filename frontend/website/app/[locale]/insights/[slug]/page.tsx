@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { PostArticle } from "@cms/content-renderer";
+import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { SITE_URL } from "@/lib/seo/constants";
 import { getPost } from "@/lib/cms/posts";
@@ -28,6 +29,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/insights/[slu
     description: post.seoDescription || post.excerpt || "",
     ogImage: post.seoImage || post.image || undefined,
     noIndex: post.seoNoindex,
+    seo: post,
   });
 }
 
@@ -47,19 +49,22 @@ export default async function PostDetailPage(props: PageProps<"/[locale]/insight
   }
 
   return (
-    <PostArticle
-      post={post}
-      pageUrl={`${SITE_URL}/${locale}/insights/${slug}`}
-      slots={siteSlots}
-      labels={{
-        eyebrow: t("eyebrow"),
-        minRead: t("minRead"),
-        onThisPage: t("onThisPage"),
-        share: t("share"),
-        keepReading: t("keepReading"),
-        relatedInsights: t("relatedInsights"),
-        viewAllInsights: t("viewAllInsights"),
-      }}
-    />
+    <>
+      <CustomJsonLd text={post.seoJsonLd} />
+      <PostArticle
+        post={post}
+        pageUrl={`${SITE_URL}/${locale}/insights/${slug}`}
+        slots={siteSlots}
+        labels={{
+          eyebrow: t("eyebrow"),
+          minRead: t("minRead"),
+          onThisPage: t("onThisPage"),
+          share: t("share"),
+          keepReading: t("keepReading"),
+          relatedInsights: t("relatedInsights"),
+          viewAllInsights: t("viewAllInsights"),
+        }}
+      />
+    </>
   );
 }
