@@ -7,6 +7,7 @@ import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
 import { mediaSrc } from "../lib/media";
+import { figureHtml } from "../lib/mediaClient";
 import MediaPickerModal from "../components/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "../components/RichTextEditor";
 import { wordsAndOutline } from "../lib/richText";
@@ -198,7 +199,7 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
     fallbackImage: image ?? "",
     noindex: seoNoindex,
   };
-  const seoCheckList = seoChecks({ ...seoValues, slug: { value: slug, url: `/insights/${slug || "…"}` } });
+  const seoCheckList = seoChecks({ ...seoValues, slug: { value: slug, url: `/insights/${slug || "…"}` }, body });
   const [snippetOpen, setSnippetOpen] = useState(false);
 
   const saveMutation = useMutation({
@@ -1021,15 +1022,13 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
       <MediaPickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        onSelect={(url) => {
+        onSelect={(url, file) => {
           if (pickerTarget === "cover") {
             setImage(url);
           } else if (pickerTarget === "social") {
             setSeoImage(url);
           } else {
-            rteRef.current?.insertHtml(
-              `<figure><img src="${url}" alt=""><figcaption>Add a caption</figcaption></figure><p><br></p>`,
-            );
+            rteRef.current?.insertHtml(figureHtml(url, file));
           }
           setDirty(true);
           setPickerOpen(false);

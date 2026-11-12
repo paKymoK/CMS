@@ -239,6 +239,20 @@
 .rich-body figure {
   margin: 1.5rem 0;
 }
+.rich-body figure[data-size="small"] {
+  max-width: 320px;
+}
+.rich-body figure[data-size="medium"] {
+  max-width: 520px;
+}
+.rich-body figure[data-size="large"] {
+  max-width: 720px;
+}
+.rich-body figure[data-size]:not([data-align="left"]):not([data-align="right"]),
+.rich-body figure[data-width]:not([data-align="left"]):not([data-align="right"]) {
+  margin-left: auto;
+  margin-right: auto;
+}
 .rich-body figure[data-align="left"] {
   float: left;
   width: 44%;

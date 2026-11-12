@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import RichTextEditor, { type RichTextEditorHandle } from "./RichTextEditor";
 import MediaPickerModal from "./MediaPickerModal";
+import { figureHtml } from "../lib/mediaClient";
 
 /** The rich-text editor as a form control (value / onChange), with its own image picker, so a form can use it like any input. */
 export default function RichTextField({ value, onChange }: { value?: string; onChange?: (html: string) => void }) {
@@ -13,8 +14,8 @@ export default function RichTextField({ value, onChange }: { value?: string; onC
       <MediaPickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        onSelect={(url) => {
-          ref.current?.insertHtml(`<figure><img src="${url}" alt=""><figcaption>Add a caption</figcaption></figure><p><br></p>`);
+        onSelect={(url, file) => {
+          ref.current?.insertHtml(figureHtml(url, file));
           setPickerOpen(false);
         }}
       />

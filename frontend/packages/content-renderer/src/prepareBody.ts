@@ -22,5 +22,9 @@ export function prepareBody(body: string): {
     const cleanAttrs = attrs.replace(/\sid="[^"]*"/i, "");
     return `<h2${cleanAttrs} id="${id}">${inner}</h2>`;
   });
-  return { html, toc };
+  // A fixed pixel width is stored as data-width (the sanitizer allows no style attribute); draw it as a max-width.
+  const sized = html.replace(/<figure([^>]*?)\sdata-width="(\d{2,4})"([^>]*)>/gi, (_m, before: string, px: string, after: string) => {
+    return `<figure${before} data-width="${px}"${after} style="max-width:${px}px">`;
+  });
+  return { html: sized, toc };
 }

@@ -9,4 +9,8 @@ public interface UploadFileService {
   Mono<UploadFile> upload(FilePart filePart, String siteId);
 
   Mono<List<UploadFile>> listForSite(String siteId);
+
+  /** Sets the library metadata (title, alt text, description); blank values are stored as empty. */
+  Mono<UploadFile> updateMetadata(
+      java.util.UUID id, String siteId, String title, String altText, String description);
 }

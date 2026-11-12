@@ -35,7 +35,7 @@ The Project Overview, In-Scope list, As-Is / To-Be, NFRs, UI/UX standards and As
 | 2 | Slug unique per site | `content_slug` table (unique per site, type and scope, primary and old slugs alike, kept by a trigger), auto-resolved by `Slugs.resolve`. A renamed page keeps its old slugs, which 308-redirect to the current one; "Previous URLs" in the editor releases them. Also covers case studies, industry and service pages | ✅ |
 | 3 | Statuses: Draft / Published / Scheduled / Archived (051126 POST-01; Ver_02 also listed Preview) | `DRAFT` / `SCHEDULED` / `PUBLISHED` / `ARCHIVED` for posts (DB CHECK; other content types stay Draft and Published, enforced by the server). There is no separate `active` flag any more (G1). Archive and Schedule are done (G1). "Preview" is read as the preview action (row 11), not a stored status: the BRD's workflow section lists only Draft, Published, Scheduled and Unpublished/Archived | ✅ |
 | 4 | Headings, bold/italic, lists, links, alignment | Tiptap toolbar: H2–H4, B/I/U/S, lists, link, align | ✅ |
-| 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full and caption. Alt is hard-coded `""` on insert | 🟡 |
+| 5 | Image: alt, caption, size, alignment | `figure` node with float left/right/full, caption, alt text and size (presets or a pixel width) (G5) | ✅ |
 | 6 | Video via URL (YouTube/Vimeo), responsive | `embed` node, allow-listed hosts only | ✅ |
 | 7 | Button / CTA | `LinkButton` (link rendered as button) | ✅ |
 | 8 | Blockquote, table, divider | All present; table has row/col/merge/header controls | ✅ |
@@ -115,8 +115,13 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 - **Still missing:** the head/body/footer code-injection field, now dropped from the BRD (see G14); the new fields in G14 (canonical, follow, OG text, JSON-LD). Slug-change redirects are done (aliases).
 
 ### G5. Per-media metadata in a post
-- Alt text on inserted images is hard-coded `alt=""`.
-- No title, description or size picker. Only the cover image uses the media picker.
+**Done.**
+- **Library metadata (media-service).** `upload_file` has `title`, `alt_text`, `description` and `size_bytes`. `PUT /v1/upload/{id}?site=` sets the first three (title 200, alt 500, description 2000 characters; the file size is recorded at upload, and at startup for older and seed rows). The Media Library opens a details panel from any image: file name, type, size, dimensions (read from the image in the browser, so every format works) and the three fields. The picker and the library show the title when there is one. This edited the media-service `init-schema.sql`: recreate the `media` database.
+- **Alt text in a post.** Inserting an image prefills its alt from the library alt text, or from the file name when there is none ("team-photo_01.jpg" becomes "team photo 01"). Selecting the image shows an Alt text field in the editor; an empty alt is allowed (decorative image) and shown as a warning. The SEO checklist counts images without alt text as a warning (never blocks saving or publishing).
+- **Size.** Presets Small (320 px), Medium (520), Large (720) and Full are the main buttons. "Custom px" (50 to 2000) is there with a warning that a fixed width does not adapt to the reader's screen; it is stored as `data-width` and never exceeds the text column. Both are stored on the figure (`data-size`, `data-width`, allowed by the sanitizer) and drawn by the shared renderer (`post.css`, `prepareBody` turns `data-width` into a max-width, since the sanitizer allows no style attribute).
+- **Seed library:** all 126 seed images have an alt text in the media `init-data.sql` (`alt_text`), written from looking at each image (names of leaders and testimonial speakers come from the content seed; a few file names were misleading, e.g. `cert-9001.png` is the ISTQB Platinum Partner badge). Recreate the `media` database to get them.
+- **Not done:** the title and description are library notes only, they are not copied into the post (the post's own caption stays the visible text). Existing images in old posts keep an empty alt until an editor fills it in.
+- **Verified:** in Chrome, the details panel saved and listed the values; the picker prefilled the alt; Medium and Small gave 520 and 320 px, custom 400 px with the warning, Large capped at the column; the checklist warning appeared and cleared; a saved draft kept `alt` and `data-width` through the server sanitizer; the Preview drew the 400 px width and the alt; an alt over 500 characters was refused. Media-service tests pass, admin-app `tsc` and eslint are clean, the website typechecks. No unit tests were added (decision).
 
 ### G6. Preview
 - **Done:** the Desktop / Tablet / Mobile preview of unsaved edits (row 11).
@@ -131,7 +136,7 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 **Status: on hold, decisions pending (owner is thinking).** Nothing here is blocked by other gaps; every item is an addition to the Tiptap editor, the sanitizer and the shared renderer, with no schema change. Checked against the code:
 
 - The article page already draws an "On this page" list (from H2s, `prepareBody`) and LinkedIn/Facebook share links at fixed places (`PostArticle`), and the editor has an H2-only outline panel. What is missing is a block the editor can place, and H1 to H3 levels (the editor allows H2 to H4; H1 is the post title).
-- Image alt text is hard-coded to `""` on insert (G5); it is the one item with an accessibility cost today.
+- Image alt text: done (G5).
 - The website's contact form has no submit endpoint that was found, so a real form block needs a backend (endpoint, storage, spam protection).
 - Tiptap has no built-in drag handle for nodes, so drag and duplicate are custom UI work (nested nodes such as columns and accordions need clear rules).
 
@@ -139,7 +144,7 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 1. Is Tiptap enough for the Post body (suggested: yes, since pages now have their own block builder, section 13 of `page-model-plan.md`)?
 2. TOC and share buttons: placeable blocks (closer to the BRD) or automatic with a per-post switch?
 3. Form block: reuse the contact form (needs an endpoint), a new simple inquiry form, or keep the iframe embed for now?
-4. Media metadata: alt text only (suggested minimum), or the full BRD set (title, description, file type, size, which needs media-service changes)?
+4. Media metadata: **decided and built** (G5): alt text, title, description, file type and size.
 
 Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, then the form block last.
 

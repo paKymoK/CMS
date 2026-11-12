@@ -24,6 +24,8 @@ export interface SeoValues {
 export interface SeoCheckInput extends SeoValues {
   /** The page's own URL: omit for a page that lives at a fixed address (About). */
   slug?: { value: string; url: string };
+  /** The rich-text body, to check its images have alt text: omit for a page without one. */
+  body?: string;
 }
 
 export interface SnippetInput extends SeoValues {
@@ -159,6 +161,19 @@ export function seoChecks(input: SeoCheckInput): SeoCheck[] {
       label: "No share image",
       detail: "The site's default image is used when this page is shared.",
     });
+  }
+
+  if (input.body !== undefined) {
+    const images = input.body.match(/<img\b[^>]*>/gi) ?? [];
+    const without = images.filter((tag) => !/\salt="[^"]*\S[^"]*"/i.test(tag)).length;
+    if (without > 0) {
+      checks.push({
+        key: "alt",
+        level: "warn",
+        label: without === 1 ? "1 image has no alt text" : `${without} images have no alt text`,
+        detail: "Select the image in the editor and describe it. Screen readers and search engines rely on it.",
+      });
+    }
   }
 
   if (input.noindex) {

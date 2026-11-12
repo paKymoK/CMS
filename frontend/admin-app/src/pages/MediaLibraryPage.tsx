@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Button, Spin, Empty, message, Popconfirm, Tabs } from "antd";
+import { Upload, Button, Spin, Empty, message, Popconfirm, Tabs, Drawer, Input } from "antd";
 import { InboxIcon, DeleteIcon } from "../components/icons";
 import Hls from "hls.js";
 import { useSite } from "../lib/useSite";
@@ -10,6 +10,9 @@ import {
   listVideos,
   uploadImage,
   uploadVideo,
+  updateImageMetadata,
+  imageLabel,
+  formatBytes,
   imageUrl,
   videoPlaybackUrl,
   type UploadFile,
@@ -108,10 +111,92 @@ function Dropzone({
   );
 }
 
+const ALT_GUIDE = 125;
+
+/** Details of one library image: file facts, and the title, alt text and description an editor can set. */
+function ImageDetails({ file, site, onClose }: { file: UploadFile | null; site: string; onClose: () => void }) {
+  return (
+    <Drawer open={!!file} onClose={onClose} width={420} title="Image details" destroyOnHidden>
+      {file && <ImageForm key={file.id} file={file} site={site} onClose={onClose} />}
+    </Drawer>
+  );
+}
+
+function ImageForm({ file, site, onClose }: { file: UploadFile; site: string; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState(file.title ?? "");
+  const [altText, setAltText] = useState(file.altText ?? "");
+  const [description, setDescription] = useState(file.description ?? "");
+  const [dims, setDims] = useState<string | null>(null);
+
+  const save = useMutation({
+    mutationFn: () => updateImageMetadata(site, file.id, { title, altText, description }),
+    onSuccess: () => {
+      message.success("Saved");
+      queryClient.invalidateQueries({ queryKey: ["media-images", site] });
+      onClose();
+    },
+    onError: () => message.error("Could not save"),
+  });
+
+  const label = { display: "block", margin: "14px 0 4px", fontSize: 12, fontWeight: 600, color: "#5b6b86" } as const;
+  const fact = (name: string, value: string) => (
+    <div className="flex justify-between gap-4" style={{ fontSize: 13, padding: "3px 0" }}>
+      <span style={{ color: "#7b8aa5" }}>{name}</span>
+      <span style={{ color: "#0b1b3a", textAlign: "right", wordBreak: "break-all" }}>{value}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      <img
+        src={mediaSrc(imageUrl(file))}
+        alt={altText}
+        onLoad={(e) => setDims(`${e.currentTarget.naturalWidth} × ${e.currentTarget.naturalHeight} px`)}
+        style={{ width: "100%", maxHeight: 240, objectFit: "contain", background: "#f4f7fc", borderRadius: 8 }}
+      />
+      <div style={{ marginTop: 12 }}>
+        {fact("File name", file.name)}
+        {fact("File type", file.extension.replace(".", "").toUpperCase())}
+        {fact("File size", formatBytes(file.sizeBytes))}
+        {fact("Dimensions", dims ?? "—")}
+      </div>
+      <label style={label}>Title</label>
+      <Input value={title} maxLength={200} placeholder={file.name} onChange={(e) => setTitle(e.target.value)} />
+      <label style={label}>Alt text</label>
+      <Input.TextArea
+        value={altText}
+        maxLength={500}
+        autoSize={{ minRows: 2, maxRows: 4 }}
+        placeholder="Describe what the image shows, for people who cannot see it"
+        onChange={(e) => setAltText(e.target.value)}
+      />
+      <div style={{ fontSize: 12, color: altText.length > ALT_GUIDE ? "#b36b00" : "#7b8aa5", marginTop: 4 }}>
+        Offered as the alt text when the image is added to a post (it can be changed there). {altText.length} / {ALT_GUIDE} is a good length.
+      </div>
+      <label style={label}>Description</label>
+      <Input.TextArea
+        value={description}
+        maxLength={2000}
+        autoSize={{ minRows: 3, maxRows: 6 }}
+        placeholder="Notes for editors: source, credit, where it is used"
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      <div className="flex justify-end gap-2" style={{ marginTop: 20 }}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button type="primary" loading={save.isPending} onClick={() => save.mutate()}>
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function MediaLibraryPage() {
   const { site } = useSite();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("images");
+  const [selected, setSelected] = useState<UploadFile | null>(null);
 
   const imagesQuery = useQuery({
     queryKey: ["media-images", site],
@@ -178,10 +263,18 @@ export default function MediaLibraryPage() {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))" }}>
           {imagesQuery.data.map((file: UploadFile) => (
-            <div key={file.id} className="cms-tile cms-tile-card flex flex-col">
+            <div
+              key={file.id}
+              className="cms-tile cms-tile-card flex flex-col"
+              role="button"
+              tabIndex={0}
+              style={{ cursor: "pointer" }}
+              onClick={() => setSelected(file)}
+              onKeyDown={(e) => e.key === "Enter" && setSelected(file)}
+            >
               <img
                 src={mediaSrc(imageUrl(file))}
-                alt={file.name}
+                alt={file.altText || imageLabel(file)}
                 style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block", borderRadius: 0 }}
               />
               <span
@@ -195,7 +288,7 @@ export default function MediaLibraryPage() {
                   textOverflow: "ellipsis",
                 }}
               >
-                {file.name}
+                {imageLabel(file)}
               </span>
             </div>
           ))}
@@ -276,6 +369,7 @@ export default function MediaLibraryPage() {
 
   return (
     <div>
+      {site && <ImageDetails file={selected} site={site} onClose={() => setSelected(null)} />}
       <h1 className="cms-page-title">Media Library</h1>
       <p className="cms-page-sub" style={{ marginBottom: 20 }}>
         {(imagesQuery.data?.length ?? 0) + (videosQuery.data?.length ?? 0)} files for this site.

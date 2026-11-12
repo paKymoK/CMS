@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS upload_file
     name        character varying NOT NULL, -- original file name, including its extension
     extension   character varying NOT NULL, -- with the leading dot, e.g. '.png'
     site_id     character varying NOT NULL,
+    title       character varying,          -- editor's label for the library; the file name is shown when empty
+    alt_text    character varying,          -- default alt text offered when the image is inserted in a post
+    description text,
+    size_bytes  bigint,                     -- stored file size; filled at upload, and at startup for seed rows
     created_at  timestamp with time zone,
     created_by  jsonb,
     modified_at timestamp with time zone,

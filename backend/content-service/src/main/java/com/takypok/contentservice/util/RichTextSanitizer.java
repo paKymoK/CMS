@@ -86,7 +86,7 @@ public final class RichTextSanitizer {
           .addAttributes("h4", "data-text-align")
           .addAttributes("blockquote", "data-text-align")
           .addAttributes("img", "src", "alt")
-          .addAttributes("figure", "data-align")
+          .addAttributes("figure", "data-align", "data-size", "data-width")
           .addAttributes("div", "data-callout", "data-embed", "data-columns", "data-column")
           .addAttributes("th", "colspan", "rowspan")
           .addAttributes("td", "colspan", "rowspan")

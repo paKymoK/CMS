@@ -5,6 +5,45 @@ export interface UploadFile {
   name: string;
   extension: string;
   siteId: string;
+  /** Library metadata an editor can set; all optional. altText is offered as the alt when the image is inserted in a post. */
+  title: string | null;
+  altText: string | null;
+  description: string | null;
+  sizeBytes: number | null;
+}
+
+/** What the library shows for an image: its title, or the file name when none was set. */
+export function imageLabel(file: Pick<UploadFile, "title" | "name">): string {
+  return file.title?.trim() || file.name;
+}
+
+/** A readable alt text from a file name, e.g. "team-photo_01.jpg" becomes "team photo 01". */
+export function altFromFileName(name: string): string {
+  return name
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** The alt text offered for an image when it is inserted: the one saved in the library, else one made from the file name. */
+export function defaultAlt(file: UploadFile): string {
+  return file.altText?.trim() || altFromFileName(file.name);
+}
+
+const escapeAttr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+
+/** The figure inserted in a post body for a picked image, its alt prefilled from the library. */
+export function figureHtml(url: string, file?: UploadFile): string {
+  const alt = file ? escapeAttr(defaultAlt(file)) : "";
+  return `<figure><img src="${url}" alt="${alt}"><figcaption>Add a caption</figcaption></figure><p><br></p>`;
+}
+
+export function formatBytes(bytes: number | null): string {
+  if (bytes == null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export interface VideoJob {
@@ -50,6 +89,15 @@ export async function uploadImage(site: string, file: File): Promise<UploadFile>
     params: { site },
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return data;
+}
+
+export async function updateImageMetadata(
+  site: string,
+  id: string,
+  body: { title: string; altText: string; description: string },
+): Promise<UploadFile> {
+  const { data } = await mediaApi.put<UploadFile>(`/v1/upload/${id}`, body, { params: { site } });
   return data;
 }
 

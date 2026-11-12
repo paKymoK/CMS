@@ -10,6 +10,7 @@ import {
   uploadImage,
   uploadVideo,
   imageUrl,
+  imageLabel,
   videoPlaybackUrl,
   videoStoredUrl,
   type UploadFile,
@@ -20,7 +21,8 @@ import { mediaSrc } from "../lib/media";
 interface MediaPickerModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (url: string) => void;
+  /** The second argument is the library entry when an image was picked (not for videos). */
+  onSelect: (url: string, file?: UploadFile) => void;
   /** "image" (default) only offers the image library/upload; "both" also offers videos; "video"
    * offers only videos and hands back the origin-less stored path (see videoStoredUrl). */
   mode?: "image" | "both" | "video";
@@ -121,13 +123,13 @@ export default function MediaPickerModal({
           {imagesQuery.data.map((file: UploadFile) => (
             <button
               key={file.id}
-              onClick={() => onSelect(imageUrl(file))}
+              onClick={() => onSelect(imageUrl(file), file)}
               className="cms-pick-tile"
-              title={file.name}
+              title={imageLabel(file)}
             >
               <img
                 src={mediaSrc(imageUrl(file))}
-                alt={file.name}
+                alt={file.altText || imageLabel(file)}
                 className="w-full h-24 object-cover"
               />
             </button>

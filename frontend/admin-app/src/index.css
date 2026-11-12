@@ -193,6 +193,20 @@ body {
 .cms-rte [data-callout] > :last-child {
   margin-bottom: 0;
 }
+.cms-rte figure[data-size="small"] {
+  max-width: 320px;
+}
+.cms-rte figure[data-size="medium"] {
+  max-width: 520px;
+}
+.cms-rte figure[data-size="large"] {
+  max-width: 720px;
+}
+.cms-rte figure[data-size]:not([data-align="left"]):not([data-align="right"]),
+.cms-rte figure[data-width]:not([data-align="left"]):not([data-align="right"]) {
+  margin-left: auto;
+  margin-right: auto;
+}
 .cms-rte figure[data-align="left"] {
   float: left;
   width: 44%;

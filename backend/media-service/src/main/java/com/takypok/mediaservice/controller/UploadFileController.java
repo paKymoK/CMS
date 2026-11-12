@@ -4,12 +4,16 @@ import com.takypok.mediaservice.config.CmsAdminGuard;
 import com.takypok.mediaservice.model.entity.UploadFile;
 import com.takypok.mediaservice.service.UploadFileService;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -54,5 +58,21 @@ public class UploadFileController {
     return cmsAdminGuard
         .requireSiteAccess(authentication, site)
         .then(uploadFileService.listForSite(site));
+  }
+
+  /** Metadata an editor can set on a library image; all three are optional. */
+  public record MetadataRequest(String title, String altText, String description) {}
+
+  @PutMapping("/{id}")
+  public Mono<UploadFile> updateMetadata(
+      @PathVariable UUID id,
+      @RequestParam String site,
+      @RequestBody MetadataRequest body,
+      Authentication authentication) {
+    return cmsAdminGuard
+        .requireSiteAccess(authentication, site)
+        .then(
+            uploadFileService.updateMetadata(
+                id, site, body.title(), body.altText(), body.description()));
   }
 }

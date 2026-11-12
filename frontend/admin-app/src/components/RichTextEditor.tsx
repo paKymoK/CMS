@@ -3,7 +3,9 @@ import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { Table, TableRow, TableHeader, TableCell } from "@tiptap/extension-table";
-import { Input, Modal, message } from "antd";
+import { Input, InputNumber, Modal, message } from "antd";
+import type { Editor } from "@tiptap/react";
+import type { Node as PmNode } from "@tiptap/pm/model";
 import { relativizeMediaHtml, resolveMediaHtml } from "../lib/media";
 import { parseEmbedUrl } from "../lib/embeds";
 import {
@@ -20,6 +22,10 @@ import {
   TextAlignment,
   TextColor,
   type FigureAlign,
+  type FigureSize,
+  FIGURE_SIZES,
+  CUSTOM_WIDTH_MIN,
+  CUSTOM_WIDTH_MAX,
   type TextAlign,
   type TextColorName,
 } from "./rte/extensions";
@@ -81,6 +87,27 @@ function normalizeLink(raw: string): string | null {
   return null;
 }
 
+/** The image inside the figure the selection is in or on, with its position. */
+function figureImage(editor: Editor): { node: PmNode; pos: number } | null {
+  const { $from } = editor.state.selection;
+  for (let d = $from.depth; d > 0; d--) {
+    if ($from.node(d).type.name === "figure") {
+      const pos = $from.before(d) + 1;
+      const node = editor.state.doc.nodeAt(pos);
+      return node?.type.name === "image" ? { node, pos } : null;
+    }
+  }
+  const selected = editor.state.selection as { node?: PmNode };
+  if (selected.node?.type.name === "figure") {
+    const pos = editor.state.selection.from + 1;
+    const node = editor.state.doc.nodeAt(pos);
+    return node?.type.name === "image" ? { node, pos } : null;
+  }
+  return null;
+}
+
+const SIZE_LABEL: Record<FigureSize, string> = { small: "Small", medium: "Medium", large: "Large", full: "Full" };
+
 const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(function RichTextEditor(
   { value, onChange, onInsertImage },
   ref,
@@ -92,6 +119,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
   const [embedUrl, setEmbedUrl] = useState("");
   const [sourceMode, setSourceMode] = useState(false);
   const [sourceHtml, setSourceHtml] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -160,6 +188,9 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
       table: !!e?.isActive("table"),
       figure: !!e?.isActive("figure"),
       align: (e?.getAttributes("figure").align as FigureAlign | undefined) ?? "full",
+      size: (e?.getAttributes("figure").size as FigureSize | undefined) ?? "full",
+      width: (e?.getAttributes("figure").width as number | null | undefined) ?? null,
+      alt: e ? figureImage(e)?.node.attrs.alt ?? "" : "",
       canUndo: !!e?.can().undo(),
       canRedo: !!e?.can().redo(),
     }),
@@ -300,6 +331,49 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         <ToolBtn label="HTML" title="Edit HTML source" on={sourceMode} onRun={toggleSource} />
       </div>
 
+      {s.figure && !sourceMode && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "6px 14px", border: "1px solid #e3e9f4", borderTop: "none", background: "#fafcff" }}>
+          <label htmlFor="cms-figure-alt" style={{ fontSize: 12, fontWeight: 600, color: "#5b6b86" }}>Alt text</label>
+          <Input
+            id="cms-figure-alt"
+            size="small"
+            style={{ flex: 1, minWidth: 200 }}
+            value={s.alt}
+            maxLength={500}
+            status={s.alt.trim() ? undefined : "warning"}
+            placeholder="Describe the image for people who cannot see it (leave empty only for decoration)"
+            onChange={(ev) => {
+              const img = editor ? figureImage(editor) : null;
+              if (!editor || !img) return;
+              editor.view.dispatch(editor.state.tr.setNodeMarkup(img.pos, undefined, { ...img.node.attrs, alt: ev.target.value }));
+            }}
+          />
+        </div>
+      )}
+
+      {s.figure && !sourceMode && (customOpen || s.width != null) && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "6px 14px", border: "1px solid #e3e9f4", borderTop: "none", background: "#fffaf0" }}>
+          <label htmlFor="cms-figure-width" style={{ fontSize: 12, fontWeight: 600, color: "#5b6b86" }}>Width</label>
+          <InputNumber
+            id="cms-figure-width"
+            size="small"
+            min={CUSTOM_WIDTH_MIN}
+            max={CUSTOM_WIDTH_MAX}
+            value={s.width}
+            addonAfter="px"
+            placeholder="e.g. 480"
+            onChange={(v) => {
+              if (typeof v === "number" && Number.isInteger(v) && v >= CUSTOM_WIDTH_MIN && v <= CUSTOM_WIDTH_MAX) {
+                editor.chain().updateAttributes("figure", { size: "full", width: v }).run(); // no focus(): keep typing in the field
+              }
+            }}
+          />
+          <span style={{ fontSize: 12, color: "#b36b00" }}>
+            A fixed width does not adapt to the reader's screen. It is never wider than the text column, but prefer Small, Medium or Large.
+          </span>
+        </div>
+      )}
+
       {(s.figure || s.table || s.columns || s.accordion) && !sourceMode && (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 2, padding: "4px 6px", border: "1px solid #e3e9f4", borderTop: "none", background: "#fafcff" }}>
           {s.figure && (
@@ -308,6 +382,21 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
               {(["full", "left", "right"] as const).map((a) => (
                 <ToolBtn key={a} label={a === "full" ? "Full width" : a === "left" ? "Float left" : "Float right"} title={`Align ${a}`} on={s.align === a} onRun={() => chain().updateAttributes("figure", { align: a }).run()} />
               ))}
+              <span style={{ width: 1, height: 18, background: "#dde4f0", margin: "0 6px" }} />
+              {FIGURE_SIZES.map((z) => (
+                <ToolBtn
+                  key={z}
+                  label={SIZE_LABEL[z]}
+                  title={z === "full" ? "Full width of the text column" : `${SIZE_LABEL[z]} image`}
+                  on={s.width == null && s.size === z}
+                  onRun={() => {
+                    setCustomOpen(false);
+                    chain().updateAttributes("figure", { size: z, width: null }).run();
+                  }}
+                />
+              ))}
+              <ToolBtn label="Custom px" title="Set an exact width in pixels" on={s.width != null || customOpen} onRun={() => setCustomOpen((v) => !v)} />
+              <span style={{ width: 1, height: 18, background: "#dde4f0", margin: "0 6px" }} />
               <ToolBtn label="Remove" title="Remove image" onRun={() => chain().deleteNode("figure").run()} />
             </>
           )}

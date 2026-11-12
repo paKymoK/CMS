@@ -19,5 +19,7 @@ public interface UploadFileRepository extends R2dbcRepository<UploadFile, UUID> 
 
   Flux<UploadFile> findAllBySiteId(String siteId);
 
+  Flux<UploadFile> findAllBySizeBytesIsNull();
+
   Mono<UploadFile> findByIdAndSiteId(UUID id, String siteId);
 }

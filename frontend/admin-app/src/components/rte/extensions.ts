@@ -2,6 +2,11 @@ import { Extension, Mark, Node, mergeAttributes } from "@tiptap/core";
 import { isAllowedEmbedSrc, EMBED_HOSTS } from "../../lib/embeds";
 
 export type FigureAlign = "full" | "left" | "right";
+/** Preset widths; "full" is the default and is stored as no attribute. A custom pixel width is `width` instead. */
+export type FigureSize = "small" | "medium" | "large" | "full";
+export const FIGURE_SIZES: FigureSize[] = ["small", "medium", "large", "full"];
+export const CUSTOM_WIDTH_MIN = 50;
+export const CUSTOM_WIDTH_MAX = 2000;
 
 /** <figure data-align><img><figcaption>…</figcaption></figure> — matches the markup the old editor
  * already stored, so existing posts load unchanged. */
@@ -29,6 +34,23 @@ export const Figure = Node.create({
           return a === "left" || a === "right" ? a : "full";
         },
         renderHTML: (attrs) => ({ "data-align": attrs.align }),
+      },
+      size: {
+        default: "full" as FigureSize,
+        parseHTML: (el) => {
+          const v = el.getAttribute("data-size");
+          return v === "small" || v === "medium" || v === "large" ? v : "full";
+        },
+        renderHTML: (attrs) => (attrs.size === "full" ? {} : { "data-size": attrs.size }),
+      },
+      // A fixed pixel width. The website turns it into a max-width (prepareBody); here it is also drawn as one.
+      width: {
+        default: null as number | null,
+        parseHTML: (el) => {
+          const n = Number(el.getAttribute("data-width"));
+          return Number.isInteger(n) && n >= CUSTOM_WIDTH_MIN && n <= CUSTOM_WIDTH_MAX ? n : null;
+        },
+        renderHTML: (attrs) => (attrs.width ? { "data-width": attrs.width, style: `max-width:${attrs.width}px` } : {}),
       },
     };
   },
