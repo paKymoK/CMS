@@ -65,7 +65,7 @@ class PostListServiceImplTest {
     var filter = ArgumentCaptor.forClass(PostListRepository.Filter.class);
     var sort = ArgumentCaptor.forClass(PostListRepository.Sort.class);
 
-    StepVerifier.create(service.page(1L, null, null, null, null, null, null, null, null))
+    StepVerifier.create(service.page(1L, null, null, null, null, null, null, null, null, null))
         .assertNext(
             page -> {
               assertEquals(1, page.page());
@@ -78,7 +78,8 @@ class PostListServiceImplTest {
         .verifyComplete();
     verify(repository).page(eq(1L), filter.capture(), sort.capture(), eq(1), eq(20));
     assertEquals(PostListRepository.Sort.UPDATED_DESC, sort.getValue());
-    assertEquals(new PostListRepository.Filter(null, null, null, null, null), filter.getValue());
+    assertEquals(
+        new PostListRepository.Filter(null, null, null, null, null, null), filter.getValue());
   }
 
   @Test
@@ -86,12 +87,13 @@ class PostListServiceImplTest {
     repositoryReturns(0);
     var filter = ArgumentCaptor.forClass(PostListRepository.Filter.class);
 
-    StepVerifier.create(service.page(1L, "  ", " ", "", 2026, 11, "title_asc", 0, 5000))
+    StepVerifier.create(service.page(1L, "  ", " ", null, null, 2026, 11, "title_asc", 0, 5000))
         .assertNext(page -> assertEquals(100, page.size()))
         .verifyComplete();
     verify(repository)
         .page(eq(1L), filter.capture(), eq(PostListRepository.Sort.TITLE_ASC), eq(1), eq(100));
-    assertEquals(new PostListRepository.Filter(null, null, null, 2026, 11), filter.getValue());
+    assertEquals(
+        new PostListRepository.Filter(null, null, null, null, 2026, 11), filter.getValue());
   }
 
   @Test
@@ -99,10 +101,12 @@ class PostListServiceImplTest {
     repositoryReturns(0);
     var filter = ArgumentCaptor.forClass(PostListRepository.Filter.class);
 
-    StepVerifier.create(service.page(1L, "  hello  ", null, null, null, null, null, null, null))
+    StepVerifier.create(
+            service.page(1L, "  hello  ", null, null, null, null, null, null, null, null))
         .expectNextCount(1)
         .verifyComplete();
-    StepVerifier.create(service.page(1L, "x".repeat(500), null, null, null, null, null, null, null))
+    StepVerifier.create(
+            service.page(1L, "x".repeat(500), null, null, null, null, null, null, null, null))
         .expectNextCount(1)
         .verifyComplete();
     verify(repository, org.mockito.Mockito.times(2))
@@ -130,6 +134,7 @@ class PostListServiceImplTest {
                       null,
                       (String) bad[0],
                       null,
+                      null,
                       (Integer) bad[3],
                       (Integer) bad[2],
                       (String) bad[1],
@@ -145,7 +150,7 @@ class PostListServiceImplTest {
     repositoryReturns(
         1, row(1, "{\"a\":1}"), row(2, null), row(3, "[\"ok\",1,\"\"]"), row(4, "not json"));
 
-    StepVerifier.create(service.page(1L, null, null, null, null, null, null, null, null))
+    StepVerifier.create(service.page(1L, null, null, null, null, null, null, null, null, null))
         .assertNext(
             page -> {
               assertEquals(List.of(), page.items().get(0).tags());

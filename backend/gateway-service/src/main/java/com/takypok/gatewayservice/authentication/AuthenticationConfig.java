@@ -63,6 +63,16 @@ public class AuthenticationConfig {
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, "/content-service/v1/case-studies/**")
                     .permitAll()
+                    // Post categories and tags with their published posts (see
+                    // PublicTaxonomyController). /content-service/v1/admin/post-categories and
+                    // /v1/admin/post-tags are different prefixes and stay authenticated.
+                    .pathMatchers(
+                        HttpMethod.GET,
+                        "/content-service/v1/post-categories",
+                        "/content-service/v1/post-categories/**",
+                        "/content-service/v1/post-tags",
+                        "/content-service/v1/post-tags/**")
+                    .permitAll()
                     // Typo-tolerant search + as-you-type suggestions (see
                     // PublicSearchController) — GET only, published content, same Host-header site
                     // resolution. Mirrors core-v1's SecurityConfig carve-out.

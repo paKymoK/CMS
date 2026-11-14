@@ -14,5 +14,13 @@ public class ContentItemUpdateRequest {
   private JsonNode data;
   private Integer displayOrder;
   private String status;
+
+  /**
+   * Pages only: for SCHEDULED, when it goes live; and when a live one is taken off the site
+   * (archived).
+   */
+  private java.time.Instant publishAt;
+
+  private java.time.Instant unpublishAt;
   private Integer version;
 }

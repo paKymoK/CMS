@@ -6,8 +6,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * What a post's publish and unpublish times may be for its status. The database job that acts on
- * them runs once a minute, so times are kept to the minute.
+ * What a post's or page's publish and unpublish times may be for its status. The database job that
+ * acts on them runs once a minute, so times are kept to the minute.
  *
  * <ul>
  *   <li>DRAFT and ARCHIVED carry no times.
@@ -37,7 +37,7 @@ public final class ScheduleRules {
     Instant unpublishAt = minute(requestedUnpublishAt);
     switch (status) {
       case "SCHEDULED" -> {
-        if (publishAt == null) throw invalid("Choose when the post should be published");
+        if (publishAt == null) throw invalid("Choose when it should be published");
         if (!publishAt.equals(storedPublishAt) && !publishAt.isAfter(now)) {
           throw invalid("The publish time must be in the future");
         }

@@ -7,6 +7,7 @@ import com.takypok.contentservice.model.content.ContentFields;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +22,22 @@ import lombok.Setter;
 public class PostFields implements ContentFields {
   @NotBlank private String title;
   private String slug;
+
+  /**
+   * The post's categories and tags, by id (the source of truth), in the order they were chosen. At
+   * most 15 of both together, and always at least one category (the default "Uncategorized").
+   */
+  private List<Long> categoryIds;
+
+  private List<Long> tagIds;
+
+  /**
+   * Derived from {@link #categoryIds}: the name of the first active category. Kept in the post so
+   * the website and the search read it without a lookup; rewritten whenever the post or the
+   * category changes.
+   */
   private String category;
+
   private String image;
   private String excerpt;
   private String date;
@@ -34,7 +50,7 @@ public class PostFields implements ContentFields {
   private String authorBio;
   private String authorAvatar;
 
-  /** ["ai-governance","events"] */
+  /** Derived from tagIds: the names of its active tags, e.g. ["Events", "AI & Automation"]. */
   private JsonNode tags;
 
   private Boolean featured;

@@ -265,7 +265,7 @@ class ContentItemServiceImplTest {
         new ContentItemServiceImpl(
             contentItemRepository, contentItemMapper, contentItemWriter, slugRegistry);
     ContentItemCreateRequest create = new ContentItemCreateRequest();
-    create.setContentType("service_page");
+    create.setContentType("stat");
     create.setStatus("ARCHIVED");
     StepVerifier.create(service.create(1L, create))
         .expectError(ApplicationException.class)
@@ -273,7 +273,7 @@ class ContentItemServiceImplTest {
 
     ContentItemUpdateRequest update = new ContentItemUpdateRequest();
     update.setId(1L);
-    update.setContentType("service_page");
+    update.setContentType("stat");
     update.setStatus("SCHEDULED");
     StepVerifier.create(service.update(1L, update))
         .expectError(ApplicationException.class)

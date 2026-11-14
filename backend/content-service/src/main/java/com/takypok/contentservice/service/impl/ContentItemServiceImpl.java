@@ -9,6 +9,8 @@ import com.takypok.contentservice.model.request.ContentItemUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ContentItemService;
 import com.takypok.contentservice.service.SlugRegistry;
+import com.takypok.contentservice.util.PageTypes;
+import com.takypok.contentservice.util.ScheduleRules;
 import com.takypok.contentservice.util.StaleEdit;
 import com.takypok.contentservice.util.StatusRules;
 import com.takypok.core.exception.ApplicationException;
@@ -81,7 +83,9 @@ public class ContentItemServiceImpl implements ContentItemService {
               item.setData(validatedData);
               item.setDisplayOrder(
                   request.getDisplayOrder() != null ? request.getDisplayOrder() : 0);
-              item.setStatus(request.getStatus() != null ? request.getStatus() : "DRAFT");
+              String status = request.getStatus() != null ? request.getStatus() : "DRAFT";
+              item.setStatus(status);
+              applyTimes(item, status, request.getPublishAt(), request.getUnpublishAt());
               return contentItemWriter.save(item);
             });
   }
@@ -115,9 +119,36 @@ public class ContentItemServiceImpl implements ContentItemService {
                           if (request.getDisplayOrder() != null) {
                             item.setDisplayOrder(request.getDisplayOrder());
                           }
-                          if (request.getStatus() != null) item.setStatus(request.getStatus());
+                          String status =
+                              request.getStatus() != null ? request.getStatus() : item.getStatus();
+                          applyTimes(
+                              item, status, request.getPublishAt(), request.getUnpublishAt());
+                          item.setStatus(status);
                           return contentItemWriter.save(item);
                         }));
+  }
+
+  /**
+   * Pages can be scheduled: the publish and unpublish times follow the same rules as a post's (see
+   * ScheduleRules), checked against the item's stored status and times. Other types carry none.
+   */
+  private static void applyTimes(
+      ContentItem item,
+      String status,
+      java.time.Instant requestedPublishAt,
+      java.time.Instant requestedUnpublishAt) {
+    if (!PageTypes.is(item.getContentType())) return;
+    ScheduleRules.Times times =
+        ScheduleRules.resolve(
+            status,
+            requestedPublishAt,
+            requestedUnpublishAt,
+            item.getStatus(),
+            item.getPublishAt(),
+            item.getUnpublishAt(),
+            java.time.Instant.now());
+    item.setPublishAt(times.publishAt());
+    item.setUnpublishAt(times.unpublishAt());
   }
 
   private static ApplicationException specializedTypeError(String contentType) {
@@ -128,7 +159,15 @@ public class ContentItemServiceImpl implements ContentItemService {
 
   @Override
   public Mono<Void> delete(Long id, Long siteId) {
-    return getById(id, siteId).flatMap(contentItemWriter::delete);
+    return getById(id, siteId)
+        .flatMap(
+            item ->
+                PageTypes.is(item.getContentType())
+                    ? Mono.<Void>error(
+                        new ApplicationException(
+                            Message.Application.ERROR,
+                            "A page is moved to the Trash, not deleted: use the Pages list"))
+                    : contentItemWriter.delete(item));
   }
 
   @Override

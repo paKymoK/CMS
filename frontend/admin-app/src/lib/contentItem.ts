@@ -1,6 +1,6 @@
 export type Row = Record<string, unknown> & { id: number; status: string };
 
-const ENVELOPE_KEYS = ["id", "displayOrder", "status", "version"] as const;
+const ENVELOPE_KEYS = ["id", "displayOrder", "status", "version", "publishAt", "unpublishAt"] as const;
 
 // Generic content_item rows keep their editable fields inside `data`; the list/drawer work on the
 // flattened shape every typed resource already has, so these two convert at the API boundary only.

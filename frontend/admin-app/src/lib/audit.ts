@@ -126,10 +126,14 @@ function typeOf(resource: (typeof RESOURCES)[number]): string | null {
 }
 
 /** Every content type the admin has a screen for, with that screen's name — for filters. */
-export const AUDIT_TYPE_OPTIONS = RESOURCES.flatMap((r) => {
-  const type = typeOf(r);
-  return type ? [{ value: type, label: r.label }] : [];
-});
+export const AUDIT_TYPE_OPTIONS = [
+  ...RESOURCES.flatMap((r) => {
+    const type = typeOf(r);
+    return type ? [{ value: type, label: r.label }] : [];
+  }),
+  { value: "post_category", label: "Categories" },
+  { value: "post_tag", label: "Tags" },
+];
 
 /** "heroTitle" → "Hero title"; the configured label for fields the admin has a form field for. */
 export function fieldLabel(contentType: string, name: string): string {

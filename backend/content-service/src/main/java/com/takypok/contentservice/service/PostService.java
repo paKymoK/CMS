@@ -42,4 +42,8 @@ public interface PostService {
    * exact} is set.
    */
   Mono<List<PostSummaryResponse>> searchPublished(Long siteId, String tag, String q, boolean exact);
+
+  /** The site's published posts that carry the category or tag, in the published order. */
+  Mono<List<PostSummaryResponse>> publishedWith(
+      Long siteId, com.takypok.contentservice.model.TaxonomyKind kind, Long taxonomyId);
 }

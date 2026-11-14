@@ -56,6 +56,11 @@ export async function adminSuggest(site: string, q: string, signal?: AbortSignal
 const SPECIAL: Record<string, { label: string; path: (id: number) => string }> = {
   post: { label: "Post", path: (id) => `/posts/${id}` },
   case_study: { label: "Case study", path: (id) => `/case-studies/${id}` },
+  service_page: { label: "Service page", path: (id) => `/service-pages/${id}` },
+  industry_page: { label: "Industry page", path: (id) => `/industry-pages/${id}` },
+  about_page: { label: "About page", path: (id) => `/about-page/${id}` },
+  post_category: { label: "Category", path: (id) => `/content/post-categories?edit=${id}` },
+  post_tag: { label: "Tag", path: (id) => `/content/post-tags?edit=${id}` },
 };
 
 /** Where an item is edited, or null for a content type the admin has no screen for. */

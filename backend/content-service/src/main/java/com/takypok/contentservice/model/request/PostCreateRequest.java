@@ -1,6 +1,5 @@
 package com.takypok.contentservice.model.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 import lombok.Getter;
@@ -9,7 +8,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PostCreateRequest {
-  private String category;
+  /** The categories and tags by id; left out on an update they keep their stored value. */
+  private java.util.List<Long> categoryIds;
+
+  private java.util.List<Long> tagIds;
   private String image;
   @NotBlank private String title;
   private String excerpt;
@@ -27,7 +29,6 @@ public class PostCreateRequest {
   private String authorRole;
   private String authorBio;
   private String authorAvatar;
-  private JsonNode tags;
   private Boolean featured;
   private String layout;
   private String seoTitle;

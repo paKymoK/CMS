@@ -8,6 +8,7 @@ import { useSite } from "../lib/useSite";
 import { SITES } from "../config/sites";
 import { CopyIcon, MoreIcon, PlusIcon } from "../components/icons";
 import { showBulkResult } from "../components/bulkResult";
+import { allTaxonomy, type TaxonomyKind } from "../lib/taxonomy";
 import PostsTrash from "./PostsTrash";
 import {
   BULK_LIMIT,
@@ -44,13 +45,17 @@ const ACTION_DONE: Record<BulkAction, string> = {
   TRASH: "Moved to Trash:",
   RESTORE: "Restored",
   DELETE_FOREVER: "Deleted",
+  ASSIGN_CATEGORY: "Added the category to",
+  REMOVE_CATEGORY: "Removed the category from",
+  ASSIGN_TAG: "Added the tag to",
+  REMOVE_TAG: "Removed the tag from",
 };
 
 function ColHeader({ children }: { children: string }) {
   return <span className="cms-eyebrow">{children}</span>;
 }
 
-/** The list's state lives in the address (?q=&status=&category=&month=&sort=&page=), so Back,
+/** The list's state lives in the address (?q=&status=&categoryId=&tagId=&month=&sort=&page=), so Back,
  * a refresh and a shared link all keep it. */
 function readQuery(params: URLSearchParams): PostQuery {
   const month = params.get("month"); // YYYY-MM
@@ -60,7 +65,8 @@ function readQuery(params: URLSearchParams): PostQuery {
   return {
     q: params.get("q") ?? undefined,
     status: status && STATUSES.includes(status) ? status : undefined,
-    category: params.get("category") ?? undefined,
+    categoryId: Number(params.get("categoryId")) || undefined,
+    tagId: Number(params.get("tagId")) || undefined,
     year: y || undefined,
     month: y && m ? m : undefined,
     sort: sort && SORTS.includes(sort) ? sort : undefined,
@@ -87,7 +93,6 @@ async function copyText(text: string): Promise<boolean> {
  * on the server, so it stays fast however many posts a site has.
  *
  * The Trash tab (PostsTrash) holds what was moved there; a published post cannot be trashed.
- * Not here yet: the bulk "assign category / tag" (it needs the Category and Tag tables).
  */
 export default function PostsPage() {
   const { site } = useSite();
@@ -137,6 +142,17 @@ export default function PostsPage() {
     placeholderData: keepPreviousData,
     refetchOnMount: "always",
   });
+  const categories = useQuery({
+    queryKey: ["taxonomy-all", site, "categories"],
+    queryFn: () => allTaxonomy(site!, "categories"),
+    enabled: !!site,
+  });
+  const tagList = useQuery({
+    queryKey: ["taxonomy-all", site, "tags"],
+    queryFn: () => allTaxonomy(site!, "tags"),
+    enabled: !!site,
+  });
+  const [assign, setAssign] = useState<{ kind: TaxonomyKind; remove: boolean; id?: number } | null>(null);
   const facets = useQuery({
     queryKey: ["posts-facets", site],
     queryFn: () => postFacets(site!),
@@ -150,10 +166,12 @@ export default function PostsPage() {
   };
 
   const bulk = useMutation({
-    mutationFn: ({ ids, action }: { ids: number[]; action: BulkAction }) => bulkPosts(site!, ids, action),
+    mutationFn: ({ ids, action, taxonomyId }: { ids: number[]; action: BulkAction; taxonomyId?: number }) =>
+      bulkPosts(site!, ids, action, undefined, taxonomyId),
     onSuccess: (result, { action }) => {
       refresh();
-      setSelected((prev) => prev.filter((id) => !result.updated.includes(id)));
+      // A category or tag change leaves the selection alone, so the next one can follow it.
+      if (!action.includes("CATEGORY") && !action.includes("TAG")) setSelected((prev) => prev.filter((id) => !result.updated.includes(id)));
       showBulkResult(result, ACTION_DONE[action]);
     },
     onError: () => message.error("The change could not be made. Nothing was changed."),
@@ -204,7 +222,7 @@ export default function PostsPage() {
   const siteSub = SITES.find((s) => s.code === site)?.subdomain;
   const counts = facets.data?.statusCounts;
   const total = counts ? STATUSES.reduce((n, s) => n + counts[s], 0) : undefined;
-  const filtersOn = Boolean(query.q || query.status || query.category || query.year || query.sort);
+  const filtersOn = Boolean(query.q || query.status || query.categoryId || query.tagId || query.year || query.sort);
   const monthValue = query.year ? dayjs(`${query.year}-${String(query.month ?? 1).padStart(2, "0")}-01`) : null;
   const rows = list.data?.items ?? [];
 
@@ -449,11 +467,23 @@ export default function PostsPage() {
           />
           <Select
             allowClear
+            showSearch
+            optionFilterProp="label"
             placeholder="Any category"
             style={{ width: 190 }}
-            value={query.category}
-            onChange={(v) => update({ category: v })}
-            options={(facets.data?.categories ?? []).map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))}
+            value={query.categoryId}
+            onChange={(v) => update({ categoryId: v ? String(v) : undefined })}
+            options={(categories.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Any tag"
+            style={{ width: 170 }}
+            value={query.tagId}
+            onChange={(v) => update({ tagId: v ? String(v) : undefined })}
+            options={(tagList.data ?? []).map((t) => ({ value: t.id, label: t.name }))}
           />
           <DatePicker
             picker="month"
@@ -485,6 +515,20 @@ export default function PostsPage() {
             {bulkButton("PUBLISH", true)}
             {bulkButton("UNPUBLISH")}
             {bulkButton("ARCHIVE")}
+            <Dropdown
+              trigger={["click"]}
+              disabled={overLimit}
+              menu={{
+                items: [
+                  { key: "ac", label: "Add a category…", onClick: () => setAssign({ kind: "categories", remove: false }) },
+                  { key: "rc", label: "Remove a category…", onClick: () => setAssign({ kind: "categories", remove: true }) },
+                  { key: "at", label: "Add a tag…", onClick: () => setAssign({ kind: "tags", remove: false }) },
+                  { key: "rt", label: "Remove a tag…", onClick: () => setAssign({ kind: "tags", remove: true }) },
+                ],
+              }}
+            >
+              <Button disabled={overLimit}>Categories & tags</Button>
+            </Dropdown>
           <Button danger disabled={overLimit} loading={bulk.isPending} onClick={() => moveToTrash(selected)}>
             Move to Trash
           </Button>
@@ -539,6 +583,33 @@ export default function PostsPage() {
         />
         </>
       )}
+
+      <Modal
+        open={assign !== null}
+        title={assign ? `${assign.remove ? "Remove a" : "Add a"} ${assign.kind === "categories" ? "category" : "tag"} ${assign.remove ? "from" : "to"} ${selected.length} post${selected.length === 1 ? "" : "s"}` : ""}
+        okText={assign?.remove ? "Remove" : "Add"}
+        okButtonProps={{ disabled: !assign?.id, loading: bulk.isPending }}
+        onCancel={() => setAssign(null)}
+        destroyOnHidden
+        onOk={() => {
+          if (!assign?.id) return;
+          const action: BulkAction = assign.kind === "categories" ? (assign.remove ? "REMOVE_CATEGORY" : "ASSIGN_CATEGORY") : assign.remove ? "REMOVE_TAG" : "ASSIGN_TAG";
+          bulk.mutate({ ids: selected, action, taxonomyId: assign.id }, { onSettled: () => setAssign(null) });
+        }}
+      >
+        <Select
+          showSearch
+          optionFilterProp="label"
+          style={{ width: "100%" }}
+          placeholder={`Choose a ${assign?.kind === "categories" ? "category" : "tag"}`}
+          value={assign?.id}
+          onChange={(v) => setAssign((a) => (a ? { ...a, id: v } : a))}
+          options={((assign?.kind === "categories" ? categories.data : tagList.data) ?? [])
+            .filter((r) => assign?.remove || r.status === "ACTIVE")
+            .map((r) => ({ value: r.id, label: r.name }))}
+        />
+        {!assign?.remove && <p className="mt-3 mb-0" style={{ fontSize: 12, color: "#7b8aa5" }}>Only active ones can be added. A post can have at most 15 categories and tags together.</p>}
+      </Modal>
     </div>
   );
 }

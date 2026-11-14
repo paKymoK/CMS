@@ -384,4 +384,37 @@ FROM (VALUES ((SELECT id FROM site WHERE code = 'en'), 'vietnam-china-ai-digital
         'CMC Global Editorial', 'Insights Team', 'The CMC Global Insights team writes about technology, delivery and the markets we work in.', '["Events"]'::jsonb, false, 4, 'PUBLISHED')
 ) AS v (site_id, slug, category, image, title, excerpt, date, body, author_name, author_role, author_bio, tags, featured, display_order, status);
 
+-- Post categories and tags (G2). Active = PUBLISHED, Inactive = DRAFT. Every site has the default
+-- "Uncategorized" category; the English site also gets the categories and tags its seeded posts use. A
+-- post keeps the ids (categoryIds, tagIds) and, derived from them, the names the website and the search
+-- read (category = its first active category, tags = its active tags).
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT s.id, 'post_category',
+       jsonb_build_object('name', 'Uncategorized', 'slug', 'uncategorized',
+                          'description', 'Posts that have no other category.'), 0, 'PUBLISHED'
+FROM site s;
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT s.id, 'post_category',
+       jsonb_build_object('name', 'Insight', 'slug', 'insight',
+                          'description', 'Articles and news from CMC Global.'), 1, 'PUBLISHED'
+FROM site s
+WHERE s.code = 'en';
+INSERT INTO content_item (site_id, content_type, data, display_order, status)
+SELECT s.id, 'post_tag', jsonb_build_object('name', t.name, 'slug', t.slug), t.ord, 'PUBLISHED'
+FROM site s,
+     (VALUES ('AI & Automation', 'ai-automation', 0), ('Events', 'events', 1), ('Partnerships', 'partnerships', 2)) AS t (name, slug, ord)
+WHERE s.code = 'en';
+UPDATE content_item p
+SET data = p.data || jsonb_build_object(
+        'categoryIds', (SELECT coalesce(jsonb_agg(c.id), '[]'::jsonb) FROM content_item c
+                        WHERE c.site_id = p.site_id AND c.content_type = 'post_category'
+                          AND lower(c.data ->> 'name') = lower(p.data ->> 'category')),
+        'category', coalesce((SELECT c.data ->> 'name' FROM content_item c
+                              WHERE c.site_id = p.site_id AND c.content_type = 'post_category'
+                                AND lower(c.data ->> 'name') = lower(p.data ->> 'category') LIMIT 1), ''),
+        'tagIds', (SELECT coalesce(jsonb_agg(t.id ORDER BY e.ord), '[]'::jsonb)
+                   FROM jsonb_array_elements_text(coalesce(p.data -> 'tags', '[]'::jsonb)) WITH ORDINALITY e (v, ord)
+                            JOIN content_item t ON t.site_id = p.site_id AND t.content_type = 'post_tag' AND t.data ->> 'name' = e.v))
+WHERE p.content_type = 'post';
+
 ALTER TABLE content_item ENABLE TRIGGER content_item_audit;

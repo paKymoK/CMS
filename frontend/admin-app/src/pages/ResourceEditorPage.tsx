@@ -1,7 +1,8 @@
 import { useState, type CSSProperties } from "react";
+import dayjs, { type Dayjs } from "dayjs";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Collapse, Empty, Form, Switch, message, type FormInstance } from "antd";
+import { Collapse, DatePicker, Empty, Form, Modal, Switch, message, type FormInstance } from "antd";
 import type { NamePath } from "antd/es/form/interface";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
@@ -18,9 +19,15 @@ import { RESOURCE_PREVIEWS } from "../components/resourcePreviews";
 import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks, type SeoCheck, type SeoValues } from "../lib/seo";
+import { confirmMovePagesToTrash } from "../components/pageTrash";
 
 type Values = Record<string, unknown>;
-type Status = "DRAFT" | "PUBLISHED";
+/** A page can also be Scheduled (goes live by itself at a set time) and Archived (taken off the site but kept). */
+type Status = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
+const STATUS_LABELS: Record<Status, string> = { DRAFT: "Draft", SCHEDULED: "Scheduled", PUBLISHED: "Published", ARCHIVED: "Archived" };
+/** The editor's own time zone, shown beside the pickers: times are picked in it and stored as UTC. */
+const ZONE = `${Intl.DateTimeFormat().resolvedOptions().timeZone} (UTC${dayjs().format("Z")})`;
+const TIME_FORMAT = "MMM D, YYYY HH:mm";
 
 function slugify(text: string): string {
   return text
@@ -213,6 +220,20 @@ function ResourceEditorForm({
   const siteSub = site ? SITES.find((s) => s.code === site)?.subdomain : undefined;
   const titleValue = (Form.useWatch(resource.titleField, form) as string | undefined) ?? "";
   const pub = status === "PUBLISHED";
+  const scheduled = status === "SCHEDULED";
+  const pageStatuses = !!editor.pageStatuses;
+  const [publishAt, setPublishAt] = useState<Dayjs | null>(initial?.publishAt ? dayjs(initial.publishAt as string) : null);
+  const [unpublishAt, setUnpublishAt] = useState<Dayjs | null>(initial?.unpublishAt ? dayjs(initial.unpublishAt as string) : null);
+  // Checked here for a quick answer; the server checks again.
+  const scheduleProblem = !scheduled
+    ? null
+    : !publishAt
+      ? "Choose when the page should be published."
+      : !publishAt.isAfter(dayjs()) && !(initial?.publishAt && dayjs(initial.publishAt as string).isSame(publishAt))
+        ? "The publish time must be in the future."
+        : unpublishAt && !unpublishAt.isAfter(publishAt)
+          ? "The unpublish time must be after the publish time."
+          : null;
   const touch = () => setDirty(true);
 
   const saveMutation = useMutation({
@@ -237,6 +258,12 @@ function ResourceEditorForm({
         slug: slug || undefined,
         displayOrder,
         status: nextStatus,
+        ...(pageStatuses
+          ? {
+              publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
+              unpublishAt: (nextStatus === "SCHEDULED" || nextStatus === "PUBLISHED") && unpublishAt ? unpublishAt.toISOString() : null,
+            }
+          : {}),
       };
       const body = resource.contentType ? toItemPayload(resource.contentType, values) : values;
       return isNew
@@ -246,8 +273,11 @@ function ResourceEditorForm({
     onSuccess: (res, nextStatus) => {
       setVersion((res.data.data as { version?: number }).version);
       setStatus(nextStatus);
+      if (nextStatus === "DRAFT" || nextStatus === "ARCHIVED") setUnpublishAt(null);
       setDirty(false);
-      message.success(nextStatus === "PUBLISHED" ? "Published" : "Saved as draft");
+      message.success(
+        nextStatus === "PUBLISHED" ? "Published" : nextStatus === "SCHEDULED" ? "Scheduled" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft",
+      );
       queryClient.invalidateQueries({ queryKey: ["content", resource.key, site] });
       queryClient.invalidateQueries({ queryKey: ["slugs", site] });
       if (isNew) {
@@ -310,7 +340,7 @@ function ResourceEditorForm({
             <span
               style={{ flex: "none", padding: "4px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: pub ? "#e3f7ee" : "#fff4e0", color: pub ? "#0b7a55" : "#9a5b00" }}
             >
-              {pub ? "Published" : "Draft"}
+              {STATUS_LABELS[status]}
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -328,25 +358,64 @@ function ResourceEditorForm({
                 History
               </button>
             )}
+            {pageStatuses && !isNew && !editor.singleton && site && (
+              <button
+                type="button"
+                onClick={() => confirmMovePagesToTrash(site, [{ id: Number(id), title: titleValue || null }], () => navigate(editor.backPath, { replace: true }))}
+                style={{ ...outlineButton, color: "#b42318" }}
+              >
+                Move to Trash
+              </button>
+            )}
             <button
               type="button"
               onClick={() => saveMutation.mutate("DRAFT")}
               disabled={saveMutation.isPending}
               style={{ ...outlineButton, border: "1px solid #bcd9fb", color: "#0083ff" }}
             >
-              Save draft
+              {status === "ARCHIVED" ? "Move to draft" : "Save draft"}
             </button>
+            {pageStatuses && !isNew && status !== "ARCHIVED" && (
+              <button
+                type="button"
+                onClick={() =>
+                  status === "PUBLISHED"
+                    ? Modal.confirm({
+                        title: `Archive this ${editor.singular}?`,
+                        content: "It is taken off the site and its address stops working, but the page is kept. You can publish it again or move it back to draft.",
+                        okText: "Archive",
+                        onOk: () => saveMutation.mutate("ARCHIVED"),
+                      })
+                    : saveMutation.mutate("ARCHIVED")
+                }
+                disabled={saveMutation.isPending}
+                style={outlineButton}
+              >
+                Archive
+              </button>
+            )}
+            {status === "ARCHIVED" && (
+              <button type="button" onClick={() => saveMutation.mutate("ARCHIVED")} disabled={saveMutation.isPending} style={outlineButton}>
+                Save
+              </button>
+            )}
             <button
               type="button"
-              onClick={() =>
-                pub || !resource.seo
-                  ? saveMutation.mutate("PUBLISHED")
-                  : publishUnlessSeoMissing(seoChecksFor(resource, form.getFieldsValue(true), slug), () => saveMutation.mutate("PUBLISHED"))
-              }
+              onClick={() => {
+                if (scheduleProblem) {
+                  message.error(scheduleProblem);
+                  return;
+                }
+                const goal: Status = scheduled ? "SCHEDULED" : "PUBLISHED";
+                // Only a page that is not live yet gets the SEO prompt; updating one never asks.
+                return status === "PUBLISHED" || initial?.status === goal || !resource.seo
+                  ? saveMutation.mutate(goal)
+                  : publishUnlessSeoMissing(seoChecksFor(resource, form.getFieldsValue(true), slug), () => saveMutation.mutate(goal));
+              }}
               disabled={saveMutation.isPending}
               style={{ ...outlineButton, padding: "0 20px", border: "none", background: "#0083ff", color: "#ffffff" }}
             >
-              {pub ? "Update" : "Publish"}
+              {scheduled ? (initial?.status === "SCHEDULED" ? "Update schedule" : "Schedule") : pub ? "Update" : "Publish"}
             </button>
           </div>
         </div>
@@ -406,7 +475,7 @@ function ResourceEditorForm({
               <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...labelStyle }}>Publishing</div>
               <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, padding: 4, border: "1px solid #dde4f0", borderRadius: 12, background: "#e8eef8" }}>
-                  {(["DRAFT", "PUBLISHED"] as const).map((s) => (
+                  {(pageStatuses ? (["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"] as const) : (["DRAFT", "PUBLISHED"] as const)).map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -427,10 +496,53 @@ function ResourceEditorForm({
                         color: status === s ? "#0b1b3a" : "#5b6b86",
                       }}
                     >
-                      {s === "DRAFT" ? "Draft" : "Published"}
+                      {STATUS_LABELS[s]}
                     </button>
                   ))}
                 </div>
+                {status === "ARCHIVED" && (
+                  <span style={{ fontSize: 12.5, color: "#7b8aa5", lineHeight: 1.45 }}>
+                    Archived: not on the site, but kept. Use Save to keep it archived, or Publish / Move to draft to bring it back.
+                  </span>
+                )}
+                {pageStatuses && scheduled && (
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={labelStyle}>Publish at</span>
+                    <DatePicker
+                      showTime={{ format: "HH:mm" }}
+                      format={TIME_FORMAT}
+                      value={publishAt}
+                      minDate={dayjs()}
+                      onChange={(v) => {
+                        setPublishAt(v ? v.startOf("minute") : null);
+                        touch();
+                      }}
+                      style={{ width: "100%" }}
+                    />
+                  </label>
+                )}
+                {pageStatuses && (scheduled || pub) && (
+                  <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={labelStyle}>Take offline at (optional)</span>
+                    <DatePicker
+                      showTime={{ format: "HH:mm" }}
+                      format={TIME_FORMAT}
+                      value={unpublishAt}
+                      minDate={dayjs()}
+                      allowClear
+                      onChange={(v) => {
+                        setUnpublishAt(v ? v.startOf("minute") : null);
+                        touch();
+                      }}
+                      style={{ width: "100%" }}
+                    />
+                  </label>
+                )}
+                {pageStatuses && (scheduled || (pub && unpublishAt)) && (
+                  <span style={{ fontSize: 12.5, color: scheduleProblem ? "#c4341c" : "#7b8aa5", lineHeight: 1.45 }}>
+                    {scheduleProblem ?? `Times are in your time zone, ${ZONE}. The site checks once a minute, so a change can take up to a minute to show.`}
+                  </span>
+                )}
 
                 {!editor.noSlug && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

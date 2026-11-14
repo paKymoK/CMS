@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.takypok.contentservice.model.content.types.PostFields;
 import com.takypok.contentservice.model.entity.ContentItem;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * A post content_item flattened back to the shape the admin editor and the public pages use: its
@@ -23,6 +24,8 @@ public record PostResponse(
     String authorBio,
     String authorAvatar,
     JsonNode tags,
+    List<Long> categoryIds,
+    List<Long> tagIds,
     Boolean featured,
     String layout,
     String seoTitle,
@@ -55,6 +58,8 @@ public record PostResponse(
         fields.getAuthorBio(),
         fields.getAuthorAvatar(),
         fields.getTags(),
+        fields.getCategoryIds() == null ? List.of() : fields.getCategoryIds(),
+        fields.getTagIds() == null ? List.of() : fields.getTagIds(),
         fields.getFeatured(),
         fields.getLayout(),
         fields.getSeoTitle(),

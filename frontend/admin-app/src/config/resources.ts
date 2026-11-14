@@ -143,6 +143,8 @@ export interface ResourceConfig {
     singleton?: boolean;
     /** No URL of its own (the page lives at a fixed address), so the editor shows no URL box. */
     noSlug?: boolean;
+    /** A page (G11): can also be Scheduled and Archived, and is moved to the Trash rather than deleted. */
+    pageStatuses?: boolean;
   };
 }
 
@@ -504,7 +506,7 @@ export const RESOURCES: ResourceConfig[] = [
     contentType: "about_page",
     titleField: "heroTitle",
     editorRoute: (id) => `/about-page/${id}`,
-    editor: { slugPrefix: "about", singular: "About page", backPath: "/about-page", singleton: true, noSlug: true },
+    editor: { slugPrefix: "about", singular: "About page", backPath: "/about-page", singleton: true, noSlug: true, pageStatuses: true },
     seo: {
       fallbackTitle: () => "About Us | CMC Global",
       fallbackDescription: (v) => str(v.heroSubtitle),
@@ -634,7 +636,7 @@ export const RESOURCES: ResourceConfig[] = [
     titleField: "navLabel",
     duplicable: true,
     editorRoute: (id) => `/industry-pages/${id}`,
-    editor: { slugPrefix: "industries", singular: "industry page", backPath: "/content/industry-pages" },
+    editor: { slugPrefix: "industries", singular: "industry page", backPath: "/pages?type=industry_page", pageStatuses: true },
     seo: {
       fallbackTitle: (v) => `${str(v.navLabel) || "Untitled industry"} | CMC Global`,
       fallbackDescription: (v) => str(v.heroSubtitle),
@@ -773,7 +775,7 @@ export const RESOURCES: ResourceConfig[] = [
     titleField: "navLabel",
     duplicable: true,
     editorRoute: (id) => `/service-pages/${id}`,
-    editor: { slugPrefix: "services/[category]", singular: "service page", backPath: "/content/service-pages" },
+    editor: { slugPrefix: "services/[category]", singular: "service page", backPath: "/pages?type=service_page", pageStatuses: true },
     seo: {
       fallbackTitle: (v) => `${str(v.navLabel) || "Untitled service"} | CMC Global`,
       fallbackDescription: (v) => str(v.heroSubtitle),

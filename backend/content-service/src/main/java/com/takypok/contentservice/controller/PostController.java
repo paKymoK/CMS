@@ -1,6 +1,7 @@
 package com.takypok.contentservice.controller;
 
 import com.takypok.contentservice.config.CmsAdminGuard;
+import com.takypok.contentservice.model.TaxonomyKind;
 import com.takypok.contentservice.model.entity.Site;
 import com.takypok.contentservice.model.request.PostBulkRequest;
 import com.takypok.contentservice.model.request.PostCreateRequest;
@@ -13,6 +14,7 @@ import com.takypok.contentservice.service.PostListService;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.PostTrashService;
 import com.takypok.contentservice.service.SiteService;
+import com.takypok.contentservice.service.TaxonomyService;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import com.takypok.core.model.ResultMessage;
@@ -30,6 +32,7 @@ public class PostController {
   private final PostService postService;
   private final PostListService postListService;
   private final PostTrashService postTrashService;
+  private final TaxonomyService taxonomyService;
   private final SiteService siteService;
   private final CmsAdminGuard cmsAdminGuard;
 
@@ -50,7 +53,8 @@ public class PostController {
       @RequestParam String site,
       @RequestParam(required = false) String q,
       @RequestParam(required = false) String status,
-      @RequestParam(required = false) String category,
+      @RequestParam(required = false) Long categoryId,
+      @RequestParam(required = false) Long tagId,
       @RequestParam(required = false) Integer year,
       @RequestParam(required = false) Integer month,
       @RequestParam(required = false) String sort,
@@ -61,7 +65,7 @@ public class PostController {
         .flatMap(
             resolved ->
                 postListService.page(
-                    resolved.getId(), q, status, category, year, month, sort, page, size))
+                    resolved.getId(), q, status, categoryId, tagId, year, month, sort, page, size))
         .map(ResultMessage::success);
   }
 
@@ -94,6 +98,8 @@ public class PostController {
                         resolved.getId(), request.getIds(), request.getSlugs());
                 case "DELETE_FOREVER" ->
                     postTrashService.deleteForever(resolved.getId(), request.getIds());
+                case "ASSIGN_CATEGORY", "REMOVE_CATEGORY", "ASSIGN_TAG", "REMOVE_TAG" ->
+                    assign(resolved.getId(), action.toUpperCase(), request);
                 default ->
                     postService.bulkStatus(resolved.getId(), request.getIds(), request.getAction());
               };
@@ -177,6 +183,17 @@ public class PostController {
                     : Mono.error(
                         new ApplicationException(
                             Message.Application.ERROR, result.failed().get(0).reason())));
+  }
+
+  private Mono<PostListResponses.BulkResult> assign(
+      Long siteId, String action, PostBulkRequest request) {
+    if (request.getTaxonomyId() == null) {
+      return Mono.error(
+          new ApplicationException(Message.Application.ERROR, "Choose a category or tag"));
+    }
+    TaxonomyKind kind = action.endsWith("CATEGORY") ? TaxonomyKind.CATEGORY : TaxonomyKind.TAG;
+    return taxonomyService.assignToPosts(
+        siteId, kind, request.getTaxonomyId(), request.getIds(), action.startsWith("REMOVE"));
   }
 
   private Mono<Site> authorizedSite(String code, Authentication authentication) {

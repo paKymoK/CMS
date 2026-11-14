@@ -21,17 +21,21 @@ class StatusRulesTest {
   }
 
   @Test
-  void onlyPostsMayBeArchived() {
-    assertDoesNotThrow(() -> StatusRules.requireAllowed("post", "ARCHIVED"));
-    for (String type : new String[] {"case_study", "service_page", "industry_page", "about_page"}) {
+  void onlyPostsAndPagesMayBeArchived() {
+    for (String type : new String[] {"post", "service_page", "industry_page", "about_page"}) {
+      assertDoesNotThrow(() -> StatusRules.requireAllowed(type, "ARCHIVED"));
+    }
+    for (String type : new String[] {"case_study", "stat", "site_footer"}) {
       assertThrows(ApplicationException.class, () -> StatusRules.requireAllowed(type, "ARCHIVED"));
     }
   }
 
   @Test
-  void onlyPostsMayBeScheduled() {
-    assertDoesNotThrow(() -> StatusRules.requireAllowed("post", "SCHEDULED"));
-    for (String type : new String[] {"case_study", "service_page", "industry_page", "about_page"}) {
+  void onlyPostsAndPagesMayBeScheduled() {
+    for (String type : new String[] {"post", "service_page", "industry_page", "about_page"}) {
+      assertDoesNotThrow(() -> StatusRules.requireAllowed(type, "SCHEDULED"));
+    }
+    for (String type : new String[] {"case_study", "stat", "site_footer"}) {
       assertThrows(ApplicationException.class, () -> StatusRules.requireAllowed(type, "SCHEDULED"));
     }
   }

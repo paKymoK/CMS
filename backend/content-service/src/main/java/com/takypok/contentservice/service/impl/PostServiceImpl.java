@@ -1,8 +1,8 @@
 package com.takypok.contentservice.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.takypok.contentservice.audit.ContentItemWriter;
+import com.takypok.contentservice.model.TaxonomyKind;
 import com.takypok.contentservice.model.content.types.PostFields;
 import com.takypok.contentservice.model.entity.ContentItem;
 import com.takypok.contentservice.model.mapper.ContentItemMapper;
@@ -17,6 +17,7 @@ import com.takypok.contentservice.search.SearchRepository;
 import com.takypok.contentservice.service.PostService;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.service.SlugRegistry;
+import com.takypok.contentservice.service.TaxonomyService;
 import com.takypok.contentservice.util.FieldRules;
 import com.takypok.contentservice.util.RichTextSanitizer;
 import com.takypok.contentservice.util.ScheduleRules;
@@ -62,6 +63,7 @@ public class PostServiceImpl implements PostService {
   private final SearchService searchService;
   private final ContentItemWriter contentItemWriter;
   private final SlugRegistry slugRegistry;
+  private final TaxonomyService taxonomyService;
 
   @Override
   public Mono<List<PostResponse>> getAll(Long siteId) {
@@ -94,7 +96,6 @@ public class PostServiceImpl implements PostService {
                   null,
                   Instant.now());
           PostFields fields = new PostFields();
-          fields.setCategory(request.getCategory() != null ? request.getCategory() : "insight");
           fields.setLayout(validLayout(request.getLayout()));
           fields.setFeatured(request.getFeatured() != null ? request.getFeatured() : false);
           applySeo(
@@ -121,16 +122,21 @@ public class PostServiceImpl implements PostService {
               request.getAuthorName(),
               request.getAuthorRole(),
               request.getAuthorBio(),
-              request.getAuthorAvatar(),
-              request.getTags());
-          return save(
-              siteId,
-              new ContentItem(),
-              request.getSlug(),
-              fields,
-              request.getDisplayOrder(),
-              status,
-              times);
+              request.getAuthorAvatar());
+          return taxonomyService
+              .resolveForPost(siteId, request.getCategoryIds(), request.getTagIds(), null, null)
+              .flatMap(
+                  taxonomy -> {
+                    applyTaxonomy(fields, taxonomy);
+                    return save(
+                        siteId,
+                        new ContentItem(),
+                        request.getSlug(),
+                        fields,
+                        request.getDisplayOrder(),
+                        status,
+                        times);
+                  });
         });
   }
 
@@ -155,10 +161,6 @@ public class PostServiceImpl implements PostService {
                               item.getUnpublishAt(),
                               Instant.now());
                       PostFields fields = new PostFields();
-                      fields.setCategory(
-                          request.getCategory() != null
-                              ? request.getCategory()
-                              : existing.getCategory());
                       fields.setLayout(
                           request.getLayout() != null
                               ? validLayout(request.getLayout())
@@ -179,8 +181,7 @@ public class PostServiceImpl implements PostService {
                           request.getAuthorName(),
                           request.getAuthorRole(),
                           request.getAuthorBio(),
-                          request.getAuthorAvatar(),
-                          request.getTags());
+                          request.getAuthorAvatar());
                       // Not sent by every client: left out keeps the stored value, blank clears it.
                       fields.setAuthorBio(
                           FieldRules.keepOrClear(request.getAuthorBio(), existing.getAuthorBio()));
@@ -199,14 +200,25 @@ public class PostServiceImpl implements PostService {
                           request.getSeoOgTitle(),
                           request.getSeoOgDescription(),
                           request.getSeoJsonLd());
-                      return save(
-                          siteId,
-                          item,
-                          request.getSlug(),
-                          fields,
-                          request.getDisplayOrder(),
-                          status,
-                          times);
+                      return taxonomyService
+                          .resolveForPost(
+                              siteId,
+                              request.getCategoryIds(),
+                              request.getTagIds(),
+                              existing.getCategoryIds(),
+                              existing.getTagIds())
+                          .flatMap(
+                              taxonomy -> {
+                                applyTaxonomy(fields, taxonomy);
+                                return save(
+                                    siteId,
+                                    item,
+                                    request.getSlug(),
+                                    fields,
+                                    request.getDisplayOrder(),
+                                    status,
+                                    times);
+                              });
                     }));
   }
 
@@ -265,8 +277,7 @@ public class PostServiceImpl implements PostService {
       String authorName,
       String authorRole,
       String authorBio,
-      String authorAvatar,
-      JsonNode tags) {
+      String authorAvatar) {
     String cleanBody = RichTextSanitizer.sanitizeOrReject(body);
     fields.setImage(image);
     fields.setTitle(title);
@@ -277,7 +288,16 @@ public class PostServiceImpl implements PostService {
     fields.setAuthorRole(authorRole);
     fields.setAuthorBio(authorBio);
     fields.setAuthorAvatar(authorAvatar);
-    fields.setTags(tags);
+  }
+
+  /** The categories and tags a post stores: the ids, and the names derived from them. */
+  private void applyTaxonomy(PostFields fields, TaxonomyService.PostTaxonomy taxonomy) {
+    fields.setCategoryIds(taxonomy.categoryIds());
+    fields.setTagIds(taxonomy.tagIds());
+    fields.setCategory(taxonomy.category());
+    var names = objectMapper.createArrayNode();
+    taxonomy.tags().forEach(names::add);
+    fields.setTags(names);
   }
 
   /** Resolves the slug, validates and persists {@code item} (new, or the row being updated). */
@@ -502,6 +522,18 @@ public class PostServiceImpl implements PostService {
       rank.putIfAbsent(hit.id(), rank.size());
     }
     return rank;
+  }
+
+  @Override
+  public Mono<List<PostSummaryResponse>> publishedWith(
+      Long siteId, TaxonomyKind kind, Long taxonomyId) {
+    return getPublished(siteId)
+        .filter(
+            post ->
+                (kind == TaxonomyKind.CATEGORY ? post.categoryIds() : post.tagIds())
+                    .contains(taxonomyId))
+        .map(PostSummaryResponse::from)
+        .collectList();
   }
 
   private boolean tagsContain(PostResponse post, String tag) {

@@ -2,7 +2,17 @@ import { contentApi } from "./api";
 
 export type PostStatus = "DRAFT" | "PUBLISHED" | "SCHEDULED" | "ARCHIVED";
 export type PostSort = "updated_desc" | "updated_asc" | "title_asc" | "title_desc";
-export type BulkAction = "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "TRASH" | "RESTORE" | "DELETE_FOREVER";
+export type BulkAction =
+  | "PUBLISH"
+  | "UNPUBLISH"
+  | "ARCHIVE"
+  | "TRASH"
+  | "RESTORE"
+  | "DELETE_FOREVER"
+  | "ASSIGN_CATEGORY"
+  | "REMOVE_CATEGORY"
+  | "ASSIGN_TAG"
+  | "REMOVE_TAG";
 
 /** One post as a list row (BRD POST-01). */
 export interface PostRow {
@@ -46,7 +56,9 @@ export interface BulkResult {
 export interface PostQuery {
   q?: string;
   status?: PostStatus;
-  category?: string;
+  /** Posts that carry this category or tag (its id). */
+  categoryId?: number;
+  tagId?: number;
   /** Month and year of the last update. A month needs a year. */
   year?: number;
   month?: number;
@@ -72,14 +84,18 @@ export async function postFacets(site: string): Promise<PostFacets> {
   return data.data as PostFacets;
 }
 
-/** `slugs` (post id to address) is for RESTORE only: restore a post under another address. */
+/**
+ * `slugs` (post id to address) is for RESTORE only: restore a post under another address.
+ * `taxonomyId` is the category or tag for the ASSIGN_ and REMOVE_ actions.
+ */
 export async function bulkPosts(
   site: string,
   ids: number[],
   action: BulkAction,
   slugs?: Record<number, string>,
+  taxonomyId?: number,
 ): Promise<BulkResult> {
-  const { data } = await contentApi.post("/v1/admin/posts/bulk", { ids, action, slugs }, { params: { site } });
+  const { data } = await contentApi.post("/v1/admin/posts/bulk", { ids, action, slugs, taxonomyId }, { params: { site } });
   return data.data as BulkResult;
 }
 

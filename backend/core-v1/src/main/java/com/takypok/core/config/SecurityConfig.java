@@ -85,6 +85,15 @@ public class SecurityConfig {
                     .permitAll()
                     .pathMatchers(HttpMethod.GET, "/v1/case-studies", "/v1/case-studies/**")
                     .permitAll()
+                    // Post categories and tags with their published posts (see
+                    // PublicTaxonomyController).
+                    .pathMatchers(
+                        HttpMethod.GET,
+                        "/v1/post-categories",
+                        "/v1/post-categories/**",
+                        "/v1/post-tags",
+                        "/v1/post-tags/**")
+                    .permitAll()
                     // Typo-tolerant search + as-you-type suggestions over the published content
                     // (see PublicSearchController); same Host-header site resolution.
                     .pathMatchers(HttpMethod.GET, "/v1/search/**")

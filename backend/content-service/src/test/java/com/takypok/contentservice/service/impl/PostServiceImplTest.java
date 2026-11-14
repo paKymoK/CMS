@@ -23,6 +23,7 @@ import com.takypok.contentservice.model.request.PostUpdateRequest;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.SearchService;
 import com.takypok.contentservice.service.SlugRegistry;
+import com.takypok.contentservice.service.TaxonomyService;
 import com.takypok.core.config.ConfigObjectMapper;
 import com.takypok.core.exception.ApplicationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,7 @@ class PostServiceImplTest {
   @Mock private SearchService searchService;
   @Mock private ContentItemWriter contentItemWriter;
   @Mock private SlugRegistry slugRegistry;
+  @Mock private TaxonomyService taxonomyService;
 
   private PostServiceImpl service;
 
@@ -62,7 +64,15 @@ class PostServiceImplTest {
             objectMapper,
             searchService,
             contentItemWriter,
-            slugRegistry);
+            slugRegistry,
+            taxonomyService);
+    // the categories and tags are TaxonomyService's own concern: any post gets the same ones
+    lenient()
+        .when(taxonomyService.resolveForPost(any(), any(), any(), any(), any()))
+        .thenReturn(
+            Mono.just(
+                new TaxonomyService.PostTaxonomy(
+                    java.util.List.of(1L), java.util.List.of(), "insight", java.util.List.of())));
     // no old slugs unless a test says so
     lenient()
         .when(slugRegistry.isAliasOfOther(any(), any(), any(), any(), any()))

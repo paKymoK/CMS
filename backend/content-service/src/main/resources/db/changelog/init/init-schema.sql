@@ -152,7 +152,7 @@ DECLARE
     live      boolean;
     n         integer;
 BEGIN
-    IF NEW.content_type NOT IN ('post', 'case_study', 'industry_page', 'service_page') THEN
+    IF NEW.content_type NOT IN ('post', 'case_study', 'industry_page', 'service_page', 'post_category', 'post_tag') THEN
         RETURN NULL;
     END IF;
     new_slug := nullif(btrim(NEW.data ->> 'slug'), '');

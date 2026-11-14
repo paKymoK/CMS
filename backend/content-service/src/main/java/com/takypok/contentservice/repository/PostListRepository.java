@@ -43,7 +43,8 @@ public class PostListRepository {
    * Any field may be null (no condition). {@code year} alone filters the year; with {@code month}
    * one month.
    */
-  public record Filter(String q, String status, String category, Integer year, Integer month) {}
+  public record Filter(
+      String q, String status, Long categoryId, Long tagId, Integer year, Integer month) {}
 
   /** One row as read; tags arrive as the JSON text of the array. */
   public record Row(
@@ -174,9 +175,13 @@ public class PostListRepository {
       conditions.add("ci.status = :status");
       params.put("status", f.status());
     }
-    if (f.category() != null && !f.category().isBlank()) {
-      conditions.add("ci.data ->> 'category' = :category");
-      params.put("category", f.category());
+    if (f.categoryId() != null) {
+      conditions.add("ci.data -> 'categoryIds' @> to_jsonb(CAST(:categoryId AS bigint))");
+      params.put("categoryId", f.categoryId());
+    }
+    if (f.tagId() != null) {
+      conditions.add("ci.data -> 'tagIds' @> to_jsonb(CAST(:tagId AS bigint))");
+      params.put("tagId", f.tagId());
     }
     if (f.year() != null) {
       OffsetDateTime from =

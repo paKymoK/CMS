@@ -35,7 +35,8 @@ public class PostListServiceImpl implements PostListService {
       Long siteId,
       String q,
       String status,
-      String category,
+      Long categoryId,
+      Long tagId,
       Integer year,
       Integer month,
       String sort,
@@ -63,7 +64,7 @@ public class PostListServiceImpl implements PostListService {
           int safePage = page == null ? 1 : Math.max(page, 1);
           int safeSize = size == null ? DEFAULT_SIZE : Math.min(Math.max(size, 1), MAX_SIZE);
           PostListRepository.Filter filter =
-              new PostListRepository.Filter(query, statusValue, blankToNull(category), year, month);
+              new PostListRepository.Filter(query, statusValue, categoryId, tagId, year, month);
           return repository
               .page(siteId, filter, parseSort(sort), safePage, safeSize)
               .map(

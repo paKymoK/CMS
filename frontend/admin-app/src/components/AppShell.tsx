@@ -19,6 +19,7 @@ const stripGroupPrefix = (label: string) => label.replace(/^About · /, "");
 // or the resource's own link when it is a singleton with no list.
 function navKeyFor(pathname: string): string {
   if (pathname.startsWith("/posts/")) return "/content/posts";
+  if (pathname === "/pages") return "/pages";
   for (const r of RESOURCES) {
     if (!r.editorRoute) continue;
     const base = r.editorRoute("new").replace(/\/new$/, "");

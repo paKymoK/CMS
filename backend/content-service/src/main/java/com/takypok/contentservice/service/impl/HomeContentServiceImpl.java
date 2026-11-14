@@ -136,7 +136,7 @@ public class HomeContentServiceImpl implements HomeContentService {
    */
   private List<HomeContentResponse.Insight> insights(List<ContentItem> items) {
     return fieldsOf(items, "post", PostFields.class).stream()
-        .filter(p -> "insight".equals(p.getCategory()))
+        .filter(p -> "insight".equalsIgnoreCase(p.getCategory()))
         .map(
             p ->
                 new HomeContentResponse.Insight(

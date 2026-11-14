@@ -74,31 +74,21 @@ Extras the app has that the BRD does not mention: device-width preview of unsave
 **The `active` flag (folded into status: done).** `content_item.active` is removed. What the public sees is now exactly `status = 'PUBLISHED'`: every public read, the search view and the full-text search dropped their `active` condition. An item that used to be inactive is simply a Draft (a post can also be Scheduled or Archived). In the admin the "Active" switches are gone from the Post, Case Study, page and list drawers; the list's old Active column is now a **Live** switch that flips Draft and Published (disabled for Scheduled and Archived posts, which are changed in the editor). The API no longer accepts or returns `active`; the audit snapshots no longer carry it. Two small behaviour changes: a case study's testimonial now shows only when the testimonial is **Published** (before, only active was checked, which the code comment already described as "unpublished quote omitted"), and restoring a version no longer restores an old active value. The seed data was unaffected (every seeded row is Published). The Banner's own "Active from / until" dates are separate fields in its data and are unchanged. The init SQL changed: recreate the local `content` database.
 
 ### G2. Categories and Tags management
-Now specified in detail in 051126 (CAT-01 to CAT-06, TAG-01 to TAG-06). Current state is unchanged:
-- `category` is a free-text string; `tags` is a string array inside `data`.
-- No Category or Tag tables, no list pages, no parent/child, no active/inactive, no per-category post counts, no bulk actions.
-- Editor category field is a plain text input defaulting to `"insight"`.
+**Built** (CAT-01 to CAT-06, TAG-01 to TAG-06), all five steps. Open: the public category URL redirect when a category is inactive (CAT-05, "ask Bảo": an inactive one answers "not found" for now).
 
-What the BRD now requires, as a checklist for the build:
+**How it is stored (decisions).**
+- A category and a tag are `content_item` rows of their own type (`post_category`, `post_tag`), **per site**, so the audit trail, addresses (a renamed one keeps its old address as an alias) and the Trash come from the generic machinery. Active is PUBLISHED and Inactive is DRAFT.
+- A post stores **ids** (`categoryIds`, `tagIds`), so renaming never breaks it. The names the website and the search read (`category` = its first active category, `tags` = its active tags) are **derived** and kept in the post; they are rewritten whenever the post, or the category or tag, changes (rename, activate or deactivate, delete, restore). The website, the search and the list needed no change.
+- Existing free-text categories and tags became rows: the seed (`init-data.sql`) creates "Uncategorized" for every site and, for English, the "Insight" category and three tags its posts used, and gives each post its ids. This edited both `init-schema.sql` (the address trigger now covers the two types) and `init-data.sql`: recreate the `content` database.
 
-| Requirement | Category | Tag |
-|---|---|---|
-| Table per site; fields name, slug, description, status (Active / Inactive), post count, last updated, updated by | CAT-01 | TAG-01 |
-| Parent category (one parent only); child can be Active only while the parent is Active; activating a parent does not activate its children | CAT-02, CAT-05 | no parent |
-| Slug auto-made from name, editable, unique, normalised (lower case, hyphens) | CAT-02 | TAG-02 |
-| Listing: search by name / slug, filter by status (and parent), sort by name, date, post count; paging (Tag: 20 / 40 / 60 / All) | CAT-01 | TAG-01 |
-| Post count is a link to the list of **Published** posts; a count of 0 is not clickable | CAT-06 | TAG-06 |
-| Create inline from the Post editor; the new item is auto-assigned to the post and kept if the post is cancelled | CAT-02 | TAG-02 |
-| Selected items listed first in the picker, rest alphabetical; at most 15 categories and tags **combined** on one post | CAT-02 | TAG-02 |
-| Default category `Uncategorized`; deleting a category moves its posts there | CAT-02, CAT-03 | n/a |
-| Delete goes to Trash, restorable for 30 days, restore brings back the post links; deleting never deletes posts | CAT-03 | TAG-03 |
-| Quick actions: Delete, Active / Inactive, Remove from all posts | CAT-03 | TAG-03 |
-| Bulk Active, Inactive, Delete with a confirmation and a per-item result; disabled when nothing is selected | CAT-04 | TAG-04 |
-| Inactive: not assignable to new posts, hidden on the site (menu, filters, breadcrumb, labels), old post links kept, posts stay Published | CAT-05 | TAG-05 |
-| Public page per item: `/category/<slug>/` and `/tag/<slug>/`, listing the published posts | CAT-02 | TAG-02 |
-| Public category URL redirect rule when inactive | CAT-05 (BRD note: "ask Bảo") | n/a |
+**Rules.** Name unique per site and kind (case-insensitive); the address is made from the name, editable, unique and normalised. A category has at most one parent, itself top-level; a child can be Active only while its parent is (deactivating a parent deactivates its children; activating a parent does not activate them). "Uncategorized" is the default: it cannot be deleted, deactivated, made a sub-category or moved to another address, and a post that would have no category gets it (it drops out as soon as the post has a real one). A post has at most **15 categories and tags together** (a server rule), only Active ones can be newly added (an inactive one a post already has stays), and unknown ids are refused. Deleting moves the item to the Trash (30 days): the posts that carried it lose it (a category's posts fall back to "Uncategorized"), a category's sub-categories become top-level, and a **restore** brings it back as Inactive with those posts and sub-categories. Posts are never deleted. "Remove from all posts" keeps the item.
 
-Design notes: the tables should be per site, as slugs and statuses already are (this matches the open question below on scope). The 15-item cap spans two fields, so it needs a server rule, not only a form limit. The public pages need new website routes. The slug-alias mechanism (`content_slug`, 308 redirects) could carry the category URL rule once Bảo answers.
+**Admin.** Categories and Tags under Perspectives: search, status tabs with counts and a Trash tab, filters (parent), sort (name, updated, posts), 20 / 40 / 60 / All per page; create and edit in a side panel (name, slug that follows the name until typed, description, parent, active); row actions (edit, make active or inactive, remove from all posts, move to Trash); bulk make active, inactive and Trash with a per-item result; the **published-post count links to those posts** (zero is not a link). The post editor has pickers (chosen first, rest A to Z, "+ Create" on the spot which adds the new item to the post and keeps it even if the post is not saved, a shared n / 15 counter). The posts list filters by category and by tag, and the bulk bar has "Categories & tags" (add or remove one on the selected posts; a post at 15 is reported, the rest change). Search and Activity know the two types.
+
+**Public site.** `/category/<slug>` and `/tag/<slug>` list the published posts that carry it (6 per page, newest first, the Insights cards); an inactive or unknown one is a 404. API: `GET /v1/post-categories[/{slug}]`, `/v1/post-tags[/{slug}]` (public in two places that must be kept in step by hand: core-v1 `SecurityConfig` and the gateway's `AuthenticationConfig`; restart the gateway after pulling).
+
+**Verified.** 191 content-service tests pass (two existing test classes were adapted to the new signatures; no new unit tests, by decision). Against the real service and Postgres: create, duplicate name, sub-category depth, the 15 cap (16 refused, 15 accepted), unknown and inactive ids, keeping stored ids when a save leaves them out, deactivate and cascade, activating a child under an inactive parent refused, the default category's protections, Trash and restore (posts, a post's only category falling back to Uncategorized, a parent's children orphaned and re-linked), rename with the old address kept as an alias, a stale edit refused, bulk add and remove on posts, the id filter. In Chrome: the Categories, Tags and Trash screens, the edit panel, the editor's picker with inline create, the posts list filters and bulk bar. The public pages were checked against the running website (`/category/insight` 5 posts, `/tag/events` 4, an unknown or inactive one 404). **Not run in the browser:** the bulk "Categories & tags" dialog (its API was run).
+**Not built:** a link from a post's category label to its page, and a "restore under another address" choice in the categories Trash (a clash is reported with the reason).
 
 ### G3. Post list view
 Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPage.tsx`) with a server-side list, so it stays fast however many posts a site has.
@@ -107,7 +97,7 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 - **Bulk actions** on selected posts (up to 100, selection kept across pages): Publish, Move to draft (unpublish), Archive, through `POST /v1/admin/posts/bulk`. It uses the same rules and the same save as editing one post (validation, slug, dates, version, audit trail), one at a time; a post that cannot be changed (say, no title) is reported with its reason in a dialog and the others still go ahead; a post already in the status counts as done; only posts of the site are ever touched. A single row's menu uses the same call.
 - **API:** `GET /v1/admin/posts/page?site&q&status&category&year&month&sort&page&size` (page counts from 1, size default 20, max 100), `GET /v1/admin/posts/facets?site` (status counts, categories in use, years), `POST /v1/admin/posts/bulk?site`.
 - **Verified:** 42 API checks against 5,000 seeded posts, each compared with an independent SQL query (every filter and sort, paging, wildcard characters, SQL-looking input, other sites, facets); 25 bulk checks (statuses, audit rows, already-done, one bad post among good ones, another site's posts, bad input, access); 32 browser checks (search, tabs, filters, sort, paging, copy URL, bulk bar, the failure dialog, row menu archive and delete, switching site, phone width); 172 content-service unit tests (13 new). Median response over 5,000 posts: about 10 to 25 ms.
-- **Trash: built** (G8): a Trash tab with its count, "Move to Trash" on the row menu and the bulk bar, Restore and Delete permanently. **Not built, waiting on G2:** bulk **assign category / tag** and a category filter over real taxonomy (category is still a free text field and tags a plain list on each post, so the filter and column use those); the date filter is the last-update month (the BRD only says "Date (month/year)").
+- **Trash: built** (G8): a Trash tab with its count, "Move to Trash" on the row menu and the bulk bar, Restore and Delete permanently. **Bulk assign category / tag: built (G2).** Previously noted as waiting: bulk **assign category / tag** and a category filter over real taxonomy (category is still a free text field and tags a plain list on each post, so the filter and column use those); the date filter is the last-update month (the BRD only says "Date (month/year)").
 
 ### G4. SEO
 - **Done** for Posts, Case Studies, Service, Industry and About pages: meta title (`seoTitle`, the whole page title), meta description, share image (falls back to the cover or main image) and noindex. Each falls back to the title, excerpt or summary and image used before, so nothing changes until a field is filled in. The Posts editor has an SEO card; the other pages have an SEO section. The website's page metadata (title, description, Open Graph and Twitter image, robots) follows the fields.
@@ -182,22 +172,31 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 - Auth-service already has project-scoped role assignments (`client_role_assignment`, one role per client, user and project), which fits the website scope. User management is built in auth-service (G13).
 
 ### G11. Pages (PAGE-01 to PAGE-08)
+Pages here means the Service, Industry and About pages (each with its own address family on the website). Decided: draft-over-live uses a draft column on the page; parent and child pages are structure only (the URL does not change); no page password for now; templates wait for G12. Order of work: **1. statuses and Trash (built), 2. one Pages list (built)**, 3. draft over live, 4. parent / child and order, 5. duplicate a page and a review of the fields.
+
+**Built (steps 1 and 2).**
+- **Statuses.** Service, Industry and About pages can be Draft, Scheduled, Published or Archived, like posts: a schedule picker (publish time, optional take-offline time, once-a-minute job that was already generic), an Archive button with a confirmation for a live page, and the SEO prompt when a page goes live. `StatusRules` and `ScheduleRules` now cover the page types; the item API takes `publishAt` / `unpublishAt`.
+- **Trash.** A page is moved to the Trash (30 days, restore as a draft, delete for good, the existing generic functions) instead of deleted; the generic delete refuses a page. Before trashing, a warning lists what links to it (other items whose text holds its address) and, for a published Service page, that it will leave the header's Services menu: a warning, never a block. The About page cannot be trashed (a site has exactly one). A restore whose address is taken is reported with the reason (restoring under another address is not built).
+- **One Pages list** (`/pages`, "All Pages" at the top of the sidebar; the Service and Industry list links open it filtered): title with the page type, URL with a copy button, author (who created it), published date (when it last went live), updated (when and by whom), status; search by title and URL; filters for status, type, author and a published date range; sort by name, updated and published date; 20 / 40 / 60 / All per page; bulk publish, move to draft, archive and Trash (disabled until something is selected, with the count and a confirmation); a Trash tab with its count; quick edit (title, address, status), which asks before changing the address of a live page (the old address keeps redirecting). New page offers Service and Industry. The editor's Publishing card has the four statuses and the schedule pickers, with Archive and Move to Trash beside Save.
+- **Verified:** 191 content-service tests (three old tests that asserted "only posts can be archived or scheduled" now assert posts and pages); against the running stack: filters, sort, bad filter values, bulk archive and publish, the generic delete refused, the About page refused for Trash, an unknown action refused, scheduling a page (a past time and a missing time refused), the menu warning, Trash and restore with the public page answering 200, then not found, then 200, and the editor's Move to Trash dialog in Chrome. **Not run:** quick edit (its endpoint was switched from PATCH to PUT because the CORS rules allow only GET, POST, PUT and DELETE: restart the content-service to load it), and the Scheduled picker in the browser (its API was run).
+- **Not built yet:** the Parent column and parent-aware warnings (step 4: the BRD's "children are hidden from menus when the parent is trashed"), an Author column that is not empty for the seeded pages (they have no creator), and a published date for pages that went live before the audit trail existed.
+
 Pages here means the page types (Service, Industry, About, Case Study, Home). Compared with the code and `page-model-plan.md`:
 
 | BRD | Current | Status |
 |---|---|---|
 | Blocks / components on a page: add, remove, duplicate, hide, reorder | Block builder on Service, Industry and About (`page-model-plan.md` section 13). Home and Contact Us are not on it yet | 🟡 |
-| Statuses Draft, Scheduled, Published, Archived, Trash | Non-post types are Draft and Published only; scheduling and archive are posts only (G1) | ❌ |
+| Statuses Draft, Scheduled, Published, Archived, Trash | Built for Service, Industry and About pages (see above) | ✅ |
 | Edit a published page without changing the live version (draft copy) | Not found: a save on a Published row changes the live row. Needs a draft-over-live design (second row or a `draft` jsonb) | ❌ |
 | Parent / child pages, page order, full URL from the parent chain | No page hierarchy found in the page model | ❌ |
-| Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Generic list; no bulk actions, no quick edit, no page password | ❌ |
+| Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Built except the parent column and quick-edit parent (step 4) and the password (left out): see above | 🟡 |
 | Create from template, blank, or copy an existing page | No page templates; `post_template` exists for posts only | ❌ |
 | Featured image, excerpt (default first 55 words), author with a show/hide flag | Per type; not checked field by field | 🟡 |
 | Slug unique per site and language, warning on change, redirect | Done (`content_slug`, 308 aliases) | ✅ |
 | Save as Template | Posts only | ❌ |
 | Preview Desktop / Tablet / Mobile of unsaved edits | Done for Service, Industry, About, Case Study, Posts; not Home; header, footer shown as stand-ins | 🟡 |
 | Version history: compare and restore, last 2 kept | Full history in `content_audit` with diff and restore | ✅ (exceeds) |
-| Warning when a trashed page is in a menu or has internal links | Not built (needs Trash) | ❌ |
+| Warning when a trashed page is in a menu or has internal links | Built: links and the Services menu (the parent / children part is step 4) | 🟡 |
 | Per-page Search & Filter configuration | Not checked; the BRD says "function list complete, BA to expand" | ? |
 
 ### G12. Components library and Templates (CMP-01 to CMP-04, TMP-01 to TMP-05)
@@ -276,8 +275,8 @@ Pages here means the page types (Service, Industry, About, Case Study, Home). Co
 
 1. **Status model:** `DRAFT / PUBLISHED / SCHEDULED / ARCHIVED`, `publish_at` / `unpublish_at`, scheduler. *(Done for posts: archive, the delete rule, scheduling with a pg_cron job; see G1.)*
 2. ~~Trash (G8)~~ **done for posts** (separate `content_trash` table, 30-day purge job, restore); Categories, Tags, Pages and Components switch it on when they are built.
-3. **Category and Tag tables** per site, the Post pickers, public `/category` and `/tag` pages (G2). Largest single gap and the BRD now specifies it fully.
-4. ~~Dedicated post list~~ **done** (G3), without Trash and the taxonomy: the Trash view and "Move to Trash" are done; bulk assign category / tag waits for 3.
+3. ~~Category and Tag tables~~ **done** (G2): per site, the Post pickers, public `/category` and `/tag` pages, Trash, bulk actions.
+4. ~~Dedicated post list~~ **done** (G3), without Trash and the taxonomy: the Trash view and "Move to Trash" are done; bulk assign category / tag done with 3.
 5. ~~SEO fields and checklist (G4)~~ done; ~~the G14 fields (canonical, follow, OG text, JSON-LD)~~ done.
 6. **Page statuses and draft-over-live** for the page types (G11), then parent / child pages and the page list upgrades.
 7. **Roles** (G9) and **user management in auth-service** (G13): *built, except what is parked until the environment and BA confirmation (see the parked list at the end of G13: permission matrix, password policy, MFA factor, SSO, real SMTP).*

@@ -24,6 +24,8 @@ const inGroup = (group: ResourceGroup) =>
   }));
 
 export const NAVIGATION: NavItem[] = [
+  // The Service, Industry and About pages as one list (search, filters, bulk actions, Trash).
+  { key: "/pages", label: "All Pages", icon: "M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7" },
   // Derived from RESOURCES rather than duplicated here, so adding/renaming a content type in
   // resources.ts is the only edit needed — these lists can't drift out of sync with it.
   { key: "home-page", label: "Home Page", icon: "M3 11l9-8 9 8M5 10v10h14V10", items: inGroup("home") },
@@ -31,7 +33,11 @@ export const NAVIGATION: NavItem[] = [
     key: "perspectives",
     label: "Perspectives",
     icon: "M5 4h14v16H5zM9 8h6M9 12h6M9 16h3",
-    items: inGroup("perspectives"),
+    items: [
+      ...inGroup("perspectives"),
+      { key: "/content/post-categories", label: "Categories" },
+      { key: "/content/post-tags", label: "Tags" },
+    ],
   },
   {
     key: "company",

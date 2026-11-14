@@ -16,6 +16,8 @@ import PostTemplatePicker, { TEMPLATES_PATH } from "../components/PostTemplatePi
 import HistoryDrawer from "../components/HistoryDrawer";
 import PreviousUrls from "../components/PreviousUrls";
 import { SeoChecklist } from "../components/SeoChecklist";
+import TaxonomyPicker from "../components/TaxonomyPicker";
+import { allTaxonomy, type TaxonomyRow } from "../lib/taxonomy";
 import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks } from "../lib/seo";
 import type { ItemPrefill } from "../lib/audit";
@@ -38,6 +40,8 @@ interface PostRecord {
   image: string | null;
   date: string | null;
   category: string | null;
+  categoryIds: number[];
+  tagIds: number[];
   displayOrder: number;
   status: string;
   publishAt: string | null;
@@ -141,16 +145,20 @@ export default function PostEditorPage() {
     enabled: !isNew && !!site && !!id,
   });
 
-  if (!isNew && !detailQuery.data) {
+  // The form's pickers start from these, so it waits for them (they are short lists).
+  const categoriesQuery = useQuery({ queryKey: ["taxonomy-all", site, "categories"], queryFn: () => allTaxonomy(site!, "categories"), enabled: !!site });
+  const tagsQuery = useQuery({ queryKey: ["taxonomy-all", site, "tags"], queryFn: () => allTaxonomy(site!, "tags"), enabled: !!site });
+
+  if ((!isNew && !detailQuery.data) || !categoriesQuery.data || !tagsQuery.data) {
     return <div style={{ padding: 48, textAlign: "center", color: "#7b8aa5" }}>Loading…</div>;
   }
 
   if (isNew && !seed && !prefill) return <PostTemplatePicker onPick={setSeed} />;
 
-  return <PostEditorForm onRestored={async () => { await queryClient.refetchQueries({ queryKey: ["post-editor", id, site] }); setRestoreCount((n) => n + 1); }} key={`${id}-${restoreCount}`} id={id!} isNew={isNew} initial={isNew ? (prefill ? prefillAsPost(prefill) : null) : (detailQuery.data ?? null)} seed={seed} />;
+  return <PostEditorForm onRestored={async () => { await queryClient.refetchQueries({ queryKey: ["post-editor", id, site] }); setRestoreCount((n) => n + 1); }} key={`${id}-${restoreCount}`} id={id!} isNew={isNew} initial={isNew ? (prefill ? prefillAsPost(prefill) : null) : (detailQuery.data ?? null)} seed={seed} categoryRows={categoriesQuery.data} tagRows={tagsQuery.data} />;
 }
 
-function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; isNew: boolean; initial: PostRecord | null; seed: PostTemplate | null; onRestored?: () => void }) {
+function PostEditorForm({ id, isNew, initial, seed, categoryRows, tagRows, onRestored }: { id: string; isNew: boolean; initial: PostRecord | null; seed: PostTemplate | null; categoryRows: TaxonomyRow[]; tagRows: TaxonomyRow[]; onRestored?: () => void }) {
   const navigate = useNavigate();
   const { site } = useSite();
   const queryClient = useQueryClient();
@@ -162,7 +170,19 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [image, setImage] = useState<string | null>(initial?.image ?? null);
   const [date, setDate] = useState(initial?.date ?? "");
   const [displayOrder, setDisplayOrder] = useState(initial?.displayOrder ?? 0);
-  const [category, setCategory] = useState(initial?.category ?? seed?.category ?? "insight");
+  // Categories and tags are chosen by id. A new post starts with "Insight" when the site has it (the
+  // server adds "Uncategorized" to a post with none); a template's names are matched to the site's.
+  const [categoryIds, setCategoryIds] = useState<number[]>(() => {
+    if (initial) return initial.categoryIds ?? [];
+    const named = (seed?.category ? [seed.category] : ["insight"]).flatMap((n) => categoryRows.filter((r) => r.status === "ACTIVE" && r.name.toLowerCase() === n.toLowerCase()).map((r) => r.id));
+    return named;
+  });
+  const [tagIds, setTagIds] = useState<number[]>(() => {
+    if (initial) return initial.tagIds ?? [];
+    return (seed?.tags ?? []).flatMap((n) => tagRows.filter((r) => r.status === "ACTIVE" && r.name.toLowerCase() === n.toLowerCase()).map((r) => r.id));
+  });
+  const category = categoryIds.map((id) => categoryRows.find((r) => r.id === id)).find((r) => r?.status === "ACTIVE")?.name ?? "";
+  const tags = tagIds.map((id) => tagRows.find((r) => r.id === id)).filter((r): r is TaxonomyRow => r?.status === "ACTIVE").map((r) => r.name);
   const [status, setStatus] = useState<PostStatus>((initial?.status as PostStatus) ?? "DRAFT");
   // Picked in the editor's time zone; sent as UTC. The job that acts on them runs once a minute.
   const [publishAt, setPublishAt] = useState<Dayjs | null>(initial?.publishAt ? dayjs(initial.publishAt) : null);
@@ -170,8 +190,6 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
   const [body, setBody] = useState(initial?.body ?? seed?.body ?? "");
   const [authorName, setAuthorName] = useState(initial?.authorName ?? "");
   const [authorRole, setAuthorRole] = useState(initial?.authorRole ?? "");
-  const [tags, setTags] = useState<string[]>(initial?.tags ?? seed?.tags ?? []);
-  const [tagDraft, setTagDraft] = useState("");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
   const [layout, setLayout] = useState(initial?.layout ?? seed?.layout ?? "default");
   const [seoTitle, setSeoTitle] = useState(initial?.seoTitle ?? "");
@@ -225,14 +243,14 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
         image,
         date,
         displayOrder,
-        category,
+        categoryIds,
+        tagIds,
         status: nextStatus,
         publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
         unpublishAt: (nextStatus === "SCHEDULED" || nextStatus === "PUBLISHED") && unpublishAt ? unpublishAt.toISOString() : null,
         body,
         authorName,
         authorRole,
-        tags,
         featured,
         layout,
         seoTitle,
@@ -281,13 +299,6 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
       setTemplateName("");
     },
   });
-
-  const addTag = () => {
-    const t = slugify(tagDraft);
-    if (t && !tags.includes(t)) setTags([...tags, t]);
-    setTagDraft("");
-    setDirty(true);
-  };
 
   const siteSub = site ? SITES.find((s) => s.code === site)?.subdomain : undefined;
   const pub = status === "PUBLISHED";
@@ -744,17 +755,19 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
                   />
                 </label>
               </div>
-              <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <span style={cardLabelStyle}>Category</span>
-                <input
-                  value={category}
-                  onChange={(e) => {
-                    setCategory(e.target.value);
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={cardLabelStyle}>Categories</span>
+                <TaxonomyPicker
+                  kind="categories"
+                  rows={categoryRows}
+                  value={categoryIds}
+                  chosenTotal={categoryIds.length + tagIds.length}
+                  onChange={(ids) => {
+                    setCategoryIds(ids);
                     setDirty(true);
                   }}
-                  style={inputStyle}
                 />
-              </label>
+              </div>
               <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <input
                   type="checkbox"
@@ -1006,47 +1019,16 @@ function PostEditorForm({ id, isNew, initial, seed, onRestored }: { id: string; 
 
           <div style={{ background: "#ffffff", border: "1px solid #e3e9f4", borderRadius: 16, overflow: "clip", boxShadow: "0 1px 2px rgba(10,30,70,.04)" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #e3e9f4", ...cardLabelStyle }}>Tags</div>
-            <div style={{ padding: "14px 18px", display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {tags.map((t) => (
-                <span
-                  key={t}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "5px 6px 5px 10px",
-                    borderRadius: 999,
-                    background: "#eaf4fb",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 11,
-                    color: "#0159be",
-                  }}
-                >
-                  #{t}
-                  <button
-                    type="button"
-                    aria-label="Remove tag"
-                    onClick={() => {
-                      setTags(tags.filter((x) => x !== t));
-                      setDirty(true);
-                    }}
-                    style={{ width: 18, height: 18, border: "none", borderRadius: "50%", background: "rgba(1,89,190,.12)", color: "#0159be", fontSize: 12, lineHeight: 1, cursor: "pointer" }}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              <input
-                value={tagDraft}
-                onChange={(e) => setTagDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === ",") {
-                    e.preventDefault();
-                    addTag();
-                  }
+            <div style={{ padding: "14px 18px" }}>
+              <TaxonomyPicker
+                kind="tags"
+                rows={tagRows}
+                value={tagIds}
+                chosenTotal={categoryIds.length + tagIds.length}
+                onChange={(ids) => {
+                  setTagIds(ids);
+                  setDirty(true);
                 }}
-                placeholder="Add tag + Enter"
-                style={{ flex: 1, minWidth: 120, border: "none", padding: "6px 4px", fontFamily: "var(--font-mono)", fontSize: 11, color: "#0b1b3a", outline: "none" }}
               />
             </div>
           </div>
