@@ -66,6 +66,18 @@ public class ContentItemController {
         .map(ResultMessage::success);
   }
 
+  /**
+   * Discards a page's pending draft (edits to a published page that are not live yet); the live
+   * page is unchanged.
+   */
+  @DeleteMapping("/{id}/draft")
+  public Mono<ResultMessage<ContentItem>> discardDraft(
+      @PathVariable Long id, @RequestParam String site, Authentication authentication) {
+    return authorizedSite(site, authentication)
+        .flatMap(resolved -> contentItemService.discardDraft(id, resolved.getId()))
+        .map(ResultMessage::success);
+  }
+
   @DeleteMapping("/{id}")
   public Mono<ResultMessage<Void>> delete(
       @PathVariable Long id, @RequestParam String site, Authentication authentication) {

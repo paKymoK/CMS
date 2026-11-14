@@ -168,6 +168,8 @@ public class ContentAuditServiceImpl implements ContentAuditService {
                                   data -> {
                                     // The content comes back; whether it is published stays as now.
                                     existing.setData(data);
+                                    existing.setDraft(
+                                        null); // restoring a version replaces what was pending
                                     existing.setDisplayOrder(target.path("displayOrder").asInt(0));
                                     return writer.restore(existing);
                                   }))

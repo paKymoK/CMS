@@ -251,6 +251,7 @@ export default function PagesPage() {
           {status === "SCHEDULED" && row.publishAt && (
             <div style={{ fontSize: 12, color: "#7b8aa5", marginTop: 4 }}>{dayjs(row.publishAt).format("MMM D, HH:mm")}</div>
           )}
+          {row.hasDraft && <div style={{ fontSize: 12, color: "#0159be", marginTop: 4 }}>Unpublished changes</div>}
         </div>
       ),
     },
@@ -269,6 +270,7 @@ export default function PagesPage() {
                 { key: "quick", label: "Quick edit", onClick: () => setQuick(row) },
                 { type: "divider" as const },
                 ...(row.status !== "PUBLISHED" ? [{ key: "pub", label: "Publish", onClick: () => one("PUBLISH") }] : []),
+                ...(row.hasDraft ? [{ key: "pubdraft", label: "Publish the saved changes", onClick: () => one("PUBLISH") }] : []),
                 ...(row.status === "PUBLISHED" || row.status === "SCHEDULED" ? [{ key: "draft", label: "Move to draft", onClick: () => one("UNPUBLISH") }] : []),
                 ...(row.status !== "ARCHIVED" ? [{ key: "arch", label: "Archive", onClick: () => one("ARCHIVE") }] : []),
                 { type: "divider" as const },

@@ -28,6 +28,10 @@ public class ContentItem extends IdEntity {
   private Long siteId;
   private String contentType;
   private JsonNode data;
+
+  /** Pages only: saved edits to a published page that are not live yet (see init-schema.sql). */
+  private JsonNode draft;
+
   private Integer displayOrder;
   private String status;
   @Version private Integer version;

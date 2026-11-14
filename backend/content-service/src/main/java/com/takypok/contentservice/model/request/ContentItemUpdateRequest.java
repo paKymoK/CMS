@@ -23,4 +23,16 @@ public class ContentItemUpdateRequest {
 
   private java.time.Instant unpublishAt;
   private Integer version;
+
+  /**
+   * Pages only: on a PUBLISHED page, store {@code data} as a pending draft and leave the live
+   * content, status and times alone. Ignored for a page that is not live.
+   */
+  private Boolean saveAsDraft;
+
+  /**
+   * Set {@code data} but leave a pending draft as it is (used by the quick edit, which patches both
+   * itself).
+   */
+  private Boolean keepDraft;
 }

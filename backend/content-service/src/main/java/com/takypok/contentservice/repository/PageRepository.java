@@ -44,7 +44,7 @@ public class PageRepository {
           + " ci.data ->> 'slug' AS slug,"
           + " CASE ci.content_type WHEN 'service_page' THEN '/services/' || (ci.data ->> 'category') || '/' || (ci.data ->> 'slug')"
           + " WHEN 'industry_page' THEN '/industries/' || (ci.data ->> 'slug') ELSE '/about' END AS path,"
-          + " ci.status, ci.publish_at, ci.created_by ->> 'sub' AS author_sub,"
+          + " ci.status, (ci.draft IS NOT NULL) AS has_draft, ci.publish_at, ci.created_by ->> 'sub' AS author_sub,"
           + " audit_actor_label(ci.created_by) AS author,"
           + " (SELECT max(a.occurred_at) FROM content_audit a WHERE a.item_id = ci.id AND a.action = 'PUBLISH') AS published_at,"
           + " COALESCE(ci.modified_at, ci.created_at) AS updated_at,"
@@ -106,6 +106,7 @@ public class PageRepository {
                         row.get("slug", String.class),
                         row.get("path", String.class),
                         row.get("status", String.class),
+                        Boolean.TRUE.equals(row.get("has_draft", Boolean.class)),
                         instant(row.get("publish_at", OffsetDateTime.class)),
                         row.get("author", String.class),
                         instant(row.get("published_at", OffsetDateTime.class)),

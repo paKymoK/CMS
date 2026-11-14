@@ -115,10 +115,24 @@ public class ContentItemServiceImpl implements ContentItemService {
                     .flatMap(
                         validatedData -> {
                           item.setContentType(request.getContentType());
-                          item.setData(validatedData);
                           if (request.getDisplayOrder() != null) {
                             item.setDisplayOrder(request.getDisplayOrder());
                           }
+                          // A published page's edits can wait as a draft: the live content, status
+                          // and
+                          // times stay as they are until it is published again.
+                          boolean pending =
+                              Boolean.TRUE.equals(request.getSaveAsDraft())
+                                  && PageTypes.is(item.getContentType())
+                                  && "PUBLISHED".equals(item.getStatus())
+                                  && (request.getStatus() == null
+                                      || "PUBLISHED".equals(request.getStatus()));
+                          if (pending) {
+                            item.setDraft(validatedData);
+                            return contentItemWriter.save(item);
+                          }
+                          item.setData(validatedData);
+                          if (!Boolean.TRUE.equals(request.getKeepDraft())) item.setDraft(null);
                           String status =
                               request.getStatus() != null ? request.getStatus() : item.getStatus();
                           applyTimes(
@@ -155,6 +169,17 @@ public class ContentItemServiceImpl implements ContentItemService {
     return new ApplicationException(
         Message.Application.ERROR,
         "Content type " + contentType + " is managed through its own endpoint");
+  }
+
+  @Override
+  public Mono<ContentItem> discardDraft(Long id, Long siteId) {
+    return getById(id, siteId)
+        .flatMap(
+            item -> {
+              if (item.getDraft() == null) return Mono.just(item);
+              item.setDraft(null);
+              return contentItemWriter.save(item);
+            });
   }
 
   @Override

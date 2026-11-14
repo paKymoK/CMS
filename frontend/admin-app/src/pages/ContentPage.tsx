@@ -139,7 +139,7 @@ export default function ContentPage() {
         },
       });
       const items = data.data as Record<string, unknown>[];
-      return (resource!.contentType ? items.map(flattenItem) : items) as Row[];
+      return (resource!.contentType ? items.map((row) => flattenItem(row)) : items) as Row[];
     },
     enabled: !!resource && !!site,
   });

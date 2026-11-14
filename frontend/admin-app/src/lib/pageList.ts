@@ -15,6 +15,8 @@ export interface PageRow {
   /** The public address, e.g. /services/digital-engineering/web-app. */
   path: string;
   status: PageStatus;
+  /** A published page with saved edits that are not live yet. */
+  hasDraft: boolean;
   publishAt: string | null;
   /** Who created it and who last changed it ("Display Name (sub)"). */
   author: string | null;

@@ -23,6 +23,7 @@ public final class PageResponses {
       String slug,
       String path,
       String status,
+      boolean hasDraft,
       Instant publishAt,
       String author,
       Instant publishedAt,

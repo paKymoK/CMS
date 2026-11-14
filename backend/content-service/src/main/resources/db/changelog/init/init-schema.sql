@@ -42,6 +42,10 @@ CREATE TABLE IF NOT EXISTS content_item
     site_id        bigint            NOT NULL REFERENCES site (id),
     content_type   character varying NOT NULL, -- must match a @ContentTypeKey class; checked in ContentItemMapper
     data           jsonb             NOT NULL DEFAULT '{}', -- validated server-side before write; see ContentItemMapper
+    -- Pages only: edits to a PUBLISHED page that are saved but not yet live. `data` stays what the website
+    -- serves until the page is published again (the draft then becomes `data`) or the draft is discarded.
+    -- Not in the audit trail (a draft-only write records nothing); the Trash keeps it with the row.
+    draft          jsonb,
     display_order  integer           NOT NULL DEFAULT 0,
     status         character varying NOT NULL DEFAULT 'DRAFT'
         CHECK (status IN ('DRAFT', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED')),
@@ -66,6 +70,8 @@ CREATE TABLE IF NOT EXISTS content_item
     created_by     jsonb,
     modified_at    timestamp with time zone,
     modified_by    jsonb,
+    -- A pending draft only exists on a live page; whatever takes a page off the site applies it first
+    CONSTRAINT ck_content_item_draft_is_live CHECK (draft IS NULL OR status = 'PUBLISHED'),
     CONSTRAINT ck_content_item_scheduled_has_time CHECK (status <> 'SCHEDULED' OR publish_at IS NOT NULL),
     CONSTRAINT ck_content_item_schedule_order CHECK (publish_at IS NULL OR unpublish_at IS NULL OR unpublish_at > publish_at)
 );
@@ -447,6 +453,8 @@ BEGIN
 
     UPDATE content_item ci
     SET status       = 'ARCHIVED',
+        data         = coalesce(ci.draft, ci.data), -- pending edits are kept as the content, not lost
+        draft        = NULL,
         unpublish_at = NULL,
         version      = ci.version + 1,
         modified_at  = now(),
@@ -538,10 +546,13 @@ BEGIN
         d := jsonb_set(d, '{slug}', to_jsonb(btrim(p_slug)));
     END IF;
     PERFORM set_config('cms.audit_action', 'UNTRASH', true);
-    INSERT INTO content_item (id, site_id, content_type, data, display_order, status, version, publish_at,
+    INSERT INTO content_item (id, site_id, content_type, data, draft, display_order, status, version, publish_at,
                               unpublish_at, search_title, search_meta, search_body, created_at, created_by,
                               modified_at, modified_by)
-    VALUES (r.id, r.site_id, r.content_type, d, r.display_order, 'DRAFT', coalesce(r.version, 0) + 1, NULL, NULL,
+    -- a pending draft was the content being edited: it comes back as the content (the page is a draft again)
+    VALUES (r.id, r.site_id, r.content_type, coalesce(CASE WHEN r.draft IS NULL OR nullif(btrim(p_slug), '') IS NULL THEN r.draft
+                 ELSE jsonb_set(r.draft, '{slug}', to_jsonb(btrim(p_slug))) END, d), NULL,
+            r.display_order, 'DRAFT', coalesce(r.version, 0) + 1, NULL, NULL,
             r.search_title, r.search_meta, r.search_body, r.created_at, r.created_by, now(), p_actor);
     PERFORM set_config('cms.audit_action', '', true);
     -- the content_item_slug trigger has just made its primary address; the old ones come back if still free

@@ -1,11 +1,13 @@
 export type Row = Record<string, unknown> & { id: number; status: string };
 
-const ENVELOPE_KEYS = ["id", "displayOrder", "status", "version", "publishAt", "unpublishAt"] as const;
+const ENVELOPE_KEYS = ["id", "displayOrder", "status", "version", "publishAt", "unpublishAt", "saveAsDraft"] as const;
 
 // Generic content_item rows keep their editable fields inside `data`; the list/drawer work on the
 // flattened shape every typed resource already has, so these two convert at the API boundary only.
-export function flattenItem(row: Record<string, unknown>): Row {
-  return { ...(row.data as Record<string, unknown>), ...row } as Row;
+// A page's editor shows its pending draft (saved edits to a live page) rather than the live content.
+export function flattenItem(row: Record<string, unknown>, preferDraft = false): Row {
+  const content = preferDraft && row.draft ? row.draft : row.data;
+  return { ...(content as Record<string, unknown>), ...row } as Row;
 }
 
 export function toItemPayload(

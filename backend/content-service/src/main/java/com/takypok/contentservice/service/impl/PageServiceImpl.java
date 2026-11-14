@@ -158,8 +158,16 @@ public class PageServiceImpl implements PageService {
         .flatMap(
             item -> {
               String title = titleOf(item);
-              if (status.equals(item.getStatus())) return Mono.just(new Outcome(id, null));
+              // Publishing a live page that has saved edits makes them live; taking it off the site
+              // keeps them as its content.
+              boolean applyDraft = item.getDraft() != null;
+              if (status.equals(item.getStatus()) && !applyDraft)
+                return Mono.just(new Outcome(id, null));
               StatusRules.requireAllowed(item.getContentType(), status);
+              if (applyDraft) {
+                item.setData(item.getDraft());
+                item.setDraft(null);
+              }
               ScheduleRules.Times times =
                   ScheduleRules.resolve(
                       status,
@@ -187,7 +195,14 @@ public class PageServiceImpl implements PageService {
         .flatMap(
             item -> {
               StaleEdit.check(item, request.getVersion());
-              ObjectNode data = item.getData().deepCopy();
+              String status =
+                  request.getStatus() == null || request.getStatus().isBlank()
+                      ? item.getStatus()
+                      : request.getStatus();
+              // A page being taken off the site keeps its saved edits as its content: the edit goes
+              // into those.
+              boolean offLiveWithDraft = item.getDraft() != null && !"PUBLISHED".equals(status);
+              ObjectNode data = (offLiveWithDraft ? item.getDraft() : item.getData()).deepCopy();
               if (request.getTitle() != null) {
                 String title = request.getTitle().trim();
                 if (title.isEmpty()) throw fail("The title cannot be empty");
@@ -202,10 +217,6 @@ public class PageServiceImpl implements PageService {
                   throw fail("Enter an address made of letters, numbers and hyphens");
                 data.put("slug", slug);
               }
-              String status =
-                  request.getStatus() == null || request.getStatus().isBlank()
-                      ? item.getStatus()
-                      : request.getStatus();
               if ("SCHEDULED".equals(status) && !"SCHEDULED".equals(item.getStatus())) {
                 throw fail("Scheduling needs a time: use the page editor");
               }
@@ -217,7 +228,32 @@ public class PageServiceImpl implements PageService {
               update.setPublishAt(item.getPublishAt());
               update.setUnpublishAt(item.getUnpublishAt());
               update.setVersion(item.getVersion());
-              return contentItemService.update(siteId, update);
+              update.setKeepDraft(!offLiveWithDraft);
+              Mono<ContentItem> saved = contentItemService.update(siteId, update);
+              if (item.getDraft() == null || offLiveWithDraft) return saved;
+              // A live page with saved edits: the same change goes into the draft, so publishing it
+              // later does not undo this.
+              return saved.flatMap(
+                  live -> {
+                    ObjectNode draft = item.getDraft().deepCopy();
+                    if (request.getTitle() != null)
+                      draft.set(
+                          PageTypes.titleKey(item.getContentType()),
+                          data.get(PageTypes.titleKey(item.getContentType())));
+                    if (data.hasNonNull("slug")
+                        && request.getSlug() != null
+                        && !request.getSlug().isBlank()) draft.set("slug", data.get("slug"));
+                    ContentItemUpdateRequest forDraft = new ContentItemUpdateRequest();
+                    forDraft.setId(id);
+                    forDraft.setContentType(item.getContentType());
+                    forDraft.setData(draft);
+                    forDraft.setStatus(live.getStatus());
+                    forDraft.setVersion(live.getVersion());
+                    forDraft.setSaveAsDraft(true);
+                    return "PUBLISHED".equals(live.getStatus())
+                        ? contentItemService.update(siteId, forDraft)
+                        : Mono.just(live);
+                  });
             })
         .flatMap(saved -> rowOf(siteId, saved.getId()));
   }

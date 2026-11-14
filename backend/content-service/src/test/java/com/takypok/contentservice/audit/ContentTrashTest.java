@@ -293,7 +293,7 @@ class ContentTrashTest {
   @Test
   void contentItemHasNoColumnTheRestoreDoesNotKnow() throws Exception {
     assertEquals(
-        "content_type,created_at,created_by,data,display_order,id,modified_at,modified_by,"
+        "content_type,created_at,created_by,data,display_order,draft,id,modified_at,modified_by,"
             + "publish_at,search_body,search_meta,search_title,search_vec,site_id,status,"
             + "unpublish_at,version",
         scalar(

@@ -150,7 +150,7 @@ export default function ResourceEditorPage({ resourceKey }: { resourceKey: strin
     queryKey: ["resource-editor", resourceKey, id, site],
     queryFn: async () => {
       const { data } = await contentApi.get(`${resource!.apiPath}/${id}`, { params: { site } });
-      return (resource!.contentType ? flattenItem(data.data) : data.data) as Values;
+      return (resource!.contentType ? flattenItem(data.data, true) : data.data) as Values;
     },
     enabled: !!resource && !isNew && !!site && !!id,
   });
@@ -202,6 +202,9 @@ function ResourceEditorForm({
   const [slug, setSlug] = useState((initial?.slug as string | null | undefined) ?? "");
   const [displayOrder, setDisplayOrder] = useState((initial?.displayOrder as number | undefined) ?? 0);
   const [status, setStatus] = useState<Status>((initial?.status as Status | undefined) ?? "DRAFT");
+  // What the server has: a published page with saved edits that are not live yet (a pending draft) shows the edits here.
+  const [storedStatus, setStoredStatus] = useState<Status | undefined>(initial?.status as Status | undefined);
+  const [hasDraft, setHasDraft] = useState(!!initial?.draft);
   // The row version this form was loaded with; the server rejects a save made against an older one.
   const [version, setVersion] = useState(initial?.version as number | undefined);
   const [dirty, setDirty] = useState(false);
@@ -234,10 +237,21 @@ function ResourceEditorForm({
         : unpublishAt && !unpublishAt.isAfter(publishAt)
           ? "The unpublish time must be after the publish time."
           : null;
+  // A live page's edits can be saved without going live: "Save draft" then keeps the page published as it is.
+  const livePending = pageStatuses && storedStatus === "PUBLISHED" && status === "PUBLISHED";
   const touch = () => setDirty(true);
+  const discard = useMutation({
+    mutationFn: () => contentApi.delete(`${resource.apiPath}/${id}/draft`, { params: { site } }),
+    onSuccess: () => {
+      message.success("Draft discarded: the editor shows the live page again");
+      queryClient.invalidateQueries({ queryKey: ["pages-list", site] });
+      onRestored();
+    },
+    onError: () => message.error("Could not discard the draft"),
+  });
 
   const saveMutation = useMutation({
-    mutationFn: async (nextStatus: Status) => {
+    mutationFn: async ({ status: nextStatus, asDraft = false }: { status: Status; asDraft?: boolean }) => {
       const fieldValues = await form.validateFields();
       // A loaded row also carries its metadata (siteId, createdAt, ...): only declared fields go into `data`.
       const loaded = { ...form.getFieldsValue(true), ...fieldValues };
@@ -258,6 +272,7 @@ function ResourceEditorForm({
         slug: slug || undefined,
         displayOrder,
         status: nextStatus,
+        ...(asDraft ? { saveAsDraft: true } : {}),
         ...(pageStatuses
           ? {
               publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
@@ -270,13 +285,15 @@ function ResourceEditorForm({
         ? contentApi.post(resource.apiPath, body, { params: { site } })
         : contentApi.put(resource.apiPath, body, { params: { site } });
     },
-    onSuccess: (res, nextStatus) => {
+    onSuccess: (res, { status: nextStatus, asDraft = false }) => {
       setVersion((res.data.data as { version?: number }).version);
       setStatus(nextStatus);
+      setStoredStatus(nextStatus);
+      setHasDraft(asDraft);
       if (nextStatus === "DRAFT" || nextStatus === "ARCHIVED") setUnpublishAt(null);
       setDirty(false);
       message.success(
-        nextStatus === "PUBLISHED" ? "Published" : nextStatus === "SCHEDULED" ? "Scheduled" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft",
+        asDraft ? "Saved as a draft: the live page is unchanged until you press Update" : nextStatus === "PUBLISHED" ? "Published" : nextStatus === "SCHEDULED" ? "Scheduled" : nextStatus === "ARCHIVED" ? "Archived" : "Saved as draft",
       );
       queryClient.invalidateQueries({ queryKey: ["content", resource.key, site] });
       queryClient.invalidateQueries({ queryKey: ["slugs", site] });
@@ -342,6 +359,11 @@ function ResourceEditorForm({
             >
               {STATUS_LABELS[status]}
             </span>
+            {hasDraft && (
+              <span style={{ flex: "none", padding: "4px 10px", borderRadius: 999, fontSize: 12, fontWeight: 600, background: "#e6f2ff", color: "#0159be" }}>
+                Unpublished changes
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12.5, color: "#7b8aa5", display: "flex", alignItems: "center", gap: 6 }}>
@@ -358,6 +380,24 @@ function ResourceEditorForm({
                 History
               </button>
             )}
+            {hasDraft && (
+              <button
+                type="button"
+                onClick={() =>
+                  Modal.confirm({
+                    title: "Discard the unpublished changes?",
+                    content: "The saved edits are thrown away and the editor goes back to the live page. The live page itself is not changed.",
+                    okText: "Discard changes",
+                    okButtonProps: { danger: true },
+                    onOk: () => discard.mutateAsync(),
+                  })
+                }
+                disabled={saveMutation.isPending}
+                style={outlineButton}
+              >
+                Discard changes
+              </button>
+            )}
             {pageStatuses && !isNew && !editor.singleton && site && (
               <button
                 type="button"
@@ -369,11 +409,12 @@ function ResourceEditorForm({
             )}
             <button
               type="button"
-              onClick={() => saveMutation.mutate("DRAFT")}
+              onClick={() => (livePending ? saveMutation.mutate({ status: "PUBLISHED", asDraft: true }) : saveMutation.mutate({ status: "DRAFT" }))}
               disabled={saveMutation.isPending}
               style={{ ...outlineButton, border: "1px solid #bcd9fb", color: "#0083ff" }}
+              title={livePending ? "Keeps the page live as it is: your edits wait here until you press Update" : undefined}
             >
-              {status === "ARCHIVED" ? "Move to draft" : "Save draft"}
+              {status === "ARCHIVED" || (storedStatus === "PUBLISHED" && pageStatuses && status === "DRAFT") ? "Move to draft" : "Save draft"}
             </button>
             {pageStatuses && !isNew && status !== "ARCHIVED" && (
               <button
@@ -384,9 +425,9 @@ function ResourceEditorForm({
                         title: `Archive this ${editor.singular}?`,
                         content: "It is taken off the site and its address stops working, but the page is kept. You can publish it again or move it back to draft.",
                         okText: "Archive",
-                        onOk: () => saveMutation.mutate("ARCHIVED"),
+                        onOk: () => saveMutation.mutate({ status: "ARCHIVED" }),
                       })
-                    : saveMutation.mutate("ARCHIVED")
+                    : saveMutation.mutate({ status: "ARCHIVED" })
                 }
                 disabled={saveMutation.isPending}
                 style={outlineButton}
@@ -395,7 +436,7 @@ function ResourceEditorForm({
               </button>
             )}
             {status === "ARCHIVED" && (
-              <button type="button" onClick={() => saveMutation.mutate("ARCHIVED")} disabled={saveMutation.isPending} style={outlineButton}>
+              <button type="button" onClick={() => saveMutation.mutate({ status: "ARCHIVED" })} disabled={saveMutation.isPending} style={outlineButton}>
                 Save
               </button>
             )}
@@ -409,8 +450,8 @@ function ResourceEditorForm({
                 const goal: Status = scheduled ? "SCHEDULED" : "PUBLISHED";
                 // Only a page that is not live yet gets the SEO prompt; updating one never asks.
                 return status === "PUBLISHED" || initial?.status === goal || !resource.seo
-                  ? saveMutation.mutate(goal)
-                  : publishUnlessSeoMissing(seoChecksFor(resource, form.getFieldsValue(true), slug), () => saveMutation.mutate(goal));
+                  ? saveMutation.mutate({ status: goal })
+                  : publishUnlessSeoMissing(seoChecksFor(resource, form.getFieldsValue(true), slug), () => saveMutation.mutate({ status: goal }));
               }}
               disabled={saveMutation.isPending}
               style={{ ...outlineButton, padding: "0 20px", border: "none", background: "#0083ff", color: "#ffffff" }}
@@ -420,6 +461,12 @@ function ResourceEditorForm({
           </div>
         </div>
       </div>
+
+      {hasDraft && (
+        <div style={{ margin: "0 0 16px", padding: "10px 16px", borderRadius: 12, background: "#eaf4ff", border: "1px solid #bcd9fb", fontSize: 13.5, color: "#0b1b3a" }}>
+          This page has <b>saved changes that are not live yet</b>. The website still shows the last published version; press <b>Update</b> to publish these changes.
+        </div>
+      )}
 
       <Form form={form} layout="vertical" initialValues={initial ?? undefined} onValuesChange={touch} requiredMark={false}>
         <div className="cms-editor-body" style={{ margin: "0 auto", padding: "0 0 80px", display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24 }}>

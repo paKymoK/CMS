@@ -18,6 +18,9 @@ public interface ContentItemService {
 
   Mono<Void> delete(Long id, Long siteId);
 
+  /** Throws away a page's pending draft; the live page is unchanged. */
+  Mono<ContentItem> discardDraft(Long id, Long siteId);
+
   Flux<ContentItem> getPublished(Long siteId, String contentType);
 
   /** Every published item of every type for the site, in display order. */
