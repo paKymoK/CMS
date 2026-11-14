@@ -17,6 +17,7 @@ import {
   PAGE_TRASH_DAYS,
   PAGE_TYPE,
   bulkPages,
+  duplicatePage,
   listPageTrash,
   allPages,
   listPages,
@@ -178,6 +179,19 @@ export default function PagesPage() {
       message.error("Could not copy the URL");
     }
   };
+  // PAGE-02: a new page can start as a copy of an existing one; it opens in its editor as a draft.
+  const copyPage = async (row: PageRow) => {
+    if (!site) return;
+    try {
+      const copy = await duplicatePage(site, row.id);
+      message.success(`Created “${copy.title}” as a draft`);
+      refresh();
+      navigate(PAGE_TYPE[copy.type].editor(copy.id));
+    } catch (e: unknown) {
+      const reason = (e as { response?: { data?: { status?: { message?: string } } } })?.response?.data?.status?.message;
+      message.error(reason || "Could not copy the page");
+    }
+  };
   const clearAll = () => {
     setSearch("");
     setParams({}, { replace: true });
@@ -281,6 +295,7 @@ export default function PagesPage() {
               items: [
                 { key: "edit", label: "Edit", onClick: () => navigate(PAGE_TYPE[row.type].editor(row.id)) },
                 { key: "quick", label: "Quick edit", onClick: () => setQuick(row) },
+                ...(row.type !== "about_page" ? [{ key: "copy", label: "Duplicate", onClick: () => copyPage(row) }] : []),
                 { type: "divider" as const },
                 ...(row.status !== "PUBLISHED" ? [{ key: "pub", label: "Publish", onClick: () => one("PUBLISH") }] : []),
                 ...(row.hasDraft ? [{ key: "pubdraft", label: "Publish the saved changes", onClick: () => one("PUBLISH") }] : []),

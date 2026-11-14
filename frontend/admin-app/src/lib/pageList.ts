@@ -139,6 +139,12 @@ export async function quickEditPage(
   return data.data as PageRow;
 }
 
+/** A new draft copy of a page (not the About page); returns the copy's row. */
+export async function duplicatePage(site: string, id: number): Promise<PageRow> {
+  const { data } = await contentApi.post(`/v1/admin/pages/${id}/duplicate`, null, { params: { site } });
+  return data.data as PageRow;
+}
+
 export async function listPageTrash(site: string, q: string | undefined, page: number): Promise<PageTrashPage> {
   const params: Record<string, unknown> = { site, size: 20, page };
   if (q) params.q = q;

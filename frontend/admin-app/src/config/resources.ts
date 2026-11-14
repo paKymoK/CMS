@@ -189,6 +189,15 @@ function seoMoreFields(group?: string): FieldConfig[] {
   ];
 }
 
+/** The fields every page type has for cards, lists and sharing (PAGE-02): thumbnail, summary and the author flag. */
+function pageCardFields(group: string): FieldConfig[] {
+  return [
+    field({ name: "featuredImage", label: "Featured image (thumbnail for cards, lists and sharing; falls back to the hero image)", type: "image", showInTable: false, group }),
+    field({ name: "summary", label: "Summary (for cards and lists; left blank, the first 55 words of the hero subtitle are used)", type: "textarea", showInTable: false, group }),
+    field({ name: "showAuthor", label: "Show the author's name on the page (the account that created it)", type: "boolean", showInTable: false, group }),
+  ];
+}
+
 export const RESOURCES: ResourceConfig[] = [
   {
     key: "stats",
@@ -509,13 +518,14 @@ export const RESOURCES: ResourceConfig[] = [
     editor: { slugPrefix: "about", singular: "About page", backPath: "/about-page", singleton: true, noSlug: true, pageStatuses: true },
     seo: {
       fallbackTitle: () => "About Us | CMC Global",
-      fallbackDescription: (v) => str(v.heroSubtitle),
-      fallbackImage: (v) => str(v.heroImage),
+      fallbackDescription: (v) => str(v.summary) || str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.featuredImage) || str(v.heroImage),
       url: () => "/about",
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "blocks", label: "Page sections", defaultOpen: true },
+      { key: "card", label: "Summary and author" },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -624,6 +634,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...pageCardFields("card"),
       ...seoMoreFields("seo"),
     ],
   },
@@ -639,13 +650,14 @@ export const RESOURCES: ResourceConfig[] = [
     editor: { slugPrefix: "industries", singular: "industry page", backPath: "/pages?type=industry_page", pageStatuses: true },
     seo: {
       fallbackTitle: (v) => `${str(v.navLabel) || "Untitled industry"} | CMC Global`,
-      fallbackDescription: (v) => str(v.heroSubtitle),
-      fallbackImage: (v) => str(v.heroImage),
+      fallbackDescription: (v) => str(v.summary) || str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.featuredImage) || str(v.heroImage),
       url: (slug) => `/industries/${slug}`,
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "blocks", label: "Page sections", defaultOpen: true },
+      { key: "card", label: "Summary and author" },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -763,6 +775,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...pageCardFields("card"),
       ...seoMoreFields("seo"),
     ],
   },
@@ -778,13 +791,14 @@ export const RESOURCES: ResourceConfig[] = [
     editor: { slugPrefix: "services/[category]", singular: "service page", backPath: "/pages?type=service_page", pageStatuses: true },
     seo: {
       fallbackTitle: (v) => `${str(v.navLabel) || "Untitled service"} | CMC Global`,
-      fallbackDescription: (v) => str(v.heroSubtitle),
-      fallbackImage: (v) => str(v.heroImage),
+      fallbackDescription: (v) => str(v.summary) || str(v.heroSubtitle),
+      fallbackImage: (v) => str(v.featuredImage) || str(v.heroImage),
       url: (slug, v) => `/services/${str(v.category) || "…"}/${slug}`,
     },
     groups: [
       { key: "hero", label: "Hero", defaultOpen: true },
       { key: "blocks", label: "Page sections", defaultOpen: true },
+      { key: "card", label: "Summary and author" },
       { key: "seo", label: "SEO" },
     ],
     fields: [
@@ -902,6 +916,7 @@ export const RESOURCES: ResourceConfig[] = [
       field({ name: "seoDescription", label: "SEO description", type: "textarea", showInTable: false, group: "seo" }),
       field({ name: "seoImage", label: "Share image (falls back to the main image)", type: "image", showInTable: false, group: "seo" }),
       field({ name: "seoNoindex", label: "Hide from search engines", type: "boolean", showInTable: false, group: "seo" }),
+      ...pageCardFields("card"),
       ...seoMoreFields("seo"),
     ],
   },

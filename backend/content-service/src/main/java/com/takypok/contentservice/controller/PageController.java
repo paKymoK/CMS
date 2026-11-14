@@ -107,6 +107,15 @@ public class PageController {
         .map(ResultMessage::success);
   }
 
+  /** A new draft copy of the page (PAGE-02: create a page by copying an existing one). */
+  @PostMapping("/{id}/duplicate")
+  public Mono<ResultMessage<PageResponses.Row>> duplicate(
+      @PathVariable Long id, @RequestParam String site, Authentication authentication) {
+    return authorizedSite(site, authentication)
+        .flatMap(s -> pageService.duplicate(s.getId(), id))
+        .map(ResultMessage::success);
+  }
+
   @GetMapping("/trash")
   public Mono<ResultMessage<PageResponses.TrashPage>> trash(
       @RequestParam String site,

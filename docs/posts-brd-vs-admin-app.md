@@ -192,7 +192,13 @@ Pages here means the Service, Industry and About pages (each with its own addres
 - **Verified** against the running stack: setting a parent, the self, cycle and missing-parent refusals, a parent of another type, the Menu order sort, the child warning, the Services menu while the parent is trashed and after restore, and orphaning a child on delete-forever (with throwaway pages, removed after). 191 content-service tests pass. **Not run:** the quick edit's parent choice in the browser (its API was run).
 - **Not built (decision or later):** nested menus (the Services menu is still grouped by category), and addresses built from the parent chain.
 
-**Still to do in G11:** step 5 (duplicate a page, and a review of the featured image, excerpt and author flag on each page type), an Author column that is not empty for the seeded pages (they have no creator), restoring a trashed page under another address, and the items below that depend on G12 (templates) or were left out (password). The table compares the BRD with the code and `page-model-plan.md`:
+**Built (step 5): duplicate a page, and summary, featured image and author flag (PAGE-02).**
+- **Duplicate.** "Duplicate" on a page's row menu and in its editor creates a new **draft** with the same content (as the editor shows it, pending edits included): the title gets "(copy)" and the address "-copy" (then "-copy-2", ...), it sits right after the original in menu order, keeps the same parent, has no schedule or pending draft, and drops the canonical address (a copy that named the original as its canonical would hide itself). It opens in its editor. The About page cannot be copied (one per site).
+- **Fields on every page type** (a collapsed "Summary and author" section): **featured image** (thumbnail for cards, lists and sharing; the share image and the search preview fall back to it before the hero image), **summary** (up to 500 characters; used as the meta description fallback before the hero subtitle), and **show the author's name**. A blank summary is filled by the server with the **first 55 words of the hero subtitle** in the public response; with the author flag on, the public response carries `authorName` (the account that created the page). Pages created by the seed have no creator, so they have no author name.
+- **Not rendered:** the website has no design for an author line or a page-card thumbnail yet, so `authorName` and `featuredImage` are offered to it (and `featuredImage` and `summary` already feed the share image and meta description) but nothing new is drawn on the pages.
+- **Verified** against the running service: copying twice (copy, copy-2), the About page refused, the copy a draft with the same content and no canonical, the default summary from the hero subtitle, a written summary, the author name and the featured image in the public response, and cleanup of the copies. 191 content-service tests pass. In Chrome: the new section in the editor. **Not run:** the Duplicate buttons in the browser (their endpoint was run).
+
+**Still to do in G11:** an Author column that is not empty for the seeded pages (they have no creator), restoring a trashed page under another address, and the items below that depend on G12 (templates) or were left out (password). The table compares the BRD with the code and `page-model-plan.md`:
 
 | BRD | Current | Status |
 |---|---|---|
@@ -201,8 +207,8 @@ Pages here means the Service, Industry and About pages (each with its own addres
 | Edit a published page without changing the live version (draft copy) | Built: a `draft` column on the page; Save draft keeps the page live, Update publishes (see above) | ✅ |
 | Parent / child pages, page order, full URL from the parent chain | Built as structure only (parent, order, rules, menu hiding); the address is not built from the chain (decision) | 🟡 |
 | Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Built except the parent column and quick-edit parent (step 4) and the password (left out): see above | 🟡 |
-| Create from template, blank, or copy an existing page | No page templates; `post_template` exists for posts only | ❌ |
-| Featured image, excerpt (default first 55 words), author with a show/hide flag | Per type; not checked field by field | 🟡 |
+| Create from template, blank, or copy an existing page | Copy and blank (new page) built; templates wait for G12 | 🟡 |
+| Featured image, excerpt (default first 55 words), author with a show/hide flag | Built on every page type (see step 5); the website does not draw a byline or card thumbnail yet | ✅ |
 | Slug unique per site and language, warning on change, redirect | Done (`content_slug`, 308 aliases) | ✅ |
 | Save as Template | Posts only | ❌ |
 | Preview Desktop / Tablet / Mobile of unsaved edits | Done for Service, Industry, About, Case Study, Posts; not Home; header, footer shown as stand-ins | 🟡 |

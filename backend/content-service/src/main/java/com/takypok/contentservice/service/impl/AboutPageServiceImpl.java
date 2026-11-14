@@ -26,7 +26,10 @@ public class AboutPageServiceImpl implements AboutPageService {
     return contentItemRepository
         .findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(siteId, TYPE, "PUBLISHED")
         .next()
-        .flatMap(item -> withGrowthStats(siteId, item.getData()))
+        .flatMap(
+            item ->
+                withGrowthStats(siteId, item.getData())
+                    .map(data -> com.takypok.contentservice.util.PageExtras.apply(item, data)))
         .map(AboutPageResponse::new)
         .switchIfEmpty(
             Mono.error(

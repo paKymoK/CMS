@@ -64,6 +64,25 @@ public class ServicePageFields implements ContentFields {
    */
   private Long parentId;
 
+  /**
+   * The page's thumbnail (media URL) for cards, lists and sharing; when blank the hero image is
+   * used.
+   */
+  private String featuredImage;
+
+  /**
+   * A short description for cards and lists; when blank the first 55 words of the hero subtitle are
+   * used.
+   */
+  @Size(max = 500)
+  private String summary;
+
+  /**
+   * Show the creator's name publicly on the page (the website has no byline design yet: it is only
+   * offered to it).
+   */
+  private Boolean showAuthor;
+
   /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
 

@@ -43,6 +43,14 @@ public interface PageService {
    */
   Mono<PageResponses.Row> quickEdit(Long siteId, Long id, PageQuickEditRequest request);
 
+  /**
+   * A new draft with the same content as the page (as the editor shows it, pending edits included):
+   * its title gets "(copy)" and its address "-copy" (or "-copy-2", ...). The copy has no schedule,
+   * no pending draft and no canonical address of its own to point back at the original. The About
+   * page cannot be copied.
+   */
+  Mono<PageResponses.Row> duplicate(Long siteId, Long id);
+
   Mono<PostListResponses.BulkResult> trash(Long siteId, List<Long> ids);
 
   Mono<PostListResponses.BulkResult> restore(Long siteId, List<Long> ids, Map<Long, String> slugs);

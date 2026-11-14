@@ -27,8 +27,8 @@ export async function generateMetadata(
     locale,
     path,
     title: d.seoTitle || `${d.navLabel} | CMC Global`,
-    description: d.seoDescription || d.heroSubtitle || "",
-    ogImage: d.seoImage || d.heroImage,
+    description: d.seoDescription || d.summary || d.heroSubtitle || "",
+    ogImage: d.seoImage || d.featuredImage || d.heroImage,
     noIndex: d.seoNoindex,
     seo: d,
   });

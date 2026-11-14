@@ -164,6 +164,12 @@ export interface ServicePageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Thumbnail for cards, lists and sharing; falls back to the hero image. */
+  featuredImage?: string | null;
+  /** A short description; the server fills it from the hero subtitle when none was written. */
+  summary?: string | null;
+  /** Set by the server (the creator's name) when the editor chose to show the author. */
+  authorName?: string | null;
   /** Canonical address override (https); blank means the page's own address. */
   seoCanonical?: string | null;
   seoNofollow?: boolean;
@@ -272,6 +278,12 @@ export interface IndustryPageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Thumbnail for cards, lists and sharing; falls back to the hero image. */
+  featuredImage?: string | null;
+  /** A short description; the server fills it from the hero subtitle when none was written. */
+  summary?: string | null;
+  /** Set by the server (the creator's name) when the editor chose to show the author. */
+  authorName?: string | null;
   /** Canonical address override (https); blank means the page's own address. */
   seoCanonical?: string | null;
   seoNofollow?: boolean;
@@ -355,6 +367,12 @@ export interface AboutPageData {
   /** Social-share image; falls back to the page's main image. */
   seoImage?: string;
   seoNoindex?: boolean;
+  /** Thumbnail for cards, lists and sharing; falls back to the hero image. */
+  featuredImage?: string | null;
+  /** A short description; the server fills it from the hero subtitle when none was written. */
+  summary?: string | null;
+  /** Set by the server (the creator's name) when the editor chose to show the author. */
+  authorName?: string | null;
   /** Canonical address override (https); blank means the page's own address. */
   seoCanonical?: string | null;
   seoNofollow?: boolean;

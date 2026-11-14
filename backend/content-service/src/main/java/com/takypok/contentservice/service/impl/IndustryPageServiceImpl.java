@@ -21,7 +21,10 @@ public class IndustryPageServiceImpl implements IndustryPageService {
     return contentItemRepository
         .findBySlug(siteId, TYPE, slug)
         .filter(item -> "PUBLISHED".equals(item.getStatus()))
-        .map(item -> new IndustryPageResponse(item.getData()))
+        .map(
+            item ->
+                new IndustryPageResponse(
+                    com.takypok.contentservice.util.PageExtras.apply(item, item.getData())))
         .switchIfEmpty(
             Mono.error(new ApplicationException(Message.Application.ERROR, "Industry not found")));
   }

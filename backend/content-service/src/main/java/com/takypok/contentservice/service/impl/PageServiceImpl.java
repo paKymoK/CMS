@@ -279,6 +279,58 @@ public class PageServiceImpl implements PageService {
                     .orElse(Mono.empty()));
   }
 
+  // ---- duplicate -------------------------------------------------------------------------------
+
+  private static final int MAX_COPY_ATTEMPTS = 20;
+
+  @Override
+  public Mono<PageResponses.Row> duplicate(Long siteId, Long id) {
+    return findPage(siteId, id)
+        .flatMap(
+            item -> {
+              if (PageTypes.ABOUT.equals(item.getContentType())) {
+                return Mono.<ContentItem>error(
+                    fail("The About page cannot be copied: every site has exactly one"));
+              }
+              ObjectNode data =
+                  (item.getDraft() != null ? item.getDraft() : item.getData()).deepCopy();
+              data.put(PageTypes.titleKey(item.getContentType()), titleOf(item) + " (copy)");
+              data.remove(
+                  "seoCanonical"); // a copy that named the original as its canonical address would
+              // hide itself
+              String base = data.path("slug").asText("page") + "-copy";
+              return copyWithFreeSlug(siteId, item, data, base, 1);
+            })
+        .flatMap(copy -> rowOf(siteId, copy.getId()));
+  }
+
+  private Mono<ContentItem> copyWithFreeSlug(
+      Long siteId, ContentItem original, ObjectNode data, String base, int attempt) {
+    ObjectNode attemptData = data.deepCopy();
+    attemptData.put("slug", attempt == 1 ? base : base + "-" + attempt);
+    com.takypok.contentservice.model.request.ContentItemCreateRequest request =
+        new com.takypok.contentservice.model.request.ContentItemCreateRequest();
+    request.setContentType(original.getContentType());
+    request.setData(attemptData);
+    request.setStatus("DRAFT");
+    request.setDisplayOrder(
+        (original.getDisplayOrder() == null ? 0 : original.getDisplayOrder()) + 1);
+    return contentItemService
+        .create(siteId, request)
+        .onErrorResume(
+            ApplicationException.class,
+            ex -> {
+              String message =
+                  ex.getArgs() != null && ex.getArgs().length > 0
+                      ? String.valueOf(ex.getArgs()[0])
+                      : "";
+              if (message.startsWith("slug:") && attempt < MAX_COPY_ATTEMPTS) {
+                return copyWithFreeSlug(siteId, original, data, base, attempt + 1);
+              }
+              return Mono.error(ex);
+            });
+  }
+
   // ---- Trash -----------------------------------------------------------------------------------
 
   @Override

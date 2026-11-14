@@ -138,7 +138,13 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
                   .filter(c -> "PUBLISHED".equals(c.getStatus()))
                   .map(ServiceCatalogServiceImpl::featured)
                   .collectList()
-                  .map(list -> new ServicePageResponse(pageItem.getData(), cat, list));
+                  .map(
+                      list ->
+                          new ServicePageResponse(
+                              com.takypok.contentservice.util.PageExtras.apply(
+                                  pageItem, pageItem.getData()),
+                              cat,
+                              list));
             });
   }
 

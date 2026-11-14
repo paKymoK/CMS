@@ -20,7 +20,7 @@ import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks, type SeoCheck, type SeoValues } from "../lib/seo";
 import { confirmMovePagesToTrash } from "../components/pageTrash";
-import { allPages, parentChain, selfAndDescendants } from "../lib/pageList";
+import { allPages, duplicatePage, PAGE_TYPE, type PageType, parentChain, selfAndDescendants } from "../lib/pageList";
 
 type Values = Record<string, unknown>;
 /** A page can also be Scheduled (goes live by itself at a set time) and Archived (taken off the site but kept). */
@@ -383,6 +383,23 @@ function ResourceEditorForm({
             {!isNew && (
               <button type="button" onClick={() => setHistoryOpen(true)} style={outlineButton}>
                 History
+              </button>
+            )}
+            {pageStatuses && !isNew && !editor.singleton && site && resource.contentType && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const copy = await duplicatePage(site, Number(id));
+                    message.success(`Created “${copy.title}” as a draft${dirty ? " (from the last saved version)" : ""}`);
+                    navigate(PAGE_TYPE[copy.type as PageType].editor(copy.id));
+                  } catch {
+                    message.error("Could not copy the page");
+                  }
+                }}
+                style={outlineButton}
+              >
+                Duplicate
               </button>
             )}
             {hasDraft && (
