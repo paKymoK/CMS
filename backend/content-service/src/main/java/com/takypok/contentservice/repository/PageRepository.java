@@ -41,7 +41,10 @@ public class PageRepository {
   private static final String ROWS =
       "SELECT ci.id, ci.content_type AS type,"
           + " COALESCE(ci.data ->> 'navLabel', ci.data ->> 'heroTitle') AS title,"
-          + " ci.data ->> 'slug' AS slug,"
+          + " ci.data ->> 'slug' AS slug, ci.display_order,"
+          + " NULLIF(ci.data ->> 'parentId', '')::bigint AS parent_id,"
+          + " (SELECT COALESCE(p.data ->> 'navLabel', p.data ->> 'heroTitle') FROM content_item p"
+          + " WHERE p.id = NULLIF(ci.data ->> 'parentId', '')::bigint) AS parent_title,"
           + " CASE ci.content_type WHEN 'service_page' THEN '/services/' || (ci.data ->> 'category') || '/' || (ci.data ->> 'slug')"
           + " WHEN 'industry_page' THEN '/industries/' || (ci.data ->> 'slug') ELSE '/about' END AS path,"
           + " ci.status, (ci.draft IS NOT NULL) AS has_draft, ci.publish_at, ci.created_by ->> 'sub' AS author_sub,"
@@ -105,6 +108,8 @@ public class PageRepository {
                         row.get("title", String.class),
                         row.get("slug", String.class),
                         row.get("path", String.class),
+                        row.get("parent_id", Long.class),
+                        row.get("parent_title", String.class),
                         row.get("status", String.class),
                         Boolean.TRUE.equals(row.get("has_draft", Boolean.class)),
                         instant(row.get("publish_at", OffsetDateTime.class)),
@@ -124,6 +129,7 @@ public class PageRepository {
       case "title_asc" -> "lower(x.title) ASC";
       case "title_desc" -> "lower(x.title) DESC";
       case "updated_asc" -> "x.updated_at ASC NULLS FIRST";
+      case "order_asc" -> "x.display_order ASC, lower(x.title) ASC";
       case "published_desc" -> "x.published_at DESC NULLS LAST";
       case "published_asc" -> "x.published_at ASC NULLS LAST";
       default -> "x.updated_at DESC NULLS LAST";
@@ -173,6 +179,34 @@ public class PageRepository {
         .all()
         .collectList();
   }
+
+  /**
+   * The pages (any type) whose parent is one of the given pages: parent id, then the child's id,
+   * title and status.
+   */
+  public Mono<List<ChildRow>> childrenOf(long siteId, List<Long> parentIds) {
+    return databaseClient
+        .sql(
+            "SELECT NULLIF(ci.data ->> 'parentId', '')::bigint AS parent_id, ci.id, ci.status,"
+                + " COALESCE(ci.data ->> 'navLabel', ci.data ->> 'heroTitle') AS title FROM content_item ci"
+                + " WHERE ci.site_id = :site AND ci.content_type IN "
+                + TYPES
+                + " AND NULLIF(ci.data ->> 'parentId', '')::bigint = ANY (CAST(:ids AS bigint[]))"
+                + " ORDER BY ci.display_order, ci.id")
+        .bind("site", siteId)
+        .bind("ids", parentIds.toArray(new Long[0]))
+        .map(
+            (row, md) ->
+                new ChildRow(
+                    row.get("parent_id", Long.class),
+                    row.get("id", Long.class),
+                    row.get("status", String.class),
+                    row.get("title", String.class)))
+        .all()
+        .collectList();
+  }
+
+  public record ChildRow(Long parentId, Long id, String status, String title) {}
 
   /** One page of the Trash, newest first. */
   public Mono<PageResponses.TrashPage> trashPage(long siteId, String q, int page, int size) {

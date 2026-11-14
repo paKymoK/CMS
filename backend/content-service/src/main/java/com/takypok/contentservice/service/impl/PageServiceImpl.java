@@ -49,7 +49,8 @@ public class PageServiceImpl implements PageService {
           "title_asc",
           "title_desc",
           "published_desc",
-          "published_asc");
+          "published_asc",
+          "order_asc");
   private static final Set<String> STATUSES = Set.of("DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED");
 
   private final PageRepository pages;
@@ -208,6 +209,10 @@ public class PageServiceImpl implements PageService {
                 if (title.isEmpty()) throw fail("The title cannot be empty");
                 data.put(PageTypes.titleKey(item.getContentType()), title);
               }
+              if (request.isParentIdSent()) {
+                if (request.getParentId() == null) data.remove("parentId");
+                else data.put("parentId", request.getParentId());
+              }
               if (request.getSlug() != null && !request.getSlug().isBlank()) {
                 if (PageTypes.ABOUT.equals(item.getContentType())) {
                   throw fail("The About page lives at /about and has no address to change");
@@ -243,6 +248,10 @@ public class PageServiceImpl implements PageService {
                     if (data.hasNonNull("slug")
                         && request.getSlug() != null
                         && !request.getSlug().isBlank()) draft.set("slug", data.get("slug"));
+                    if (request.isParentIdSent()) {
+                      if (data.hasNonNull("parentId")) draft.set("parentId", data.get("parentId"));
+                      else draft.remove("parentId");
+                    }
                     ContentItemUpdateRequest forDraft = new ContentItemUpdateRequest();
                     forDraft.setId(id);
                     forDraft.setContentType(item.getContentType());
@@ -367,6 +376,7 @@ public class PageServiceImpl implements PageService {
     List<Long> unique = ids.stream().distinct().toList();
     return Mono.zip(
             pages.referrers(siteId, unique, MAX_REFERRER_ROWS),
+            pages.childrenOf(siteId, unique),
             Flux.fromIterable(unique)
                 .concatMap(
                     id ->
@@ -377,9 +387,23 @@ public class PageServiceImpl implements PageService {
         .map(
             t -> {
               List<TrashResponses.LinkCheck> out = new ArrayList<>();
-              for (ContentItem page : t.getT2()) {
+              for (ContentItem page : t.getT3()) {
                 List<TrashResponses.Referrer> refs =
                     new ArrayList<>(t.getT1().getOrDefault(page.getId(), List.of()));
+                // Child pages stay where they are but leave the menus while their parent is in the
+                // Trash.
+                t.getT2().stream()
+                    .filter(c -> page.getId().equals(c.parentId()))
+                    .forEach(
+                        c ->
+                            refs.add(
+                                new TrashResponses.Referrer(
+                                    c.id(),
+                                    "child_page",
+                                    c.status(),
+                                    "child page \u201c"
+                                        + c.title()
+                                        + "\u201d (hidden from menus)")));
                 // A published Service page is in the header's Services menu: trashing it takes it
                 // out.
                 if (PageTypes.SERVICE.equals(page.getContentType())

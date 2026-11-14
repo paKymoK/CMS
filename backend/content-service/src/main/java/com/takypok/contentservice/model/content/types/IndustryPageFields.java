@@ -53,6 +53,12 @@ public class IndustryPageFields implements ContentFields {
   @Size(max = 40)
   private List<IndustryBlock> blocks;
 
+  /**
+   * The parent page's id (any page type); empty for a top-level page. Structure only: the address
+   * does not change.
+   */
+  private Long parentId;
+
   /** Search-engine title: when set it is the whole page title. */
   private String seoTitle;
 

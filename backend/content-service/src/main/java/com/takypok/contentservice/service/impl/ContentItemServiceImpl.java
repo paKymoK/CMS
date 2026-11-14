@@ -74,6 +74,7 @@ public class ContentItemServiceImpl implements ContentItemService {
             data ->
                 ensureSingleton(siteId, request.getContentType(), null)
                     .then(ensureUnique(siteId, request.getContentType(), data, null))
+                    .then(ensureValidParent(siteId, request.getContentType(), null, data))
                     .thenReturn(data))
         .flatMap(
             validatedData -> {
@@ -111,6 +112,9 @@ public class ContentItemServiceImpl implements ContentItemService {
                                 .then(
                                     ensureUnique(
                                         siteId, request.getContentType(), data, item.getId()))
+                                .then(
+                                    ensureValidParent(
+                                        siteId, request.getContentType(), item.getId(), data))
                                 .thenReturn(data))
                     .flatMap(
                         validatedData -> {
@@ -205,6 +209,49 @@ public class ContentItemServiceImpl implements ContentItemService {
   public Flux<ContentItem> getAllPublished(Long siteId) {
     return contentItemRepository.findAllBySiteIdAndStatusOrderByDisplayOrderAsc(
         siteId, "PUBLISHED");
+  }
+
+  /**
+   * A page's parent (structure only) must be another page of the site, never the page itself or one
+   * of its own descendants: the chain above the chosen parent is followed to the top and must not
+   * meet the page.
+   */
+  private Mono<Void> ensureValidParent(
+      Long siteId, String contentType, Long selfId, JsonNode data) {
+    if (!PageTypes.is(contentType)) return Mono.empty();
+    JsonNode parent = data.get("parentId");
+    if (parent == null || parent.isNull()) return Mono.empty();
+    long parentId = parent.asLong();
+    if (selfId != null && parentId == selfId) {
+      return Mono.error(invalidParent("A page cannot be its own parent"));
+    }
+    return walkUp(siteId, selfId, parentId, 0, true);
+  }
+
+  private Mono<Void> walkUp(Long siteId, Long selfId, long current, int depth, boolean first) {
+    if (depth > 50) return Mono.error(invalidParent("The page structure is too deep"));
+    return contentItemRepository
+        .findByIdAndSiteId(current, siteId)
+        .filter(page -> PageTypes.is(page.getContentType()))
+        .switchIfEmpty(
+            Mono.error(
+                invalidParent(
+                    first ? "The parent page no longer exists" : "The page structure is broken")))
+        .flatMap(
+            page -> {
+              if (selfId != null && page.getId().equals(selfId)) {
+                return Mono.error(
+                    invalidParent("A page cannot be moved under one of its own child pages"));
+              }
+              JsonNode up = page.getData().get("parentId");
+              return up == null || up.isNull()
+                  ? Mono.<Void>empty()
+                  : walkUp(siteId, selfId, up.asLong(), depth + 1, false);
+            });
+  }
+
+  private static ApplicationException invalidParent(String message) {
+    return new ApplicationException(Message.Application.ERROR, "parentId: " + message);
   }
 
   /** A site has one item of each singleton type: a second one is rejected with a plain message. */

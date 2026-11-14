@@ -18,10 +18,13 @@ import {
   PAGE_TYPE,
   bulkPages,
   listPageTrash,
+  allPages,
   listPages,
   pageFacets,
   pageUrl,
+  parentChain,
   quickEditPage,
+  selfAndDescendants,
   type PageBulkAction,
   type PageQuery,
   type PageRow,
@@ -95,6 +98,8 @@ export default function PagesPage() {
       return { site, ids: typeof next === "function" ? next(current) : next };
     });
   const [quick, setQuick] = useState<PageRow | null>(null);
+  // Every page, for choosing a parent in the quick edit (the list above may be filtered or paged).
+  const everyPage = useQuery({ queryKey: ["pages-all", site], queryFn: () => allPages(site!), enabled: !!site, refetchOnMount: "always" });
 
   const update = (patch: Record<string, string | undefined>) => {
     setParams(
@@ -137,6 +142,7 @@ export default function PagesPage() {
     queryClient.invalidateQueries({ queryKey: ["pages-list", site] });
     queryClient.invalidateQueries({ queryKey: ["pages-facets", site] });
     queryClient.invalidateQueries({ queryKey: ["pages-trash", site] });
+    queryClient.invalidateQueries({ queryKey: ["pages-all", site] });
     queryClient.invalidateQueries({ queryKey: ["content"] });
   };
 
@@ -197,7 +203,7 @@ export default function PagesPage() {
     {
       title: <ColHeader>URL</ColHeader>,
       dataIndex: "path",
-      width: 250,
+      width: 225,
       render: (path: string, row) => (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <span title={site ? pageUrl(siteSub, site, path) : path} style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#5b6b86", whiteSpace: "nowrap" }}>
@@ -208,16 +214,23 @@ export default function PagesPage() {
       ),
     },
     {
+      title: <ColHeader>Parent</ColHeader>,
+      dataIndex: "parentTitle",
+      width: 125,
+      ellipsis: true,
+      render: (v: string | null) => <span style={{ fontSize: 14, color: "#5b6b86" }}>{v || "—"}</span>,
+    },
+    {
       title: <ColHeader>Author</ColHeader>,
       dataIndex: "author",
-      width: 130,
+      width: 105,
       ellipsis: true,
       render: (v: string | null) => <span style={{ fontSize: 14, color: "#5b6b86" }}>{v || "—"}</span>,
     },
     {
       title: <ColHeader>Published</ColHeader>,
       dataIndex: "publishedAt",
-      width: 130,
+      width: 115,
       render: (v: string | null, row) =>
         v && (row.status === "PUBLISHED" || row.status === "ARCHIVED") ? (
           <span style={{ fontSize: 13, color: "#0b1b3a" }}>{dayjs(v).format("MMM D, YYYY")}</span>
@@ -228,7 +241,7 @@ export default function PagesPage() {
     {
       title: <ColHeader>Updated</ColHeader>,
       dataIndex: "updatedAt",
-      width: 150,
+      width: 140,
       render: (v: string | null, row) =>
         v ? (
           <div>
@@ -459,7 +472,7 @@ export default function PagesPage() {
             dataSource={rows}
             loading={list.isFetching}
             tableLayout="fixed"
-            scroll={{ x: 980 }}
+            scroll={{ x: 1000 }}
             rowSelection={{ selectedRowKeys: selected, preserveSelectedRowKeys: true, onChange: (keys) => setSelected(keys as number[]) }}
             pagination={{
               current: list.data?.page ?? query.page ?? 1,
@@ -495,6 +508,7 @@ export default function PagesPage() {
           key={quick.id}
           site={site}
           row={quick}
+          everyPage={everyPage.data ?? []}
           onClose={() => setQuick(null)}
           onSaved={() => {
             setQuick(null);
@@ -507,10 +521,12 @@ export default function PagesPage() {
 }
 
 /** Quick edit (PAGE-01): title, address and status on the list. Changing the address of a live page asks first. */
-function QuickEdit({ site, row, onClose, onSaved }: { site: string; row: PageRow; onClose: () => void; onSaved: () => void }) {
+function QuickEdit({ site, row, everyPage, onClose, onSaved }: { site: string; row: PageRow; everyPage: PageRow[]; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState(row.title ?? "");
   const [slug, setSlug] = useState(row.slug ?? "");
   const [status, setStatus] = useState<PageStatus>(row.status);
+  const [parentId, setParentId] = useState<number | null>(row.parentId);
+  const blocked = selfAndDescendants(everyPage, row.id);
   const isAbout = row.type === "about_page";
   const slugChanged = !isAbout && slug.trim() !== (row.slug ?? "");
   const live = row.status === "PUBLISHED";
@@ -521,6 +537,7 @@ function QuickEdit({ site, row, onClose, onSaved }: { site: string; row: PageRow
         title: title.trim() !== (row.title ?? "") ? title.trim() : undefined,
         slug: slugChanged ? slug.trim() : undefined,
         status: status !== row.status ? status : undefined,
+        parentId: parentId !== row.parentId ? parentId : undefined,
         version: row.version,
       }),
     onSuccess: () => {
@@ -558,6 +575,20 @@ function QuickEdit({ site, row, onClose, onSaved }: { site: string; row: PageRow
           {slugChanged && live && <div style={{ fontSize: 12, color: "#b36b00", marginTop: 4 }}>This page is live: you will be asked to confirm.</div>}
         </>
       )}
+      <label style={label}>Parent page</label>
+      <Select
+        allowClear
+        showSearch
+        optionFilterProp="label"
+        style={{ width: "100%" }}
+        placeholder="None (top level)"
+        value={parentId ?? undefined}
+        onChange={(v) => setParentId(v ?? null)}
+        options={everyPage.filter((p) => !blocked.has(p.id)).map((p) => ({ value: p.id, label: `${p.title ?? "(no title)"} · ${PAGE_TYPE[p.type].label}` }))}
+      />
+      <div style={{ fontSize: 12, color: "#7b8aa5", marginTop: 4 }}>
+        {parentId !== null ? `Sits under: ${parentChain(everyPage, parentId)}. ` : ""}The address does not change.
+      </div>
       <label style={label}>Status</label>
       <Select
         style={{ width: "100%" }}

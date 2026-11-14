@@ -576,6 +576,23 @@ $$
 DECLARE
     n integer;
 BEGIN
+    -- Pages that sat under a page deleted for good become top-level: their parent will never come back.
+    -- (Credited to the actor, like any change; a page's draft is kept in step.)
+    UPDATE content_item c
+    SET data        = c.data - 'parentId',
+        draft       = CASE WHEN c.draft IS NULL THEN NULL ELSE c.draft - 'parentId' END,
+        version     = c.version + 1,
+        modified_at = now(),
+        modified_by = p_actor
+    WHERE c.content_type IN ('service_page', 'industry_page', 'about_page')
+      AND (NULLIF(c.data ->> 'parentId', '')::bigint = ANY (SELECT t.id FROM content_trash t
+                                                              WHERE t.id = ANY (p_ids)
+                                                                AND (p_site IS NULL OR t.site_id = p_site)
+                                                                AND t.content_type IN ('service_page', 'industry_page', 'about_page'))
+        OR NULLIF(c.draft ->> 'parentId', '')::bigint = ANY (SELECT t.id FROM content_trash t
+                                                              WHERE t.id = ANY (p_ids)
+                                                                AND (p_site IS NULL OR t.site_id = p_site)
+                                                                AND t.content_type IN ('service_page', 'industry_page', 'about_page')));
     WITH gone AS (DELETE FROM content_trash t
         WHERE t.id = ANY (p_ids) AND (p_site IS NULL OR t.site_id = p_site)
         RETURNING t.*)

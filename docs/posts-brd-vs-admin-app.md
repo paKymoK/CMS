@@ -172,7 +172,7 @@ Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, 
 - Auth-service already has project-scoped role assignments (`client_role_assignment`, one role per client, user and project), which fits the website scope. User management is built in auth-service (G13).
 
 ### G11. Pages (PAGE-01 to PAGE-08)
-Pages here means the Service, Industry and About pages (each with its own address family on the website). Decided: draft-over-live uses a draft column on the page; parent and child pages are structure only (the URL does not change); no page password for now; templates wait for G12. Order of work: **1. statuses and Trash (built), 2. one Pages list (built), 3. draft over live (built)**, 4. parent / child and order, 5. duplicate a page and a review of the fields.
+Pages here means the Service, Industry and About pages (each with its own address family on the website). Decided: draft-over-live uses a draft column on the page; parent and child pages are structure only (the URL does not change); no page password for now; templates wait for G12. Order of work: **1. statuses and Trash (built), 2. one Pages list (built), 3. draft over live (built), 4. parent / child and order (built)**, 5. duplicate a page and a review of the fields.
 
 **Built (steps 1 and 2).**
 - **Statuses.** Service, Industry and About pages can be Draft, Scheduled, Published or Archived, like posts: a schedule picker (publish time, optional take-offline time, once-a-minute job that was already generic), an Archive button with a confirmation for a live page, and the SEO prompt when a page goes live. `StatusRules` and `ScheduleRules` now cover the page types; the item API takes `publishAt` / `unpublishAt`.
@@ -185,16 +185,21 @@ Pages here means the Service, Industry and About pages (each with its own addres
 - **Elsewhere.** The Pages list shows "Unpublished changes" under the status and a "Publish the saved changes" action; bulk Publish applies a draft; bulk Archive or Move to draft, the take-offline job and a Trash restore keep the draft as the page's content; the quick edit patches the live page and its draft together; restoring a version from History replaces a pending draft.
 - **Not in the audit trail:** a draft-only save records nothing (the trail records what went live). The list's Updated column does show who saved the draft.
 
-**Not built yet:** the Parent column and parent-aware warnings (step 4: the BRD's "children are hidden from menus when the parent is trashed"), an Author column that is not empty for the seeded pages (they have no creator), and a published date for pages that went live before the audit trail existed.
+**Built (step 4): parent and child pages (PAGE-02), structure only.**
+- **Parent.** Any page can have a parent page (any page type), stored as `parentId` in the page. The address does not change (decision), so this is structure: the **Parent** column in the Pages list, a **Parent page** choice in the editor's Publishing card and in the quick edit (with the chain "Grandparent › Parent" shown), and sorting by **Menu order** (the page's Order number, edited in the editor). Multi-level is allowed.
+- **Rules (server).** A page cannot be its own parent or be moved under one of its own descendants (the chain above the chosen parent is followed to the top), and the parent must exist; a draft is checked the same way.
+- **Trash.** Before trashing a parent, the warning lists its child pages as "hidden from menus". While the parent is in the Trash its child pages stay where they are but **leave the Services menu** (and the page's sibling links); restoring the parent brings them back. When a parent is **deleted for good** (by hand or by the 30-day job) its children become top-level pages (`delete_trashed_items` does it, so both paths are covered; edits init-schema.sql: recreate the `content` database).
+- **Verified** against the running stack: setting a parent, the self, cycle and missing-parent refusals, a parent of another type, the Menu order sort, the child warning, the Services menu while the parent is trashed and after restore, and orphaning a child on delete-forever (with throwaway pages, removed after). 191 content-service tests pass. **Not run:** the quick edit's parent choice in the browser (its API was run).
+- **Not built (decision or later):** nested menus (the Services menu is still grouped by category), and addresses built from the parent chain.
 
-Pages here means the page types (Service, Industry, About, Case Study, Home). Compared with the code and `page-model-plan.md`:
+**Still to do in G11:** step 5 (duplicate a page, and a review of the featured image, excerpt and author flag on each page type), an Author column that is not empty for the seeded pages (they have no creator), restoring a trashed page under another address, and the items below that depend on G12 (templates) or were left out (password). The table compares the BRD with the code and `page-model-plan.md`:
 
 | BRD | Current | Status |
 |---|---|---|
 | Blocks / components on a page: add, remove, duplicate, hide, reorder | Block builder on Service, Industry and About (`page-model-plan.md` section 13). Home and Contact Us are not on it yet | 🟡 |
 | Statuses Draft, Scheduled, Published, Archived, Trash | Built for Service, Industry and About pages (see above) | ✅ |
 | Edit a published page without changing the live version (draft copy) | Built: a `draft` column on the page; Save draft keeps the page live, Update publishes (see above) | ✅ |
-| Parent / child pages, page order, full URL from the parent chain | No page hierarchy found in the page model | ❌ |
+| Parent / child pages, page order, full URL from the parent chain | Built as structure only (parent, order, rules, menu hiding); the address is not built from the chain (decision) | 🟡 |
 | Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Built except the parent column and quick-edit parent (step 4) and the password (left out): see above | 🟡 |
 | Create from template, blank, or copy an existing page | No page templates; `post_template` exists for posts only | ❌ |
 | Featured image, excerpt (default first 55 words), author with a show/hide flag | Per type; not checked field by field | 🟡 |

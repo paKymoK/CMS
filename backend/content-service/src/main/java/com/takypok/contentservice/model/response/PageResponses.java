@@ -22,6 +22,8 @@ public final class PageResponses {
       String title,
       String slug,
       String path,
+      Long parentId,
+      String parentTitle,
       String status,
       boolean hasDraft,
       Instant publishAt,

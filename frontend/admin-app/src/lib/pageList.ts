@@ -3,7 +3,7 @@ import type { BulkResult, LinkCheck } from "./postList";
 
 export type PageType = "service_page" | "industry_page" | "about_page";
 export type PageStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
-export type PageSort = "updated_desc" | "updated_asc" | "title_asc" | "title_desc" | "published_desc" | "published_asc";
+export type PageSort = "updated_desc" | "updated_asc" | "title_asc" | "title_desc" | "published_desc" | "published_asc" | "order_asc";
 export type PageBulkAction = "PUBLISH" | "UNPUBLISH" | "ARCHIVE" | "TRASH" | "RESTORE" | "DELETE_FOREVER";
 
 /** One page as a list row (BRD PAGE-01). */
@@ -14,6 +14,9 @@ export interface PageRow {
   slug: string | null;
   /** The public address, e.g. /services/digital-engineering/web-app. */
   path: string;
+  /** The parent page (structure only: the address does not change), or null for a top-level page. */
+  parentId: number | null;
+  parentTitle: string | null;
   status: PageStatus;
   /** A published page with saved edits that are not live yet. */
   hasDraft: boolean;
@@ -99,6 +102,7 @@ export const PAGE_SORT_LABELS: Record<PageSort, string> = {
   title_desc: "Name: Z to A",
   published_desc: "Published: newest first",
   published_asc: "Published: oldest first",
+  order_asc: "Menu order",
 };
 
 export async function listPages(site: string, query: PageQuery): Promise<PageList> {
@@ -129,7 +133,7 @@ export async function bulkPages(
 export async function quickEditPage(
   site: string,
   id: number,
-  edit: { title?: string; slug?: string; status?: PageStatus; version: number },
+  edit: { title?: string; slug?: string; status?: PageStatus; parentId?: number | null; version: number },
 ): Promise<PageRow> {
   const { data } = await contentApi.put(`/v1/admin/pages/${id}`, edit, { params: { site } });
   return data.data as PageRow;
@@ -152,4 +156,38 @@ export async function pageTrashLinks(site: string, ids: number[]): Promise<LinkC
 export function pageUrl(subdomain: string | undefined, siteCode: string, path: string): string {
   const full = `/${siteCode}${path}`;
   return subdomain ? `https://${subdomain}${full}` : full;
+}
+
+/** Every page of the site (id, title, parent), for choosing a parent: the lists are short. */
+export async function allPages(site: string): Promise<PageRow[]> {
+  return (await listPages(site, { size: 0, sort: "title_asc" })).items;
+}
+
+/** The ids of a page and everything below it: none of these can be its parent (it would loop). */
+export function selfAndDescendants(pages: PageRow[], id: number): Set<number> {
+  const out = new Set<number>([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const p of pages) {
+      if (p.parentId !== null && out.has(p.parentId) && !out.has(p.id)) {
+        out.add(p.id);
+        grew = true;
+      }
+    }
+  }
+  return out;
+}
+
+/** "Grandparent › Parent": the chain above a page, top first, for showing where it sits. */
+export function parentChain(pages: PageRow[], parentId: number | null): string {
+  const names: string[] = [];
+  let current = parentId;
+  for (let guard = 0; current !== null && guard < 50; guard++) {
+    const page = pages.find((p) => p.id === current);
+    if (!page) break;
+    names.unshift(page.title ?? "(no title)");
+    current = page.parentId;
+  }
+  return names.join(" › ");
 }

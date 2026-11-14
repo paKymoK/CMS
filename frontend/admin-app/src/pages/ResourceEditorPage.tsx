@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from "react";
 import dayjs, { type Dayjs } from "dayjs";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Collapse, DatePicker, Empty, Form, Modal, Switch, message, type FormInstance } from "antd";
+import { Collapse, DatePicker, Empty, Form, Modal, Select, Switch, message, type FormInstance } from "antd";
 import type { NamePath } from "antd/es/form/interface";
 import { contentApi } from "../lib/api";
 import { useSite } from "../lib/useSite";
@@ -20,6 +20,7 @@ import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
 import { publishUnlessSeoMissing, seoChecks, type SeoCheck, type SeoValues } from "../lib/seo";
 import { confirmMovePagesToTrash } from "../components/pageTrash";
+import { allPages, parentChain, selfAndDescendants } from "../lib/pageList";
 
 type Values = Record<string, unknown>;
 /** A page can also be Scheduled (goes live by itself at a set time) and Archived (taken off the site but kept). */
@@ -205,6 +206,9 @@ function ResourceEditorForm({
   // What the server has: a published page with saved edits that are not live yet (a pending draft) shows the edits here.
   const [storedStatus, setStoredStatus] = useState<Status | undefined>(initial?.status as Status | undefined);
   const [hasDraft, setHasDraft] = useState(!!initial?.draft);
+  // Pages sit in a structure (a parent page, structure only: the address does not change).
+  const [parentId, setParentId] = useState<number | null>((initial?.parentId as number | undefined) ?? null);
+  const everyPage = useQuery({ queryKey: ["pages-all", site], queryFn: () => allPages(site!), enabled: !!editor.pageStatuses && !!site });
   // The row version this form was loaded with; the server rejects a save made against an older one.
   const [version, setVersion] = useState(initial?.version as number | undefined);
   const [dirty, setDirty] = useState(false);
@@ -273,6 +277,7 @@ function ResourceEditorForm({
         displayOrder,
         status: nextStatus,
         ...(asDraft ? { saveAsDraft: true } : {}),
+        ...(editor.pageStatuses ? { parentId: parentId ?? undefined } : {}),
         ...(pageStatuses
           ? {
               publishAt: nextStatus === "SCHEDULED" && publishAt ? publishAt.toISOString() : null,
@@ -618,6 +623,30 @@ function ResourceEditorForm({
                       From title
                     </button>
                     <PreviousUrls itemId={isNew ? undefined : id} slug={slug} live={status !== "DRAFT"} prefix={`${siteSub ?? "site"}/${editor.slugPrefix.split("/")[0]}/`} />
+                  </div>
+                )}
+
+                {pageStatuses && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <span style={labelStyle}>Parent page</span>
+                    <Select
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      placeholder="None (top level)"
+                      value={parentId ?? undefined}
+                      onChange={(v) => {
+                        setParentId(v ?? null);
+                        touch();
+                      }}
+                      options={(everyPage.data ?? [])
+                        .filter((p) => isNew || !selfAndDescendants(everyPage.data ?? [], Number(id)).has(p.id))
+                        .map((p) => ({ value: p.id, label: p.title ?? "(no title)" }))}
+                    />
+                    <span style={{ fontSize: 12, color: "#7b8aa5", lineHeight: 1.45 }}>
+                      {parentId !== null && everyPage.data ? `Sits under: ${parentChain(everyPage.data, parentId)}. ` : ""}
+                      Structure only: the page's address does not change. If the parent is moved to the Trash, this page leaves the menus.
+                    </span>
                   </div>
                 )}
 

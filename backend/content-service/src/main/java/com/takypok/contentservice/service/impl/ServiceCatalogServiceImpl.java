@@ -35,9 +35,31 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
     return node == null || node.isNull() ? null : node.asText();
   }
 
+  /**
+   * The ids of every page of the site, live or not, that is not in the Trash: a child page whose
+   * parent is not among them (the parent is in the Trash) is left out of the menus.
+   */
+  private Mono<java.util.Set<Long>> pageIds(Long siteId) {
+    return Flux.fromIterable(com.takypok.contentservice.util.PageTypes.ALL)
+        .concatMap(
+            type ->
+                contentItemRepository.findAllBySiteIdAndContentTypeOrderByDisplayOrderAsc(
+                    siteId, type))
+        .map(ContentItem::getId)
+        .collect(java.util.stream.Collectors.toSet());
+  }
+
+  private static boolean parentInTrash(ContentItem page, java.util.Set<Long> existing) {
+    JsonNode parent = page.getData() == null ? null : page.getData().get("parentId");
+    return parent != null && !parent.isNull() && !existing.contains(parent.asLong());
+  }
+
   @Override
   public Mono<ServiceNavResponse> getNav(Long siteId) {
-    return Mono.zip(items(siteId, CATEGORY).collectList(), items(siteId, PAGE).collectList())
+    return Mono.zip(
+            items(siteId, CATEGORY).collectList(),
+            items(siteId, PAGE).collectList(),
+            pageIds(siteId))
         .map(
             t -> {
               List<ServiceNavResponse.Category> categories = new ArrayList<>();
@@ -45,6 +67,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
                 String slug = text(category.getData(), "slug");
                 List<ServiceNavResponse.Link> links = new ArrayList<>();
                 for (ContentItem page : t.getT2()) {
+                  if (parentInTrash(page, t.getT3())) continue;
                   if (slug != null && slug.equals(text(page.getData(), "category"))) {
                     links.add(
                         new ServiceNavResponse.Link(
@@ -62,7 +85,10 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   public Mono<ServicePageResponse> getPage(Long siteId, String category, String slug) {
     Mono<ApplicationException> notFound =
         Mono.just(new ApplicationException(Message.Application.ERROR, "Service not found"));
-    return Mono.zip(items(siteId, CATEGORY).collectList(), items(siteId, PAGE).collectList())
+    return Mono.zip(
+            items(siteId, CATEGORY).collectList(),
+            items(siteId, PAGE).collectList(),
+            pageIds(siteId))
         .flatMap(
             t -> {
               ContentItem categoryItem =
@@ -83,6 +109,7 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
               List<ServiceNavResponse.Link> siblings =
                   t.getT2().stream()
                       .filter(p -> category.equals(text(p.getData(), "category")))
+                      .filter(p -> !parentInTrash(p, t.getT3()))
                       .map(
                           p ->
                               new ServiceNavResponse.Link(
