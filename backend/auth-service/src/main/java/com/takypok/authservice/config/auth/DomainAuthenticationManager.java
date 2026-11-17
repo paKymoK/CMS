@@ -72,6 +72,13 @@ public class DomainAuthenticationManager implements AuthenticationManager {
             case "GUEST" -> jdbcAuthenticationProvider.authenticate(token);
             default -> throw new BadCredentialsException("Unknown domain: " + token.getDomain());
           };
+    } catch (AuthenticationServiceException ex) {
+      // The directory (or another backend) is down: that is not the user's wrong password, so it
+      // must not count toward the lockout, or an outage would lock everyone out for 10 minutes.
+      log.warn("Sign-in could not be checked for user={}: {}", username, ex.getMessage());
+      auditService.recordQuietly(
+          username, AuditAction.LOGIN_UNAVAILABLE, username, token.getDomain(), remoteAddress);
+      throw ex;
     } catch (AuthenticationException ex) {
       recordFailure(username, remoteAddress);
       auditService.recordQuietly(

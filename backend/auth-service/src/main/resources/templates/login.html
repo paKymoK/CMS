@@ -120,6 +120,9 @@
         <div th:if="${attemptsLeft != null}" class="alert alert-warn" role="alert">
             <strong>Invalid credentials.</strong> <span th:text="${attemptsLeft}"></span> attempt(s) remaining before lockout.
         </div>
+        <div th:if="${param.unavailable != null}" class="alert alert-warn" role="alert">
+            <strong>Sign-in is temporarily unavailable.</strong> Try again in a few minutes.
+        </div>
         <div th:if="${param.error != null and locked == null and attemptsLeft == null}" class="alert alert-danger" role="alert">
             Invalid username or password.
         </div>

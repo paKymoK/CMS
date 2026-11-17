@@ -6,6 +6,7 @@ public enum AuditAction {
   LOGIN_FAILED("Sign-in failed"),
   LOGIN_LOCKED("Sign-in refused: locked"),
   LOGIN_BLOCKED("Sign-in refused: inactive"),
+  LOGIN_UNAVAILABLE("Sign-in failed: directory unavailable"),
   LOGOUT("Signed out"),
   SESSION_ENDED("Session ended"),
   USER_CREATED("Account created"),

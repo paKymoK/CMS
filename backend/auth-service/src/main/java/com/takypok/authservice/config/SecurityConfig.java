@@ -10,6 +10,7 @@ import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -64,6 +65,12 @@ public class SecurityConfig {
   @Value("${ldap.user-search-filter}")
   private String userSearchFilter;
 
+  @Value("${ldap.connect-timeout-ms}")
+  private String ldapConnectTimeoutMs;
+
+  @Value("${ldap.read-timeout-ms}")
+  private String ldapReadTimeoutMs;
+
   @Value("${cors.allowed-origins}")
   private String[] corsAllowedOrigins;
 
@@ -74,6 +81,11 @@ public class SecurityConfig {
     source.setBase(ldapBase);
     source.setUserDn(ldapUsername);
     source.setPassword(ldapPassword);
+    // Without these a silently dropped connection hangs the login thread until the OS TCP timeout.
+    source.setBaseEnvironmentProperties(
+        Map.of(
+            "com.sun.jndi.ldap.connect.timeout", ldapConnectTimeoutMs,
+            "com.sun.jndi.ldap.read.timeout", ldapReadTimeoutMs));
     return source;
   }
 

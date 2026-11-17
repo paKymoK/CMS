@@ -98,6 +98,24 @@ class DomainAuthenticationManagerTest {
   }
 
   @Test
+  void aDirectoryOutageIsNotCountedAsAFailedAttempt() {
+    DomainAuthenticationToken staff =
+        new DomainAuthenticationToken("sam", "pw", "INTERNAL", "10.0.0.1");
+    when(ldap.authenticate(staff))
+        .thenThrow(
+            new org.springframework.security.authentication.InternalAuthenticationServiceException(
+                "ldap down"));
+
+    assertThatThrownBy(() -> manager.authenticate(staff))
+        .isInstanceOf(AuthenticationServiceException.class);
+    verify(ops, never()).increment(any());
+    verify(audit)
+        .recordQuietly("sam", AuditAction.LOGIN_UNAVAILABLE, "sam", "INTERNAL", "10.0.0.1");
+    verify(audit, never())
+        .recordQuietly("sam", AuditAction.LOGIN_FAILED, "sam", "INTERNAL", "10.0.0.1");
+  }
+
+  @Test
   void aLockedAccountIsAuditedAsRefused() {
     when(ops.get("login-fail:sam@x.com")).thenReturn("5");
 

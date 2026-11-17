@@ -7,6 +7,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,12 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
   public void onAuthenticationFailure(
       HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
       throws IOException {
+
+    // Not a credentials problem (e.g. LDAP unreachable): say so instead of "invalid password".
+    if (exception instanceof AuthenticationServiceException) {
+      response.sendRedirect(request.getContextPath() + "/login?unavailable");
+      return;
+    }
 
     String username = request.getParameter("username");
     if (username != null && !username.isBlank()) {
