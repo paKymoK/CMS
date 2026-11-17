@@ -628,13 +628,30 @@ function PagesTrash({ site, onChanged }: { site: string; onChanged: () => void }
     placeholderData: keepPreviousData,
     refetchOnMount: "always",
   });
+  // Pages whose address is taken: the person picks another one and restores them again.
+  const [clashes, setClashes] = useState<{ id: number; title: string | null; slug: string }[]>([]);
+  const [typed, setTyped] = useState<Record<number, string>>({});
   const act = useMutation({
-    mutationFn: ({ ids, action }: { ids: number[]; action: PageBulkAction }) => bulkPages(site, ids, action),
+    mutationFn: ({ ids, action, slugs }: { ids: number[]; action: PageBulkAction; slugs?: Record<number, string> }) =>
+      bulkPages(site, ids, action, slugs),
     onSuccess: (result, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["pages-trash", site] });
       onChanged();
       setSelected((prev) => prev.filter((id) => !result.updated.includes(id)));
-      showBulkResult(result, ACTION_DONE[action], "page");
+      const taken = action === "RESTORE" ? result.failed.filter((f) => f.reason.includes("already used")) : [];
+      if (taken.length === 0) {
+        showBulkResult(result, ACTION_DONE[action], "page");
+        return;
+      }
+      const rows = trash.data?.items ?? [];
+      const found = taken.map((f) => {
+        const row = rows.find((r) => r.id === f.id);
+        return { id: f.id, title: f.title ?? row?.title ?? null, slug: row?.slug ?? "" };
+      });
+      const others = result.failed.filter((f) => !taken.some((t) => t.id === f.id));
+      if (result.updated.length > 0 || others.length > 0) showBulkResult({ updated: result.updated, failed: others }, ACTION_DONE[action], "page");
+      setTyped(Object.fromEntries(found.map((c) => [c.id, c.slug ? `${c.slug}-2` : ""])));
+      setClashes(found);
     },
     onError: () => message.error("The change could not be made. Nothing was changed."),
   });
@@ -706,6 +723,30 @@ function PagesTrash({ site, onChanged }: { site: string; onChanged: () => void }
           </Button>
         </Popconfirm>
       </div>
+      <Modal
+        open={clashes.length > 0}
+        title="Choose another address"
+        okText="Restore under these addresses"
+        okButtonProps={{ loading: act.isPending, disabled: clashes.some((c) => !typed[c.id]?.trim()) }}
+        onCancel={() => setClashes([])}
+        onOk={() => {
+          const slugs = Object.fromEntries(clashes.map((c) => [c.id, typed[c.id].trim()]));
+          const ids = clashes.map((c) => c.id);
+          setClashes([]);
+          act.mutate({ ids, action: "RESTORE", slugs });
+        }}
+        destroyOnHidden
+      >
+        <p style={{ marginTop: 0, color: "#5b6b86" }}>
+          {clashes.length === 1 ? "This page's address is" : "These pages' addresses are"} already used by another page. Give {clashes.length === 1 ? "it" : "each"} a new one and restore:
+        </p>
+        {clashes.map((c) => (
+          <div key={c.id} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0b1b3a" }}>{c.title || "(no title)"}</div>
+            <Input value={typed[c.id] ?? ""} addonBefore={`was ${c.slug}`} maxLength={100} onChange={(e) => setTyped((t) => ({ ...t, [c.id]: e.target.value }))} />
+          </div>
+        ))}
+      </Modal>
       <Table<PageTrashRow>
         className="cms-table"
         rowKey="id"

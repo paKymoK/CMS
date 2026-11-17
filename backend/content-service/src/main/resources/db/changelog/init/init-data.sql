@@ -417,4 +417,11 @@ SET data = p.data || jsonb_build_object(
                             JOIN content_item t ON t.site_id = p.site_id AND t.content_type = 'post_tag' AND t.data ->> 'name' = e.v))
 WHERE p.content_type = 'post';
 
+-- The seeded pages were "created" by the system, so the Pages list has an author and a date for them.
+UPDATE content_item
+SET created_by = jsonb_build_object('sub', 'system', 'name', 'System'),
+    created_at = now()
+WHERE content_type IN ('service_page', 'industry_page', 'about_page')
+  AND created_by IS NULL;
+
 ALTER TABLE content_item ENABLE TRIGGER content_item_audit;
