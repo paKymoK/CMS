@@ -9,6 +9,7 @@ import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.service.AccountMailService;
 import com.takypok.authservice.service.ClientRoleService;
 import com.takypok.authservice.service.DepartmentService;
+import com.takypok.authservice.service.MfaService;
 import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UnitService;
@@ -63,6 +64,7 @@ public class UserAdminController {
   private final RegisteredClientRepository registeredClientRepository;
   private final AccountMailService accountMail;
   private final SessionService sessionService;
+  private final MfaService mfaService;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -188,6 +190,7 @@ public class UserAdminController {
             .anyMatch(r -> r.getProjectId() == null && SuperAdminService.ROLE.equals(r.getRole())));
     model.addAttribute("direct", directAssignments(sub));
     model.addAttribute("sessions", sessionService.list(sub));
+    model.addAttribute("mfaEnabled", mfaService.isEnabled(sub));
     model.addAttribute("departments", departmentService.get());
     model.addAttribute("units", unitService.get(null));
     model.addAttribute("roleOptions", ROLES);
@@ -277,6 +280,31 @@ public class UserAdminController {
   public String endAllSessions(@PathVariable String sub, RedirectAttributes redirect) {
     sessionService.endAll(sub, null, "ended by an administrator");
     redirect.addFlashAttribute("flash", "Every session of this person was ended.");
+    return "redirect:/admin/users/{sub}";
+  }
+
+  /**
+   * For a lost phone: turns two-step verification off so the person can sign in and set it up
+   * again.
+   */
+  @PostMapping("/{sub}/mfa/reset")
+  public String resetMfa(
+      @PathVariable String sub, Authentication authentication, RedirectAttributes redirect) {
+    try {
+      if (mfaService.reset(sub)) {
+        // Whoever held a session before the reset is signed out; an admin resetting themselves
+        // keeps the browser they are in.
+        sessionService.endAll(
+            sub,
+            sub.equals(authentication.getName()) ? sessionService.currentWebHash() : null,
+            "two-step verification reset");
+        redirect.addFlashAttribute("flash", "Two-step verification was reset.");
+      } else {
+        redirect.addFlashAttribute("error", "Two-step verification is not on for this account.");
+      }
+    } catch (RuntimeException ex) {
+      redirect.addFlashAttribute("error", message(ex));
+    }
     return "redirect:/admin/users/{sub}";
   }
 

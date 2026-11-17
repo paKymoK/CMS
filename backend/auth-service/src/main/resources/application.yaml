@@ -19,6 +19,12 @@ auth:
     # leave this empty. Applied in MailService; it must not be set to an empty value in the Spring
     # mail properties, because an empty trust list rejects every server.
     ssl-trust: ${AUTH_MAIL_SSL_TRUST:}
+  # Two-step verification (TOTP). With no key, the feature is off and the screens hide it. The key
+  # is 32 random bytes, base64 (openssl rand -base64 32); losing or changing it makes every stored
+  # secret unreadable, so those people would need an administrator's reset.
+  mfa:
+    issuer: ${AUTH_MFA_ISSUER:CMC Global CMS}
+    encryption-key: ${AUTH_MFA_ENCRYPTION_KEY:}
   # Where the "Back to CMS" link of the Users screens points.
   admin-app-url: ${CMS_ADMIN_URL:http://localhost:5173}
   cms-admin-client:

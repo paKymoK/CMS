@@ -24,6 +24,13 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
       HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
       throws IOException {
 
+    // Right password, second step still to do: park the sign-in and ask for the code.
+    if (exception instanceof MfaRequiredException mfa) {
+      PendingMfa.store(request.getSession(), mfa);
+      response.sendRedirect(request.getContextPath() + "/login/mfa");
+      return;
+    }
+
     // Not a credentials problem (e.g. LDAP unreachable): say so instead of "invalid password".
     if (exception instanceof AuthenticationServiceException) {
       response.sendRedirect(request.getContextPath() + "/login?unavailable");

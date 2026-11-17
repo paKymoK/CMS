@@ -18,6 +18,7 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
@@ -96,16 +97,20 @@ public class DomainAuthenticationManager implements AuthenticationManager {
       throw ex;
     }
 
-    // MFA seam: nothing runs today (NoMfaPolicy). See MfaPolicy for how to build the second step.
-    if (mfaPolicy.isSecondFactorRequired(result)) {
-      throw new AuthenticationServiceException(
-          "A second factor is required but no MFA step is implemented");
-    }
-
     clearFailures(username, remoteAddress);
 
     if (result instanceof AbstractAuthenticationToken aat) {
       aat.setDetails(token.getDomain());
+    }
+
+    // The password was right. If the person turned on two-step verification the sign-in is not
+    // complete yet: that is not a failure (no lockout count, no LOGIN_FAILED row). Wrong codes are
+    // counted separately by MfaService, and a right password never resets that count.
+    if (mfaPolicy.isSecondFactorRequired(result)) {
+      if (result instanceof CredentialsContainer container) {
+        container.eraseCredentials(); // it waits in the session: keep no password in it
+      }
+      throw new MfaRequiredException(result, remoteAddress);
     }
     return result;
   }

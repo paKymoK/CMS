@@ -313,3 +313,33 @@ CREATE TABLE IF NOT EXISTS auth_session
 
 CREATE INDEX IF NOT EXISTS ix_auth_session_sub ON auth_session (sub, last_seen_at DESC);
 CREATE INDEX IF NOT EXISTS ix_auth_session_web ON auth_session (web_session_hash);
+
+-- ── Two-step verification (TOTP: Google / Microsoft Authenticator and the like) ────────────────
+-- One row per account that started setting it up. enabled = false is a setup that was not
+-- confirmed with a first code yet (it does not affect signing in). The secret is encrypted
+-- (AES-GCM, bound to the account) and never leaves the service. last_used_step is the 30-second
+-- step of the last accepted code, so a code can be used once.
+CREATE TABLE IF NOT EXISTS user_mfa
+(
+    sub            VARCHAR(50)  NOT NULL,
+    secret_enc     VARCHAR(200) NOT NULL,
+    enabled        BOOLEAN      NOT NULL DEFAULT FALSE,
+    confirmed_at   TIMESTAMPTZ,
+    last_used_step BIGINT       NOT NULL DEFAULT 0,
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT user_mfa_pkey PRIMARY KEY (sub),
+    CONSTRAINT fk_user_mfa_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE
+);
+
+-- One-time recovery codes for a lost phone. Only a SHA-256 of each is kept.
+CREATE TABLE IF NOT EXISTS user_mfa_recovery
+(
+    id        BIGSERIAL    NOT NULL,
+    sub       VARCHAR(50)  NOT NULL,
+    code_hash VARCHAR(64)  NOT NULL,
+    used_at   TIMESTAMPTZ,
+    CONSTRAINT user_mfa_recovery_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_user_mfa_recovery_users FOREIGN KEY (sub) REFERENCES users (username) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS ix_user_mfa_recovery_sub ON user_mfa_recovery (sub, code_hash);

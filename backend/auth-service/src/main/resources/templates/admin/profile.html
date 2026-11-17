@@ -80,6 +80,33 @@
             <p class="sub">Your password is your organisation's directory password. Change it there.</p>
         </section>
 
+        <!-- Two-step verification (authenticator app) -->
+        <section class="card" id="mfa" th:if="${mfaAvailable or mfa.enabled}">
+            <h2>Two-step verification</h2>
+            <th:block th:if="${!mfa.enabled}">
+                <p class="sub" style="margin-bottom:16px">Ask for a code from an authenticator app (Google Authenticator, Microsoft Authenticator) after your password. Optional.</p>
+                <p class="sub">Status: <strong>Off</strong></p>
+                <div class="actions"><a class="btn btn-primary" th:href="@{/profile/mfa/setup}">Set up</a></div>
+            </th:block>
+            <th:block th:if="${mfa.enabled}">
+                <p class="sub">Status: <strong>On</strong>
+                    <span th:if="${mfa.since != null}" th:text="'since ' + ${#temporals.format(mfa.since, 'd MMM yyyy')}"></span>
+                    · <span th:text="${mfa.recoveryLeft} + ' recovery code(s) left'"></span></p>
+                <p class="hint">Turning it off or getting new recovery codes needs a current code from the app (or a recovery code).</p>
+                <form method="post" th:action="@{/profile/mfa/recovery}" autocomplete="off" style="margin-top:12px">
+                    <div class="field"><label for="mfa-code-renew">Code</label>
+                        <input type="text" id="mfa-code-renew" name="code" required autocomplete="off" placeholder="123456" style="max-width:200px"></div>
+                    <div class="actions"><button class="btn" type="submit">New recovery codes</button></div>
+                </form>
+                <form method="post" th:action="@{/profile/mfa/disable}" autocomplete="off" style="margin-top:12px"
+                      onsubmit="return confirm('Turn off two-step verification?')">
+                    <div class="field"><label for="mfa-code-off">Code</label>
+                        <input type="text" id="mfa-code-off" name="code" required autocomplete="off" placeholder="123456" style="max-width:200px"></div>
+                    <div class="actions"><button class="btn" type="submit">Turn off</button></div>
+                </form>
+            </th:block>
+        </section>
+
         <!-- Where you are signed in -->
         <section class="card table-card" id="sessions">
             <div style="padding:22px 22px 6px">

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.takypok.authservice.config.auth.DomainAuthenticationManager;
 import com.takypok.authservice.config.auth.DomainAuthenticationToken;
 import com.takypok.authservice.config.auth.MfaPolicy;
+import com.takypok.authservice.config.auth.MfaRequiredException;
 import com.takypok.authservice.model.entity.AuditAction;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
@@ -140,11 +141,20 @@ class DomainAuthenticationManagerTest {
   }
 
   @Test
-  void aSecondFactorRequirementFailsClosedBecauseNoStepExistsYet() {
+  void aSecondFactorIsAskedForAfterTheRightPasswordWithoutCountingAFailure() {
     when(userinfo.getBySub("sam@x.com")).thenReturn(withStatus("ACTIVE"));
     when(mfa.isSecondFactorRequired(verified)).thenReturn(true);
 
     assertThatThrownBy(() -> manager.authenticate(login))
-        .isInstanceOf(AuthenticationServiceException.class);
+        .isInstanceOfSatisfying(
+            MfaRequiredException.class,
+            ex -> {
+              assertThat(ex.getPrincipal()).isSameAs(verified);
+              assertThat(ex.getRemoteAddress()).isEqualTo("10.0.0.1");
+            });
+    // Not a wrong password: no lockout count, no LOGIN_FAILED row, and the sign-in is not complete.
+    verify(ops, never()).increment(any());
+    verify(audit, never())
+        .recordQuietly("sam@x.com", AuditAction.LOGIN_FAILED, "sam@x.com", "GUEST", "10.0.0.1");
   }
 }

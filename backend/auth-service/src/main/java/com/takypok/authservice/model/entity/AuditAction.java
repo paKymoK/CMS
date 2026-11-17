@@ -27,7 +27,13 @@ public enum AuditAction {
   EMAIL_CONFLICT("Directory email already in use"),
   PASSWORD_CHANGED("Password changed"),
   PASSWORD_CHANGE_FAILED("Password change refused"),
-  AUDIT_EXPORTED("Audit log exported");
+  AUDIT_EXPORTED("Audit log exported"),
+  MFA_ENABLED("Two-step verification turned on"),
+  MFA_DISABLED("Two-step verification turned off"),
+  MFA_RESET("Two-step verification reset by an administrator"),
+  MFA_FAILED("Two-step code refused"),
+  MFA_RECOVERY_USED("Recovery code used"),
+  MFA_RECOVERY_RENEWED("Recovery codes renewed");
 
   private final String label;
 

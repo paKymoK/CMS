@@ -3,6 +3,7 @@ package com.takypok.authservice.web;
 import com.takypok.authservice.model.request.UpdateUserProfileRequest;
 import com.takypok.authservice.model.response.UserResponse;
 import com.takypok.authservice.service.AvatarService;
+import com.takypok.authservice.service.MfaService;
 import com.takypok.authservice.service.SessionService;
 import com.takypok.authservice.service.SuperAdminService;
 import com.takypok.authservice.service.UserService;
@@ -41,6 +42,7 @@ public class ProfileController {
   private final AvatarService avatarService;
   private final SuperAdminService superAdminService;
   private final SessionService sessionService;
+  private final MfaService mfaService;
 
   @Value("${auth.admin-app-url}")
   private String adminAppUrl;
@@ -77,6 +79,8 @@ public class ProfileController {
         avatarService.find(sub).map(a -> a.updatedAt().toInstant().toEpochMilli()).orElse(null));
     model.addAttribute("showAdminNav", superAdminService.isActiveSuperAdmin(authentication));
     model.addAttribute("sessions", sessionService.list(sub));
+    model.addAttribute("mfaAvailable", mfaService.isAvailable());
+    model.addAttribute("mfa", mfaService.status(sub));
     model.addAttribute("active", "profile");
     if ("size".equals(avatarError)) {
       model.addAttribute("error", "The picture must be 512 KB or smaller.");

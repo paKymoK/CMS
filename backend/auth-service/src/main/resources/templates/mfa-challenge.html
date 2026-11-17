@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{public-layout :: head('Two-step verification')}"></head>
+<body>
+<div class="card">
+    <div class="heading"><div class="orb"></div>
+        <h1>Two-step <span>verification</span></h1>
+        <p>Signing in as <strong th:text="${account}"></strong></p></div>
+    <form class="panel" method="post" th:action="@{/login/mfa}" autocomplete="off">
+        <input type="hidden" name="recovery" value="1" th:if="${recovery}">
+        <div class="alert alert-lock" role="alert" th:if="${param.locked != null}">
+            <strong>Too many wrong codes.</strong> Try again in 10 minutes.
+        </div>
+        <div class="alert alert-danger" role="alert" th:if="${param.error != null}">
+            That code is not correct.
+        </div>
+        <label class="field" th:if="${!recovery}"><span class="eyebrow">6-digit code from your authenticator app</span>
+            <input class="field-input" type="text" name="code" inputmode="numeric" pattern="[0-9 ]*"
+                   maxlength="7" required autofocus autocomplete="one-time-code" placeholder="123456"></label>
+        <label class="field" th:if="${recovery}"><span class="eyebrow">Recovery code</span>
+            <input class="field-input" type="text" name="code" maxlength="11" required autofocus
+                   autocomplete="off" placeholder="xxxxx-xxxxx"></label>
+        <p class="hint" th:if="${recovery}">Each recovery code works once.</p>
+        <button class="submit-btn" type="submit"><span class="label">Verify</span><span class="icon"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></button>
+    </form>
+    <p class="links">
+        <a th:if="${!recovery}" th:href="@{/login/mfa(recovery=1)}">Use a recovery code</a>
+        <a th:if="${recovery}" th:href="@{/login/mfa}">Use the app code</a>
+    </p>
+    <form method="post" th:action="@{/login/mfa/cancel}" class="links">
+        <button type="submit" style="background:none;border:0;padding:0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer">Back to sign in</button>
+    </form>
+</div>
+</body>
+</html>

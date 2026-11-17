@@ -177,6 +177,20 @@
             </div>
         </section>
 
+        <!-- Two-step verification: reset for a lost phone -->
+        <section class="card" th:if="${mfaEnabled}">
+            <div class="status-block">
+                <div>
+                    <h2>Two-step verification</h2>
+                    <p class="sub">This person has it on. If they lost their phone and recovery codes, reset it: it turns off, their sessions end, and they can set it up again after signing in.</p>
+                </div>
+                <form method="post" th:action="@{/admin/users/{sub}/mfa/reset(sub=${user.sub})}"
+                      onsubmit="return confirm('Reset two-step verification for this person? Their sessions will be ended.')">
+                    <button class="btn" type="submit">Reset</button>
+                </form>
+            </div>
+        </section>
+
         <!-- Password reset link: active local accounts, when email is set up -->
         <section class="card" th:if="${user.accountType == 'LOCAL' and user.status == 'ACTIVE' and mailEnabled}">
             <div class="status-block">

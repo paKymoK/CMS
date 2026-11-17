@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{admin/layout :: head('Two-step verification')}"></head>
+<body>
+<div class="shell">
+    <aside th:replace="~{admin/layout :: sidebar('profile')}"></aside>
+    <main class="main"><div class="wrap" style="max-width:860px">
+
+        <div class="page-head">
+            <div>
+                <span class="eyebrow">Account</span>
+                <h1>Two-step verification</h1>
+            </div>
+        </div>
+
+        <div class="alert alert-ok" role="status" th:if="${flash}" th:text="${flash}"></div>
+        <div class="alert alert-err" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <!-- Setup: scan, then confirm with the first code -->
+        <th:block th:if="${codes == null}">
+            <section class="card">
+                <h2>1. Scan the QR code</h2>
+                <p class="sub" style="margin-bottom:16px">Open Google Authenticator or Microsoft Authenticator, add an account, and scan this code.</p>
+                <img th:src="${qr}" alt="QR code to scan with your authenticator app" width="260" height="260"
+                     style="background:#fff;border-radius:8px;display:block">
+                <p class="hint" style="margin-top:14px">Cannot scan? Enter this key in the app (time-based):</p>
+                <p><code style="font-size:15px;letter-spacing:.06em;word-break:break-all" th:text="${secret}"></code></p>
+            </section>
+
+            <form class="card" method="post" th:action="@{/profile/mfa/setup}" autocomplete="off">
+                <h2>2. Enter the code it shows</h2>
+                <p class="sub" style="margin-bottom:16px">This proves the app is set up. Two-step verification only turns on once the code is right.</p>
+                <div class="field"><label for="code">6-digit code</label>
+                    <input type="text" id="code" name="code" inputmode="numeric" pattern="[0-9 ]*" maxlength="7"
+                           required autocomplete="one-time-code" placeholder="123456" style="max-width:200px"></div>
+                <div class="actions"><button class="btn btn-primary" type="submit">Turn on</button></div>
+            </form>
+
+            <form method="post" th:action="@{/profile/mfa/cancel}" class="actions">
+                <button class="btn" type="submit">Cancel</button>
+            </form>
+        </th:block>
+
+        <!-- Recovery codes: shown once -->
+        <section class="card" th:if="${codes != null}">
+            <h2 th:text="${heading}">Two-step verification is on.</h2>
+            <p class="sub" style="margin-bottom:16px">
+                <strong>Save these recovery codes now.</strong> They are shown only once. If you lose your phone,
+                each code signs you in once. Keep them somewhere safe, apart from your phone.</p>
+            <ul id="recovery-codes" style="list-style:none;padding:0;margin:0 0 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;font-family:'JetBrains Mono',monospace;font-size:15px">
+                <li th:each="c : ${codes}" th:text="${c}" style="padding:8px 10px;border:1px solid var(--line,#cbd5e1);border-radius:6px"></li>
+            </ul>
+            <div class="actions"><a class="btn btn-primary" th:href="@{/profile}">I saved them</a></div>
+        </section>
+
+    </div></main>
+</div>
+</body>
+</html>

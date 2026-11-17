@@ -115,29 +115,35 @@ public class SecurityConfig {
     return provider;
   }
 
+  /** Also used by the two-step page, which finishes a sign-in the same way. */
+  @Bean
+  public LdapAutoProvisionSuccessHandler ldapAutoProvisionSuccessHandler(
+      JdbcUserDetailsManager jdbcUserDetailsManager,
+      PasswordEncoder passwordEncoder,
+      UserinfoRepository userinfoRepository,
+      LdapTemplate ldapTemplate,
+      AuditService auditService) {
+    return new LdapAutoProvisionSuccessHandler(
+        jdbcUserDetailsManager,
+        passwordEncoder,
+        userinfoRepository,
+        ldapTemplate,
+        userSearchBase,
+        userSearchFilter,
+        auditService);
+  }
+
   @Bean
   public DomainAuthenticationFilter domainAuthenticationFilter(
       DomainAuthenticationManager domainAuthenticationManager,
       SecurityContextRepository securityContextRepository,
-      JdbcUserDetailsManager jdbcUserDetailsManager,
-      PasswordEncoder passwordEncoder,
-      LoginFailureHandler loginFailureHandler,
-      UserinfoRepository userinfoRepository,
-      LdapTemplate ldapTemplate,
-      AuditService auditService) {
+      LdapAutoProvisionSuccessHandler ldapAutoProvisionSuccessHandler,
+      LoginFailureHandler loginFailureHandler) {
     DomainAuthenticationFilter filter = new DomainAuthenticationFilter(domainAuthenticationManager);
     filter.setFilterProcessesUrl("/login");
     filter.setSecurityContextRepository(securityContextRepository);
     filter.setSessionAuthenticationStrategy(new ChangeSessionIdAuthenticationStrategy());
-    filter.setAuthenticationSuccessHandler(
-        new LdapAutoProvisionSuccessHandler(
-            jdbcUserDetailsManager,
-            passwordEncoder,
-            userinfoRepository,
-            ldapTemplate,
-            userSearchBase,
-            userSearchFilter,
-            auditService));
+    filter.setAuthenticationSuccessHandler(ldapAutoProvisionSuccessHandler);
     filter.setAuthenticationFailureHandler(loginFailureHandler);
     return filter;
   }
