@@ -24,7 +24,7 @@ auth:
   # secret unreadable, so those people would need an administrator's reset.
   mfa:
     issuer: ${AUTH_MFA_ISSUER:CMC Global CMS}
-    encryption-key: ${AUTH_MFA_ENCRYPTION_KEY:}
+    encryption-key: ${AUTH_MFA_ENCRYPTION_KEY:x7GbDgyNhdXWZjNWNlgs+sxpcck3SuNkb7T3q2ww6+w=}
   # Where the "Back to CMS" link of the Users screens points.
   admin-app-url: ${CMS_ADMIN_URL:http://localhost:5173}
   cms-admin-client:

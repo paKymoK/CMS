@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "next-intl";
 import { NAV_SECTIONS } from "@/content/nav";
 import { useSectionSpy } from "@/lib/useSectionSpy";
-import { SectionDock } from "./SectionDock";
 import type { AssistantBand as AssistantBandContent } from "@/content/home/types";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 
@@ -42,16 +41,9 @@ async function askAssistant(
 }
 
 /** The design's "lower third" menu: in-page anchors with a scrollspy-driven active state. */
-function LowerThirdNav({
-  active,
-  navRef,
-}: {
-  active: number;
-  navRef: React.RefObject<HTMLElement | null>;
-}) {
+function LowerThirdNav({ active }: { active: number }) {
   return (
     <nav
-      ref={navRef}
       aria-label="Page sections"
       className="asst-nav mx-auto flex w-full overflow-x-auto [scrollbar-width:none] lg:justify-center [&::-webkit-scrollbar]:hidden"
     >
@@ -98,33 +90,6 @@ export function AssistantBand({ band }: { band: AssistantBandContent }) {
   // successful replies enter it (a client-side fallback never does).
   const historyRef = useRef<AssistantTurn[]>([]);
   const active = useSectionSpy();
-  const navRef = useRef<HTMLElement>(null);
-  // The docked copy of the section menu shows once the in-card one has scrolled off the top, and
-  // hides again at the bottom of the page (Recognition onwards), where it would cover content.
-  const [navScrolledPast, setNavScrolledPast] = useState(false);
-  const [atPageEnd, setAtPageEnd] = useState(false);
-  const dockShown = navScrolledPast && !atPageEnd;
-
-  useEffect(() => {
-    const el = navRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) =>
-      setNavScrolledPast(!entry.isIntersecting && entry.boundingClientRect.top < 0),
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const end = document.getElementById("recognition");
-    if (!end) return;
-    // From the moment the Recognition section's top edge enters the screen, until the page ends.
-    const observer = new IntersectionObserver(([entry]) =>
-      setAtPageEnd(entry.isIntersecting || entry.boundingClientRect.top < 0),
-    );
-    observer.observe(end);
-    return () => observer.disconnect();
-  }, []);
 
   const [started, setStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -320,12 +285,10 @@ export function AssistantBand({ band }: { band: AssistantBandContent }) {
               </div>
             )}
 
-            <LowerThirdNav active={active} navRef={navRef} />
+            <LowerThirdNav active={active} />
           </div>
         </div>
       </section>
-      {/* Outside the container: layout containment would otherwise anchor `fixed` to the band. */}
-      <SectionDock active={active} show={dockShown} />
     </>
   );
 }

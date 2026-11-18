@@ -10,7 +10,7 @@ import { useBackdropTone } from "@/lib/useBackdropTone";
  * section behind the bar is dark or light (useBackdropTone); the current section is a brand-blue
  * gradient with a primary-blue underline, matching the other controls. It appears once the
  * in-card menu in the assistant band has scrolled out of view, so the page's sections stay one tap
- * away all the way down. Sits above the mobile bottom bar on phones.
+ * away all the way down. Phones only (hidden from md up); sits above the mobile bottom bar.
  */
 export function SectionDock({ active, show }: { active: number; show: boolean }) {
   const ref = useRef<HTMLElement>(null);
@@ -20,7 +20,7 @@ export function SectionDock({ active, show }: { active: number; show: boolean })
       ref={ref}
       aria-label="Page sections"
       aria-hidden={!show}
-      className={`fixed left-1/2 z-[90] max-w-[100vw] -translate-x-1/2 overflow-x-auto px-6 py-2 transition-[opacity,transform] duration-300 [scrollbar-width:none] bottom-[calc(64px+env(safe-area-inset-bottom))] md:bottom-1 [&::-webkit-scrollbar]:hidden ${
+      className={`fixed left-1/2 z-[90] max-w-[100vw] -translate-x-1/2 overflow-x-auto px-6 py-2 transition-[opacity,transform] duration-300 [scrollbar-width:none] bottom-[calc(64px+env(safe-area-inset-bottom))] md:hidden [&::-webkit-scrollbar]:hidden ${
         show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
       }`}
     >
