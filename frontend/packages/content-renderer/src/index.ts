@@ -4,6 +4,11 @@ export { ServicePage } from "./ServicePage";
 export { IndustryPage } from "./IndustryPage";
 export { AboutPage } from "./AboutPage";
 export { IndustryStories } from "./IndustryStories";
+export { InsightsAccordion } from "./InsightsAccordion";
+export { ContactForm } from "./ContactForm";
+export { ServiceIndustries } from "./ServiceIndustries";
+export { ServiceHighlights } from "./ServiceHighlights";
+export type { CardTooltip } from "./ServiceHighlights";
 export { defaultSlots } from "./defaults";
 export { prepareBody } from "./prepareBody";
 export { SiteFooterView } from "./SiteFooterView";
@@ -34,6 +39,9 @@ export type {
   ProcessBlockProps,
   ReasonsBlockProps,
   IndustryBlockData,
+  IndustryCardData,
+  InsightItemData,
+  SectionLinkIntroData,
   IndustryPageData,
   IndustryReasonsBlockProps,
   IndustryStoriesBlockProps,

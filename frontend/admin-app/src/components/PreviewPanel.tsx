@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { IndustryCardData, SectionLinkIntroData } from "@cms/content-renderer";
 import { contentApi } from "../lib/api";
+import { mediaSrc } from "../lib/media";
 import { useSite } from "../lib/useSite";
 import {
   MSG_HEIGHT,
@@ -50,11 +52,23 @@ export default function PreviewPanel({
         const { data } = await contentApi.get("/v1/admin/content-items", { params: { site, type } });
         return (data.data as Row<T>[]).filter((r) => !r.status || r.status === "PUBLISHED").map((r) => r.data);
       };
-      const [nav, footers] = await Promise.all([
+      const [nav, footers, posts, cards, intros] = await Promise.all([
         list<{ label: string; links?: string[] | null }>("footer_nav_category"),
         list<NonNullable<PreviewChrome["footer"]>>("site_footer"),
+        list<{ slug?: string; title: string; date?: string; image?: string; category?: string }>("post"),
+        list<IndustryCardData>("industry_card"),
+        list<SectionLinkIntroData & { section: string }>("section_intro"),
       ]);
-      return { footerNav: nav.map((c) => ({ label: c.label, links: c.links ?? [] })), footer: footers[0] };
+      return {
+        footerNav: nav.map((c) => ({ label: c.label, links: c.links ?? [] })),
+        footer: footers[0],
+        // Same rule as the website's home content: only "insight" posts, in list order.
+        insights: posts
+          .filter((p) => p.category?.toLowerCase() === "insight")
+          .map((p) => ({ slug: p.slug, title: p.title, date: p.date, image: p.image && mediaSrc(p.image) })),
+        industryCards: cards.map((c) => ({ ...c, image: c.image && mediaSrc(c.image) })),
+        intros: Object.fromEntries(intros.map((i) => [i.section, i])),
+      };
     },
   });
   const chrome = chromeQuery.data;

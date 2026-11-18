@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
-import { AboutPage, CaseStudyArticle, IndustryPage, PostArticle, ServicePage, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
+import { AboutPage, CaseStudyArticle, ContactForm, IndustryPage, InsightsAccordion, PostArticle, ServiceHighlights, ServiceIndustries, ServicePage, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
 import { CASE_STUDY_LABELS, HEADER_ITEMS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewChrome, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
-
-/** Stand-in for a section that reads site-wide content rather than the page being edited. */
-function SiteSection({ label }: { label: string }) {
-  return (
-    <div className="flex h-40 items-center justify-center border-y border-dashed border-[#c5d3e8] bg-[#f4f7fc] text-sm text-[#7b8aa5]">
-      {label}
-    </div>
-  );
-}
 
 /**
  * The document the admin's preview shows in an iframe. It holds no data of its own: the admin
@@ -59,20 +50,27 @@ export default function Frame() {
   return (
     <div className="relative">
       <SiteHeaderBar items={HEADER_ITEMS} logoSrc="/preview-logo.svg" contactLabel="Contact Us" />
-      <Page page={page} />
+      <Page page={page} chrome={chrome} />
       {chrome && <SiteFooterView footerNav={chrome.footerNav} footer={chrome.footer} defaultCopyright={`Copyright ©${new Date().getFullYear()} CMC Global. All rights reserved.`} />}
     </div>
   );
 }
 
-function Page({ page }: { page: PreviewPage }) {
+function Page({ page, chrome }: { page: PreviewPage; chrome?: PreviewChrome }) {
+  const intros = chrome?.intros ?? {};
+  const contact = <ContactForm intro={intros.contact} />;
   if (page.kind === "about") return <AboutPage page={page.page} />;
   if (page.kind === "industry") {
     return (
       <IndustryPage
         page={page.page}
-        insights={() => <SiteSection label="Latest insights (site-wide, not previewed)" />}
-        contact={<SiteSection label="Contact form (site-wide, not previewed)" />}
+        insights={(block) => (
+          <InsightsAccordion
+            insights={chrome?.insights ?? []}
+            intro={block.title ? { eyebrow: block.eyebrow, title: block.title, body: block.body, linkLabel: block.linkLabel, linkUrl: block.linkUrl } : undefined}
+          />
+        )}
+        contact={contact}
       />
     );
   }
@@ -83,9 +81,9 @@ function Page({ page }: { page: PreviewPage }) {
         categoryName={page.categoryName}
         stories={page.stories}
         storiesIntro={page.storiesIntro}
-        industries={<SiteSection label="Industries strip (site-wide, not previewed)" />}
-        highlights={<SiteSection label="Latest highlights (site-wide, not previewed)" />}
-        contact={<SiteSection label="Contact form (site-wide, not previewed)" />}
+        industries={<ServiceIndustries cards={chrome?.industryCards ?? []} intro={intros["service-industries"]} />}
+        highlights={<ServiceHighlights insights={chrome?.insights ?? []} intro={intros["service-highlights"]} />}
+        contact={contact}
       />
     );
   }

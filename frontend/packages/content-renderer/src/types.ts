@@ -382,3 +382,24 @@ export interface AboutPageData {
   /** Structured data (JSON-LD) text, validated by the server. */
   seoJsonLd?: string | null;
 }
+
+/** One article in the latest-insights / latest-highlights sections. */
+export interface InsightItemData {
+  slug?: string;
+  title: string;
+  date?: string;
+  image?: string;
+}
+
+/** A photo card in the service page's industries strip. */
+export interface IndustryCardData {
+  label: string;
+  image?: string;
+  url?: string;
+}
+
+/** A section's text plus its "see all" link. */
+export interface SectionLinkIntroData extends SectionIntroData {
+  linkLabel?: string;
+  linkUrl?: string;
+}

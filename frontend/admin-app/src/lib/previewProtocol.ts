@@ -5,11 +5,14 @@ import type {
   SiteHeaderBarItem,
   CaseStudyArticleData,
   CaseStudyArticleLabels,
+  IndustryCardData,
   IndustryPageData,
+  InsightItemData,
   IndustryStoryData,
   PostArticleData,
   PostArticleLabels,
   SectionIntroData,
+  SectionLinkIntroData,
   ServicePageData,
 } from "@cms/content-renderer";
 
@@ -34,6 +37,12 @@ export type PreviewPage =
 export interface PreviewChrome {
   footerNav: FooterNavColumn[];
   footer?: SiteFooterData;
+  /** The newest articles (the insights accordion, the latest-highlights cards). */
+  insights: InsightItemData[];
+  /** The photo cards of a service page's industries strip. */
+  industryCards: IndustryCardData[];
+  /** Section texts by their anchor id ("contact", "service-industries", "service-highlights"). */
+  intros: Record<string, SectionLinkIntroData>;
 }
 
 export interface PreviewMessage {
