@@ -324,6 +324,88 @@ Pages here means the Service, Industry and About pages (each with its own addres
 - Version caps: the BRD keeps only 2 versions for Pages and Templates. We keep all in `content_audit`; confirm the BRD means a minimum, not a limit to enforce.
 - Chatbot: removed from this BRD. Should `chat-service` and the assistant page be kept, or are they now out of scope?
 
+## 5a. Notice: visitor personal data (PII), not in the BRD
+
+Neither BRD version specifies a Career application form, a CV upload, or any rule for personal data from visitors. Career is only a template-based content type (a job listing MKT edits). The BRD mentions only a "Contact / Inquiry Form", Contact Form/CRM and Email integration "when needed", form-submission tracking, and a Cookie / Privacy Notice. Nothing is built for it: the home contact form does not post anywhere (no contact endpoint), there is no applicant table, and media-service is a public media library, not a place for CVs. **No action now; recorded so it is not forgotten.** If applications or inquiries are ever stored here, agree these first:
+
+- **Do we store them at all?** Simplest is an Apply link to the HR system / ATS or an external form provider (already on the iframe allowlist), which keeps PII out of this system.
+- **If stored:** a separate service and database (not `content_item`, not media-service); CV files in a private bucket with short-lived signed links; encryption at rest and in transit; file type, size and malware checks; rate limit and CAPTCHA.
+- **Consent and notice:** privacy checkbox and policy link, stated purpose and retention. The regional sites (Korea, Germany, APAC) have different laws.
+- **Retention and deletion:** a retention period, a purge job, and a way to honour deletion requests.
+- **Access and audit:** an HR-only role (not Marketing Editor) and an audit log of who viewed or exported data.
+- **Keep PII out** of application logs, analytics events and chatbot history.
+- **Ask the BRD owner / HR:** does applying happen on this website, and where do applications go?
+
+## 5b. Notice: CSP, HubSpot forms and SEO (plan only, not built)
+
+The website has no Content-Security-Policy or security headers today (`frontend/website/proxy.ts` only does next-intl routing; `next.config.ts` sets no headers). **Nothing is implemented; recorded as a plan.**
+
+**CSP and nonce**
+- A nonce (random per request, in the header and on each trusted `<script nonce>`) stops injected scripts from running (XSS). It does not encrypt data or validate input. Pair it with `connect-src`, `form-action` and `frame-src` allowlists so a script that did run cannot send data to unknown hosts.
+- Next.js 16: `proxy.ts` would generate the nonce, set the header and pass it on (`x-nonce`). Cost: pages using a nonce render dynamically, so static generation and CDN caching are lost for them.
+- JSON-LD (`lib/seo/jsonld.tsx`) is a data block, not executable, so it needs no nonce.
+- Third-party exceptions are explicit host allowlists, only for what is used: Google Analytics / Tag Manager (`www.googletagmanager.com`, `*.google-analytics.com`, `*.analytics.google.com`), HubSpot tracking if used (`js.hs-scripts.com`, `js.hs-analytics.net`, `*.hubspot.com`), and `frame-src` for the allowed post embeds. No `'unsafe-inline'` / `'unsafe-eval'` in `script-src`; no whole-domain wildcards. Keep the list in one config. Confirm exact hosts from violation reports. Whoever can publish in a GTM container can run any script, so limit that access (or load GA directly). Analytics should load only after cookie consent.
+
+**HubSpot form flow (custom form, no iframe, no HubSpot script on the page)**
+- Browser posts to our own service, which validates, checks spam and consent, then sends to HubSpot server-side and returns a plain result. This keeps `connect-src` tight and HubSpot code out of the page.
+- Prefer the HubSpot Forms API (`/submissions/v3/integration/submit/{portalId}/{formGuid}`, authenticated variant from the server) so workflows and form reports keep working; field names must match the form's properties. Keep tokens in the service environment.
+- Send consent text via `legalConsentOptions`. `hutk`, page URI and page name only help if the HubSpot tracking script is on the site.
+- Save the validated submission to a queue or table first, deliver with retries, and make delivery idempotent (HubSpot rate limits; same email updates the same contact). Add rate limit, honeypot or CAPTCHA, size limits.
+- File upload (CV) does not go through the Forms API. Keep Career applications separate from the HubSpot contact form (see 5a); the service now holds PII briefly, so it is inside the 5a scope, and the privacy notice must name HubSpot as a processor.
+
+**SEO**
+- CSP is not a ranking signal. The risks are indirect: slower pages (Core Web Vitals) when a nonce removes caching, broken analytics or Search Console verification, and blocked fonts, images or embeds causing layout shift or a bad Googlebot render.
+- Rollout: (1) `Content-Security-Policy-Report-Only` for 1 to 2 weeks; (2) allowlist only used hosts (also `font-src`, `img-src` for the media-service origin, `style-src`, `frame-src`); (3) measure TTFB and LCP before choosing a nonce, and use a cacheable variant (host allowlist and hashes) on key landing pages if the cost is too high; (4) enforce, then watch Search Console and GA for 2 to 4 weeks; verify Googlebot rendering with URL Inspection "Live test"; verify Search Console by DNS or file, not a script.
+- For SEO after leaving WordPress, URLs, 301 redirects, sitemap, titles, descriptions, canonicals and structured data matter far more than CSP.
+
+## 5c. Notice: cookie consent (plan only, not built)
+
+The BRD lists a "Cookie / Privacy Notice" as a shared component and "Cookie Management" as a possible third-party integration. Nothing is built. **Recorded as a plan.**
+
+**Today (read from code, not yet checked in a browser)**
+- Website: no `document.cookie`, no `localStorage` / `sessionStorage`, no `cookies()` calls, and no analytics, HubSpot or other tracking scripts.
+- One likely cookie: next-intl (`frontend/website/proxy.ts`, `i18n/routing.ts`) keeps its default locale cookie `NEXT_LOCALE`, which remembers the language. Confirm when it is set by checking Application → Cookies in a browser. It is a functional cookie (no tracking, no personal data), normally exempt from consent but it must be listed in the cookie notice. It can be removed with `localeCookie: false`, since the URL already carries the locale (`localePrefix: "always"`).
+- Admin app: sign-in token and UI preferences in `localStorage` / `sessionStorage`. Not shown to visitors, so no visitor banner.
+
+**When consent becomes required:** as soon as non-essential cookies or storage are added: Google Analytics / GTM, HubSpot tracking (`hubspotutk`), embedded video, advertising pixels.
+
+**Plan**
+1. Before launch, inspect the real cookies and storage in a browser.
+2. Consent banner with Accept, Reject (as easy as Accept) and per-category choices; store the choice and keep a consent record.
+3. Load GA and HubSpot tracking only after consent; no requests to those hosts before it. Use Google Consent Mode if GTM is used. No cookie wall, no pre-ticked boxes.
+4. Cookie policy page listing each cookie, its purpose and duration, with a way to change the choice later.
+5. Make the CSP allowlist and consent agree (see 5b); the regional sites (Korea, Germany, Japan) have different rules.
+6. Decide to build it or buy a consent-management product.
+7. HubSpot server-side form submission (5b) without the tracking script sets no cookie, so it needs no consent for tracking, but the form's own consent checkbox still applies.
+
+## 5d. Notice: form spam and bot protection (needs an update, plan only)
+
+**Status: the current protection is not enough for public forms and must be updated before any form goes live. Not built. The plan waits for a check of the real infrastructure (CDN, WAF, load balancer, where the gateway sits).**
+
+**Today** (`backend/gateway-service/src/main/resources/application.yaml`, `RateLimiterConfig.java`): a Redis rate limiter on every route, keyed by the server-observed remote IP (never `X-Forwarded-For`), default 20 requests per second with a burst of 40 (`GATEWAY_RATE_LIMIT_REPLENISH`, `GATEWAY_RATE_LIMIT_BURST`). chat-service has its own tighter limiter on `/v1/assistant/ask`.
+
+**Why it is not enough for a form**
+- Far too loose for a form (a bot can submit many times a minute and never be limited).
+- IP is the only key: botnets and proxies stay under the limit, while offices and mobile carriers sharing one IP could block real people if the limit is tightened.
+- Behind a load balancer or CDN, the gateway may see the proxy address for everyone, which puts all visitors in one bucket. Check at deployment.
+- It cannot tell a human from a script and checks no content.
+
+**Layers to plan (to decide after the infrastructure check)**
+1. A tight, separate limit on form endpoints only (for example 3 to 5 per IP per 10 minutes, a daily cap, and limits per email and per phone).
+2. CAPTCHA verified server-side: Cloudflare Turnstile preferred (free, privacy-friendly, mostly invisible); reCAPTCHA v3 or hCaptcha as alternatives. Add its hosts to the CSP (5b) and consider consent (5c).
+3. Honeypot field, and a minimum fill time (signed timestamp, reject under about 2 to 3 seconds).
+4. Server-side validation, size limits, link and spam-pattern checks, regardless of the client.
+5. Origin and CSRF checks so other sites cannot post to the form.
+6. Idempotency and duplicate detection (also needed for HubSpot retries, 5b).
+7. Quarantine queue: save first, send to HubSpot only what passes, so spam does not pollute the CRM or use API calls.
+8. Monitoring: counts of blocked and accepted submissions, spike alerts, logs without PII (5a).
+9. CV upload (5a): stricter size, type and count limits, malware scan, private store, CAPTCHA required.
+10. Above the gateway: a CDN with WAF and bot management (for example Cloudflare) is the best defence against distributed bots.
+
+**Minimum for launch:** a dedicated tight rate limit, a server-verified CAPTCHA, a honeypot, validation, and the quarantine queue.
+
+**Open:** what the current infrastructure provides (CDN or WAF, proxy headers, Redis availability), and where the form endpoint lives (see 5b).
+
 ## Key files
 
 - Schema: `backend/content-service/src/main/resources/db/changelog/init/init-schema.sql`
