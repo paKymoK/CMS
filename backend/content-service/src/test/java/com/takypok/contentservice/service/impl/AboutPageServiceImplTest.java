@@ -24,6 +24,14 @@ class AboutPageServiceImplTest {
   private final ObjectMapper objectMapper = ConfigObjectMapper.objectMapper();
 
   @Mock private ContentItemRepository contentItemRepository;
+  @Mock private com.takypok.contentservice.service.SlugRegistry slugRegistry;
+
+  private AboutPageServiceImpl service() {
+    return new AboutPageServiceImpl(
+        contentItemRepository,
+        new GrowthStats(contentItemRepository),
+        new FeaturedCaseStudies(contentItemRepository, slugRegistry));
+  }
 
   @Test
   void thePublishedPageIsReturnedAsItsStoredData() {
@@ -33,7 +41,7 @@ class AboutPageServiceImplTest {
             1L, "about_page", "PUBLISHED"))
         .thenReturn(Flux.just(item));
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
+    StepVerifier.create(service().getPage(1L))
         .assertNext(response -> assertEquals("Hello", response.data().get("heroTitle").asText()))
         .verifyComplete();
   }
@@ -44,9 +52,7 @@ class AboutPageServiceImplTest {
             2L, "about_page", "PUBLISHED"))
         .thenReturn(Flux.empty());
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(2L))
-        .expectError(ApplicationException.class)
-        .verify();
+    StepVerifier.create(service().getPage(2L)).expectError(ApplicationException.class).verify();
   }
 
   private ContentItem aboutWith(String growthSource) {
@@ -86,7 +92,7 @@ class AboutPageServiceImplTest {
             1L, "stat", "PUBLISHED"))
         .thenReturn(Flux.just(stat("32+", "Years"), stat("3000+", "Employees")));
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
+    StepVerifier.create(service().getPage(1L))
         .assertNext(
             response -> {
               var figures = response.data().at("/blocks/1/props/growthStats");
@@ -103,7 +109,7 @@ class AboutPageServiceImplTest {
   void customModeKeepsTheEmbeddedFiguresAndNeverReadsTheLibrary() {
     aboutPageIs(aboutWith("custom"));
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
+    StepVerifier.create(service().getPage(1L))
         .assertNext(
             response ->
                 assertEquals(
@@ -120,7 +126,7 @@ class AboutPageServiceImplTest {
   void aPageWithoutASourceIsCustom() {
     aboutPageIs(aboutWith(null));
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
+    StepVerifier.create(service().getPage(1L))
         .assertNext(
             response ->
                 assertEquals(
@@ -136,7 +142,7 @@ class AboutPageServiceImplTest {
             1L, "stat", "PUBLISHED"))
         .thenReturn(Flux.empty());
 
-    StepVerifier.create(new AboutPageServiceImpl(contentItemRepository).getPage(1L))
+    StepVerifier.create(service().getPage(1L))
         .assertNext(
             response -> assertEquals(0, response.data().at("/blocks/1/props/growthStats").size()))
         .verifyComplete();

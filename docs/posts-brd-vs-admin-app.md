@@ -142,7 +142,7 @@ Specified in POST-01. **Built** as a dedicated page (`/content/posts`, `PostsPag
 
 Suggested order once decided: alt text, spacer, TOC, share, duplicate and drag, then the form block last.
 
-**Related, done separately:** the page-type editors (Service, Industry, About) now use a block builder; see `page-model-plan.md`, section 13. Contact Us, shared components and templates are still to do.
+**Related, done separately:** the page-type editors (Service, Industry, About) now use a block builder; see `page-model-plan.md`, section 13. Contact Us is still to do; the shared block list and the library are in G12.
 
 ### G8. Delete rule and Trash
 - **Delete rule: done (posts).** A published post cannot be deleted, from the API (400: "archive it or move it to draft first") or the list (the Delete button is disabled with a tooltip). Draft and archived posts can be deleted. The 051126 BRD no longer states this rule, but nothing contradicts it.
@@ -202,7 +202,7 @@ Pages here means the Service, Industry and About pages (each with its own addres
 
 **G11 leftovers, built.** The seeded pages now have a creator ("System") and a created date, so the Pages list's Author and Updated columns are not empty for them (an `UPDATE` in the content `init-data.sql`: recreate the `content` database). In the Pages Trash, a restore that fails because the page's address is taken now opens "Choose another address": each page gets an input prefilled with its address plus "-2", and "Restore under these addresses" restores them again with the new addresses (the API already took a per-page address). Checked at the database level with throwaway rows (restore refused while the address is taken, then restored under another address); the dialog itself was not run in the browser (the browser extension was not connected).
 
-**Still open in G11:** page templates and "Save as Template" (they wait for G12), and the items left out by decision: a page password, nested menus and addresses built from the parent chain. The table below compares the BRD with the code and `page-model-plan.md`:
+**Still open in G11:** the items left out by decision: a page password, nested menus and addresses built from the parent chain. The table below compares the BRD with the code and `page-model-plan.md`:
 
 | BRD | Current | Status |
 |---|---|---|
@@ -211,19 +211,24 @@ Pages here means the Service, Industry and About pages (each with its own addres
 | Edit a published page without changing the live version (draft copy) | Built: a `draft` column on the page; Save draft keeps the page live, Update publishes (see above) | ✅ |
 | Parent / child pages, page order, full URL from the parent chain | Built as structure only (parent, order, rules, menu hiding); the address is not built from the chain (decision) | 🟡 |
 | Listing columns incl. parent, author, published date; search, filter, sort, bulk status change, bulk Trash; quick edit (title, slug, parent, status, password) | Built except the parent column and quick-edit parent (step 4) and the password (left out): see above | 🟡 |
-| Create from template, blank, or copy an existing page | Copy and blank (new page) built; templates wait for G12 | 🟡 |
+| Create from template, blank, or copy an existing page | Copy, blank and templates built (G12: a template is a saved list of sections) | ✅ |
 | Featured image, excerpt (default first 55 words), author with a show/hide flag | Built on every page type (see step 5); the website does not draw a byline or card thumbnail yet | ✅ |
 | Slug unique per site and language, warning on change, redirect | Done (`content_slug`, 308 aliases) | ✅ |
-| Save as Template | Posts only | ❌ |
+| Save as Template | Posts, and Service and Industry pages (sections only; G12) | ✅ |
 | Preview Desktop / Tablet / Mobile of unsaved edits | Done for Service, Industry, About, Case Study, Posts; not Home; header, footer shown as stand-ins | 🟡 |
 | Version history: compare and restore, last 2 kept | Full history in `content_audit` with diff and restore | ✅ (exceeds) |
 | Warning when a trashed page is in a menu or has internal links | Built: links and the Services menu (the parent / children part is step 4) | 🟡 |
 | Per-page Search & Filter configuration | Not checked; the BRD says "function list complete, BA to expand" | ? |
 
 ### G12. Components library and Templates (CMP-01 to CMP-04, TMP-01 to TMP-05)
-- **Not built.** Blocks exist inside each page row, but there is no shared library: no list with previews, no "shared component updates every page" versus "copy that diverges" (CMP-04), no 30-day delete, no template entity with versions, "apply to all pages or only new ones", "cannot delete a template in use".
-- This is the same question as section 3 of `page-model-plan.md` (embedded versus library). That plan chose embedded content with an optional library per field. CMP-04 asks for the library to be a first-class object with two modes, which is a bigger step. A shared component would need its own `content_item` type and a reference from the block (`props.componentId`), with the renderer resolving it.
-- Template TMP-05 asks for a template update to propagate to existing pages. The plan's rule "rows hold content only, layout lives in code" works against that, so a Template would be a stored list of block types rather than a code layout. Decision needed (section 5).
+**Built (copy-based, with one shared block list).** Two parts:
+
+- **One block list for Service and Industry pages.** Every block can be used on either page type (decision: "just put blocks together"). The two names that meant different blocks were split: Service `stories` is now `case-studies`, Service `reasons` is `reasons-slider`, Industry `reasons` is `reasons-cards`; Industry `stories` (typed in) keeps its name. In the backend one `PageBlock` replaces `ServiceBlock` and `IndustryBlock`; the single-use blocks (case studies, industries strip, highlights, insights) may appear once per page. In the renderer one `PageBlocks` component draws the list for both pages, and the host hands it the site-wide pieces (`PageBlockContext`: resolved case studies, industries strip, highlights, insights strip). The industry page endpoint now returns `caseStudies` like the service one (`FeaturedCaseStudies`). **The About page uses the same list, and its five sections (intro, vision, mission, leaders, values; `SingleUseBlock`) can go on any page**, once per page. What made them About-only is now shared: the intro block's growth figures (library mode) are filled in by every page endpoint (`GrowthStats`), the About endpoint also returns its featured `caseStudies`, and the About preview and website page hand the blocks the same site-wide context as the other two. The hero stays per page type.
+- **Library of saved layouts and sections** (`block_library` table, `/v1/admin/block-library`). A **page template** (kind PAGE) is the ordered list of a page's blocks: "Save as template" and "Use a template" sit in the Service and Industry editors (using one replaces the sections below the hero, with a confirmation, and nothing is saved until you press Save). A **saved section** (kind BLOCK) is one block: "Save to library" on each block and "From library" next to "Add section" (a single-use block already on the page is refused with a message). Both are copies: block ids are dropped on save and each insert gets its own, and the page keeps no link back. An entry can be deleted from the picker.
+
+**Not built (decision pending with the BA):** CMP-04's "update everywhere" (a block that points at a shared component), the 30-day delete of a component, template versions and TMP-05's "apply a template change to all pages using it or only to new ones" ("cannot delete a template in use"). They all need a link from the page to the library entry, which is the step that changes the page model; see section 3 of `page-model-plan.md`. A template does not carry the hero, address or SEO, only the sections.
+
+**Verified:** 196 content-service tests (new: `BlockLibraryServiceImplTest`, the case-studies block and the growth figures on an industry page, shared blocks across all three page types); in Chrome a block saved from the Industry page was inserted on a Service page, the Service page was saved as a template and applied to the Industry page, the admin preview drew the mixed page (reasons slider, industries strip, case-study cards, contact form), and after saving, the live Industry page showed the Service blocks; the Service template was also applied to the About page (preview and live page drew the Service blocks under the About hero), and an About "Meet CMC Global" section was added to a Service page and showed live. `tsc` (admin, website, renderer) and lint are clean. **Edited `init-schema.sql` (new table) and `init-data.sql` (block type names): recreate the `content` database.**
 
 ### G13. User management and security (USR-01 to USR-07)
 - **Decision: user management lives in auth-service, not in the admin app.** The Users screens (USR-01 to USR-05) are built there, next to the data they change. The admin app gets no Users module. It shows a link or redirect to auth-service for a user who has permission to manage users, and hides it for everyone else.

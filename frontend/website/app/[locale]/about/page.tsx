@@ -5,11 +5,14 @@ import { AboutPage as AboutPageView } from "@cms/content-renderer";
 import { CustomJsonLd } from "@/lib/seo/jsonld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getAboutPage } from "@/lib/cms/about";
+import { getHomeContent } from "@/lib/cms/homeContent";
+import { pageBlockContext } from "@/lib/cms/pageBlockContext";
 import { siteSlots } from "@/components/content/siteSlots";
 
 export async function generateMetadata(props: PageProps<"/[locale]/about">): Promise<Metadata> {
   const { locale } = await props.params;
-  const page = await getAboutPage();
+  const found = await getAboutPage();
+  const page = found?.data;
   if (!page) {
     return buildPageMetadata({ locale, path: "about", title: "About Us | CMC Global", description: "", noIndex: true });
   }
@@ -29,13 +32,15 @@ export default async function AboutPage(props: PageProps<"/[locale]/about">) {
   if (locale !== "en") notFound();
   setRequestLocale(locale);
 
-  const page = await getAboutPage();
-  if (!page) notFound();
+  const found = await getAboutPage();
+  if (!found) notFound();
+  const page = found.data;
+  const content = await getHomeContent();
 
   return (
     <>
       <CustomJsonLd text={page.seoJsonLd} />
-      <AboutPageView page={page} slots={siteSlots} />
+      <AboutPageView page={page} slots={siteSlots} context={pageBlockContext(content, found.caseStudies)} />
     </>
   );
 }

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.annotation.JsonLd;
 import com.takypok.contentservice.model.content.ContentFields;
-import com.takypok.contentservice.model.content.blocks.HighlightsBlock;
-import com.takypok.contentservice.model.content.blocks.IndustriesBlock;
-import com.takypok.contentservice.model.content.blocks.ServiceBlock;
-import com.takypok.contentservice.model.content.blocks.StoriesBlock;
+import com.takypok.contentservice.model.content.blocks.PageBlock;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -20,8 +17,8 @@ import lombok.Setter;
 /**
  * One page of the Services section (/services/{category}/{slug}), e.g. "Web App Development". Every
  * service page has a hero and a search/SEO block of its own fields, and a list of {@link
- * ServiceBlock}s for everything in between. A block with no content (or marked hidden) is simply
- * not rendered.
+ * PageBlock}s for everything in between. A block with no content (or marked hidden) is simply not
+ * rendered.
  */
 @Getter
 @Setter
@@ -51,12 +48,12 @@ public class ServicePageFields implements ContentFields {
   @Valid private List<StatItem> heroStats;
 
   /**
-   * The sections below the hero, in page order. Each is one of the types {@link ServiceBlock}
-   * lists; the stories, industries and highlights sections may appear once.
+   * The sections below the hero, in page order. Each is one of the types {@link PageBlock} lists;
+   * the case studies, industries, highlights and insights sections may appear once.
    */
   @Valid
   @Size(max = 40)
-  private List<ServiceBlock> blocks;
+  private List<PageBlock> blocks;
 
   /**
    * The parent page's id (any page type); empty for a top-level page. Structure only: the address
@@ -114,19 +111,16 @@ public class ServicePageFields implements ContentFields {
   @JsonLd private String seoJsonLd;
 
   @JsonIgnore
-  @AssertTrue(message = "stories, industries and highlights may each appear only once")
+  @AssertTrue(
+      message =
+          "case studies, industries, highlights, insights and the About sections may each appear only once")
   public boolean isSingleUseBlocksUnique() {
-    if (blocks == null) return true;
-    long stories = blocks.stream().filter(b -> b.getProps() instanceof StoriesBlock).count();
-    long industries = blocks.stream().filter(b -> b.getProps() instanceof IndustriesBlock).count();
-    long highlights = blocks.stream().filter(b -> b.getProps() instanceof HighlightsBlock).count();
-    return stories <= 1 && industries <= 1 && highlights <= 1;
+    return PageBlock.singleUseOnce(blocks);
   }
 
   @JsonIgnore
   @AssertTrue(message = "block ids must be unique")
   public boolean isBlockIdsUnique() {
-    if (blocks == null) return true;
-    return blocks.stream().map(ServiceBlock::getId).distinct().count() == blocks.size();
+    return PageBlock.idsUnique(blocks);
   }
 }

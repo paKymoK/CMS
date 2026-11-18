@@ -6,7 +6,6 @@ import com.takypok.contentservice.model.response.ServiceNavResponse;
 import com.takypok.contentservice.model.response.ServicePageResponse;
 import com.takypok.contentservice.repository.ContentItemRepository;
 import com.takypok.contentservice.service.ServiceCatalogService;
-import com.takypok.contentservice.service.SlugRegistry;
 import com.takypok.core.exception.ApplicationException;
 import com.takypok.core.model.Message;
 import java.util.ArrayList;
@@ -23,7 +22,8 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
   static final String PAGE = "service_page";
 
   private final ContentItemRepository contentItemRepository;
-  private final SlugRegistry slugRegistry;
+  private final FeaturedCaseStudies featuredCaseStudies;
+  private final GrowthStats growthStats;
 
   private Flux<ContentItem> items(Long siteId, String type) {
     return contentItemRepository.findAllBySiteIdAndContentTypeAndStatusOrderByDisplayOrderAsc(
@@ -119,43 +119,19 @@ public class ServiceCatalogServiceImpl implements ServiceCatalogService {
                   new ServiceNavResponse.Category(
                       category, text(categoryItem.getData(), "name"), siblings);
 
-              // The stories block (at most one per page) names the case studies to feature.
-              List<String> wanted = new ArrayList<>();
-              for (JsonNode block : pageItem.getData().path("blocks")) {
-                if (!"stories".equals(block.path("type").asText())) continue;
-                block.path("props").path("caseStudies").forEach(s -> wanted.add(s.asText()));
-              }
-
-              return Flux.fromIterable(wanted)
-                  .concatMap(
-                      s ->
-                          contentItemRepository
-                              .findBySlug(siteId, CaseStudyServiceImpl.TYPE, s)
-                              // a renamed case study is still found under its old slug
-                              .switchIfEmpty(
-                                  slugRegistry.findPublishedByAlias(
-                                      siteId, CaseStudyServiceImpl.TYPE, "", s)))
-                  .filter(c -> "PUBLISHED".equals(c.getStatus()))
-                  .map(ServiceCatalogServiceImpl::featured)
-                  .collectList()
-                  .map(
-                      list ->
-                          new ServicePageResponse(
-                              com.takypok.contentservice.util.PageExtras.apply(
-                                  pageItem, pageItem.getData()),
-                              cat,
-                              list));
+              return growthStats
+                  .apply(siteId, pageItem.getData())
+                  .flatMap(
+                      data ->
+                          featuredCaseStudies
+                              .resolve(siteId, data)
+                              .map(
+                                  list ->
+                                      new ServicePageResponse(
+                                          com.takypok.contentservice.util.PageExtras.apply(
+                                              pageItem, data),
+                                          cat,
+                                          list)));
             });
-  }
-
-  private static ServicePageResponse.FeaturedCaseStudy featured(ContentItem c) {
-    JsonNode d = c.getData();
-    return new ServicePageResponse.FeaturedCaseStudy(
-        text(d, "slug"),
-        text(d, "title"),
-        text(d, "summary"),
-        text(d, "image"),
-        text(d, "category"),
-        d.get("results"));
   }
 }

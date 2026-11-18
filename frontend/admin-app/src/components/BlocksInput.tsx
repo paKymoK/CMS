@@ -1,7 +1,10 @@
 import { useState, type DragEvent } from "react";
-import { Button, Dropdown, Form, Input, Popconfirm, Switch, type FormInstance } from "antd";
+import { Button, Dropdown, Form, Input, Popconfirm, Switch, message, type FormInstance } from "antd";
 import type { NamePath } from "antd/es/form/interface";
 import { DeleteIcon, PlusIcon } from "./icons";
+import SaveToLibraryModal from "./SaveToLibraryModal";
+import { useSite } from "../lib/useSite";
+import { toPageBlocks, useLibrary, useLibraryActions } from "../lib/blockLibrary";
 import { FieldInput } from "./FieldInput";
 import type { BlockTypeConfig, FieldConfig } from "../config/resources";
 
@@ -59,6 +62,12 @@ export function BlocksInput({
   const [dragOver, setDragOver] = useState<number | null>(null);
   const typeOf = (t?: string): BlockTypeConfig | undefined => types.find((x) => x.type === t);
   const used = (t: string) => blocks.some((b) => b.type === t);
+  const { site } = useSite();
+  const shared = !!f.sharedLibrary;
+  const library = useLibrary(site, "BLOCK", shared);
+  const { save, remove: removeFromLibrary } = useLibraryActions(site);
+  // The block being saved to the library, as it is now.
+  const [saving, setSaving] = useState<BlockValue | null>(null);
 
   return (
     <Form.Item label={f.label}>
@@ -153,6 +162,11 @@ export function BlocksInput({
                     >
                       Duplicate
                     </Button>
+                    {shared && (
+                      <Button size="small" disabled={!cfg} title="Save this section to the library" onClick={() => setSaving(JSON.parse(JSON.stringify(value)) as BlockValue)}>
+                        Save to library
+                      </Button>
+                    )}
                     <Popconfirm title="Remove this section?" okText="Remove" onConfirm={() => remove(entry.name)}>
                       <Button size="small" danger icon={<DeleteIcon />} aria-label="Remove section" />
                     </Popconfirm>
@@ -175,33 +189,91 @@ export function BlocksInput({
                 </div>
               );
             })}
-            <Dropdown
-              trigger={["click"]}
-              menu={{
-                items: types.map((t) => ({
-                  key: t.type,
-                  disabled: !!t.single && used(t.type),
-                  label: (
-                    <div style={{ maxWidth: 320, whiteSpace: "normal" }}>
-                      <div style={{ fontWeight: 600 }}>{t.label}</div>
-                      {t.description && <div style={{ fontSize: 12, color: "#7b8aa5" }}>{t.description}</div>}
-                    </div>
-                  ),
-                })),
-                onClick: ({ key }) => {
-                  const id = newId(key);
-                  add({ id, type: key, props: {} });
-                  setOpen((o) => ({ ...o, [id]: true }));
-                },
-              }}
-            >
-              <Button type="dashed" icon={<PlusIcon />}>
-                {f.addLabel ?? "Add section"}
-              </Button>
-            </Dropdown>
+            <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
+              <Dropdown
+                trigger={["click"]}
+                menu={{
+                  items: types.map((t) => ({
+                    key: t.type,
+                    disabled: !!t.single && used(t.type),
+                    label: (
+                      <div style={{ maxWidth: 320, whiteSpace: "normal" }}>
+                        <div style={{ fontWeight: 600 }}>{t.label}</div>
+                        {t.description && <div style={{ fontSize: 12, color: "#7b8aa5" }}>{t.description}</div>}
+                      </div>
+                    ),
+                  })),
+                  onClick: ({ key }) => {
+                    const id = newId(key);
+                    add({ id, type: key, props: {} });
+                    setOpen((o) => ({ ...o, [id]: true }));
+                  },
+                }}
+              >
+                <Button type="dashed" icon={<PlusIcon />}>
+                  {f.addLabel ?? "Add section"}
+                </Button>
+              </Dropdown>
+              {shared && (
+                <Dropdown
+                  trigger={["click"]}
+                  menu={{
+                    items: (library.data ?? []).map((item) => ({
+                      key: String(item.id),
+                      label: (
+                        <div className="flex items-center gap-2" style={{ maxWidth: 340 }}>
+                          <div style={{ flex: 1, whiteSpace: "normal" }}>
+                            <div style={{ fontWeight: 600 }}>{item.name}</div>
+                            <div style={{ fontSize: 12, color: "#7b8aa5" }}>
+                              {typeOf(item.blocks[0]?.type)?.label ?? item.blocks[0]?.type}
+                              {item.description ? ` · ${item.description}` : ""}
+                            </div>
+                          </div>
+                          <Popconfirm
+                            title="Delete from the library?"
+                            description="Pages that already use a copy are not affected."
+                            okText="Delete"
+                            okButtonProps={{ danger: true }}
+                            onConfirm={() => removeFromLibrary("BLOCK", item.id).catch(() => message.error("Could not delete it"))}
+                          >
+                            <span role="button" aria-label={`Delete ${item.name}`} onClick={(e) => e.stopPropagation()} style={{ color: "#5b6b86", padding: "0 6px" }}>
+                              ×
+                            </span>
+                          </Popconfirm>
+                        </div>
+                      ),
+                    })),
+                    onClick: ({ key }) => {
+                      const item = library.data?.find((i) => String(i.id) === key);
+                      if (!item) return;
+                      const [copy] = toPageBlocks(item);
+                      const cfgOf = typeOf(copy.type);
+                      if (!cfgOf) return message.warning("This page cannot use that section");
+                      if (cfgOf.single && used(copy.type)) return message.warning(`${cfgOf.label} can appear only once per page`);
+                      add(copy);
+                      setOpen((o) => ({ ...o, [copy.id]: true }));
+                    },
+                  }}
+                >
+                  <Button type="dashed">
+                    From library{library.data && library.data.length > 0 ? ` (${library.data.length})` : ""}
+                  </Button>
+                </Dropdown>
+              )}
+            </div>
           </div>
         )}
       </Form.List>
+      {shared && (
+        <SaveToLibraryModal
+          open={!!saving}
+          title="Save section to the library"
+          defaultName={saving ? (typeOf(saving.type)?.label ?? "") : ""}
+          hint="Saves this section as it is now. Insert it into any Service or Industry page with “From library”; each page gets its own copy."
+          onSave={(name, description) => save("BLOCK", name, description, [saving])}
+          onClose={() => setSaving(null)}
+        />
+      )}
     </Form.Item>
   );
 }

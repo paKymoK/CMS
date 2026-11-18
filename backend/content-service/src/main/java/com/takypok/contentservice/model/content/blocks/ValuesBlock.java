@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ValuesBlock implements BlockProps {
+public class ValuesBlock implements SingleUseBlock {
   private String eyebrow;
   private String title;
   private String body;

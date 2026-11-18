@@ -29,8 +29,8 @@ export const MSG_HEIGHT = "cms-preview:height";
 export type PreviewPage =
   | { kind: "post"; post: PostArticleData; pageUrl: string }
   | { kind: "case-study"; caseStudy: CaseStudyArticleData }
-  | { kind: "about"; page: AboutPageData }
-  | { kind: "industry"; page: IndustryPageData }
+  | { kind: "about"; page: AboutPageData; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData }
+  | { kind: "industry"; page: IndustryPageData; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData }
   | { kind: "service"; page: ServicePageData; categoryName: string; stories: IndustryStoryData[]; storiesIntro?: SectionIntroData };
 
 /** The site-wide footer content the frame draws around the page (the admin fetches it; the frame has no access to the API). */

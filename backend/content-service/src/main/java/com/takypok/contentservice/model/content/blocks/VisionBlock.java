@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class VisionBlock implements BlockProps {
+public class VisionBlock implements SingleUseBlock {
   private String eyebrow;
   private String title;
   private String image;

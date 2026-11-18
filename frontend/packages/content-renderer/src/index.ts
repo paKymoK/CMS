@@ -2,6 +2,7 @@ export { PostArticle } from "./PostArticle";
 export { CaseStudyArticle } from "./CaseStudyArticle";
 export { ServicePage } from "./ServicePage";
 export { IndustryPage } from "./IndustryPage";
+export type { PageBlockContext } from "./PageBlocks";
 export { AboutPage } from "./AboutPage";
 export { IndustryStories } from "./IndustryStories";
 export { InsightsAccordion } from "./InsightsAccordion";
@@ -17,7 +18,6 @@ export { FacebookIcon, InstagramIcon, TwitterIcon } from "./SocialIcons";
 export type { SiteFooterData, FooterNavColumn, SiteFooterViewProps } from "./SiteFooterView";
 export type { SiteHeaderBarItem } from "./SiteHeaderBar";
 export type {
-  AboutBlockData,
   AboutIntroBlockProps,
   AboutLeaderData,
   AboutLeadersBlockProps,
@@ -38,7 +38,7 @@ export type {
   PostCardData,
   ProcessBlockProps,
   ReasonsBlockProps,
-  IndustryBlockData,
+  PageBlockData,
   IndustryCardData,
   InsightItemData,
   SectionLinkIntroData,
@@ -52,7 +52,6 @@ export type {
   IndustryStoryData,
   SectionIntroData,
   SolutionsBlockProps,
-  ServiceBlockData,
   ServiceCapabilityData,
   ServicePageData,
   ServiceReasonData,

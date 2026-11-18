@@ -200,7 +200,7 @@ In rough order of value for effort:
 
 ## 13. Blocks (page builder)
 
-Service, Industry and About pages now hold their sections as an ordered `blocks` list instead of fixed fields, so an editor can add, duplicate, drag, hide and remove sections. Contact Us and shared components come later.
+Service, Industry and About pages now hold their sections as an ordered `blocks` list instead of fixed fields, so an editor can add, duplicate, drag, hide and remove sections. Contact Us comes later.
 
 - **Shape:** `data.blocks = [{ id, type, hidden?, props }]`. The page row keeps the page-level fields: slug, names, category, **hero** and SEO. The hero stays on the page (not a block) because search, SEO fallbacks and menus read `heroTitle` and `heroSubtitle`; it is required and always first. The contact form is always last and is not a block.
 - **Backend:** one block class per page type (`ServiceBlock`, `IndustryBlock`) whose `type` picks the class of `props` through Jackson (`EXTERNAL_PROPERTY`), so Bean Validation cascades and unknown props are dropped like elsewhere. A block type a page does not list is rejected; block ids must be unique; site-wide blocks (service: stories, industries, highlights; industry: insights) may appear once. A block with a type but no `props` is rejected: the editor always sends `props`.
@@ -210,3 +210,7 @@ Service, Industry and About pages now hold their sections as an ordered `blocks`
 - **Known limits:** a block type that may repeat (e.g. Capabilities) repeats the section's HTML `id` (anchor) when used twice; the drag handle, the phone-width editor and a before/after style-digest comparison were not checked.
 - **Data:** seeds were rewritten as blocks, so recreate the local `content` database.
 - **About growth figures:** the Custom / From-library switch lives in the intro block (`props.growthSource`, `props.growthStats`); the public About endpoint finds the intro block and swaps in the published Stats when it is set to library. The admin preview does the same from the unsaved form.
+
+### Update: one block list, and a library (G12)
+
+Service and Industry pages now share one list of block types (`PageBlock`), so a section can be used on either; the types that clashed were renamed (`case-studies`, `reasons-slider`, `reasons-cards`; Industry `stories` keeps its name). The About page uses the same list (its five fixed sections may appear once per page, on any page). A library (`block_library`) holds saved page layouts (the block list) and saved single blocks; both are copied into a page, with no link back. Sharing by reference ("update everywhere") is still not built; see `posts-brd-vs-admin-app.md`, G12.

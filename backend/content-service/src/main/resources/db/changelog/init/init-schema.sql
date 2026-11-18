@@ -419,6 +419,24 @@ CREATE TABLE IF NOT EXISTS post_template
 );
 CREATE INDEX IF NOT EXISTS idx_post_template_site ON post_template (site_id);
 
+-- Saved starting points for service and industry pages: a whole page layout (kind PAGE: an ordered
+-- list of blocks) or a single block (kind BLOCK). Blocks are copied out of an entry; nothing links a
+-- page back to it. The block ids are dropped on save, since a page gives each copy its own.
+CREATE TABLE IF NOT EXISTS block_library
+(
+    id           bigserial PRIMARY KEY,
+    site_id      bigint            NOT NULL REFERENCES site (id),
+    kind         character varying NOT NULL CHECK (kind IN ('PAGE', 'BLOCK')),
+    name         character varying NOT NULL,
+    description  text,
+    blocks       jsonb             NOT NULL DEFAULT '[]',
+    created_at   timestamp with time zone,
+    created_by   jsonb,
+    modified_at  timestamp with time zone,
+    modified_by  jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_block_library_site_kind ON block_library (site_id, kind);
+
 -- ---- Scheduled publishing -------------------------------------------------------------------------
 -- Moves what is due: SCHEDULED items whose publish_at has passed become PUBLISHED, and PUBLISHED items
 -- whose unpublish_at has passed become ARCHIVED (their unpublish_at is cleared, so publishing the item

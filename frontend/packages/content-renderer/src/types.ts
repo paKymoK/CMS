@@ -135,14 +135,26 @@ export interface ReasonsBlockProps {
   items?: ServiceReasonData[];
 }
 
-/** One block of a service page: where it sits in the list is where it is drawn. */
-export type ServiceBlockData = { id: string; hidden?: boolean } & (
+/**
+ * One block of a Service, Industry or About page: where it sits in the list is where it is drawn.
+ * The page types share this list, so a block can be used on any of them.
+ */
+export type PageBlockData = { id: string; hidden?: boolean } & (
   | { type: "capabilities"; props: CapabilitiesBlockProps }
   | { type: "process"; props: ProcessBlockProps }
-  | { type: "stories"; props: StoriesBlockProps }
-  | { type: "reasons"; props: ReasonsBlockProps }
+  | { type: "case-studies"; props: StoriesBlockProps }
+  | { type: "reasons-slider"; props: ReasonsBlockProps }
   | { type: "industries"; props: Record<string, never> }
   | { type: "highlights"; props: Record<string, never> }
+  | { type: "solutions"; props: SolutionsBlockProps }
+  | { type: "reasons-cards"; props: IndustryReasonsBlockProps }
+  | { type: "stories"; props: IndustryStoriesBlockProps }
+  | { type: "insights"; props: InsightsBlockProps }
+  | { type: "intro"; props: AboutIntroBlockProps }
+  | { type: "vision"; props: AboutVisionBlockProps }
+  | { type: "mission"; props: AboutMissionBlockProps }
+  | { type: "leaders"; props: AboutLeadersBlockProps }
+  | { type: "values"; props: AboutValuesBlockProps }
 );
 
 /** The content of one service page (content_item "service_page"); the website and the admin preview both fill it. */
@@ -158,7 +170,7 @@ export interface ServicePageData {
   heroImage?: string;
   heroStats?: ServiceStatData[];
   /** The sections below the hero, in page order. */
-  blocks?: ServiceBlockData[];
+  blocks?: PageBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */
@@ -252,14 +264,6 @@ export interface InsightsBlockProps {
   linkUrl?: string;
 }
 
-/** One block of an industry page: where it sits in the list is where it is drawn. */
-export type IndustryBlockData = { id: string; hidden?: boolean } & (
-  | { type: "solutions"; props: SolutionsBlockProps }
-  | { type: "reasons"; props: IndustryReasonsBlockProps }
-  | { type: "stories"; props: IndustryStoriesBlockProps }
-  | { type: "insights"; props: InsightsBlockProps }
-);
-
 /** The content of one industry page (content_item "industry_page"); the website and the admin preview both fill it. */
 export interface IndustryPageData {
   slug: string;
@@ -272,7 +276,7 @@ export interface IndustryPageData {
   heroImage?: string;
   heroStats?: ServiceStatData[];
   /** The sections below the hero, in page order. */
-  blocks?: IndustryBlockData[];
+  blocks?: PageBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */
@@ -342,15 +346,6 @@ export interface AboutValuesBlockProps {
   items?: AboutValueData[];
 }
 
-/** One block of the About page: where it sits in the list is where it is drawn. */
-export type AboutBlockData = { id: string; hidden?: boolean } & (
-  | { type: "intro"; props: AboutIntroBlockProps }
-  | { type: "vision"; props: AboutVisionBlockProps }
-  | { type: "mission"; props: AboutMissionBlockProps }
-  | { type: "leaders"; props: AboutLeadersBlockProps }
-  | { type: "values"; props: AboutValuesBlockProps }
-);
-
 /** The content of the About page (content_item "about_page"); the website and the admin preview both fill it. */
 export interface AboutPageData {
   heroBreadcrumb?: string;
@@ -361,7 +356,7 @@ export interface AboutPageData {
   heroImage?: string;
   heroStats?: ServiceStatData[];
   /** The sections below the hero, in page order. */
-  blocks?: AboutBlockData[];
+  blocks?: PageBlockData[];
   seoTitle?: string;
   seoDescription?: string;
   /** Social-share image; falls back to the page's main image. */

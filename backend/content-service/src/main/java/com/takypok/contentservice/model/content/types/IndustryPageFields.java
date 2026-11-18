@@ -4,8 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.annotation.JsonLd;
 import com.takypok.contentservice.model.content.ContentFields;
-import com.takypok.contentservice.model.content.blocks.IndustryBlock;
-import com.takypok.contentservice.model.content.blocks.InsightsBlock;
+import com.takypok.contentservice.model.content.blocks.PageBlock;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -17,8 +16,8 @@ import lombok.Setter;
 
 /**
  * One page of the Industries section (/industries/{slug}), e.g. "Banking, Finance &amp; Insurance".
- * A page has a hero and SEO fields of its own and a list of {@link IndustryBlock}s for everything
- * in between. A block with no content (or marked hidden) is simply not rendered.
+ * A page has a hero and SEO fields of its own and a list of {@link PageBlock}s for everything in
+ * between. A block with no content (or marked hidden) is simply not rendered.
  */
 @Getter
 @Setter
@@ -46,12 +45,12 @@ public class IndustryPageFields implements ContentFields {
   @Valid private List<StatItem> heroStats;
 
   /**
-   * The sections below the hero, in page order. Each is one of the types {@link IndustryBlock}
-   * lists; the insights strip may appear once.
+   * The sections below the hero, in page order. Each is one of the types {@link PageBlock} lists;
+   * the single-use sections may appear once.
    */
   @Valid
   @Size(max = 40)
-  private List<IndustryBlock> blocks;
+  private List<PageBlock> blocks;
 
   /**
    * The parent page's id (any page type); empty for a top-level page. Structure only: the address
@@ -109,16 +108,16 @@ public class IndustryPageFields implements ContentFields {
   @JsonLd private String seoJsonLd;
 
   @JsonIgnore
-  @AssertTrue(message = "the insights strip may appear only once")
-  public boolean isInsightsBlockUnique() {
-    return blocks == null
-        || blocks.stream().filter(b -> b.getProps() instanceof InsightsBlock).count() <= 1;
+  @AssertTrue(
+      message =
+          "case studies, industries, highlights, insights and the About sections may each appear only once")
+  public boolean isSingleUseBlocksUnique() {
+    return PageBlock.singleUseOnce(blocks);
   }
 
   @JsonIgnore
   @AssertTrue(message = "block ids must be unique")
   public boolean isBlockIdsUnique() {
-    return blocks == null
-        || blocks.stream().map(IndustryBlock::getId).distinct().count() == blocks.size();
+    return PageBlock.idsUnique(blocks);
   }
 }

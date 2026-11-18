@@ -134,16 +134,17 @@ class ContentItemMapperTest {
   }
 
   @Test
-  void industryPageRejectsServiceOnlyBlocksAndASecondInsightsStrip() throws Exception {
+  void industryPageSharesTheBlockListAndAllowsOneInsightsStrip() throws Exception {
     ContentItemMapper mapper =
         mapperWithRegistry(Map.of("industry_page", IndustryPageFields.class));
     String head = "\"slug\": \"bfsi\", \"navLabel\": \"B\", \"heroTitle\": \"H\"";
-    JsonNode serviceBlock =
+    // A block of the shared list (here a service one) is fine on an industry page.
+    JsonNode shared =
         objectMapper.readTree(
             "{" + head + ", \"blocks\": [{\"id\": \"a\", \"type\": \"process\", \"props\": {}}]}");
-    StepVerifier.create(mapper.resolveAndValidate("industry_page", serviceBlock))
-        .expectErrorMatches(e -> e instanceof ApplicationException)
-        .verify();
+    StepVerifier.create(mapper.resolveAndValidate("industry_page", shared))
+        .expectNextCount(1)
+        .verifyComplete();
 
     JsonNode twoInsights =
         objectMapper.readTree(
@@ -158,7 +159,7 @@ class ContentItemMapperTest {
   }
 
   @Test
-  void aboutPageAllowsEachSectionOnlyOnce() throws Exception {
+  void aboutPageSharesTheBlockListAndAllowsEachSectionOnlyOnce() throws Exception {
     ContentItemMapper mapper = mapperWithRegistry(Map.of("about_page", AboutPageFields.class));
     JsonNode input =
         objectMapper.readTree(
@@ -172,9 +173,22 @@ class ContentItemMapperTest {
     JsonNode serviceBlock =
         objectMapper.readTree(
             "{\"heroTitle\": \"H\", \"blocks\": [{\"id\": \"a\", \"type\": \"process\", \"props\": {}}]}");
+    // the shared blocks are fine on the About page too
     StepVerifier.create(mapper.resolveAndValidate("about_page", serviceBlock))
-        .expectErrorMatches(e -> e instanceof ApplicationException)
-        .verify();
+        .expectNextCount(1)
+        .verifyComplete();
+
+    // and an About section is fine on a service page, once
+    ContentItemMapper services =
+        mapperWithRegistry(Map.of("service_page", ServicePageFields.class));
+    JsonNode aboutOnService =
+        objectMapper.readTree(
+            "{"
+                + SERVICE_HEAD
+                + ", \"blocks\": [{\"id\": \"a\", \"type\": \"values\", \"props\": {}}]}");
+    StepVerifier.create(services.resolveAndValidate("service_page", aboutOnService))
+        .expectNextCount(1)
+        .verifyComplete();
   }
 
   @Test
@@ -278,7 +292,7 @@ class ContentItemMapperTest {
             "{"
                 + SERVICE_HEAD
                 + ", \"blocks\": ["
-                + "{\"id\": \"b1\", \"type\": \"reasons\", \"hidden\": true, \"props\": {\"title\": \"Why\","
+                + "{\"id\": \"b1\", \"type\": \"reasons-slider\", \"hidden\": true, \"props\": {\"title\": \"Why\","
                 + " \"items\": [{\"title\": \"R\", \"bogus\": 1}], \"extra\": 2}},"
                 + "{\"id\": \"b2\", \"type\": \"industries\", \"props\": {}},"
                 + "{\"id\": \"b3\", \"type\": \"capabilities\", \"props\": {\"items\": [{\"title\": \"C\"}]}}]}");
@@ -286,7 +300,7 @@ class ContentItemMapperTest {
     StepVerifier.create(mapper.resolveAndValidate("service_page", input))
         .assertNext(
             result -> {
-              assertEquals("reasons", result.at("/blocks/0/type").asText());
+              assertEquals("reasons-slider", result.at("/blocks/0/type").asText());
               assertTrue(result.at("/blocks/0/hidden").asBoolean());
               assertEquals("R", result.at("/blocks/0/props/items/0/title").asText());
               assertTrue(result.at("/blocks/0/props/extra").isMissingNode());
@@ -337,8 +351,8 @@ class ContentItemMapperTest {
         objectMapper.readTree(
             "{"
                 + SERVICE_HEAD
-                + ", \"blocks\": [{\"id\": \"a\", \"type\": \"stories\", \"props\": {}},"
-                + "{\"id\": \"b\", \"type\": \"stories\", \"props\": {}}]}");
+                + ", \"blocks\": [{\"id\": \"a\", \"type\": \"case-studies\", \"props\": {}},"
+                + "{\"id\": \"b\", \"type\": \"case-studies\", \"props\": {}}]}");
     StepVerifier.create(mapper.resolveAndValidate("service_page", twoStories))
         .expectErrorMatches(
             e -> e instanceof ApplicationException && e.getMessage().contains("only once"))

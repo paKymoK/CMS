@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MissionBlock implements BlockProps {
+public class MissionBlock implements SingleUseBlock {
   private String eyebrow;
 
   /** Paragraphs separated by blank lines. */

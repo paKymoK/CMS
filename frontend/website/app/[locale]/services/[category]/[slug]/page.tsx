@@ -8,8 +8,7 @@ import { getServicePage } from "@/lib/cms/services";
 import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
-import { ServiceIndustries } from "@/components/service/ServiceIndustries";
-import { ServiceHighlights } from "@/components/service/ServiceHighlights";
+import { pageBlockContext } from "@/lib/cms/pageBlockContext";
 import { siteSlots } from "@/components/content/siteSlots";
 import { ContactForm } from "@/components/home/ContactForm";
 
@@ -46,16 +45,6 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
   }
 
   const content = await getHomeContent();
-  const first = page.caseStudies[0];
-  const stories = page.caseStudies.map((c, i) => ({
-    tag: c.category,
-    title: c.title,
-    body: c.summary,
-    image: c.image,
-    linkLabel: "Read the case study →",
-    linkUrl: `/case-studies/${c.slug}`,
-    ...(i === 0 ? { metrics: first?.results } : {}),
-  }));
 
   return (
     <>
@@ -63,16 +52,8 @@ export default async function ServicePage(props: PageProps<"/[locale]/services/[
       <ServicePageView
         page={page.data}
         categoryName={page.category.name}
-        stories={stories}
-        storiesIntro={sectionIntro(content, "service-stories")}
         slots={siteSlots}
-        industries={
-          <ServiceIndustries
-            cards={content.sections?.industry_card ?? []}
-            intro={sectionIntro(content, "service-industries")}
-          />
-        }
-        highlights={<ServiceHighlights insights={content.insights} intro={sectionIntro(content, "service-highlights")} />}
+        context={pageBlockContext(content, page.caseStudies)}
         contact={<ContactForm intro={sectionIntro(content, "contact")} />}
       />
     </>

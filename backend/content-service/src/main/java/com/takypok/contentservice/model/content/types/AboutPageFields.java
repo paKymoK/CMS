@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.takypok.contentservice.model.annotation.ContentTypeKey;
 import com.takypok.contentservice.model.annotation.JsonLd;
 import com.takypok.contentservice.model.content.ContentFields;
-import com.takypok.contentservice.model.content.blocks.AboutBlock;
+import com.takypok.contentservice.model.content.blocks.PageBlock;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -16,7 +16,7 @@ import lombok.Setter;
 
 /**
  * The About page (/about). There is exactly one per site: a hero and SEO fields of its own and a
- * list of {@link AboutBlock}s for everything in between. A block with no content (or marked hidden)
+ * list of {@link PageBlock}s for everything in between. A block with no content (or marked hidden)
  * is simply not rendered.
  */
 @Getter
@@ -33,12 +33,12 @@ public class AboutPageFields implements ContentFields {
   @Valid private List<StatItem> heroStats;
 
   /**
-   * The sections below the hero, in page order. Each is one of the types {@link AboutBlock} lists,
+   * The sections below the hero, in page order. Each is one of the types {@link PageBlock} lists,
    * and each may appear once.
    */
   @Valid
   @Size(max = 20)
-  private List<AboutBlock> blocks;
+  private List<PageBlock> blocks;
 
   /**
    * The parent page's id (any page type); empty for a top-level page. Structure only: the address
@@ -96,16 +96,14 @@ public class AboutPageFields implements ContentFields {
   @JsonLd private String seoJsonLd;
 
   @JsonIgnore
-  @AssertTrue(message = "each section may appear only once")
+  @AssertTrue(message = "intro, vision, mission, leaders and values may each appear only once")
   public boolean isEachBlockTypeUnique() {
-    return blocks == null
-        || blocks.stream().map(b -> b.getProps().getClass()).distinct().count() == blocks.size();
+    return PageBlock.singleUseOnce(blocks);
   }
 
   @JsonIgnore
   @AssertTrue(message = "block ids must be unique")
   public boolean isBlockIdsUnique() {
-    return blocks == null
-        || blocks.stream().map(AboutBlock::getId).distinct().count() == blocks.size();
+    return PageBlock.idsUnique(blocks);
   }
 }

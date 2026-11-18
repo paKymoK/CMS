@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class StoriesBlock implements BlockProps {
+public class CaseStudiesBlock implements BlockProps {
   private String heading;
   private List<String> caseStudies;
 }

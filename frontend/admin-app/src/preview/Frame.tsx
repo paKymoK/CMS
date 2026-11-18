@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { PageBlockContext } from "@cms/content-renderer";
 import { AboutPage, CaseStudyArticle, ContactForm, IndustryPage, InsightsAccordion, PostArticle, ServiceHighlights, ServiceIndustries, ServicePage, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
 import { CASE_STUDY_LABELS, HEADER_ITEMS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewChrome, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
@@ -59,32 +60,25 @@ export default function Frame() {
 function Page({ page, chrome }: { page: PreviewPage; chrome?: PreviewChrome }) {
   const intros = chrome?.intros ?? {};
   const contact = <ContactForm intro={intros.contact} />;
-  if (page.kind === "about") return <AboutPage page={page.page} />;
-  if (page.kind === "industry") {
-    return (
-      <IndustryPage
-        page={page.page}
-        insights={(block) => (
-          <InsightsAccordion
-            insights={chrome?.insights ?? []}
-            intro={block.title ? { eyebrow: block.eyebrow, title: block.title, body: block.body, linkLabel: block.linkLabel, linkUrl: block.linkUrl } : undefined}
-          />
-        )}
-        contact={contact}
-      />
-    );
-  }
-  if (page.kind === "service") {
-    return (
-      <ServicePage
-        page={page.page}
-        categoryName={page.categoryName}
-        stories={page.stories}
-        storiesIntro={page.storiesIntro}
-        industries={<ServiceIndustries cards={chrome?.industryCards ?? []} intro={intros["service-industries"]} />}
-        highlights={<ServiceHighlights insights={chrome?.insights ?? []} intro={intros["service-highlights"]} />}
-        contact={contact}
-      />
+  if (page.kind === "about" || page.kind === "industry" || page.kind === "service") {
+    // The blocks that read site-wide content: the same for both page types, as on the website.
+    const context: PageBlockContext = {
+      stories: page.stories,
+      storiesIntro: page.storiesIntro,
+      industries: <ServiceIndustries cards={chrome?.industryCards ?? []} intro={intros["service-industries"]} />,
+      highlights: <ServiceHighlights insights={chrome?.insights ?? []} intro={intros["service-highlights"]} />,
+      insights: (block) => (
+        <InsightsAccordion
+          insights={chrome?.insights ?? []}
+          intro={block.title ? { eyebrow: block.eyebrow, title: block.title, body: block.body, linkLabel: block.linkLabel, linkUrl: block.linkUrl } : undefined}
+        />
+      ),
+    };
+    if (page.kind === "about") return <AboutPage page={page.page} context={context} />;
+    return page.kind === "industry" ? (
+      <IndustryPage page={page.page} context={context} contact={contact} />
+    ) : (
+      <ServicePage page={page.page} categoryName={page.categoryName} context={context} contact={contact} />
     );
   }
   if (page.kind === "case-study") return <CaseStudyArticle caseStudy={page.caseStudy} labels={CASE_STUDY_LABELS} />;

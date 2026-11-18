@@ -9,14 +9,15 @@ import { redirectIfRenamed } from "@/lib/cms/slugRedirect";
 import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
 import { siteSlots } from "@/components/content/siteSlots";
-import { InsightsAccordion } from "@/components/home/InsightsAccordion";
+import { pageBlockContext } from "@/lib/cms/pageBlockContext";
 import { ContactForm } from "@/components/home/ContactForm";
 
 export async function generateMetadata(
   props: PageProps<"/[locale]/industries/[slug]">,
 ): Promise<Metadata> {
   const { locale, slug } = await props.params;
-  const page = await getIndustryPage(slug);
+  const found = await getIndustryPage(slug);
+  const page = found?.data;
   const path = `industries/${slug}`;
   if (!page) {
     return buildPageMetadata({ locale, path, title: "Industries — CMC Global", description: "", noIndex: true });
@@ -37,13 +38,14 @@ export default async function IndustryPage(props: PageProps<"/[locale]/industrie
   if (locale !== "en") notFound();
   setRequestLocale(locale);
 
-  const page = await getIndustryPage(slug);
-  if (!page) {
+  const found = await getIndustryPage(slug);
+  if (!found) {
     await redirectIfRenamed(locale, "industries", "industries", [slug]);
     notFound();
   }
 
   const content = await getHomeContent();
+  const page = found.data;
 
   return (
     <>
@@ -51,23 +53,7 @@ export default async function IndustryPage(props: PageProps<"/[locale]/industrie
       <IndustryPageView
         page={page}
         slots={siteSlots}
-        insights={(block) => (
-          <InsightsAccordion
-            insights={content.insights}
-            intro={
-              block.title
-                ? {
-                    section: "industry-insights",
-                    eyebrow: block.eyebrow,
-                    title: block.title,
-                    body: block.body,
-                    linkLabel: block.linkLabel,
-                    linkUrl: block.linkUrl,
-                  }
-                : undefined
-            }
-          />
-        )}
+        context={pageBlockContext(content, found.caseStudies)}
         contact={<ContactForm intro={sectionIntro(content, "contact")} />}
       />
     </>

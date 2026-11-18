@@ -15,6 +15,7 @@ import { FieldInput } from "../components/FieldInput";
 import MediaPickerModal from "../components/MediaPickerModal";
 import HistoryDrawer from "../components/HistoryDrawer";
 import PreviousUrls from "../components/PreviousUrls";
+import PageTemplateBar from "../components/PageTemplateBar";
 import { RESOURCE_PREVIEWS } from "../components/resourcePreviews";
 import { SeoChecklist } from "../components/SeoChecklist";
 import SearchSnippetModal from "../components/SearchSnippetModal";
@@ -220,6 +221,8 @@ function ResourceEditorForm({
   const mainFields = resource.fields.filter((f) => f.area !== "side" && !f.tableOnly);
   const groups = resource.groups ?? [];
   const hasToggles = groups.some((g) => g.toggleable);
+  // Service and Industry pages share one block list and its library of saved layouts and sections.
+  const libraryBlocksField = resource.fields.find((f) => f.type === "blocks" && f.sharedLibrary);
   const plainFields = mainFields.filter((f) => !f.group || !groups.some((g) => g.key === f.group));
   const [openGroups, setOpenGroups] = useState<string[]>(groups.filter((g) => g.defaultOpen).map((g) => g.key));
   const [hiddenSections, setHiddenSections] = useState<string[]>((initial?.hiddenSections as string[] | undefined) ?? []);
@@ -375,6 +378,7 @@ function ResourceEditorForm({
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: dirty ? "#fa8c16" : "#00bbff" }} />
               {dirty ? "Unsaved changes" : isNew ? "Not saved yet" : "Saved"}
             </span>
+            {libraryBlocksField && site && <PageTemplateBar form={form} fieldName={libraryBlocksField.name} onApplied={touch} />}
             {Preview && site && (
               <button type="button" onClick={() => setPreviewValues({ ...form.getFieldsValue(true), slug, ...(hasToggles ? { hiddenSections } : {}) })} style={outlineButton}>
                 Preview

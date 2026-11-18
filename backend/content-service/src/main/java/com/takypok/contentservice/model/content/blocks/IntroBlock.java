@@ -12,7 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class IntroBlock implements BlockProps {
+public class IntroBlock implements SingleUseBlock {
   private String eyebrow;
   private String title;
 
