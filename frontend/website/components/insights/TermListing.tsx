@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getTerm, type TaxonomyKind } from "@/lib/cms/taxonomy";
+import { categorySlugsByName, getTerm, type TaxonomyKind } from "@/lib/cms/taxonomy";
 import { getHomeContent } from "@/lib/cms/homeContent";
 import { sectionIntro } from "@/lib/sectionIntro";
 import { ListHero } from "@/components/list/ListHero";
@@ -26,6 +26,7 @@ export async function TermListing({
   if (!found) notFound();
   const { term, posts } = found;
   const content = await getHomeContent();
+  const categorySlugs = await categorySlugsByName();
 
   const time = (d: string) => Date.parse(d) || 0;
   const sorted = [...posts].sort((a, b) => time(b.date) - time(a.date));
@@ -51,7 +52,7 @@ export async function TermListing({
           ) : (
             <ul className="psp-grid">
               {items.map((post) => (
-                <PerspectiveCard key={post.id} post={post} />
+                <PerspectiveCard key={post.id} post={post} categorySlug={categorySlugs.get(post.category?.toLowerCase())} />
               ))}
             </ul>
           )}

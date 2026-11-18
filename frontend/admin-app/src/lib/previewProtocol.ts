@@ -2,6 +2,7 @@ import type {
   AboutPageData,
   FooterNavColumn,
   SiteFooterData,
+  MobileBottomBarItem,
   SiteHeaderBarItem,
   CaseStudyArticleData,
   CaseStudyArticleLabels,
@@ -59,6 +60,16 @@ export const HEADER_ITEMS: SiteHeaderBarItem[] = [
   { label: "Insights" },
   { label: "Career" },
   { label: "Contact" },
+];
+
+/** The labels of the website's mobile bottom bar (website/content/nav.ts PRIMARY_NAV), drawn at phone width. */
+export const MOBILE_NAV_ITEMS: MobileBottomBarItem[] = [
+  { label: "Services" },
+  { label: "Case Studies" },
+  { label: "Insights" },
+  { label: "About Us" },
+  { label: "Resources" },
+  { label: "Careers" },
 ];
 
 /** The public pages are English-only today, so the preview uses the site's English strings. */

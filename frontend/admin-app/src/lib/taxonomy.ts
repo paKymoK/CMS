@@ -115,8 +115,10 @@ export async function bulkTaxonomy(
   kind: TaxonomyKind,
   ids: number[],
   action: TaxonomyBulkAction,
+  /** For RESTORE only: id to the address to restore it under (when its own is taken). */
+  slugs?: Record<number, string>,
 ): Promise<BulkResult> {
-  const { data } = await contentApi.post(`${base(kind)}/bulk`, { ids, action }, { params: { site } });
+  const { data } = await contentApi.post(`${base(kind)}/bulk`, { ids, action, slugs }, { params: { site } });
   return data.data as BulkResult;
 }
 

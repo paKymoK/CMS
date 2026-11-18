@@ -3,15 +3,17 @@ import { Placeholder } from "@/components/ui/Placeholder";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { Link } from "@/i18n/navigation";
 import type { PostSummary } from "@/lib/cms/types";
+import { CategoryPill } from "./CategoryPill";
 
 const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * One card on the Perspectives listing (wireframe card): thumbnail, a content-type pill, bold title
  * and excerpt, then the date on the left and a "Discover" link on the right, on the same white card
- * with a light-grey edge as the Case Studies cards. A clamped title shows in full in a tooltip.
+ * with a light-grey edge as the Case Studies cards. A clamped title shows in full in a tooltip. The pill
+ * links to the category's page when `categorySlug` is known.
  */
-export function PerspectiveCard({ post }: { post: PostSummary }) {
+export function PerspectiveCard({ post, categorySlug }: { post: PostSummary; categorySlug?: string }) {
   return (
     <Tooltip
       as="li"
@@ -36,9 +38,12 @@ export function PerspectiveCard({ post }: { post: PostSummary }) {
             <Placeholder tone="navy" label="Perspective" fill />
           )}
         </div>
-        {post.category && (
-          <span className="psp-pill">{sentence(post.category)}</span>
-        )}
+        {post.category &&
+          (categorySlug ? (
+            <CategoryPill href={`/category/${categorySlug}`}>{sentence(post.category)}</CategoryPill>
+          ) : (
+            <span className="psp-pill">{sentence(post.category)}</span>
+          ))}
         <h2 className="psp-card-title">{post.title}</h2>
         {post.excerpt && <p className="psp-card-sum">{post.excerpt}</p>}
         <div className="psp-card-foot">

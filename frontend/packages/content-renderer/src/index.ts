@@ -14,6 +14,8 @@ export { defaultSlots } from "./defaults";
 export { prepareBody } from "./prepareBody";
 export { SiteFooterView } from "./SiteFooterView";
 export { SiteHeaderBar } from "./SiteHeaderBar";
+export { MobileBottomBar } from "./MobileBottomBar";
+export type { MobileBottomBarItem } from "./MobileBottomBar";
 export { FacebookIcon, InstagramIcon, TwitterIcon } from "./SocialIcons";
 export type { SiteFooterData, FooterNavColumn, SiteFooterViewProps } from "./SiteFooterView";
 export type { SiteHeaderBarItem } from "./SiteHeaderBar";

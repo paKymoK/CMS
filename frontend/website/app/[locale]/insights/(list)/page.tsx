@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getPosts } from "@/lib/cms/posts";
+import { categorySlugsByName } from "@/lib/cms/taxonomy";
 import { getSearchResolution } from "@/lib/cms/search";
 import {
   PERSPECTIVES_RESULTS_ID,
@@ -77,6 +78,7 @@ export default async function PerspectivesPage(
     totalPages,
   );
   const items = matches.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const categorySlugs = await categorySlugsByName();
   const current = { category, tag, q, exact, sort };
 
   return (
@@ -117,7 +119,7 @@ export default async function PerspectivesPage(
             ) : (
               <ul className="psp-grid">
                 {items.map((post) => (
-                  <PerspectiveCard key={post.id} post={post} />
+                  <PerspectiveCard key={post.id} post={post} categorySlug={categorySlugs.get(post.category?.toLowerCase())} />
                 ))}
               </ul>
             )}

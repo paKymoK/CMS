@@ -622,13 +622,30 @@ function TaxonomyTrash({ site, kind, onChanged }: { site: string; kind: Taxonomy
     placeholderData: keepPreviousData,
     refetchOnMount: "always",
   });
+  // Items whose address is taken: the person picks another one and restores them again.
+  const [clashes, setClashes] = useState<{ id: number; name: string; slug: string }[]>([]);
+  const [typed, setTyped] = useState<Record<number, string>>({});
   const act = useMutation({
-    mutationFn: ({ ids, action }: { ids: number[]; action: TaxonomyBulkAction }) => bulkTaxonomy(site, kind, ids, action),
+    mutationFn: ({ ids, action, slugs }: { ids: number[]; action: TaxonomyBulkAction; slugs?: Record<number, string> }) =>
+      bulkTaxonomy(site, kind, ids, action, slugs),
     onSuccess: (result, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["taxonomy-trash", site, kind] });
       onChanged();
       setSelected((prev) => prev.filter((id) => !result.updated.includes(id)));
-      showBulkResult(result, DONE[action], text.singular);
+      const taken = action === "RESTORE" ? result.failed.filter((f) => f.reason.includes("already used")) : [];
+      if (taken.length === 0) {
+        showBulkResult(result, DONE[action], text.singular);
+        return;
+      }
+      const rows = trash.data?.items ?? [];
+      const found = taken.map((f) => {
+        const row = rows.find((r) => r.id === f.id);
+        return { id: f.id, name: f.title ?? row?.name ?? "", slug: row?.slug ?? "" };
+      });
+      const others = result.failed.filter((f) => !taken.some((t) => t.id === f.id));
+      if (result.updated.length > 0 || others.length > 0) showBulkResult({ updated: result.updated, failed: others }, DONE[action], text.singular);
+      setTyped(Object.fromEntries(found.map((c) => [c.id, c.slug ? `${c.slug}-2` : ""])));
+      setClashes(found);
     },
     onError: () => message.error("The change could not be made. Nothing was changed."),
   });
@@ -692,6 +709,30 @@ function TaxonomyTrash({ site, kind, onChanged }: { site: string; kind: Taxonomy
           </Button>
         </Popconfirm>
       </div>
+      <Modal
+        open={clashes.length > 0}
+        title="Choose another address"
+        okText="Restore under these addresses"
+        okButtonProps={{ loading: act.isPending, disabled: clashes.some((c) => !typed[c.id]?.trim()) }}
+        onCancel={() => setClashes([])}
+        onOk={() => {
+          const slugs = Object.fromEntries(clashes.map((c) => [c.id, typed[c.id].trim()]));
+          const ids = clashes.map((c) => c.id);
+          setClashes([]);
+          act.mutate({ ids, action: "RESTORE", slugs });
+        }}
+        destroyOnHidden
+      >
+        <p style={{ marginTop: 0, color: "#5b6b86" }}>
+          {clashes.length === 1 ? `This ${text.singular}'s address is` : `These ${text.plural}' addresses are`} already used. Give {clashes.length === 1 ? "it" : "each"} a new one and restore:
+        </p>
+        {clashes.map((c) => (
+          <div key={c.id} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0b1b3a" }}>{c.name}</div>
+            <Input value={typed[c.id] ?? ""} addonBefore={`was ${c.slug}`} maxLength={100} onChange={(e) => setTyped((t) => ({ ...t, [c.id]: e.target.value }))} />
+          </div>
+        ))}
+      </Modal>
       <Table<TaxonomyTrashRow>
         className="cms-table"
         rowKey="id"

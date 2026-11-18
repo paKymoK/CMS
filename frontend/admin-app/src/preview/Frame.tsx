@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { PageBlockContext } from "@cms/content-renderer";
-import { AboutPage, CaseStudyArticle, ContactForm, IndustryPage, InsightsAccordion, PostArticle, ServiceHighlights, ServiceIndustries, ServicePage, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
-import { CASE_STUDY_LABELS, HEADER_ITEMS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewChrome, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
+import { AboutPage, CaseStudyArticle, ContactForm, IndustryPage, InsightsAccordion, PostArticle, ServiceHighlights, ServiceIndustries, ServicePage, MobileBottomBar, SiteFooterView, SiteHeaderBar } from "@cms/content-renderer";
+import { CASE_STUDY_LABELS, HEADER_ITEMS, MOBILE_NAV_ITEMS, MSG_HEIGHT, MSG_READY, MSG_RENDER, POST_LABELS, type PreviewChrome, type PreviewMessage, type PreviewPage } from "../lib/previewProtocol";
 
 /**
  * The document the admin's preview shows in an iframe. It holds no data of its own: the admin
@@ -49,10 +49,12 @@ export default function Frame() {
   if (!page) return null;
   // The website's header sits over the top of the page and its footer closes it; the page itself is the part being edited.
   return (
-    <div className="relative">
+    // Room under the footer for the phone-width bottom bar, as the website's body has.
+    <div className="relative pb-[64px] md:pb-0">
       <SiteHeaderBar items={HEADER_ITEMS} logoSrc="/preview-logo.svg" contactLabel="Contact Us" />
       <Page page={page} chrome={chrome} />
       {chrome && <SiteFooterView footerNav={chrome.footerNav} footer={chrome.footer} defaultCopyright={`Copyright ©${new Date().getFullYear()} CMC Global. All rights reserved.`} />}
+      <MobileBottomBar items={MOBILE_NAV_ITEMS} position="absolute" />
     </div>
   );
 }

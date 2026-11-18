@@ -689,6 +689,14 @@
   line-height: 1.4;
   color: #44546a;
 }
+.psp-pill--link {
+  cursor: pointer;
+}
+.psp-pill--link:hover,
+.psp-pill--link:focus-visible {
+  border-color: #0069cc;
+  color: #0069cc;
+}
 .psp-card-title {
   display: -webkit-box;
   margin-top: 14px;

@@ -39,3 +39,22 @@ export async function getTerm(kind: TaxonomyKind, slug: string): Promise<{ term:
     return null;
   }
 }
+
+/** Every Active category or tag of the site, in the server's order; empty when the CMS is unreachable. */
+export async function getTerms(kind: TaxonomyKind): Promise<Term[]> {
+  try {
+    const res = await cmsFetch(`${CMS_BASE}/content-service/v1/${PATH[kind]}`, { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const body = (await res.json()) as { data?: Term[] };
+    return body.data ?? [];
+  } catch (err) {
+    console.error(`Failed to load the ${kind} list`, err);
+    return [];
+  }
+}
+
+/** A post's derived category name (what its card shows) to the address of that category's page. */
+export async function categorySlugsByName(): Promise<Map<string, string>> {
+  const terms = await getTerms("category");
+  return new Map(terms.map((t) => [t.name.toLowerCase(), t.slug]));
+}
