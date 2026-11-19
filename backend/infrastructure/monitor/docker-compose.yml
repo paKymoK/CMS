@@ -63,8 +63,9 @@ services:
       - '-config.file=/etc/tempo/tempo.yaml'
     ports:
       - "3200:3200"   # Tempo query API (used by Grafana datasource)
-      # OTLP receivers (4317/4318) are reached by Alloy over the docker network only —
-      # host 4317/4318 belong to Alloy now.
+      # Alloy runs in host mode, so it reaches Tempo's OTLP gRPC receiver through this
+      # published port (host 4317/4318 belong to Alloy itself).
+      - "4319:4317"
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo-data:/var/tempo
@@ -96,9 +97,11 @@ services:
         max-size: "100m"
         max-file: "1"
 
+# Monitor stack keeps its own bridge network (Grafana reaches Prometheus/Tempo/Loki by name).
+# Alloy is host-mode, so it reaches them through the published ports (3101, 9090, 4319).
 networks:
   takypok_default:
-    external: true
+    name: takypok_default
 
 volumes:
   prometheus-data:

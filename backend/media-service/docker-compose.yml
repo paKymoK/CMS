@@ -5,37 +5,31 @@ services:
       dockerfile: media-service/Dockerfile
     image: takypok/media-service
     container_name: media-service
+    # Host networking: 127.0.0.1 is this machine, so the defaults below work on a single
+    # Linux host; on separate VPSs override the *_HOST/*_URI values (and
+    # EUREKA_INSTANCE_IP_ADDRESS) in .env with the real private IPs. Linux only.
+    network_mode: host
     labels:
       # Alloy skips docker-log collection for this container; it reads the log file instead
       logging.source: file
-    ports:
-      - "8082:8082"
     environment:
       LOG_DIR: /logs
-      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
-      DB_HOST: ${DB_HOST:-postgres}
+      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://127.0.0.1:9000}
+      DB_HOST: ${DB_HOST:-127.0.0.1}
       DB_PORT: ${DB_PORT:-5432}
       DB_SCHEMA: media
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
-      JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
-      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+      EUREKA_INSTANCE_IP_ADDRESS: ${EUREKA_INSTANCE_IP_ADDRESS:-127.0.0.1}
+      EUREKA_URI: ${EUREKA_URI:-http://127.0.0.1:8761/eureka}
+      JWK_URI: ${JWK_URI:-http://127.0.0.1:9000/oauth2/jwks}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-127.0.0.1}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
-      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
-    # discovery-service isn't defined in this file — this depends_on only resolves when
-    # this file is passed to compose alongside discovery-service's own, e.g.:
-    #   docker compose -f ../discovery-service/docker-compose.yml -f docker-compose.yml up -d
-    # Running `docker compose up` from this directory alone fails validation.
-    depends_on:
-      discovery-service:
-        condition: service_healthy
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://127.0.0.1:4318/v1/metrics}
     volumes:
       # Host dir the Alloy reads from (default: backend/logs); must match alloy's LOG_HOST_DIR
       - ${LOG_HOST_DIR:-../logs}:/logs
-    networks:
-      - takypok_default
     logging:
       driver: json-file
       options:
@@ -45,8 +39,3 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
-
-networks:
-  takypok_default:
-    external: true
-
