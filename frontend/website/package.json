@@ -13,7 +13,7 @@
     "@cms/content-renderer": "workspace:*",
     "d3-geo": "^3.1.1",
     "hls.js": "^1.7.3",
-    "next": "^16.4.0",
+    "next": "^16.4.6",
     "next-intl": "^4.14.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
