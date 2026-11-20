@@ -14,6 +14,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -53,6 +54,20 @@ public class LdapAutoProvisionSuccessHandler extends SavedRequestAwareAuthentica
   private final String userSearchBase;
   private final String userSearchFilter;
   private final AuditService auditService;
+
+  /** Where to go when there is no saved request to resume; unset means the default target URL. */
+  private Function<HttpServletRequest, String> fallbackTarget;
+
+  public void setFallbackTarget(Function<HttpServletRequest, String> fallbackTarget) {
+    this.fallbackTarget = fallbackTarget;
+  }
+
+  @Override
+  protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response) {
+    return fallbackTarget != null
+        ? fallbackTarget.apply(request)
+        : super.determineTargetUrl(request, response);
+  }
 
   @Override
   public void onAuthenticationSuccess(

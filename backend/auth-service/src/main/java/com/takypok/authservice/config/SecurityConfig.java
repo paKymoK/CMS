@@ -36,7 +36,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -122,15 +121,21 @@ public class SecurityConfig {
       PasswordEncoder passwordEncoder,
       UserinfoRepository userinfoRepository,
       LdapTemplate ldapTemplate,
-      AuditService auditService) {
-    return new LdapAutoProvisionSuccessHandler(
-        jdbcUserDetailsManager,
-        passwordEncoder,
-        userinfoRepository,
-        ldapTemplate,
-        userSearchBase,
-        userSearchFilter,
-        auditService);
+      AuditService auditService,
+      ClientLanding clientLanding) {
+    LdapAutoProvisionSuccessHandler handler =
+        new LdapAutoProvisionSuccessHandler(
+            jdbcUserDetailsManager,
+            passwordEncoder,
+            userinfoRepository,
+            ldapTemplate,
+            userSearchBase,
+            userSearchFilter,
+            auditService);
+    // A sign-in with no OAuth request in progress (e.g. straight on /login) has no saved request
+    // to resume: send it back to its client, which decides what the user may see.
+    handler.setFallbackTarget(clientLanding::targetFor);
+    return handler;
   }
 
   @Bean
@@ -257,7 +262,7 @@ public class SecurityConfig {
   }
 
   @Bean
-  public RequestCache requestCache() {
-    return new HttpSessionRequestCache();
+  public RequestCache requestCache(ClientLanding clientLanding) {
+    return new RememberingRequestCache(clientLanding);
   }
 }

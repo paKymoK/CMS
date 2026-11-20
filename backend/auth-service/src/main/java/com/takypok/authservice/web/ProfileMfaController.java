@@ -4,7 +4,6 @@ import com.takypok.authservice.service.MfaService;
 import com.takypok.authservice.service.QrCodes;
 import com.takypok.authservice.service.SuperAdminService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,14 +29,6 @@ public class ProfileMfaController {
 
   private final MfaService mfaService;
   private final SuperAdminService superAdminService;
-
-  @Value("${auth.admin-app-url}")
-  private String adminAppUrl;
-
-  @ModelAttribute("cmsUrl")
-  String cmsUrl() {
-    return adminAppUrl;
-  }
 
   @ModelAttribute("me")
   String me(Authentication authentication) {

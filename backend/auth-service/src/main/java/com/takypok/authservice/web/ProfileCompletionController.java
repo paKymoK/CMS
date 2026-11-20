@@ -1,5 +1,6 @@
 package com.takypok.authservice.web;
 
+import com.takypok.authservice.config.ClientLanding;
 import com.takypok.authservice.model.entity.Userinfo;
 import com.takypok.authservice.repository.UserinfoRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ public class ProfileCompletionController {
 
   private final UserinfoRepository userinfoRepository;
   private final RequestCache requestCache;
+  private final ClientLanding clientLanding;
 
   @GetMapping("/profile/complete")
   public String complete(@RequestParam(required = false) String error, Model model) {
@@ -53,8 +55,10 @@ public class ProfileCompletionController {
 
     // The original /oauth2/authorize?... request was never consumed — it's still sitting in the
     // session's RequestCache, parked there by LdapAutoProvisionSuccessHandler's redirect here
-    // instead of its usual super.onAuthenticationSuccess() call. Resume it now.
+    // instead of its usual super.onAuthenticationSuccess() call. Resume it now; with none, go
+    // back to the client.
     SavedRequest savedRequest = requestCache.getRequest(request, response);
-    response.sendRedirect(savedRequest != null ? savedRequest.getRedirectUrl() : "/");
+    response.sendRedirect(
+        savedRequest != null ? savedRequest.getRedirectUrl() : clientLanding.targetFor(request));
   }
 }

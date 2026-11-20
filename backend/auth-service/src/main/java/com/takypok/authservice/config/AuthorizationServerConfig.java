@@ -86,7 +86,7 @@ public class AuthorizationServerConfig {
 
   private static final String CUSTOM_CONSENT_PAGE_URI = "/oauth2/consent";
 
-  private static final String CMS_ADMIN_CLIENT_ID = "cms-admin";
+  static final String CMS_ADMIN_CLIENT_ID = "cms-admin";
   private static final String CMS_ADMIN_CLIENT_SECRET = "cms-admin-client-secret";
 
   @Bean

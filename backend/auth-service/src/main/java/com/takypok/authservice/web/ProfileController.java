@@ -11,7 +11,6 @@ import com.takypok.core.exception.ApplicationException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -43,14 +42,6 @@ public class ProfileController {
   private final SuperAdminService superAdminService;
   private final SessionService sessionService;
   private final MfaService mfaService;
-
-  @Value("${auth.admin-app-url}")
-  private String adminAppUrl;
-
-  @ModelAttribute("cmsUrl")
-  String cmsUrl() {
-    return adminAppUrl;
-  }
 
   @ModelAttribute("me")
   String me(Authentication authentication) {

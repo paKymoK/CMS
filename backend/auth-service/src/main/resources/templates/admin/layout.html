@@ -25,7 +25,6 @@
     <div class="sider-foot">
         <div>Signed in as<br><span class="me" th:text="${me}">admin</span></div>
         <div class="row">
-            <a th:href="${cmsUrl}">Back to CMS</a>
             <form th:action="@{/logout}" method="post"><button type="submit" class="linklike">Sign out</button></form>
         </div>
     </div>

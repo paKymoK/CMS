@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -28,14 +27,6 @@ public class AuditAdminController {
 
   private final AuditService auditService;
   private final AuditExportService exportService;
-
-  @Value("${auth.admin-app-url}")
-  private String adminAppUrl;
-
-  @ModelAttribute("cmsUrl")
-  String cmsUrl() {
-    return adminAppUrl;
-  }
 
   @ModelAttribute("me")
   String me(Authentication authentication) {
