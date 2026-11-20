@@ -1,7 +1,7 @@
 # Own project name so this stack isn't lumped into the same "takypok" project as
 # everything else — started/stopped independently of the app services and other infra
-# stacks. Host networking: Redis listens on the machine's own port 6379, so services
-# reach it at 127.0.0.1 (same host) or this VPS's private IP. Firewall it to the private network.
+# stacks. It still shares the "takypok_default" network (declared explicitly below,
+# not just implied by a shared project name) so services can reach it by container DNS.
 name: takypok-redis
 
 services:
@@ -9,10 +9,19 @@ services:
     image: redis:7-alpine
     container_name: redis
     command: redis-server
-    network_mode: host
+    ports:
+      - "6379:6379"
     logging:
       driver: json-file
       options:
         max-size: "100m"
         max-file: "1"
     restart: unless-stopped
+    networks:
+      - takypok_default
+
+# Named explicitly (not external) so whichever of the independent infra stacks
+# (postgres/redis) happens to start first creates it; the others just attach.
+networks:
+  takypok_default:
+    name: takypok_default

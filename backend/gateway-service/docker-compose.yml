@@ -5,26 +5,27 @@ services:
       dockerfile: gateway-service/Dockerfile
     image: takypok/gateway-service
     container_name: gateway-service
-    # Host networking: 127.0.0.1 is this machine, so the defaults below work on a single
-    # Linux host; on separate VPSs override the *_HOST/*_URI values (and
-    # EUREKA_INSTANCE_IP_ADDRESS) in .env with the real private IPs. Linux only.
-    network_mode: host
     labels:
       # Alloy skips docker-log collection for this container; it reads the log file instead
       logging.source: file
+    ports:
+      - "8080:8080"
+      - "8090:8090"
     environment:
       LOG_DIR: /logs
-      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://127.0.0.1:9000}
-      EUREKA_URI: ${EUREKA_URI:-http://127.0.0.1:8761/eureka}
-      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-127.0.0.1}
+      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
+      EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       GATEWAY_IO_WORKER_COUNT: ${GATEWAY_IO_WORKER_COUNT:-}
       SINGLE_TAB_REDIS_ON_FAILURE: ${SINGLE_TAB_REDIS_ON_FAILURE:-FAIL_OPEN}
-      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://127.0.0.1:4318/v1/metrics}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
     volumes:
       # Host dir the Alloy reads from (default: backend/logs); must match alloy's LOG_HOST_DIR
       - ${LOG_HOST_DIR:-../logs}:/logs
+    networks:
+      - takypok_default
     logging:
       driver: json-file
       options:
@@ -34,3 +35,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true

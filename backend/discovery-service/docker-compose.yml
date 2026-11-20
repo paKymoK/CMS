@@ -5,13 +5,13 @@ services:
       dockerfile: discovery-service/Dockerfile
     image: takypok/discovery-service
     container_name: discovery-service
-    # Host networking: 127.0.0.1 is this machine, so the defaults below work on a single
-    # Linux host; on separate VPSs override the *_HOST/*_URI values (and
-    # EUREKA_INSTANCE_IP_ADDRESS) in .env with the real private IPs. Linux only.
-    network_mode: host
+    ports:
+      - "8761:8761"
     environment:
-      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://127.0.0.1:4318/v1/metrics}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+    networks:
+      - takypok_default
     logging:
       driver: json-file
       options:
@@ -21,3 +21,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true

@@ -5,36 +5,39 @@ services:
       dockerfile: auth-service/Dockerfile
     image: takypok/auth-service
     container_name: auth-service
-    # Host networking: 127.0.0.1 is this machine, so the defaults below work on a single
-    # Linux host; on separate VPSs override the *_HOST/*_URI values (and
-    # EUREKA_INSTANCE_IP_ADDRESS) in .env with the real private IPs. Linux only.
-    network_mode: host
     labels:
       # Alloy skips docker-log collection for this container; it reads the log file instead
       logging.source: file
+    ports:
+      - "9000:9000"
     environment:
       LOG_DIR: /logs
-      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://127.0.0.1:9000}
-      DB_HOST: ${DB_HOST:-127.0.0.1}
+      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
       DB_SCHEMA: authentication
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-127.0.0.1}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
-      EUREKA_INSTANCE_IP_ADDRESS: ${EUREKA_INSTANCE_IP_ADDRESS:-127.0.0.1}
-      EUREKA_URI: ${EUREKA_URI:-http://127.0.0.1:8761/eureka}
-      LDAP_URL: ${LDAP_URL:-ldap://127.0.0.1:389}
+      # Passed through only when set in .env (production: THIS VPS's private IP); unset = Docker network IP
+      EUREKA_INSTANCE_IP_ADDRESS:
+      EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
+      LDAP_URL: ${LDAP_URL:-ldap://host.docker.internal:389}
       LDAP_BASE: ${LDAP_BASE:-dc=mycompany,dc=local}
       LDAP_USERNAME: ${LDAP_USERNAME:-cn=admin,dc=mycompany,dc=local}
       LDAP_PASSWORD: ${LDAP_PASSWORD:-admin_secret}
       LDAP_USER_SEARCH_BASE: ${LDAP_USER_SEARCH_BASE:-ou=users}
       LDAP_USER_SEARCH_FILTER: ${LDAP_USER_SEARCH_FILTER:-(cn={0})}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
-      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://127.0.0.1:4318/v1/metrics}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Host dir the Alloy reads from (default: backend/logs); must match alloy's LOG_HOST_DIR
       - ${LOG_HOST_DIR:-../logs}:/logs
+    networks:
+      - takypok_default
     logging:
       driver: json-file
       options:
@@ -44,3 +47,8 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true
+

@@ -19,8 +19,10 @@ services:
       - '--server.http.listen-addr=0.0.0.0:12345'
       - '--storage.path=/var/lib/alloy/data'
       - '/etc/alloy/config.alloy'
-    # Host networking: 12345 (UI), 4317 (OTLP gRPC) and 4318 (OTLP HTTP) listen on the machine itself.
-    network_mode: host
+    ports:
+      - "12345:12345"   # Alloy's own live-debugging UI (component graph, live log/metric preview)
+      - "4317:4317"     # OTLP gRPC receiver (services push metrics + traces here)
+      - "4318:4318"     # OTLP HTTP receiver (what Spring Boot uses)
     volumes:
       - ./config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
@@ -32,20 +34,28 @@ services:
       - /:/rootfs:ro
       - /:/host:ro
     environment:
-      LOKI_URL: ${LOKI_URL:-http://127.0.0.1:3101/loki/api/v1/push}
-      PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://127.0.0.1:9090/api/v1/write}
+      LOKI_URL: ${LOKI_URL:-http://loki:3100/loki/api/v1/push}
+      PROMETHEUS_REMOTE_WRITE_URL: ${PROMETHEUS_REMOTE_WRITE_URL:-http://prometheus:9090/api/v1/write}
       LOG_PATH_GLOB: ${LOG_PATH_GLOB:-/var/log/takypok/*/*.log}
-      TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-127.0.0.1:4319}
+      TEMPO_OTLP_ENDPOINT: ${TEMPO_OTLP_ENDPOINT:-tempo:4317}
       # Status dashboard probes; defaults reach a website / admin app running on the docker host
-      PROBE_WEBSITE_URL: ${PROBE_WEBSITE_URL:-http://127.0.0.1:3000}
-      PROBE_ADMIN_URL: ${PROBE_ADMIN_URL:-http://127.0.0.1:5173}
-      PROBE_DATABASE_ADDR: ${PROBE_DATABASE_ADDR:-127.0.0.1:5432}
+      PROBE_WEBSITE_URL: ${PROBE_WEBSITE_URL:-http://host.docker.internal:3000}
+      PROBE_ADMIN_URL: ${PROBE_ADMIN_URL:-http://host.docker.internal:5173}
+      PROBE_DATABASE_ADDR: ${PROBE_DATABASE_ADDR:-postgres:5432}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - takypok_default
     restart: unless-stopped
     logging:
       driver: json-file
       options:
         max-size: "100m"
         max-file: "1"
+
+networks:
+  takypok_default:
+    external: true
 
 volumes:
   alloy-data:

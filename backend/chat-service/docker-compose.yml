@@ -5,37 +5,38 @@ services:
       dockerfile: chat-service/Dockerfile
     image: takypok/chat-service
     container_name: chat-service
-    # Host networking: 127.0.0.1 is this machine, so the defaults below work on a single
-    # Linux host; on separate VPSs override the *_HOST/*_URI values (and
-    # EUREKA_INSTANCE_IP_ADDRESS) in .env with the real private IPs. Linux only.
-    network_mode: host
     labels:
       # Alloy skips docker-log collection for this container; it reads the log file instead
       logging.source: file
+    ports:
+      - "8083:8083"
     environment:
       LOG_DIR: /logs
-      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://127.0.0.1:9000}
-      DB_HOST: ${DB_HOST:-127.0.0.1}
+      AUTH_ISSUER_URI: ${AUTH_ISSUER_URI:-http://auth-service:9000}
+      DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
       DB_SCHEMA: chat
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-127.0.0.1}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
-      EUREKA_INSTANCE_IP_ADDRESS: ${EUREKA_INSTANCE_IP_ADDRESS:-127.0.0.1}
-      EUREKA_URI: ${EUREKA_URI:-http://127.0.0.1:8761/eureka}
-      JWK_URI: ${JWK_URI:-http://127.0.0.1:9000/oauth2/jwks}
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://127.0.0.1:4318/v1/traces}
-      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://127.0.0.1:4318/v1/metrics}
+      # Passed through only when set in .env (production: THIS VPS's private IP); unset = Docker network IP
+      EUREKA_INSTANCE_IP_ADDRESS:
+      EUREKA_URI: ${EUREKA_URI:-http://discovery-service:8761/eureka}
+      JWK_URI: ${JWK_URI:-http://auth-service:9000/oauth2/jwks}
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:-http://alloy:4318/v1/traces}
+      MANAGEMENT_OTLP_METRICS_EXPORT_URL: ${MANAGEMENT_OTLP_METRICS_EXPORT_URL:-http://alloy:4318/v1/metrics}
       # Qdrant/Ollama aren't part of this compose stack yet; defaults below only work if
       # they're reachable at localhost from inside the container (e.g. host networking).
       # Override with real hosts/URLs once those services are deployed.
-      QDRANT_HOST: ${QDRANT_HOST:-127.0.0.1}
+      QDRANT_HOST: ${QDRANT_HOST:-localhost}
       QDRANT_PORT: ${QDRANT_PORT:-6334}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://127.0.0.1:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
     volumes:
       # Host dir the Alloy reads from (default: backend/logs); must match alloy's LOG_HOST_DIR
       - ${LOG_HOST_DIR:-../logs}:/logs
+    networks:
+      - takypok_default
     logging:
       driver: json-file
       options:
@@ -45,3 +46,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+
+networks:
+  takypok_default:
+    external: true
