@@ -165,7 +165,17 @@ export default function AppShell() {
   if (accessibleSites.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Empty description="Your account has no CMS site access assigned. Ask a global admin to grant you access to at least one site." />
+        <Empty description="Your account has no CMS site access assigned. Ask a global admin to grant you access to at least one site.">
+          {/* No sidebar here, so the way out has to be on this screen. */}
+          <div className="flex justify-center gap-2">
+            <Button href={`${AUTH_SERVER}/profile`} target="_blank" rel="noopener noreferrer">
+              My profile
+            </Button>
+            <Button type="primary" icon={<LogoutIcon />} onClick={logout}>
+              Log out
+            </Button>
+          </div>
+        </Empty>
       </div>
     );
   }
@@ -255,6 +265,8 @@ export default function AppShell() {
           {isGlobalAdmin && (
             <a
               href={`${AUTH_SERVER}/admin/users`}
+              target="_blank"
+              rel="noopener noreferrer"
               title="Users & access"
               className="cms-nav-head cms-nav-link"
               onClick={() => setNavOpen(false)}
@@ -267,7 +279,13 @@ export default function AppShell() {
 
         <div className="cms-user">
           {/* Everyone has a profile page, on auth-service (name, picture, password). */}
-          <a className="cms-user-link" href={`${AUTH_SERVER}/profile`} title="My profile">
+          <a
+            className="cms-user-link"
+            href={`${AUTH_SERVER}/profile`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="My profile"
+          >
             <div className="cms-user-avatar">{initialsOf(displayName)}</div>
             <div className="cms-user-text">
               <span className="cms-user-name">{displayName}</span>
