@@ -1,0 +1,22 @@
+services:
+  website:
+    build:
+      context: ..
+      dockerfile: website/Dockerfile
+      args:
+        # Inlined at build time and also fetched server-side from inside the container, so
+        # localhost does not work here: use the gateway's address as reachable from both the
+        # browser and this container (LAN IP locally, the public API URL in production).
+        NEXT_PUBLIC_CMS_API_BASE_URL: ${NEXT_PUBLIC_CMS_API_BASE_URL:-http://localhost:8080}
+        SITE_URL: ${SITE_URL:-http://localhost:3000}
+    image: takypok/website
+    container_name: website
+    ports:
+      - "3000:3000"
+    networks:
+      - takypok_default
+    restart: unless-stopped
+
+networks:
+  takypok_default:
+    name: takypok_default

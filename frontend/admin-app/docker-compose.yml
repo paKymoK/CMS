@@ -1,0 +1,27 @@
+services:
+  admin-app:
+    build:
+      context: ..
+      dockerfile: admin-app/Dockerfile
+      additional_contexts:
+        # supplies rich-text-embed-hosts.json (imported by src/lib/embeds.ts), which lives outside frontend/
+        backend: ../../backend
+      args:
+        # Inlined into the JS bundle at build time and used only by the browser, so these are
+        # the addresses as the browser sees them (production: the public gateway/auth/admin URLs).
+        VITE_BASE_URL: ${VITE_BASE_URL:-http://localhost:8080}
+        VITE_AUTH_SERVER: ${VITE_AUTH_SERVER:-http://localhost:9000}
+        VITE_REDIRECT_URI: ${VITE_REDIRECT_URI:-http://localhost:5173/callback}
+        VITE_WEBSITE_ORIGIN: ${VITE_WEBSITE_ORIGIN:-http://localhost:3000}
+    image: takypok/admin-app
+    container_name: admin-app
+    ports:
+      # nginx listens on 8080 inside the container; 8080 on the host belongs to the gateway
+      - "5173:8080"
+    networks:
+      - takypok_default
+    restart: unless-stopped
+
+networks:
+  takypok_default:
+    name: takypok_default

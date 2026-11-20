@@ -2,7 +2,9 @@
 #   docker build -f admin-app/Dockerfile -t cms-admin \
 #     --build-arg VITE_BASE_URL=https://api.example.com \
 #     --build-arg VITE_AUTH_SERVER=https://auth.example.com \
-#     --build-arg VITE_REDIRECT_URI=https://admin.example.com/callback .
+#     --build-arg VITE_REDIRECT_URI=https://admin.example.com/callback \
+#     --build-context backend=../backend .
+# The extra `backend` context supplies rich-text-embed-hosts.json, which src/lib/embeds.ts imports from content-service.
 # All VITE_* values are inlined into the JS bundle at build time, so each environment needs its own build.
 
 # --- deps ---
@@ -27,6 +29,8 @@ COPY --from=deps /app/packages/content-renderer/node_modules ./packages/content-
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY admin-app admin-app
 COPY packages packages
+# embeds.ts imports ../../../../backend/... relative to /app/admin-app/src/lib
+COPY --from=backend content-service/src/main/resources/rich-text-embed-hosts.json /backend/content-service/src/main/resources/rich-text-embed-hosts.json
 
 ARG VITE_BASE_URL
 ARG VITE_AUTH_SERVER

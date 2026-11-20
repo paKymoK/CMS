@@ -10,7 +10,8 @@ const gatewayUrl = new URL(process.env.NEXT_PUBLIC_CMS_API_BASE_URL ?? "http://l
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source.
   transpilePackages: ["@cms/content-renderer"],
-  // output: "standalone", // needed for Docker builds; conflicts with Vercel's own output tracing, so disabled while deploying there
+  // Docker builds set NEXT_OUTPUT=standalone; it conflicts with Vercel's own output tracing, so it stays off otherwise.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Dev only: extra hosts (e.g. a LAN IP) allowed to load the dev server, comma-separated.
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
   images: {
