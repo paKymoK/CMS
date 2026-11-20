@@ -3,14 +3,26 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
+// next/image may only load media from the gateway the website talks to, so derive the allowed
+// origin from the same URL (localhost:8080 in dev, the LAN/prod gateway elsewhere).
+const gatewayUrl = new URL(process.env.NEXT_PUBLIC_CMS_API_BASE_URL ?? "http://localhost:8080");
+
 const nextConfig: NextConfig = {
   // Workspace packages ship TypeScript source.
   transpilePackages: ["@cms/content-renderer"],
   // output: "standalone", // needed for Docker builds; conflicts with Vercel's own output tracing, so disabled while deploying there
+  // Dev only: extra hosts (e.g. a LAN IP) allowed to load the dev server, comma-separated.
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
   images: {
     // media-service-hosted images/logos come back as full absolute URLs from content-service's
     // /v1/home, routed through gateway-service — allowlist its origin for next/image.
-    remotePatterns: [{ protocol: "http", hostname: "localhost", port: "8080" }],
+    remotePatterns: [
+      {
+        protocol: gatewayUrl.protocol === "https:" ? "https" : "http",
+        hostname: gatewayUrl.hostname,
+        port: gatewayUrl.port,
+      },
+    ],
     // gateway-service is always reached over a private address (localhost in dev, an
     // internal Docker/cluster network in deployment) — Next 16's SSRF guard blocks
     // private-IP targets by default even when they match remotePatterns above, so this

@@ -54,3 +54,18 @@ Eureka registration on their own.
 - Docker Desktop (Windows/macOS) needs host networking enabled (4.34+) to use these files
   locally; otherwise run the services with `gradlew bootRun`.
 - Run a service either as a container or with `bootRun`, not both; they share the port.
+
+## Testing over plain HTTP on a LAN
+
+No code or YAML edits are needed; set the same LAN address in the `.env` files (see the
+`<LAN-IP>` blocks in each `.env.example`):
+
+- **Every backend service:** `AUTH_ISSUER_URI=http://<LAN-IP>:9000` (must equal the token `iss`
+  and the address the browser uses), and `CORS_ALLOWED_ORIGINS=http://<LAN-IP>:5173,http://<LAN-IP>:3000`
+  on auth, chat, content, gateway and media.
+- **auth-service:** `CMS_ADMIN_REDIRECT_URIS` and `CMS_ADMIN_POST_LOGOUT_REDIRECT_URIS` for the admin origin.
+- **admin-app / website:** their `VITE_*` / `NEXT_PUBLIC_*` values are read at build time, so rebuild
+  after changing them.
+- Open inbound TCP 5173 (or the admin port), 3000, 8080 and 9000 in the firewall.
+- Over plain HTTP `crypto.subtle` is unavailable; the admin's PKCE helper falls back to a JS SHA-256.
+- Restart all services after changing any value. HTTP is for testing only; production uses HTTPS.
