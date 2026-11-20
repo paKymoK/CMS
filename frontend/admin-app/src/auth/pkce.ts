@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+
 export const AUTH_SERVER = import.meta.env.VITE_AUTH_SERVER as string;
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID as string;
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI as string;
@@ -10,9 +12,13 @@ export function generateCodeVerifier(): string {
 }
 
 export async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(verifier));
-  return base64UrlEncode(new Uint8Array(digest));
+  const data = new TextEncoder().encode(verifier);
+  // crypto.subtle exists only in secure contexts (HTTPS / localhost); over plain HTTP on a LAN
+  // address it is undefined, so fall back to a JS implementation.
+  if (globalThis.crypto?.subtle) {
+    return base64UrlEncode(new Uint8Array(await crypto.subtle.digest("SHA-256", data)));
+  }
+  return base64UrlEncode(sha256(data));
 }
 
 export function generateState(): string {
