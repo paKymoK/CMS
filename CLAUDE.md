@@ -84,7 +84,7 @@ The preview runs in an iframe (`/preview-frame.html`, a second Vite entry) fed b
 
 ## Verifying UI changes
 
-Type checks do not prove a UI works. For any change to a page, editor or preview: start the app, open the page in a browser (Playwright is fine: `npx playwright-core` with the installed Chromium), exercise the change, and look at a screenshot. Check Desktop and Mobile widths for anything visual. If the backend is not running, intercept the gateway calls (`page.route("http://localhost:8080/**", ...)`) and serve fixture JSON; a valid-looking JWT (`{sub, exp, roles:["ADMIN"]}`) in `sessionStorage.access_token` gets past the admin login.
+Type checks do not prove a UI works. For any change to a page, editor or preview: start the app, open the page in a browser (Playwright is fine: `npx playwright-core` with the installed Chromium), exercise the change, and look at a screenshot. Check Desktop and Mobile widths for anything visual. If the backend is not running, intercept the gateway calls (`page.route("http://localhost:8080/**", ...)`) and serve fixture JSON; a valid-looking JWT (`{sub, exp, roles:["ADMIN"]}`) in `localStorage.access_token` gets past the admin login.
 
 ## Where things live
 
