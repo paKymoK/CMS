@@ -40,5 +40,21 @@
     "results": "Results",
     "moreWork": "More work",
     "relatedCaseStudies": "Related case studies"
+  },
+  "errors": {
+    "backHome": "Back to homepage",
+    "browseInsights": "Browse insights",
+    "tryAgain": "Try again",
+    "reference": "Reference: {id}",
+    "notFound": {
+      "eyebrow": "Page not found",
+      "title": "This page does not exist",
+      "body": "The link may be out of date, or the page may have moved. Check the address, or start from the homepage."
+    },
+    "serverError": {
+      "eyebrow": "Server error",
+      "title": "We could not load this page",
+      "body": "Something went wrong on our side. Try again in a moment. If it keeps happening, contact us and quote the reference below."
+    }
   }
 }
