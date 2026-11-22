@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 /**
  * Where to send a user who signs in with no OAuth request in progress (straight on /login, or after
  * a logout), so they are not left on an auth-service page. It is the client they last came from,
- * remembered in a cookie that holds only a client id, or the default client when there is none.
- * The cookie can only choose among registered clients, so it can never point anywhere else.
+ * remembered in a cookie that holds only a client id, or the default client when there is none. The
+ * cookie can only choose among registered clients, so it can never point anywhere else.
  *
  * <p>The target is the origin of the client's first registered redirect URI: the redirect URI
  * itself is the client's callback, which fails without an authorization code.
