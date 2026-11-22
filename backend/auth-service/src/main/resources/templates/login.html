@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/svg+xml" href="/ams.svg" />
-    <title>CMC Global CMS — Sign in</title>
+    <title>Sign in · CMC Global CMS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -24,23 +24,20 @@
             padding: 24px 20px;
             background: linear-gradient(180deg, #03091a, #04102a, #061634);
         }
-        input::placeholder { color: rgba(255,255,255,.5); }
+        input::placeholder { color: rgba(255,255,255,.62); }
         a { color: #8fd0ff; text-decoration: none; }
 
         .card { width: 100%; max-width: 440px; animation: rise 420ms cubic-bezier(.22,1,.36,1) both; }
         @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
         .orb {
-            margin: 0 auto 16px; width: 40px; height: 40px; border-radius: 50%;
+            margin: 0 auto 16px; width: 44px; height: 44px; border-radius: 50%;
             background: radial-gradient(circle at 34% 30%, #eaf6ff 0%, #7cc4f7 42%, #1a6fc4 78%, #0c3f7d 100%);
             box-shadow: 0 0 22px rgba(90,180,255,.55);
         }
-        .heading { text-align: center; margin-bottom: 22px; }
-        .heading h1 { margin: 0; font-size: clamp(22px,2.6vw,28px); font-weight: 700; color: #ffffff; letter-spacing: -.01em; }
-        .heading h1 span { color: #43a4ff; }
-        .heading p { margin: 8px 0 0; font-size: 13.5px; color: #c9d9ee; }
-        .heading p strong { color: #ffffff; font-weight: 600; }
-
+        .heading { text-align: center; margin-bottom: 24px; }
+        .heading h1 { margin: 0; font-size: clamp(26px,3vw,32px); font-weight: 700; color: #ffffff; letter-spacing: -.01em; }
+        
         form.panel {
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,.26);
@@ -60,7 +57,6 @@
         .alert-warn { background: rgba(255,184,77,.14); border: 1px solid rgba(255,196,110,.45); color: #ffe9c7; }
         .alert-success { background: rgba(0,187,228,.14); border: 1px solid rgba(0,187,228,.45); color: #d6f6ff; }
 
-        .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #c9d9ee; }
 
         .domain-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(3,9,26,.3); }
         .domain-toggle label {
@@ -85,7 +81,7 @@
         .pw-toggle {
             position: absolute; right: 8px; top: 8px; height: 30px; padding: 0 10px;
             border: none; border-radius: 999px; background: rgba(255,255,255,.1);
-            font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em;
+            font-family: inherit; font-size: 12px; font-weight: 600;
             color: #dce7f5; cursor: pointer;
         }
 
@@ -101,7 +97,6 @@
             background: #0b63c5; color: #ffffff; align-items: center; justify-content: center;
         }
 
-        .footer-note { margin: 18px 0 0; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: rgba(201,217,238,.75); }
     </style>
 </head>
 <body>
@@ -109,62 +104,52 @@
 <div class="card">
     <div class="heading">
         <div class="orb"></div>
-        <h1>Sign in to <span>CMC Global</span></h1>
-        <p>Continue to <strong>CMS Admin</strong></p>
+        <h1>Sign in</h1>
     </div>
 
     <form class="panel" method="post" th:action="@{/login}" id="login-form">
         <div th:if="${locked != null and locked}" class="alert alert-lock" role="alert">
-            <strong>Account locked.</strong> Too many failed attempts. Try again in 10 minutes.
+            <strong>Account locked.</strong> Try again in 10 minutes.
         </div>
         <div th:if="${attemptsLeft != null}" class="alert alert-warn" role="alert">
-            <strong>Invalid credentials.</strong> <span th:text="${attemptsLeft}"></span> attempt(s) remaining before lockout.
+            Wrong username or password. <strong th:text="${attemptsLeft}"></strong> tries left.
         </div>
         <div th:if="${param.unavailable != null}" class="alert alert-warn" role="alert">
-            <strong>Sign-in is temporarily unavailable.</strong> Try again in a few minutes.
+            Sign-in is unavailable. Try again soon.
         </div>
         <div th:if="${param.error != null and locked == null and attemptsLeft == null}" class="alert alert-danger" role="alert">
-            Invalid username or password.
+            Wrong username or password.
         </div>
         <div th:if="${param.logout}" class="alert alert-success" role="alert">
-            You have been signed out.
+            You are signed out.
         </div>
         <div th:if="${param.activated}" class="alert alert-success" role="alert">
-            Your account is active. Sign in with your new password.
+            Account activated. Sign in.
         </div>
         <div th:if="${param.reset}" class="alert alert-success" role="alert">
-            Your password has been changed. Sign in with it.
+            Password changed. Sign in.
         </div>
 
-        <div class="field">
-            <span class="eyebrow">Account type</span>
-            <div class="domain-toggle">
+        <div class="domain-toggle" role="radiogroup" aria-label="Account type">
                 <label>
-                    <input type="radio" name="domain" value="INTERNAL" checked /> Internal staff
+                    <input type="radio" name="domain" value="INTERNAL" checked /> Staff
                 </label>
                 <label>
                     <input type="radio" name="domain" value="GUEST" /> Guest
                 </label>
-            </div>
         </div>
 
-        <label class="field">
-            <span class="eyebrow">Username</span>
-            <input class="field-input" type="text" id="username" name="username"
-                   placeholder="name.surname" autocomplete="username" required autofocus>
-        </label>
+        <input class="field-input" type="text" id="username" name="username" aria-label="Username"
+               placeholder="Username" autocomplete="username" required autofocus>
 
-        <label class="field">
-            <span class="eyebrow">Password</span>
-            <div class="pw-wrap">
-                <input class="field-input" type="password" id="password" name="password"
-                       placeholder="••••••••••" autocomplete="current-password" required>
-                <button type="button" class="pw-toggle" id="pw-toggle">SHOW</button>
-            </div>
-        </label>
+        <div class="pw-wrap">
+            <input class="field-input" type="password" id="password" name="password" aria-label="Password"
+                   placeholder="Password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" id="pw-toggle">Show</button>
+        </div>
 
         <p th:if="${mailEnabled}" style="margin:-6px 0 0;font-size:12.5px;text-align:right">
-            <a th:href="@{/forgot-password}">Forgot your password?</a>
+            <a th:href="@{/forgot-password}">Forgot password?</a>
         </p>
 
         <button class="submit-btn" type="submit" th:disabled="${locked}">
@@ -175,7 +160,6 @@
         </button>
     </form>
 
-    <p class="footer-note">Secure OAuth2 · PKCE flow · Session encrypted</p>
 </div>
 
 <script>
@@ -183,7 +167,7 @@
         var pw = document.getElementById('password');
         var showing = pw.type === 'text';
         pw.type = showing ? 'password' : 'text';
-        this.textContent = showing ? 'SHOW' : 'HIDE';
+        this.textContent = showing ? 'Show' : 'Hide';
     });
 
     /* Domain persistence — same as before: remembers the last-picked account type per browser. */
