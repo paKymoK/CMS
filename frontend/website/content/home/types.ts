@@ -80,6 +80,8 @@ export type HeroSlide = {
   tabletImage: string;
   /** 750×1000, screens under 768px. */
   mobileImage: string;
+  /** How the slide comes in (see lib/pixel-slider/effects): unset or unknown = a crossfade. */
+  transition?: string;
 };
 
 /** content_item type "assistant_band" — see content-service's AssistantBandFields. */

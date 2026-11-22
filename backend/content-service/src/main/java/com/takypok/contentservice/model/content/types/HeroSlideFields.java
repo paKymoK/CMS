@@ -31,4 +31,12 @@ public class HeroSlideFields implements ContentFields {
   @NotBlank private String image;
   @NotBlank private String tabletImage;
   @NotBlank private String mobileImage;
+
+  /**
+   * Optional: how the slide comes in (going back rewinds it). One of {@code crossfade}, {@code
+   * rearrange}, {@code unveil}, {@code darkroom}, {@code duotone}, {@code sand} or {@code stir};
+   * unset means {@code crossfade}. The website treats a value it doesn't know as a crossfade, so
+   * this is not validated against the list.
+   */
+  private String transition;
 }

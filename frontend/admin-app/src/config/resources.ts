@@ -684,6 +684,21 @@ export const RESOURCES: ResourceConfig[] = [
         required: true,
         imageSpec: { width: 750, height: 1000 },
       }),
+      field({
+        name: "transition",
+        label: "Transition — how this slide comes in (empty = Crossfade; going back rewinds it)",
+        type: "select",
+        options: [
+          { label: "Crossfade — a plain fade", value: "crossfade" },
+          { label: "Rearrange — the next image is rebuilt from the current one's pixels", value: "rearrange" },
+          { label: "Unveil — the image rolls away like a sheet", value: "unveil" },
+          { label: "Darkroom — bleaches out, then develops like a print", value: "darkroom" },
+          { label: "Duotone — sinks into a two-tone print, then flows into the next image", value: "duotone" },
+          { label: "Sand — the image erodes into grains blown away by the wind", value: "sand" },
+          { label: "Stir — the image turns liquid and is stirred into the next", value: "stir" },
+        ],
+        showInTable: false,
+      }),
     ],
   },
   {
